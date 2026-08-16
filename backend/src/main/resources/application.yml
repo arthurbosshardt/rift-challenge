@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: riftrace-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:riftrace}?sslmode=${DB_SSLMODE:disable}}
+    username: ${DB_USER:}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:${PORT:8080}}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+riftrace:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  supabase:
+    url: ${SUPABASE_URL}
+    publishable-key: ${SUPABASE_PUBLISHABLE_KEY}
+  riot:
+    api-key: ${RIOT_API_KEY:}
+    app-id: ${RIOT_APP_ID:}
+    regional-routing: ${RIOT_REGIONAL_ROUTING:europe}
+    platform: ${RIOT_PLATFORM:euw1}

@@ -1,0 +1,57 @@
+---
+description: Testing rules for RiftRace
+globs:
+  - "backend/**/*.java"
+  - "frontend/**/*.ts"
+alwaysApply: false
+---
+
+# RiftRace Testing Rules
+
+## General
+Every significant business feature should include tests.
+
+Tests should verify behavior, not implementation details.
+
+## Backend priorities
+Highest priority:
+- authentication;
+- authorization;
+- challenge ownership;
+- challenge creation;
+- participant limits;
+- SoloQ/DuoQ rules;
+- challenge start time;
+- refresh throttling;
+- Riot parsing;
+- match deduplication;
+- LP/rank calculations.
+
+## Refresh tests
+Explicitly test:
+- first refresh accepted;
+- second refresh before 2 minutes rejected/throttled;
+- refresh after 2 minutes accepted;
+- two concurrent refresh requests cannot bypass the limit.
+
+The exact concurrency strategy must be appropriate for the deployed architecture.
+
+## Riot tests
+Mock external Riot API calls.
+Do not make production/network requests in unit tests.
+
+## Frontend tests
+Prioritize:
+- authentication UI;
+- challenge creation form;
+- participant limits;
+- not-started state;
+- active challenge visualization;
+- refresh countdown;
+- error states.
+
+## Regression
+When fixing a bug:
+1. reproduce it with a test;
+2. fix it;
+3. keep the regression test.

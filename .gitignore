@@ -1,0 +1,23 @@
+# Backend
+backend/target/
+backend/.idea/
+backend/*.iml
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Secrets
+.env
+.env.*
+!.env.example
+**/application-local.yml
+frontend/src/environments/environment.ts
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

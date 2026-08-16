@@ -1,0 +1,29 @@
+<div class="shell">
+  <header class="shell__header">
+    <div>
+      <a routerLink="/" class="brand">RiftRace</a>
+      <p class="shell__subtitle">{{ subtitle() }}</p>
+    </div>
+
+    <div class="shell__actions">
+      <nav class="shell__nav">
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/my-races" routerLinkActive="active">Mes races</a>
+        <a routerLink="/public-races" routerLinkActive="active">Races publiques</a>
+        <a routerLink="/races/new" routerLinkActive="active">Créer</a>
+      }
+      </nav>
+
+      @if (auth.isAuthenticated()) {
+        <button type="button" class="linkish" (click)="logout()">Déconnexion</button>
+      } @else {
+        <a routerLink="/login" class="linkish">Connexion</a>
+      }
+    </div>
+  </header>
+
+  <main class="shell__main">
+    <h1>{{ title() }}</h1>
+    <ng-content />
+  </main>
+</div>

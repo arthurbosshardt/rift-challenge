@@ -1,0 +1,23 @@
+<a class="race-card" [routerLink]="['/races', race().shareSlug]">
+  <div class="race-card__header">
+    <h2>{{ race().name }}</h2>
+    @if (race().isPublic) {
+      <span class="badge badge--public">Publique</span>
+    }
+  </div>
+
+  <dl class="race-card__meta">
+    <div>
+      <dt>Type</dt>
+      <dd>{{ typeLabel(race().type) }}</dd>
+    </div>
+    <div>
+      <dt>Début</dt>
+      <dd>{{ race().startAt | date: 'short' }}</dd>
+    </div>
+    <div>
+      <dt>Statut</dt>
+      <dd>{{ statusLabel(race().status) }}</dd>
+    </div>
+  </dl>
+</a>

@@ -1,0 +1,43 @@
+<app-page-shell title="Créer une race" subtitle="Configurez votre nouvelle race">
+  <form class="race-form" (ngSubmit)="submit()">
+    <label>
+      Nom de la race
+      <input
+        name="name"
+        [(ngModel)]="name"
+        required
+        maxlength="120"
+        placeholder="Ex. Race SoloQ été 2026"
+      />
+    </label>
+
+    <label>
+      Type
+      <select name="type" [(ngModel)]="type" required>
+        <option value="SOLOQ">SoloQ (16 joueurs max)</option>
+        <option value="DUOQ">DuoQ (8 duos max)</option>
+      </select>
+    </label>
+
+    <label>
+      Date et heure de début
+      <input name="startAtLocal" type="datetime-local" [(ngModel)]="startAtLocal" required />
+    </label>
+
+    <label class="checkbox">
+      <input name="isPublic" type="checkbox" [(ngModel)]="isPublic" />
+      Race publique (visible dans la liste publique)
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <div class="actions">
+      <button type="submit" [disabled]="loading()">
+        {{ loading() ? 'Création…' : 'Créer la race' }}
+      </button>
+      <a routerLink="/my-races">Annuler</a>
+    </div>
+  </form>
+</app-page-shell>

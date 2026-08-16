@@ -1,0 +1,18 @@
+<app-page-shell
+  title="Races publiques"
+  subtitle="Découvrez les races partagées par la communauté"
+>
+  @if (loading()) {
+    <p class="state">Chargement…</p>
+  } @else if (error()) {
+    <p class="state state--error">{{ error() }}</p>
+  } @else if (races().length === 0) {
+    <p class="state">Aucune race publique pour le moment.</p>
+  } @else {
+    <div class="race-grid">
+      @for (race of races(); track race.id) {
+        <app-race-card [race]="race" />
+      }
+    </div>
+  }
+</app-page-shell>

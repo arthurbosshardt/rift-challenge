@@ -1,0 +1,146 @@
+---
+description: Spring Boot backend conventions for RiftRace
+globs:
+  - "backend/**/*.java"
+  - "backend/**/*.xml"
+  - "backend/**/*.yml"
+  - "backend/**/*.yaml"
+alwaysApply: false
+---
+
+# RiftRace Backend Rules
+
+## Stack
+- Java 21
+- Spring Boot
+- Maven
+- Spring Web
+- Spring Data JPA
+- PostgreSQL
+- Flyway
+- Bean Validation
+- Spring Security when authentication is implemented
+- Actuator for health checks
+
+## Architecture
+Prefer feature-oriented packages rather than one global package per technical layer.
+
+Example:
+- challenge/
+- player/
+- duo/
+- account/
+- authentication/
+- riot/
+- synchronization/
+- common/
+
+Within a feature, separate responsibilities clearly:
+- controller
+- service
+- repository
+- dto
+- domain/entity where appropriate
+
+Controllers should be thin.
+Business rules belong in services/domain logic.
+Repositories handle persistence only.
+
+## API
+- Use REST conventions.
+- Use explicit request/response DTOs.
+- Validate request DTOs.
+- Return appropriate HTTP status codes.
+- Do not expose JPA entities directly as public API contracts.
+- Use a consistent error response format.
+- Do not leak internal exceptions or secrets.
+
+## Authentication
+The application must support:
+1. local account registration/login using email, username and password;
+2. Google authentication.
+
+Local passwords must be securely hashed.
+Authentication/session implementation must be chosen deliberately; do not invent an insecure custom mechanism.
+
+The user's email and username must have appropriate uniqueness constraints.
+Never log passwords, tokens or OAuth secrets.
+
+## Challenge rules
+- SOLOQ challenge: maximum 16 players.
+- DUOQ challenge: maximum 8 duos / 16 players.
+- A DUOQ challenge represents pairs, not an unordered list of independent players.
+- Challenge ownership must be enforced server-side.
+- Only authorized users can modify their challenges.
+- Challenge start date/time is persisted and compared server-side.
+- Challenge status must never depend solely on frontend calculations.
+
+## Refresh/rate limiting
+The 2-minute challenge refresh rule must be enforced server-side.
+
+A refresh request must:
+- identify the challenge;
+- verify that the requester is allowed to refresh it;
+- check the last successful/accepted refresh time according to the chosen policy;
+- reject or throttle refreshes made before the 2-minute window;
+- return enough information for the frontend to display the next available refresh time.
+
+Do not rely on the frontend button being disabled.
+
+The implementation should also minimize Riot API calls by reusing persisted data.
+
+## Riot integration
+Never call Riot API directly from controllers when business logic is required.
+
+Prefer:
+Controller/Service
+→ Riot client/service
+→ Riot API
+
+Handle:
+- timeouts;
+- HTTP errors;
+- rate limits;
+- missing data;
+- transient failures.
+
+Do not retry aggressively.
+
+Riot API keys must come from environment/configuration and never from source code.
+
+## Persistence
+Use Flyway migrations.
+Do not modify production schema manually.
+
+Add database constraints for important invariants such as:
+- unique email;
+- unique username;
+- challenge relationships;
+- duo membership;
+- appropriate foreign keys;
+- valid ownership relationships.
+
+Use indexes deliberately for frequent queries such as:
+- challenge lookup;
+- challenge participants;
+- Riot account lookup;
+- match lookup;
+- refresh tracking.
+
+## Testing
+Business-critical services require tests.
+
+Prioritize tests for:
+- registration/authentication rules;
+- challenge creation;
+- 16-player SoloQ limit;
+- 8-duo DuoQ limit;
+- challenge ownership;
+- challenge start state;
+- refresh every 2 minutes;
+- Riot match parsing;
+- LP/rank calculations;
+- DuoQ participant detection.
+
+Mock Riot API calls in unit tests.
+Use integration tests for database/API behavior where valuable.

@@ -1,0 +1,12 @@
+.race-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.state {
+  color: var(--text-muted);
+}
+
+.state--error {
+  color: var(--danger);
+}

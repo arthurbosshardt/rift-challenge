@@ -1,0 +1,174 @@
+@if (loading()) {
+  <app-page-shell title="Race" subtitle="">
+    <p class="state">Chargement…</p>
+  </app-page-shell>
+} @else if (error()) {
+  <app-page-shell title="Race" subtitle="">
+    <p class="state state--error">{{ error() }}</p>
+  </app-page-shell>
+} @else if (race(); as currentRace) {
+  <app-page-shell [title]="currentRace.name" subtitle="Détail de la race">
+    <section class="detail">
+      <div class="detail__badges">
+        <span class="badge">{{ currentRace.type === 'SOLOQ' ? 'SoloQ' : 'DuoQ' }}</span>
+        <span class="badge">{{ statusLabel(currentRace.status) }}</span>
+        @if (currentRace.isPublic) {
+          <span class="badge badge--public">Publique</span>
+        }
+      </div>
+
+      <dl class="detail__meta">
+        <div>
+          <dt>Début</dt>
+          <dd>{{ currentRace.startAt | date: 'full' }}</dd>
+        </div>
+        <div>
+          <dt>Lien de partage</dt>
+          <dd class="share-row">
+            <code>/races/{{ currentRace.shareSlug }}</code>
+            <button type="button" (click)="copyShareLink()">
+              {{ copied() ? 'Copié' : 'Copier le lien' }}
+            </button>
+          </dd>
+        </div>
+      </dl>
+
+      @if (currentRace.status === 'ACTIVE') {
+        <section class="refresh">
+          <div class="refresh__info">
+            @if (currentRace.lastRefreshedAt) {
+              <p>Dernière MAJ : {{ currentRace.lastRefreshedAt | date: 'short' }}</p>
+            } @else {
+              <p>Aucune synchronisation pour le moment.</p>
+            }
+            <p class="refresh__hint">
+              Les données Riot ne sont pas en temps réel. Une actualisation est possible au maximum toutes les 2 minutes.
+            </p>
+          </div>
+
+          @if (!currentRace.refreshAvailable && refreshCountdown()) {
+            <div class="refresh__cooldown" role="status" aria-live="polite">
+              <span class="refresh__cooldown-label">Prochaine actualisation dans</span>
+              <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
+            </div>
+          }
+
+          <button
+            type="button"
+            class="refresh__button"
+            (click)="refreshRace()"
+            [disabled]="!currentRace.refreshAvailable || refreshing()"
+          >
+            @if (refreshing()) {
+              Actualisation…
+            } @else if (currentRace.refreshAvailable) {
+              Actualiser
+            } @else {
+              Actualiser (indisponible)
+            }
+          </button>
+          @if (refreshError()) {
+            <p class="refresh__error">{{ refreshError() }}</p>
+          }
+        </section>
+      }
+
+      <section class="participants">
+        <div class="participants__header">
+          <h2>Participants</h2>
+          <span class="participants__count">
+            {{ currentRace.participants.length }} / {{ participantLimit }}
+          </span>
+        </div>
+
+        @if (currentRace.participants.length === 0) {
+          <p class="participants__empty">Aucun participant pour le moment.</p>
+        } @else if (currentRace.status === 'ACTIVE' && currentRace.lastRefreshedAt) {
+          <ol class="leaderboard">
+            @for (participant of currentRace.participants; track participant.id) {
+              <li class="leaderboard__item">
+                <span class="leaderboard__rank">#{{ participant.position }}</span>
+                <div class="leaderboard__body">
+                  <strong>{{ participant.riotId }}</strong>
+                  <span class="leaderboard__meta">
+                    @if (participant.hasRankData) {
+                      {{ rankLabel(participant) }}
+                    } @else {
+                      Non classé en SoloQ
+                    }
+                  </span>
+                </div>
+                <div class="leaderboard__stats">
+                  <span class="leaderboard__lp" [class.leaderboard__lp--negative]="participant.lpGained < 0">
+                    {{ lpLabel(participant) }}
+                  </span>
+                  <span class="leaderboard__wl">{{ participant.wins }}V · {{ participant.losses }}D</span>
+                </div>
+                @if (currentRace.isOwner) {
+                  <button
+                    type="button"
+                    class="participant-remove"
+                    (click)="removeParticipant(participant)"
+                    [disabled]="removingParticipantId() === participant.id"
+                    [attr.aria-label]="'Retirer ' + participant.riotId"
+                  >
+                    {{ removingParticipantId() === participant.id ? '…' : 'Retirer' }}
+                  </button>
+                }
+              </li>
+            }
+          </ol>
+        } @else {
+          <ul class="participants__list">
+            @for (participant of currentRace.participants; track participant.id) {
+              <li class="participants__list-item">
+                <span>{{ participant.riotId }}</span>
+                @if (currentRace.isOwner) {
+                  <button
+                    type="button"
+                    class="participant-remove"
+                    (click)="removeParticipant(participant)"
+                    [disabled]="removingParticipantId() === participant.id"
+                    [attr.aria-label]="'Retirer ' + participant.riotId"
+                  >
+                    {{ removingParticipantId() === participant.id ? '…' : 'Retirer' }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @if (currentRace.isOwner) {
+          <form class="participants__form" (ngSubmit)="addParticipant()">
+            <label for="riotId">Ajouter un joueur</label>
+            <div class="participants__form-row">
+              <input
+                id="riotId"
+                name="riotId"
+                type="text"
+                [(ngModel)]="riotIdInput"
+                placeholder="Tanor#7154"
+                [disabled]="addingParticipant() || currentRace.participants.length >= participantLimit"
+                autocomplete="off"
+              />
+              <button
+                type="submit"
+                [disabled]="addingParticipant() || currentRace.participants.length >= participantLimit"
+              >
+                {{ addingParticipant() ? 'Ajout…' : 'Ajouter' }}
+              </button>
+            </div>
+            @if (participantError()) {
+              <p class="participants__error">{{ participantError() }}</p>
+            }
+          </form>
+        }
+      </section>
+
+      @if (currentRace.status === 'NOT_STARTED') {
+        <p class="notice">Cette race n'a pas encore commencé. Le classement sera disponible après le début et une première actualisation.</p>
+      }
+    </section>
+  </app-page-shell>
+}

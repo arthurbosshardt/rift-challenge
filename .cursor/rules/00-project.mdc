@@ -1,0 +1,101 @@
+---
+description: Global project rules for RiftRace
+alwaysApply: true
+---
+
+# RiftRace — Project Rules
+
+## Product
+RiftRace is a League of Legends challenge platform.
+
+Authenticated users can:
+- create an account with email, username and password;
+- alternatively sign in with Google;
+- create challenges;
+- configure and manage their own challenges;
+- add participants;
+- view challenge progress and rankings.
+
+A challenge has exactly one type:
+- SOLOQ: up to 16 individual players.
+- DUOQ: up to 8 duos, therefore 16 players maximum.
+
+The challenge creator is the owner of the challenge.
+
+## Challenge lifecycle
+A challenge has a configured start date and time.
+
+Before the configured start:
+- display that the challenge has not started;
+- do not count post-start challenge statistics;
+- clearly display the scheduled start date/time.
+
+After the start:
+- display participant progression;
+- display LP gained;
+- display rank comparison;
+- display the information visually and intuitively.
+
+The product should favor fast comprehension over dense tables.
+
+## Riot data refresh
+A challenge can be manually refreshed at most once every 2 minutes.
+
+The UI must clearly indicate:
+- whether refresh is available;
+- when the next refresh will be available;
+- that data may not be real-time.
+
+Do not implement a client-side workaround that bypasses this limit.
+
+The backend is responsible for enforcing the refresh limit. The frontend indicator is only UX.
+
+## Architecture
+Use a clear separation:
+- Angular frontend;
+- Spring Boot backend;
+- PostgreSQL database;
+- Riot API accessed only by the backend.
+
+Never expose Riot API credentials to the browser.
+
+## Engineering principles
+- Prefer simple, maintainable solutions.
+- Do not over-engineer the MVP.
+- Keep business logic out of Angular components.
+- Keep Riot API integration isolated behind backend services/clients.
+- Validate all user input on the backend.
+- Never trust values sent by the frontend.
+- Use DTOs between API and domain/persistence layers where appropriate.
+- Use database migrations; never rely on manually created production tables.
+- Do not introduce a library without a concrete reason.
+- Preserve existing architecture unless a change is justified.
+- Do not make unrelated refactors while implementing a feature.
+
+## Security
+Never commit:
+- passwords;
+- password hashes;
+- Riot API keys;
+- OAuth client secrets;
+- database credentials;
+- JWT signing secrets;
+- production environment files containing secrets.
+
+Passwords must be stored using a modern password hashing algorithm. Never store plaintext passwords.
+
+## Time
+Store timestamps in UTC in the backend/database.
+Convert to the user's locale only for presentation.
+The challenge start date/time must be unambiguous.
+
+## Workflow with Cursor
+Before implementing a large feature:
+1. Inspect the existing code and relevant rules.
+2. Explain the implementation plan briefly.
+3. Identify affected files.
+4. Implement the smallest coherent change.
+5. Add/update tests.
+6. Report what changed and any assumptions.
+
+Do not rewrite the application wholesale unless explicitly requested.

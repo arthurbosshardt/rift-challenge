@@ -1,0 +1,55 @@
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../core/services/auth.service';
+import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
+
+@Component({
+  selector: 'app-login-page',
+  imports: [FormsModule, PageShellComponent],
+  templateUrl: './login-page.component.html',
+  styleUrl: './login-page.component.scss',
+})
+export class LoginPageComponent {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  protected mode: 'login' | 'signup' = 'login';
+  protected email = '';
+  protected password = '';
+  protected username = '';
+  protected readonly error = signal<string | null>(null);
+  protected readonly loading = signal(false);
+
+  protected async submit(): Promise<void> {
+    this.error.set(null);
+    this.loading.set(true);
+
+    const message =
+      this.mode === 'login'
+        ? await this.auth.signInWithEmail(this.email.trim(), this.password)
+        : await this.auth.signUpWithEmail(this.email.trim(), this.password, this.username.trim());
+
+    this.loading.set(false);
+
+    if (message) {
+      this.error.set(message);
+      return;
+    }
+
+    if (this.mode === 'signup') {
+      this.error.set('Compte créé. Vérifiez votre email si la confirmation est activée.');
+      return;
+    }
+
+    await this.router.navigateByUrl('/my-races');
+  }
+
+  protected async signInWithGoogle(): Promise<void> {
+    this.error.set(null);
+    const message = await this.auth.signInWithGoogle();
+    if (message) {
+      this.error.set(message);
+    }
+  }
+}
