@@ -1,7 +1,7 @@
 /** Durée pendant laquelle la session survit à la fermeture du navigateur. */
 export const SESSION_TTL_MS = 60 * 60 * 1000;
 
-export const SESSION_LAST_SEEN_KEY = 'riftrace.session.lastSeen';
+export const SESSION_LAST_SEEN_KEY = 'riftchallenge.session.lastSeen';
 
 export function isSessionExpired(
   lastSeenMs: number | null,

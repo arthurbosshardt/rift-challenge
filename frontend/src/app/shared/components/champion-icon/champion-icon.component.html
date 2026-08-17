@@ -1,0 +1,12 @@
+@if (currentIconUrl(); as url) {
+  <img
+    class="champion-icon__img"
+    [src]="url"
+    alt=""
+    loading="lazy"
+    decoding="async"
+    (error)="onIconError()"
+  />
+} @else {
+  <span class="champion-icon__fallback">?</span>
+}

@@ -1,4 +1,4 @@
-import { ParticipantProgress, DuoProgress } from '../models/race.models';
+import { ParticipantProgress, DuoProgress } from '../models/challenge.models';
 
 export type LeaderboardSort = 'RANK' | 'LP_GAIN' | 'WIN_RATE';
 export type SortDirection = 'asc' | 'desc';

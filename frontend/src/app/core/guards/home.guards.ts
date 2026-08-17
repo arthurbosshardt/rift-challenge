@@ -7,7 +7,7 @@ async function defaultAuthenticatedRoute(auth: AuthService): Promise<string[]> {
   if (!auth.linkedAccount()) {
     await auth.refreshProfile();
   }
-  return auth.linkedAccount() ? ['/my-races'] : ['/public-races'];
+  return auth.linkedAccount() ? ['/my-challenges'] : ['/public-challenges'];
 }
 
 export const rootRedirectGuard: CanActivateFn = async () => {
@@ -18,7 +18,7 @@ export const rootRedirectGuard: CanActivateFn = async () => {
   if (auth.isAuthenticated()) {
     return router.createUrlTree(await defaultAuthenticatedRoute(auth));
   }
-  return router.createUrlTree(['/concept']);
+  return router.createUrlTree(['/home']);
 };
 
 export const guestHomeGuard: CanActivateFn = async () => {
@@ -40,7 +40,7 @@ export const authHomeGuard: CanActivateFn = async (_route, state) => {
 
   if (!auth.isAuthenticated()) {
     authModal.open({ returnUrl: state.url });
-    return router.createUrlTree(['/concept']);
+    return router.createUrlTree(['/home']);
   }
   return true;
 };
@@ -53,7 +53,7 @@ export const linkedAccountGuard: CanActivateFn = async (_route, state) => {
 
   if (!auth.isAuthenticated()) {
     authModal.open({ returnUrl: state.url });
-    return router.createUrlTree(['/concept']);
+    return router.createUrlTree(['/home']);
   }
 
   if (!auth.linkedAccount()) {
@@ -61,7 +61,7 @@ export const linkedAccountGuard: CanActivateFn = async (_route, state) => {
   }
 
   if (!auth.linkedAccount()) {
-    return router.createUrlTree(['/public-races']);
+    return router.createUrlTree(['/public-challenges']);
   }
 
   return true;

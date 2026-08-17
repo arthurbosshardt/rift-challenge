@@ -11,14 +11,14 @@ export function formatRefreshCountdown(nextRefreshAvailableAt: string, nowMs = D
 }
 
 export function isRefreshCooldownActive(
-  race: {
+  challenge: {
     refreshAvailable: boolean;
     nextRefreshAvailableAt: string | null;
   },
   nowMs = Date.now(),
 ): boolean {
-  if (race.refreshAvailable || !race.nextRefreshAvailableAt) {
+  if (challenge.refreshAvailable || !challenge.nextRefreshAvailableAt) {
     return false;
   }
-  return formatRefreshCountdown(race.nextRefreshAvailableAt, nowMs) !== null;
+  return formatRefreshCountdown(challenge.nextRefreshAvailableAt, nowMs) !== null;
 }

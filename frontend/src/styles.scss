@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'LEMON MILK';
+  src: url('/fonts/LemonMilk-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
@@ -8,8 +16,11 @@
   --gold-dim: #9a7d3f;
 
   /* Backgrounds */
-  --bg: #12171d;
-  --bg-deep: #0d1116;
+  --bg: #121820;
+  --bg-deep: #0a0e14;
+  --app-background:
+    radial-gradient(circle at 20% 0%, rgba(197, 160, 89, 0.12), transparent 42%),
+    linear-gradient(160deg, #0a0e14 0%, #121820 55%, #0d1118 100%);
   --surface: #1a2026;
   --surface-elevated: #212830;
   --surface-hover: #262e38;
@@ -46,6 +57,7 @@
 
   /* Typography */
   --font-family: 'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', system-ui, sans-serif;
+  --font-brand: 'LEMON MILK', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 [data-theme='light'] {
@@ -57,6 +69,9 @@
 
   --bg: #ebeef2;
   --bg-deep: #e3e7ed;
+  --app-background:
+    radial-gradient(ellipse 70% 42% at 50% -10%, var(--gold-a06), transparent 58%),
+    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg) 40%, var(--bg) 100%);
   --surface: #f5f7fa;
   --surface-elevated: #f8fafc;
   --surface-hover: #eef2f6;
@@ -93,9 +108,8 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background:
-    radial-gradient(ellipse 70% 42% at 50% -10%, var(--gold-a06), transparent 58%),
-    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg) 40%, var(--bg) 100%);
+  background: var(--app-background);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-family);
   font-feature-settings: 'kern' 1;
@@ -243,6 +257,10 @@ textarea:focus {
   max-width: 420px;
 }
 
+.modal-panel--settings {
+  max-width: 34rem;
+}
+
 .modal-panel--edit {
   display: flex;
   flex-direction: column;
@@ -255,6 +273,7 @@ textarea:focus {
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.3125rem;
   padding: 0.25rem 0.625rem;
   border-radius: var(--radius-pill);
   background: var(--surface-tint-strong);
@@ -262,6 +281,75 @@ textarea:focus {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.badge--title {
+  gap: 0.4375rem;
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.9375rem;
+  letter-spacing: 0.015em;
+}
+
+.badge--title .badge__icon {
+  width: 1.0625rem;
+  height: 1.0625rem;
+}
+
+.challenge-card__title .badge--title {
+  padding: 0.28125rem 0.6875rem;
+  font-size: 0.875rem;
+}
+
+.challenge-card__title .badge--title .badge__icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.detail__title .badge--title {
+  padding: 0.375rem 0.875rem;
+  font-size: clamp(0.9375rem, 2.6vw, 1.125rem);
+}
+
+.detail__title .badge--title .badge__icon {
+  width: clamp(1rem, 2.4vw, 1.1875rem);
+  height: clamp(1rem, 2.4vw, 1.1875rem);
+}
+
+.badge__icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+.badge--soloq {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 32%, transparent);
+}
+
+.badge--duoq {
+  color: #9b7bd4;
+  background: color-mix(in srgb, #9b7bd4 12%, transparent);
+  border: 1px solid color-mix(in srgb, #9b7bd4 32%, transparent);
+}
+
+.badge--status-not-started {
+  color: #9eb4d4;
+  background: rgba(120, 150, 200, 0.12);
+  border: 1px solid rgba(120, 150, 200, 0.3);
+}
+
+.badge--status-active {
+  color: #6ec97d;
+  background: rgba(107, 201, 122, 0.1);
+  border: 1px solid rgba(107, 201, 122, 0.28);
+}
+
+.badge--status-finished {
+  color: var(--text-muted);
+  background: var(--surface-tint-strong);
+  border: 1px solid var(--border);
 }
 
 .badge--type {
@@ -273,6 +361,13 @@ textarea:focus {
 .badge--public {
   color: var(--gold);
   background: var(--gold-a12);
+  border: 1px solid rgba(197, 160, 89, 0.28);
+}
+
+.badge--private {
+  color: var(--text-muted);
+  background: var(--surface-tint-strong);
+  border: 1px solid var(--border);
 }
 
 .refresh-action-btn {
@@ -406,6 +501,12 @@ textarea:focus {
   color: var(--gold);
 }
 
+.icon-button--danger:hover:not(:disabled) {
+  border-color: rgba(220, 90, 90, 0.65);
+  background: rgba(220, 90, 90, 0.12);
+  color: #f08a8a;
+}
+
 .icon-button svg {
   width: 1rem;
   height: 1rem;
@@ -417,4 +518,4 @@ textarea:focus {
   stroke: currentColor;
 }
 
-@import 'app/features/race/race-form-shared';
+@import 'app/features/challenge/challenge-form-shared';

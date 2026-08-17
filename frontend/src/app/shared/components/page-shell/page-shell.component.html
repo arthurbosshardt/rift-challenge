@@ -1,43 +1,56 @@
 <div class="shell" [class.shell--centered]="centered()" [class.shell--floating-nav]="floatingNav()">
   <header class="shell__header" [class.shell__header--floating]="floatingNav()">
-    @if (!floatingNav()) {
-      <div>
-        <a routerLink="/concept" class="brand">
-          <app-brand-logo />
-          <span class="brand__name">Rift Race</span>
+    <div class="shell__header-start">
+      <a routerLink="/home" class="brand">
+        <app-brand-logo [size]="floatingNav() ? 'lg' : 'md'" />
+        <span class="brand__name">{{ 'landing.introBrand' | t }}</span>
+      </a>
+    </div>
+
+    <nav class="shell__nav shell__nav--primary" aria-label="Main">
+      <a routerLink="/public-challenges" routerLinkActive="active">
+        <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+            fill="currentColor"
+          />
+        </svg>
+        <span>{{ 'nav.publicChallenges' | t }}</span>
+      </a>
+      @if (auth.isAuthenticated() && auth.linkedAccount()) {
+        <a routerLink="/my-challenges" routerLinkActive="active">
+          <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>{{ 'nav.myChallenges' | t }}</span>
         </a>
-      </div>
-    }
+      }
+    </nav>
 
     <div class="shell__actions">
-      <nav class="shell__nav">
-        <a routerLink="/concept" routerLinkActive="active">{{ 'nav.concept' | t }}</a>
-        <a routerLink="/public-races" routerLinkActive="active">{{ 'nav.publicRaces' | t }}</a>
-        @if (auth.isAuthenticated()) {
-          @if (auth.linkedAccount()) {
-            <a routerLink="/my-races" routerLinkActive="active">{{ 'nav.myRaces' | t }}</a>
-          }
-          <button
-            type="button"
-            class="shell__nav-create"
-            [attr.aria-label]="'nav.createRace' | t"
-            [attr.title]="'nav.createRace' | t"
-            (click)="createRaceModal.open()"
-          >
-            <span class="shell__nav-create-plus" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-              </svg>
-            </span>
-            <span class="shell__nav-create-tooltip">{{ 'nav.createRace' | t }}</span>
-          </button>
-        }
-      </nav>
       @if (auth.isAuthenticated()) {
+        <button
+          type="button"
+          class="shell__nav-create"
+          [attr.aria-label]="'nav.createChallenge' | t"
+          [attr.title]="'nav.createChallenge' | t"
+          (click)="createChallengeModal.open()"
+        >
+          <span class="shell__nav-create-plus" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+              <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+            </svg>
+          </span>
+          <span class="shell__nav-create-tooltip">{{ 'nav.createChallenge' | t }}</span>
+        </button>
+
         <div class="user-menu" #userMenu>
           @if (auth.isProfileLoading()) {
-            <app-loader [compact]="true" />
+            <app-skeleton [circle]="true" width="2rem" height="2rem" />
           } @else if (auth.headerIdentity(); as identity) {
             <button
               type="button"
@@ -59,7 +72,7 @@
 
           @if (userMenuOpen()) {
             <div class="user-menu__dropdown" role="menu">
-              <a routerLink="/created-races" role="menuitem" class="user-menu__item" (click)="closeUserMenu()">
+              <button type="button" role="menuitem" class="user-menu__item" (click)="openCreatedChallenges()">
                 <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
                   <path
                     d="M8 21h8M12 17v4M7 4h10l1 4H6l1-4zM9 8v5a3 3 0 0 0 6 0V8"
@@ -70,9 +83,9 @@
                     stroke-linejoin="round"
                   />
                 </svg>
-                <span>{{ 'nav.createdRaces' | t }}</span>
-              </a>
-              <a routerLink="/settings" role="menuitem" class="user-menu__item" (click)="closeUserMenu()">
+                <span>{{ 'nav.createdChallenges' | t }}</span>
+              </button>
+              <button type="button" role="menuitem" class="user-menu__item" (click)="openSettings()">
                 <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
                   <path
                     d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"
@@ -90,7 +103,7 @@
                   />
                 </svg>
                 <span>{{ 'nav.settings' | t }}</span>
-              </a>
+              </button>
             </div>
           }
         </div>
@@ -121,7 +134,7 @@
 
   <main class="shell__main" [class.shell__main--centered]="centered()">
     @if (title()) {
-      <div class="shell__title-row">
+      <div class="shell__title-row" [class.shell__title-row--brand]="brandTitle()">
         <h1>{{ title() }}</h1>
         <ng-content select="[shellTitleAction]" />
       </div>
@@ -129,5 +142,7 @@
     <ng-content />
   </main>
 
-  <app-site-footer />
+  @if (showFooter()) {
+    <app-site-footer />
+  }
 </div>

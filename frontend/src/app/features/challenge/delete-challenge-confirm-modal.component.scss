@@ -1,0 +1,41 @@
+.delete-challenge-confirm__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.delete-challenge-confirm__message {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.delete-challenge-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.delete-challenge-confirm__cancel {
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--border);
+}
+
+.delete-challenge-confirm__cancel:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.delete-challenge-confirm__confirm {
+  color: var(--text);
+  border-color: rgba(232, 93, 93, 0.45);
+  background: rgba(232, 93, 93, 0.12);
+}
+
+.delete-challenge-confirm__confirm:hover {
+  color: #fff;
+  border-color: var(--danger);
+  background: var(--danger);
+}

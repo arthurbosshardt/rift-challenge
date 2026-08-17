@@ -1,12 +1,12 @@
 ---
-description: PostgreSQL and persistence rules for RiftRace
+description: PostgreSQL and persistence rules for Rift Challenge
 globs:
   - "backend/src/main/resources/db/migration/**/*.sql"
   - "backend/**/*.java"
 alwaysApply: false
 ---
 
-# RiftRace Database Rules
+# Rift Challenge Database Rules
 
 ## Database
 Use PostgreSQL.

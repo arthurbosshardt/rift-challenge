@@ -18,7 +18,7 @@ export class LoginRedirectComponent implements OnInit {
     await this.auth.waitUntilReady();
 
     if (this.auth.isAuthenticated()) {
-      await this.router.navigateByUrl('/my-races', { replaceUrl: true });
+      await this.router.navigateByUrl('/my-challenges', { replaceUrl: true });
       return;
     }
 
@@ -26,6 +26,6 @@ export class LoginRedirectComponent implements OnInit {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? undefined;
 
     this.authModal.open({ error, returnUrl });
-    await this.router.navigateByUrl('/public-races', { replaceUrl: true });
+    await this.router.navigateByUrl('/public-challenges', { replaceUrl: true });
   }
 }

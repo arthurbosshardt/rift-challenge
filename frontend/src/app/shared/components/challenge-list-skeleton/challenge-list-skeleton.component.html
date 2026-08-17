@@ -1,0 +1,5 @@
+<div class="challenge-list-skeleton" role="status" [attr.aria-label]="ariaLabel()" aria-live="polite">
+  @for (item of items(); track item) {
+    <app-challenge-card-skeleton [summaryOnly]="summaryOnly()" />
+  }
+</div>

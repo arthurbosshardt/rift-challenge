@@ -1,6 +1,8 @@
-# Google OAuth — RiftRace
+# Google OAuth — Rift Challenge
 
 L’app utilise **Supabase Auth** pour Google. Le front redirige vers Google, Supabase gère le callback OAuth, puis renvoie l’utilisateur sur `/auth/callback`.
+
+Utilise les **URLs réelles** de ton déploiement (Vercel, puis domaine custom plus tard si tu en achètes un).
 
 ## 1. Google Cloud Console
 
@@ -16,14 +18,13 @@ L’app utilise **Supabase Auth** pour Google. Le front redirige vers Google, Su
    - **Authorized JavaScript origins** :
      ```
      http://localhost:4200
-     https://rift-race-beta.vercel.app
+     https://TON-URL-VERCEL.vercel.app
      ```
-     *(ajoute ton domaine custom plus tard)*
-   - **Authorized redirect URIs** — **important : URL Supabase, pas Vercel** :
+     *(ajoute ton domaine custom ici quand tu l’auras)*
+   - **Authorized redirect URIs** — **important : URL Supabase, pas l’URL Vercel** :
      ```
      https://VOTRE_PROJECT_REF.supabase.co/auth/v1/callback
      ```
-     Tu la trouves dans Supabase → **Authentication → Providers → Google** (copier l’URL callback affichée).
 5. Copie **Client ID** et **Client Secret**
 
 ## 2. Supabase
@@ -33,39 +34,34 @@ L’app utilise **Supabase Auth** pour Google. Le front redirige vers Google, Su
    - Colle **Client ID** et **Client Secret**
    - Save
 2. **Authentication → URL Configuration**
-   - **Site URL** : `https://rift-race-beta.vercel.app`
-   - **Redirect URLs** (allow list, pas OAuth Server) — une URL par ligne, **exactes** :
+   - **Site URL** : URL de prod du front (Vercel pour l’instant)
+   - **Redirect URLs** — une URL par ligne :
      ```
-     https://rift-race-beta.vercel.app
-     https://rift-race-beta.vercel.app/**
-     https://rift-race-beta.vercel.app/auth/callback
+     https://TON-URL-VERCEL.vercel.app
+     https://TON-URL-VERCEL.vercel.app/**
+     https://TON-URL-VERCEL.vercel.app/auth/callback
      http://localhost:4200
      http://localhost:4200/**
      http://localhost:4200/auth/callback
      ```
 
-   Si tu atterris sur `localhost:3000`, le **Site URL** du projet est encore `http://localhost:3000` (valeur par défaut), ou Google a `http://localhost:3000` dans **Authorized redirect URIs**.
-
-   Ne confonds pas avec **Authentication → OAuth Server / OAuth Apps** : ce n’est pas la liste pour Google login.
+   Quand tu auras un domaine custom, ajoute les mêmes entrées avec ce domaine (sans retirer localhost).
 
 ## 3. Vérification
 
-1. Ouvre `https://rift-race-beta.vercel.app/login`
-2. Clique **Continuer avec Google**
-3. Après Google → retour sur `/auth/callback` → redirection `/my-races`
-
-En cas d’erreur, le message s’affiche sur la page login.
+1. Ouvre l’URL de prod → login
+2. **Continuer avec Google**
+3. Retour sur `/auth/callback` → redirection `/my-challenges`
 
 ## Dépannage
 
 | Erreur | Cause probable |
 |---|---|
 | `redirect_uri_mismatch` | Redirect URI Google ≠ `https://xxx.supabase.co/auth/v1/callback` |
-| Retour login sans session | Redirect URLs Supabase manquantes pour Vercel |
-| `Access blocked: app not verified` | App Google en mode Testing → ajoute ton email en test user |
-| Compte créé sans username | Normal : le backend dérive un username depuis le nom Google ou l’email |
+| Retour login sans session | Redirect URLs Supabase manquantes pour l’URL du front |
+| `Access blocked: app not verified` | App Google en Testing → ajoute ton email en test user |
 
 ## Secrets
 
-- **Client Secret Google** → uniquement dans Supabase (pas Vercel, pas Git)
+- **Client Secret Google** → uniquement dans Supabase (pas dans le front, pas Git)
 - **Client ID** → Supabase uniquement

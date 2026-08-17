@@ -1,5 +1,5 @@
 ---
-description: Spring Boot backend conventions for RiftRace
+description: Spring Boot backend conventions for Rift Challenge
 globs:
   - "backend/**/*.java"
   - "backend/**/*.xml"
@@ -8,7 +8,7 @@ globs:
 alwaysApply: false
 ---
 
-# RiftRace Backend Rules
+# Rift Challenge Backend Rules
 
 ## Stack
 - Java 21

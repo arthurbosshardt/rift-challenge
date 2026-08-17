@@ -1,0 +1,304 @@
+.challenge-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.challenge-list {
+  position: relative;
+}
+
+.challenge-list--refreshing .challenge-grid,
+.challenge-list--refreshing .state {
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+.challenge-list__refresh-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-height: min(45vh, 22rem);
+  padding: 2rem 1rem;
+  border-radius: 12px;
+  background: rgba(8, 12, 18, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.challenge-list__refresh-overlay app-challenge-list-skeleton {
+  width: min(100%, 42rem);
+}
+
+.link-banner {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  border-radius: 12px;
+  background: var(--gold-a08);
+}
+
+.link-banner__text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.link-banner__action {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.link-banner__action:hover {
+  text-decoration: underline;
+}
+
+.state {
+  color: var(--text-muted);
+}
+
+.state--error {
+  color: var(--danger);
+}
+
+.challenge-search {
+  display: grid;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.challenge-search__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.875rem;
+}
+
+.challenge-search__field {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.challenge-search__field--text {
+  flex: 0 0 auto;
+  width: calc(25ch + 3.625rem);
+  max-width: 100%;
+}
+
+.challenge-search__field--type {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: auto;
+  justify-items: start;
+}
+
+.challenge-search__field--refresh {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: auto;
+  justify-items: start;
+}
+
+.challenge-search__label--invisible {
+  visibility: hidden;
+}
+
+.challenge-search__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.challenge-search__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.challenge-search__icon {
+  position: absolute;
+  left: 0.875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: var(--text-muted);
+  pointer-events: none;
+}
+
+.challenge-search__input {
+  width: 100%;
+  padding: 0.75rem 0.875rem 0.75rem 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-tint);
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.challenge-search__input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold-a12);
+}
+
+.challenge-search__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.challenge-search__type {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-height: 2.75rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-tint);
+  box-sizing: border-box;
+}
+
+.challenge-search__type-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0.4375rem 0.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.challenge-search__type-tooltip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  z-index: 10;
+  width: max-content;
+  max-width: 14rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(0.25rem);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+  pointer-events: none;
+}
+
+.challenge-search__type-btn--end .challenge-search__type-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateY(0.25rem);
+}
+
+.challenge-search__type-btn:hover .challenge-search__type-tooltip,
+.challenge-search__type-btn:focus-visible .challenge-search__type-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.challenge-search__type-btn--end:hover .challenge-search__type-tooltip,
+.challenge-search__type-btn--end:focus-visible .challenge-search__type-tooltip {
+  transform: translateY(0);
+}
+
+.challenge-search__type-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+.challenge-search__type-btn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.challenge-search__type-btn--active {
+  color: var(--text);
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.challenge-search__type-btn--active-soloq {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent);
+}
+
+.challenge-search__type-btn--active-duoq {
+  color: #9b7bd4;
+  background: color-mix(in srgb, #9b7bd4 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #9b7bd4 35%, transparent);
+}
+
+.challenge-search__reset {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.challenge-search__reset:hover {
+  color: var(--gold);
+  background: transparent;
+  border: none;
+}
+
+@media (max-width: 900px) {
+  .challenge-search__field--text {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .challenge-search__field:not(.challenge-search__field--type):not(.challenge-search__field--text) {
+    flex: 1 1 100%;
+  }
+
+  .challenge-search__field--type {
+    flex: 0 0 auto;
+  }
+}

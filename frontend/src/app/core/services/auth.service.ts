@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/race.models';
+import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import {
   SESSION_LAST_SEEN_KEY,
@@ -46,7 +46,7 @@ export class AuthService {
     const linked = this.linkedRiotAccount();
     if (linked) {
       return {
-        label: linked.riotId,
+        label: linked.gameName,
         gameName: linked.gameName,
         profileIconId: linked.profileIconId,
       };
@@ -289,7 +289,7 @@ export class AuthService {
       const accounts = await firstValueFrom(
         this.http.get<UserRiotAccount[]>(apiUrl('/api/me/riot-accounts')),
       );
-      const account = accounts[0];
+      const account = accounts.find((item) => item.primary) ?? accounts[0];
       if (!account) {
         return null;
       }
@@ -355,7 +355,9 @@ export class AuthService {
 
   private readLastSeen(): number | null {
     try {
-      return parseLastSeen(localStorage.getItem(SESSION_LAST_SEEN_KEY));
+      return parseLastSeen(
+        localStorage.getItem(SESSION_LAST_SEEN_KEY) ?? localStorage.getItem('riftrace.session.lastSeen'),
+      );
     } catch {
       return null;
     }

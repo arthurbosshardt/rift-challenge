@@ -120,7 +120,7 @@ export class LoginModalComponent {
       await this.auth.refreshProfile();
     }
 
-    const destination = this.auth.linkedAccount() ? '/my-races' : '/public-races';
+    const destination = this.auth.linkedAccount() ? '/my-challenges' : '/public-challenges';
     await this.router.navigateByUrl(destination);
   }
 

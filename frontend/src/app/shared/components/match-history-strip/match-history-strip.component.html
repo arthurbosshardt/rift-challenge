@@ -1,0 +1,91 @@
+@if (hasHistory()) {
+  <div
+    class="match-history"
+    [class.match-history--duo]="duoMode()"
+    [class.match-history--fade-right]="showRightFade()"
+  >
+    <div class="match-history__viewport" #viewport>
+      <div class="match-history__track" #track>
+        @if (duoMode()) {
+          @for (group of duoGroups(); track group.dayKey) {
+            <div class="match-history__day-column match-history__day-column--duo">
+              <div class="match-history__duo-stack">
+                <div class="match-history__player-row">
+                  <div class="match-history__day-group">
+                    @for (entry of group.entries; track $index) {
+                      <div
+                        class="match-history__entry"
+                        [class.match-history__entry--win]="entry.win"
+                        [class.match-history__entry--loss]="!entry.win"
+                      >
+                        <div class="match-history__bubble-wrap">
+                          <span class="match-history__bubble" aria-hidden="true">
+                            @if (matchIconSrc(entry.player1ChampionId, entry.player1ChampionIconUrl); as src) {
+                              <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" />
+                            } @else {
+                              <span class="match-history__fallback">?</span>
+                            }
+                          </span>
+                          <span class="match-history__lp">{{ lpLabel(entry.player1LpDelta) }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="match-history__player-row">
+                  <div class="match-history__day-group">
+                    @for (entry of group.entries; track $index) {
+                      <div
+                        class="match-history__entry"
+                        [class.match-history__entry--win]="entry.win"
+                        [class.match-history__entry--loss]="!entry.win"
+                      >
+                        <div class="match-history__bubble-wrap">
+                          <span class="match-history__bubble" aria-hidden="true">
+                            @if (matchIconSrc(entry.player2ChampionId, entry.player2ChampionIconUrl); as src) {
+                              <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" />
+                            } @else {
+                              <span class="match-history__fallback">?</span>
+                            }
+                          </span>
+                          <span class="match-history__lp">{{ lpLabel(entry.player2LpDelta) }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+              <span class="match-history__day-label">{{ dayLabel(group.dayKey) }}</span>
+            </div>
+          }
+        } @else {
+          @for (group of soloGroups(); track group.dayKey) {
+            <div class="match-history__day-column">
+              <div class="match-history__day-group">
+                @for (entry of group.entries; track $index) {
+                  <div
+                    class="match-history__entry"
+                    [class.match-history__entry--win]="entry.win"
+                    [class.match-history__entry--loss]="!entry.win"
+                  >
+                    <div class="match-history__bubble-wrap">
+                      <span class="match-history__bubble" aria-hidden="true">
+                        @if (matchIconSrc(entry.championId, entry.championIconUrl); as src) {
+                          <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" />
+                        } @else {
+                          <span class="match-history__fallback">?</span>
+                        }
+                      </span>
+                      <span class="match-history__lp">{{ lpLabel(entry.lpDelta) }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+              <span class="match-history__day-label">{{ dayLabel(group.dayKey) }}</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

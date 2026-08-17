@@ -1,0 +1,25 @@
+@if (deleteChallengeConfirm.isOpen()) {
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'challenge.deleteConfirmTitle' | t"
+    (click)="close()"
+  >
+    <section class="modal-panel" (click)="$event.stopPropagation()">
+      <h2 class="delete-challenge-confirm__title">{{ 'challenge.deleteConfirmTitle' | t }}</h2>
+      <p class="delete-challenge-confirm__message">
+        {{ 'challenge.deleteConfirmMessage' | t: { name: deleteChallengeConfirm.challengeName() } }}
+      </p>
+
+      <div class="delete-challenge-confirm__actions">
+        <button type="button" class="delete-challenge-confirm__cancel" (click)="close()">
+          {{ 'create.cancel' | t }}
+        </button>
+        <button type="button" class="delete-challenge-confirm__confirm" (click)="confirm()">
+          {{ 'challenge.delete' | t }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

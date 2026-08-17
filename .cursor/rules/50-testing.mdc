@@ -1,12 +1,12 @@
 ---
-description: Testing rules for RiftRace
+description: Testing rules for Rift Challenge
 globs:
   - "backend/**/*.java"
   - "frontend/**/*.ts"
 alwaysApply: false
 ---
 
-# RiftRace Testing Rules
+# Rift Challenge Testing Rules
 
 ## General
 Every significant business feature should include tests.

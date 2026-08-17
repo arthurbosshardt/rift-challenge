@@ -7,7 +7,7 @@ import {
   sortDuos,
   sortParticipants,
 } from './leaderboard-sort';
-import { DuoProgress, ParticipantProgress } from '../models/race.models';
+import { DuoProgress, ParticipantProgress } from '../models/challenge.models';
 
 function participant(overrides: Partial<ParticipantProgress>): ParticipantProgress {
   return {
@@ -26,6 +26,7 @@ function participant(overrides: Partial<ParticipantProgress>): ParticipantProgre
     winRate: 0,
     profileIconId: null,
     hasRankData: true,
+    recentMatches: [],
     ...overrides,
   };
 }
@@ -102,6 +103,7 @@ describe('leaderboard-sort', () => {
       eligible: true,
       ineligibilityReason: null,
       position: 1,
+      recentMatches: [],
     };
     const ineligible: DuoProgress = {
       ...eligible,

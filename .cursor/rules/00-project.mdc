@@ -1,12 +1,12 @@
 ---
-description: Global project rules for RiftRace
+description: Global project rules for Rift Challenge
 alwaysApply: true
 ---
 
-# RiftRace — Project Rules
+# Rift Challenge — Project Rules
 
 ## Product
-RiftRace is a League of Legends challenge platform.
+Rift Challenge is a League of Legends challenge platform.
 
 Authenticated users can:
 - create an account with email, username and password;

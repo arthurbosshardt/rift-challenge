@@ -10,7 +10,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 })
 export class RankEmblemComponent {
   readonly tier = input<string | null>(null);
-  readonly size = input<'sm' | 'md'>('md');
+  readonly size = input<'xs' | 'sm' | 'md'>('md');
   private readonly i18n = inject(I18nService);
 
   protected emblemUrl(): string | null {

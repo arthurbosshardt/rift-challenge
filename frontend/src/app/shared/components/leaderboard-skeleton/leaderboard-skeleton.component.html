@@ -1,0 +1,34 @@
+<div class="leaderboard-skeleton">
+  <div class="leaderboard-skeleton__sort">
+    <div class="leaderboard-skeleton__criteria">
+      <app-skeleton width="5.5rem" height="2rem" radius="999px" />
+      <app-skeleton width="4.5rem" height="2rem" radius="999px" />
+      <app-skeleton width="5rem" height="2rem" radius="999px" />
+    </div>
+    <app-skeleton class="leaderboard-skeleton__direction" width="2.375rem" height="2.375rem" radius="999px" />
+  </div>
+
+  <ol class="leaderboard-skeleton__list">
+    @for (row of rows(); track row) {
+      <li class="leaderboard-skeleton__item">
+        <app-skeleton class="leaderboard-skeleton__rank" width="2rem" height="1.125rem" />
+        <div class="leaderboard-skeleton__identity">
+          <app-skeleton [circle]="true" width="32px" height="32px" />
+          <div class="leaderboard-skeleton__identity-copy">
+            <app-skeleton height="0.9375rem" maxWidth="8rem" />
+            <app-skeleton height="0.75rem" maxWidth="5rem" />
+          </div>
+        </div>
+        <div class="leaderboard-skeleton__history">
+          @for (_ of [0, 1, 2, 3, 4]; track _) {
+            <app-skeleton [circle]="true" width="1.75rem" height="1.75rem" />
+          }
+        </div>
+        <div class="leaderboard-skeleton__stats">
+          <app-skeleton height="0.875rem" maxWidth="3rem" />
+          <app-skeleton height="0.75rem" maxWidth="4rem" />
+        </div>
+      </li>
+    }
+  </ol>
+</div>

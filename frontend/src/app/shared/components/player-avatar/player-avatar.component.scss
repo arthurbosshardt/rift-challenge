@@ -38,9 +38,28 @@
 
 .player-avatar__rank-badge {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
+  right: -32px;
+  bottom: -20px;
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 52px;
+  height: 52px;
+}
+
+.player-avatar--sm .player-avatar__rank-badge {
+  width: 44px;
+  height: 44px;
+  right: -28px;
+  bottom: -16px;
+}
+
+.player-avatar--xs .player-avatar__rank-badge {
+  width: 32px;
+  height: 32px;
+  right: -20px;
+  bottom: -12px;
+}
+
+.player-avatar__rank-badge .rank-emblem {
+  width: 100%;
+  height: 100%;
 }

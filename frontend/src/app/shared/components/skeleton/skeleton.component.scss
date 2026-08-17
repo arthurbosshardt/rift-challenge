@@ -1,0 +1,48 @@
+:host {
+  display: block;
+  width: 100%;
+  min-height: 1rem;
+  border-radius: var(--radius-sm);
+  background-color: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  position: relative;
+}
+
+:host::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.04) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+:host(.skeleton--circle) {
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+:host(.skeleton--inline) {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host::after {
+    animation: none;
+    opacity: 0.45;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

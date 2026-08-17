@@ -14,7 +14,7 @@ if (!existsSync(envTs) && existsSync(exampleTs)) {
 
 const supabaseUrl = process.env.SUPABASE_URL ?? 'https://YOUR_PROJECT.supabase.co';
 const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? '';
-const apiBaseUrl = process.env.API_BASE_URL ?? 'https://YOUR_BACKEND.onrender.com';
+const apiBaseUrl = process.env.API_BASE_URL ?? '';
 
 const content = `export const environment = {
   production: true,

@@ -1,5 +1,5 @@
 ---
-description: Angular frontend conventions for RiftRace
+description: Angular frontend conventions for Rift Challenge
 globs:
   - "frontend/**/*.ts"
   - "frontend/**/*.html"
@@ -8,7 +8,7 @@ globs:
 alwaysApply: false
 ---
 
-# RiftRace Frontend Rules
+# Rift Challenge Frontend Rules
 
 ## Stack
 - Angular

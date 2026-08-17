@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { LinkRiotAccountRequest, UserRiotAccount } from '../models/race.models';
+import { LinkRiotAccountRequest, UserRiotAccount } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import { normalizeRiotId } from '../utils/riot-id';
 
@@ -18,6 +18,7 @@ export class UserRiotAccountApiService {
   linkAccount(request: LinkRiotAccountRequest): Observable<UserRiotAccount> {
     return this.http.post<UserRiotAccount>(this.baseUrl, {
       riotId: normalizeRiotId(request.riotId),
+      smurf: request.smurf ?? false,
     });
   }
 

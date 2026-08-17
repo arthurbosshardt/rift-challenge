@@ -1,6 +1,6 @@
-# RiftRace
+# Rift Challenge
 
-Plateforme de **races** League of Legends (Angular + Spring Boot + PostgreSQL).
+Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreSQL).
 
 ## Structure
 
@@ -19,14 +19,14 @@ Installés via winget sur cette machine :
 
 PostgreSQL local :
 - superuser : `postgres` / `postgres`
-- app : `riftrace` / `riftrace` / base `riftrace`
+- app : `riftchallenge` / `riftchallenge` / base `riftchallenge`
 
 Création (déjà faite si vous suivez l'option A) :
 
 ```powershell
 $env:PGPASSWORD='postgres'
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -c "CREATE ROLE riftrace LOGIN PASSWORD 'riftrace';"
-& "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -O riftrace riftrace
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -c "CREATE ROLE riftchallenge LOGIN PASSWORD 'riftchallenge';"
+& "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -O riftchallenge riftchallenge
 ```
 
 Variables dans `.env` à la racine (gitignored).
@@ -77,17 +77,17 @@ Les clés dev Riot expirent toutes les 24 h — regénérer sur le portail si be
 
 | Route | Visiteur | Connecté |
 |---|---|---|
-| `/` | Races publiques | → `/my-races` |
-| `/my-races` | — | Mes races |
-| `/public-races` | — | Races publiques |
-| `/races/:shareSlug` | Détail + lien partageable | idem |
+| `/` | Challenges publics | → `/my-challenges` |
+| `/my-challenges` | — | Mes challenges |
+| `/public-challenges` | — | Challenges publics |
+| `/challenges/:shareSlug` | Détail + lien partageable | idem |
 
 ## API (MVP)
 
-- `GET /api/races/public`
-- `GET /api/races/mine` (auth)
-- `GET /api/races/share/{shareSlug}`
-- `POST /api/races` (auth)
+- `GET /api/challenges/public`
+- `GET /api/challenges/mine` (auth)
+- `GET /api/challenges/share/{shareSlug}`
+- `POST /api/challenges` (auth)
 
 ## Déploiement
 

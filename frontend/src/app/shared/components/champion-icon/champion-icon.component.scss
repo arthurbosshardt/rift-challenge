@@ -1,0 +1,22 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.champion-icon__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.champion-icon__fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}

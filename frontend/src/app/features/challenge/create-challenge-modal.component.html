@@ -1,0 +1,241 @@
+@if (createChallengeModal.isOpen()) {
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'create.title' | t"
+    (click)="close()"
+  >
+    <section class="modal-panel modal-panel--wide create-challenge-modal" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="create-challenge-modal__close"
+        [attr.aria-label]="'auth.close' | t"
+        [disabled]="loading()"
+        (click)="close()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <header class="create-challenge-modal__header">
+        <h2>{{ 'create.title' | t }}</h2>
+      </header>
+
+      <form class="challenge-form" (ngSubmit)="submit()">
+        <label [class.challenge-form__field--invalid]="isInvalid('name')">
+          <span class="field-label">
+            {{ 'create.name' | t }}
+            <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+          </span>
+          <input
+            name="name"
+            [(ngModel)]="name"
+            required
+            maxlength="120"
+            [placeholder]="'create.namePlaceholder' | t"
+            [class.challenge-form__control--invalid]="isInvalid('name')"
+            [attr.aria-invalid]="isInvalid('name')"
+            (ngModelChange)="clearInvalid('name')"
+          />
+          @if (fieldError('name'); as message) {
+            <span class="field-error" role="alert">{{ message }}</span>
+          }
+        </label>
+
+        <label>
+          <span class="field-label">
+            {{ 'create.type' | t }}
+            <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+          </span>
+          <select name="type" [(ngModel)]="type" required>
+            <option value="SOLOQ">{{ 'create.soloq' | t }}</option>
+            <option value="DUOQ">{{ 'create.duoq' | t }}</option>
+          </select>
+        </label>
+
+        <div class="challenge-form__schedule">
+          <section
+            class="challenge-form__schedule-block"
+            [class.challenge-form__schedule-block--invalid]="isInvalid('startDate')"
+            aria-labelledby="create-challenge-start-title"
+          >
+            <h3 id="create-challenge-start-title" class="challenge-form__schedule-title">
+              {{ 'create.startLegend' | t }}
+              <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+            </h3>
+            <div class="challenge-form__datetime-row">
+              <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isInvalid('startDate')">
+                {{ 'create.date' | t }}
+                <input
+                  name="startDate"
+                  type="date"
+                  [(ngModel)]="startDate"
+                  required
+                  [class.challenge-form__control--invalid]="isInvalid('startDate')"
+                  [attr.aria-invalid]="isInvalid('startDate')"
+                  (ngModelChange)="clearInvalid('startDate')"
+                />
+              </label>
+              <label class="challenge-form__datetime-field">
+                {{ 'create.hour' | t }}
+                <select name="startHour" [(ngModel)]="startHour" required>
+                  @for (hour of hourOptions; track hour) {
+                    <option [ngValue]="hour">{{ hour }}h</option>
+                  }
+                </select>
+              </label>
+            </div>
+            @if (fieldError('startDate'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
+            }
+          </section>
+
+          <section
+            class="challenge-form__schedule-block"
+            [class.challenge-form__schedule-block--invalid]="isInvalid('endDate')"
+            aria-labelledby="create-challenge-end-title"
+          >
+            <h3 id="create-challenge-end-title" class="challenge-form__schedule-title">
+              {{ 'create.endLegend' | t }}
+              <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+            </h3>
+
+            <div class="end-mode" role="radiogroup" [attr.aria-label]="'create.endMode' | t">
+              <label class="end-mode__option">
+                <input name="endMode" type="radio" value="duration" [(ngModel)]="endMode" (ngModelChange)="clearInvalid('endDate')" />
+                <span>{{ 'create.endByDuration' | t }}</span>
+              </label>
+              <label class="end-mode__option">
+                <input name="endMode" type="radio" value="date" [(ngModel)]="endMode" (ngModelChange)="clearInvalid('endDate')" />
+                <span>{{ 'create.endByDate' | t }}</span>
+              </label>
+            </div>
+
+            @if (endMode === 'duration') {
+              <label class="challenge-form__schedule-field">
+                {{ 'create.duration' | t }}
+                <select name="durationDays" [(ngModel)]="durationDays" required>
+                  @for (option of durationOptions; track option.days) {
+                    <option [ngValue]="option.days">{{ option.labelKey | t }}</option>
+                  }
+                </select>
+              </label>
+            } @else {
+              <div class="challenge-form__datetime-row">
+                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isInvalid('endDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="endDate"
+                    type="date"
+                    [(ngModel)]="endDate"
+                    required
+                    [class.challenge-form__control--invalid]="isInvalid('endDate')"
+                    [attr.aria-invalid]="isInvalid('endDate')"
+                    (ngModelChange)="clearInvalid('endDate')"
+                  />
+                </label>
+                <label class="challenge-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="endHour" [(ngModel)]="endHour" required>
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (fieldError('endDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            }
+          </section>
+        </div>
+
+        <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
+            <div class="visibility-switch__label" [class.visibility-switch__label--active]="!isPublic">
+              <svg class="visibility-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{{ 'create.private' | t }}</span>
+            <button
+              type="button"
+              class="visibility-switch__info"
+              [attr.aria-label]="'create.privateInfoAria' | t"
+              (click)="$event.stopPropagation()"
+            >
+              i
+              <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.privateHint' | t }}</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="visibility-switch__toggle"
+            role="switch"
+            [attr.aria-checked]="isPublic"
+            [class.visibility-switch__toggle--public]="isPublic"
+            (click)="isPublic = !isPublic"
+          >
+            @if (isPublic) {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
+                  fill="currentColor"
+                />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
+                  fill="currentColor"
+                />
+              </svg>
+            }
+          </button>
+
+            <div class="visibility-switch__label" [class.visibility-switch__label--active]="isPublic">
+              <svg class="visibility-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{{ 'create.publicLabel' | t }}</span>
+            <button
+              type="button"
+              class="visibility-switch__info visibility-switch__info--end"
+              [attr.aria-label]="'create.publicInfoAria' | t"
+              (click)="$event.stopPropagation()"
+            >
+              i
+              <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.publicHint' | t }}</span>
+            </button>
+          </div>
+        </div>
+
+        @if (error()) {
+          <p class="form-error" role="alert">{{ error() }}</p>
+        }
+
+        <div class="actions">
+          <button type="submit" [disabled]="loading()">
+            {{ loading() ? ('create.creating' | t) : ('create.submit' | t) }}
+          </button>
+          <button type="button" class="actions__cancel" [disabled]="loading()" (click)="close()">
+            {{ 'create.cancel' | t }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

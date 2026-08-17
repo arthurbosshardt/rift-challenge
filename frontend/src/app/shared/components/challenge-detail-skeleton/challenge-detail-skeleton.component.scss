@@ -1,0 +1,72 @@
+.challenge-detail-skeleton {
+  display: grid;
+  gap: 0;
+}
+
+.challenge-detail-skeleton__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.challenge-detail-skeleton__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.challenge-detail-skeleton__title {
+  display: inline-flex;
+  flex: 1 1 16rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.challenge-detail-skeleton__title-name {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.challenge-detail-skeleton__actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.challenge-detail-skeleton__detail {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.challenge-detail-skeleton__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.challenge-detail-skeleton__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin: 0;
+}
+
+.challenge-detail-skeleton__meta-item {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.challenge-detail-skeleton__participants {
+  display: grid;
+  gap: 1rem;
+}

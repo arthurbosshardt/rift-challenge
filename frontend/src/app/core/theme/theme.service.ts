@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 
 export type AppTheme = 'dark' | 'light';
 
-const THEME_STORAGE_KEY = 'riftrace.theme';
+const THEME_STORAGE_KEY = 'riftchallenge.theme';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -32,7 +32,7 @@ export class ThemeService {
 
   private readInitialTheme(): AppTheme {
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      const stored = localStorage.getItem(THEME_STORAGE_KEY) ?? localStorage.getItem('riftrace.theme');
       if (stored === 'light' || stored === 'dark') {
         return stored;
       }

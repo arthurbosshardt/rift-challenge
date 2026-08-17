@@ -1,10 +1,9 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
-import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 
 @Component({
   selector: 'app-player-identity',
-  imports: [PlayerAvatarComponent, RankEmblemComponent],
+  imports: [PlayerAvatarComponent],
   templateUrl: './player-identity.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './player-identity.component.scss',

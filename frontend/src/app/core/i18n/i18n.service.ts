@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { AppLocale, TRANSLATIONS, detectLocale, interpolate } from './translations';
 
-const LOCALE_STORAGE_KEY = 'riftrace.locale';
+const LOCALE_STORAGE_KEY = 'riftchallenge.locale';
 
 @Injectable({ providedIn: 'root' })
 export class I18nService {
@@ -32,11 +32,13 @@ export class I18nService {
       return;
     }
     document.documentElement.lang = locale;
+    document.title = TRANSLATIONS[locale]['landing.introBrand'] ?? 'Rift Challenge';
   }
 
   private readInitialLocale(): AppLocale {
     try {
-      const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+      const stored =
+        localStorage.getItem(LOCALE_STORAGE_KEY) ?? localStorage.getItem('riftrace.locale');
       if (stored === 'fr' || stored === 'en') {
         return stored;
       }

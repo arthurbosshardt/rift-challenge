@@ -1,0 +1,223 @@
+  <a class="challenge-card" [routerLink]="['/challenges', challenge().shareSlug]">
+  <div class="challenge-card__layout" [class.challenge-card__layout--summary-only]="hidePreview()">
+    <div class="challenge-card__summary">
+      <div class="challenge-card__header">
+        <h2 class="challenge-card__title">
+          <app-challenge-badge
+            size="title"
+            [kind]="challengeTypeBadgeKind(challenge().type)"
+            [label]="typeLabel(challenge().type)"
+          />
+          <span class="challenge-card__title-text">{{ challenge().name }}</span>
+        </h2>
+      </div>
+
+      <div class="challenge-card__meta-group">
+        <dl class="challenge-card__meta">
+          <div>
+            <dt>{{ 'challenge.status' | t }}</dt>
+            <dd>{{ statusLabel(challenge().status) }}</dd>
+          </div>
+          @if (!hidePublicBadge()) {
+            <div>
+              <dt>{{ 'challenge.visibility' | t }}</dt>
+              <dd>
+                @if (challenge().isPublic) {
+                  {{ 'challenge.public' | t }}
+                } @else {
+                  {{ 'challenge.private' | t }}
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+
+        <dl class="challenge-card__meta">
+          <div>
+            <dt>{{ 'challenge.start' | t }}</dt>
+            <dd>{{ challenge().startAt | challengeDate }}</dd>
+          </div>
+          @if (challenge().endAt) {
+            <div>
+              <dt>{{ 'challenge.end' | t }}</dt>
+              <dd>{{ challenge().endAt | challengeDate }}</dd>
+            </div>
+          }
+          <div>
+            <dt>{{ challenge().type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</dt>
+            <dd>{{ entryCountLabel() }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    @if (!hidePreview()) {
+      <div class="challenge-card__preview-panel">
+        @if (hasPreview()) {
+          <section class="challenge-card__preview">
+            <p class="challenge-card__preview-title">{{ previewTitle() }}</p>
+
+            <div
+              class="challenge-card__preview-viewport"
+              [class.challenge-card__preview-viewport--fade]="showPreviewFade()"
+              #previewViewport
+            >
+              <div
+                class="challenge-card__preview-track"
+                [class.challenge-card__preview-track--single-column]="previewColumnCount() === 1"
+                #previewTrack
+              >
+                @if (challenge().type === 'DUOQ') {
+                  @for (column of duoPreviewColumns(); track $index) {
+                    <ul class="challenge-card__preview-column">
+                      @for (duo of column; track duo.id) {
+                        <li
+                          class="challenge-card__preview-item challenge-card__preview-item--duo"
+                          [class]="duoPreviewItemClass(duo)"
+                        >
+                          @if (showLeaderboardPreview()) {
+                            <span
+                              class="challenge-card__position"
+                              [class]="duoPositionClass(duo)"
+                              aria-hidden="true"
+                            >
+                              {{ duo.position }}
+                            </span>
+                          }
+                          <div class="challenge-card__duo-avatars">
+                            <app-player-avatar
+                              [profileIconId]="duo.player1.profileIconId"
+                              [gameName]="duo.player1.gameName"
+                              size="xs"
+                            />
+                            <app-player-avatar
+                              [profileIconId]="duo.player2.profileIconId"
+                              [gameName]="duo.player2.gameName"
+                              size="xs"
+                            />
+                          </div>
+                          <div class="challenge-card__preview-text">
+                            <span class="challenge-card__preview-names">
+                              {{ duo.player1.gameName }} / {{ duo.player2.gameName }}
+                            </span>
+                            <span class="challenge-card__preview-ranks">
+                              @if (rankLabel(duo.player1); as p1Rank) {
+                                <span>{{ p1Rank }}</span>
+                              }
+                              @if (rankLabel(duo.player2); as p2Rank) {
+                                <span>{{ p2Rank }}</span>
+                              }
+                            </span>
+                          </div>
+                          @if (showLeaderboardPreview()) {
+                            <div class="challenge-card__stats">
+                              <span class="challenge-card__lp" [class]="lpClass(duo.combinedLpGained)">
+                                {{ lpLabel(duo.combinedLpGained) }}
+                              </span>
+                              <span class="challenge-card__wl">
+                                <span [class]="'challenge-card__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                                  {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
+                                </span>
+                                @if (hasRecord(duo.wins, duo.losses)) {
+                                  <span class="challenge-card__record">
+                                    <span class="challenge-card__wins">
+                                      {{ duo.wins }}<span class="challenge-card__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                                    </span>
+                                    <span class="challenge-card__record-sep" aria-hidden="true">/</span>
+                                    <span class="challenge-card__losses">
+                                      {{ duo.losses }}<span class="challenge-card__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                                    </span>
+                                  </span>
+                                }
+                              </span>
+                            </div>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
+                } @else {
+                  @for (column of participantPreviewColumns(); track $index) {
+                    <ul class="challenge-card__preview-column">
+                      @for (participant of column; track participant.id) {
+                        <li
+                          class="challenge-card__preview-item"
+                          [class]="participantPreviewItemClass(participant)"
+                        >
+                          @if (showLeaderboardPreview()) {
+                            <span
+                              class="challenge-card__position"
+                              [class]="participantPositionClass(participant)"
+                              aria-hidden="true"
+                            >
+                              {{ participant.position }}
+                            </span>
+                          }
+                          <div class="challenge-card__preview-rank">
+                            @if (participant.currentTier) {
+                              <app-rank-emblem [tier]="participant.currentTier" size="sm" />
+                            } @else {
+                              <span class="challenge-card__rank-placeholder" aria-hidden="true">—</span>
+                            }
+                          </div>
+                          <app-player-avatar
+                            [profileIconId]="participant.profileIconId"
+                            [gameName]="participant.gameName"
+                            size="xs"
+                          />
+                          <div class="challenge-card__preview-text">
+                            <span class="challenge-card__preview-names">{{ participant.gameName }}</span>
+                            @if (rankLabel(participant); as label) {
+                              <span class="challenge-card__preview-rank-label">{{ label }}</span>
+                            } @else {
+                              <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
+                                {{ participant.riotId }}
+                              </span>
+                            }
+                          </div>
+                          @if (showLeaderboardPreview()) {
+                            <div class="challenge-card__stats">
+                              <span class="challenge-card__lp" [class]="lpClass(participant.lpGained)">
+                                {{ lpLabel(participant.lpGained) }}
+                              </span>
+                              <span class="challenge-card__wl">
+                                <span
+                                  [class]="'challenge-card__winrate ' + winRateClass(participant.winRate, participant.wins, participant.losses)"
+                                >
+                                  {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
+                                </span>
+                                @if (hasRecord(participant.wins, participant.losses)) {
+                                  <span class="challenge-card__record">
+                                    <span class="challenge-card__wins">
+                                      {{ participant.wins }}<span class="challenge-card__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                                    </span>
+                                    <span class="challenge-card__record-sep" aria-hidden="true">/</span>
+                                    <span class="challenge-card__losses">
+                                      {{ participant.losses }}<span class="challenge-card__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                                    </span>
+                                  </span>
+                                }
+                              </span>
+                            </div>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
+                }
+              </div>
+            </div>
+
+            @if (remainingCount() > 0) {
+              <p class="challenge-card__more">{{ 'challenge.andMore' | t: { count: remainingCount() } }}</p>
+            }
+          </section>
+        } @else {
+          <p class="challenge-card__empty">
+            {{ challenge().type === 'DUOQ' ? ('challenge.noDuos' | t) : ('challenge.noParticipants' | t) }}
+          </p>
+        }
+      </div>
+    }
+  </div>
+</a>

@@ -1,4 +1,4 @@
-# Setup local RiftRace (Windows PowerShell)
+# Setup local RiftChallenge (Windows PowerShell)
 
 $ErrorActionPreference = "Stop"
 

@@ -21,6 +21,8 @@ describe('i18n translations', () => {
   });
 
   it('keeps French and English keys in sync', () => {
+    expect(TRANSLATIONS.fr['landing.introBrand']).toBe('Rift Challenge');
+    expect(TRANSLATIONS.en['landing.introBrand']).toBe('Rift Challenge');
     expect(Object.keys(TRANSLATIONS.en).sort()).toEqual(Object.keys(TRANSLATIONS.fr).sort());
   });
 });

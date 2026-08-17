@@ -1,0 +1,488 @@
+@if (editChallengeModal.isOpen() && editChallengeModal.challenge(); as challenge) {
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'challenge.editTitle' | t"
+    (click)="close()"
+  >
+    <section class="modal-panel modal-panel--edit edit-challenge-modal" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="edit-challenge-modal__close"
+        [attr.aria-label]="'auth.close' | t"
+        [disabled]="saving() || addingParticipant()"
+        (click)="close()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <header class="edit-challenge-modal__header">
+        <h2>{{ 'challenge.editTitle' | t }}</h2>
+      </header>
+
+      <form class="edit-challenge-modal__main-form" (ngSubmit)="saveChallenge()">
+        <section class="edit-challenge-modal__meta">
+          <label [class.challenge-form__field--invalid]="isNameInvalid('name')">
+            <span class="field-label">
+              {{ 'create.name' | t }}
+              <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+            </span>
+            <input
+              name="challengeName"
+              type="text"
+              [(ngModel)]="nameInput"
+              maxlength="120"
+              [placeholder]="'create.namePlaceholder' | t"
+              [class.challenge-form__control--invalid]="isNameInvalid('name')"
+              [attr.aria-invalid]="isNameInvalid('name')"
+              (ngModelChange)="clearNameInvalid('name')"
+              [disabled]="saving()"
+            />
+            @if (nameFieldError('name'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
+            }
+          </label>
+          <app-challenge-badge [kind]="challengeTypeBadgeKind(challenge.type)" [label]="typeLabel(challenge.type)" />
+
+          <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
+            <div class="visibility-switch__label" [class.visibility-switch__label--active]="!isPublicInput">
+              <svg class="visibility-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{{ 'create.private' | t }}</span>
+              <button
+                type="button"
+                class="visibility-switch__info"
+                [attr.aria-label]="'create.privateInfoAria' | t"
+                (click)="$event.stopPropagation()"
+              >
+                i
+                <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.privateHint' | t }}</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="visibility-switch__toggle"
+              role="switch"
+              [attr.aria-checked]="isPublicInput"
+              [class.visibility-switch__toggle--public]="isPublicInput"
+              [disabled]="saving() || addingParticipant()"
+              (click)="toggleVisibility()"
+            >
+              @if (isPublicInput) {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
+                    fill="currentColor"
+                  />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
+                    fill="currentColor"
+                  />
+                </svg>
+              }
+            </button>
+
+            <div class="visibility-switch__label" [class.visibility-switch__label--active]="isPublicInput">
+              <svg class="visibility-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{{ 'create.publicLabel' | t }}</span>
+              <button
+                type="button"
+                class="visibility-switch__info visibility-switch__info--end"
+                [attr.aria-label]="'create.publicInfoAria' | t"
+                (click)="$event.stopPropagation()"
+              >
+                i
+                <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.publicHint' | t }}</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="edit-challenge-modal__section edit-challenge-modal__section--schedule">
+          <div class="challenge-form__schedule challenge-form__schedule--columns">
+            <section
+              class="challenge-form__schedule-block"
+              [class.challenge-form__schedule-block--invalid]="isScheduleInvalid('startDate')"
+              aria-labelledby="edit-challenge-start-title"
+            >
+              <h3 id="edit-challenge-start-title" class="challenge-form__schedule-title">
+                {{ 'create.startLegend' | t }}
+                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+              </h3>
+              <div class="challenge-form__datetime-row">
+                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isScheduleInvalid('startDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="startDateInput"
+                    type="date"
+                    [(ngModel)]="startDateInput"
+                    required
+                    [disabled]="saving()"
+                    [class.challenge-form__control--invalid]="isScheduleInvalid('startDate')"
+                    [attr.aria-invalid]="isScheduleInvalid('startDate')"
+                    (ngModelChange)="clearScheduleInvalid('startDate')"
+                  />
+                </label>
+                <label class="challenge-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="startHourInput" [(ngModel)]="startHourInput" required [disabled]="saving()">
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (scheduleFieldError('startDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </section>
+
+            <section
+              class="challenge-form__schedule-block"
+              [class.challenge-form__schedule-block--invalid]="isScheduleInvalid('endDate')"
+              aria-labelledby="edit-challenge-end-title"
+            >
+              <h3 id="edit-challenge-end-title" class="challenge-form__schedule-title">
+                {{ 'create.endLegend' | t }}
+                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+              </h3>
+              <div class="challenge-form__datetime-row">
+                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isScheduleInvalid('endDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="endDateInput"
+                    type="date"
+                    [(ngModel)]="endDateInput"
+                    required
+                    [disabled]="saving()"
+                    [class.challenge-form__control--invalid]="isScheduleInvalid('endDate')"
+                    [attr.aria-invalid]="isScheduleInvalid('endDate')"
+                    (ngModelChange)="clearScheduleInvalid('endDate')"
+                  />
+                </label>
+                <label class="challenge-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="endHourInput" [(ngModel)]="endHourInput" required [disabled]="saving()">
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (scheduleFieldError('endDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </section>
+          </div>
+        </section>
+
+        @if (formError()) {
+          <p class="form-error" role="alert">{{ formError() }}</p>
+        }
+        @if (saveSuccess()) {
+          <p class="edit-challenge-modal__success">{{ 'challenge.changesSaved' | t }}</p>
+        }
+
+        <footer class="edit-challenge-modal__footer">
+          <button type="button" class="edit-challenge-modal__cancel" [disabled]="saving()" (click)="close()">
+            {{ 'create.cancel' | t }}
+          </button>
+          <button type="submit" [disabled]="saving()">
+            {{ saving() ? ('challenge.savingChanges' | t) : ('challenge.saveChanges' | t) }}
+          </button>
+        </footer>
+      </form>
+
+      <section class="edit-challenge-modal__section edit-challenge-modal__section--participants">
+        <div class="edit-challenge-modal__section-header">
+          <span class="edit-challenge-modal__count">{{ entryCount(challenge) }} / {{ entryLimit(challenge) }}</span>
+          <h3>{{ challenge.type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</h3>
+        </div>
+
+        <div class="edit-challenge-modal__participants-scroll">
+          @if (entryCount(challenge) === 0) {
+            <p class="edit-challenge-modal__empty">
+              {{ challenge.type === 'DUOQ' ? ('challenge.noDuos' | t) : ('challenge.noParticipants' | t) }}
+            </p>
+          } @else if (challenge.type === 'SOLOQ') {
+            <ul [class]="participantListClass(challenge)">
+              @for (participant of challenge.participants; track participant.id) {
+                <li class="edit-challenge-modal__list-item">
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="participant.gameName"
+                    [tagLine]="participant.tagLine"
+                    [riotId]="participant.riotId"
+                    [profileIconId]="participant.profileIconId"
+                    [tier]="participant.hasRankData ? participant.currentTier : null"
+                  />
+                  <button
+                    type="button"
+                    class="edit-challenge-modal__action edit-challenge-modal__action--remove"
+                    (click)="removeParticipant(participant)"
+                    [disabled]="removingParticipantId() === participant.id"
+                    [attr.aria-label]="'challenge.removeAria' | t:{ name: participant.riotId }"
+                    [attr.title]="'challenge.remove' | t"
+                  >
+                    @if (removingParticipantId() === participant.id) {
+                      <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                      </svg>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <ul [class]="participantListClass(challenge)">
+              @for (duo of challenge.duos; track duo.id) {
+                <li class="edit-challenge-modal__list-item edit-challenge-modal__list-item--duo">
+                  <div class="edit-challenge-modal__duo-stack">
+                    <app-player-identity
+                      [compact]="true"
+                      [gameName]="duo.player1.gameName"
+                      [tagLine]="duo.player1.tagLine"
+                      [riotId]="duo.player1.riotId"
+                      [profileIconId]="duo.player1.profileIconId"
+                      [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                    />
+                    <app-player-identity
+                      [compact]="true"
+                      [gameName]="duo.player2.gameName"
+                      [tagLine]="duo.player2.tagLine"
+                      [riotId]="duo.player2.riotId"
+                      [profileIconId]="duo.player2.profileIconId"
+                      [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="edit-challenge-modal__action edit-challenge-modal__action--remove"
+                    (click)="removeDuo(duo)"
+                    [disabled]="removingDuoId() === duo.id"
+                    [attr.aria-label]="'challenge.removeDuoAria' | t:{ name: duoLabel(duo) }"
+                    [attr.title]="'challenge.remove' | t"
+                  >
+                    @if (removingDuoId() === duo.id) {
+                      <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                      </svg>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (challenge.type === 'SOLOQ') {
+          <form class="challenge-form edit-challenge-modal__form" (ngSubmit)="addParticipant()">
+            <span class="edit-challenge-modal__form-title">{{ 'challenge.addPlayer' | t }}</span>
+            <div class="edit-challenge-modal__form-row">
+              <label [class.challenge-form__field--invalid]="isParticipantInvalid('gameName')">
+                <span class="field-label">
+                  {{ 'challenge.gameName' | t }}
+                  <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                </span>
+                <input
+                  name="gameName"
+                  type="text"
+                  [(ngModel)]="gameNameInput"
+                  [placeholder]="'challenge.gameNamePlaceholder' | t"
+                  [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                  [class.challenge-form__control--invalid]="isParticipantInvalid('gameName')"
+                  [attr.aria-invalid]="isParticipantInvalid('gameName')"
+                  (ngModelChange)="clearParticipantInvalid('gameName')"
+                  autocomplete="off"
+                />
+                @if (participantFieldError('gameName'); as message) {
+                  <span class="field-error" role="alert">{{ message }}</span>
+                }
+              </label>
+              <label [class.challenge-form__field--invalid]="isParticipantInvalid('tagLine')">
+                <span class="field-label">
+                  {{ 'challenge.tagLine' | t }}
+                  <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                </span>
+                <input
+                  name="tagLine"
+                  type="text"
+                  [(ngModel)]="tagLineInput"
+                  [placeholder]="'challenge.tagLinePlaceholder' | t"
+                  [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                  [class.challenge-form__control--invalid]="isParticipantInvalid('tagLine')"
+                  [attr.aria-invalid]="isParticipantInvalid('tagLine')"
+                  (ngModelChange)="clearParticipantInvalid('tagLine')"
+                  autocomplete="off"
+                />
+                @if (participantFieldError('tagLine'); as message) {
+                  <span class="field-error" role="alert">{{ message }}</span>
+                }
+              </label>
+              <button
+                type="submit"
+                class="edit-challenge-modal__action edit-challenge-modal__action--add"
+                [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                [attr.aria-label]="'challenge.add' | t"
+                [attr.title]="'challenge.add' | t"
+              >
+                @if (addingParticipant()) {
+                  <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (participantFormError()) {
+              <p class="form-error" role="alert">{{ participantFormError() }}</p>
+            }
+          </form>
+        } @else {
+          <form class="challenge-form edit-challenge-modal__form" (ngSubmit)="addDuo()">
+            <span class="edit-challenge-modal__form-title">{{ 'challenge.addDuo' | t }}</span>
+            <div class="edit-challenge-modal__duo-fields">
+              <div class="edit-challenge-modal__duo-player">
+                <span>{{ 'challenge.duoPlayer1Title' | t }}</span>
+                <div class="edit-challenge-modal__form-row">
+                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1GameName')">
+                    <span class="field-label">
+                      {{ 'challenge.gameName' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer1GameName"
+                      type="text"
+                      [(ngModel)]="duoPlayer1GameName"
+                      [placeholder]="'challenge.gameNamePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer1GameName')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer1GameName')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer1GameName')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer1GameName'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1TagLine')">
+                    <span class="field-label">
+                      {{ 'challenge.tagLine' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer1TagLine"
+                      type="text"
+                      [(ngModel)]="duoPlayer1TagLine"
+                      [placeholder]="'challenge.tagLinePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer1TagLine')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer1TagLine')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer1TagLine')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer1TagLine'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                </div>
+              </div>
+              <div class="edit-challenge-modal__duo-player">
+                <span>{{ 'challenge.duoPlayer2Title' | t }}</span>
+                <div class="edit-challenge-modal__form-row">
+                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2GameName')">
+                    <span class="field-label">
+                      {{ 'challenge.gameName' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer2GameName"
+                      type="text"
+                      [(ngModel)]="duoPlayer2GameName"
+                      [placeholder]="'challenge.gameNamePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer2GameName')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer2GameName')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer2GameName')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer2GameName'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2TagLine')">
+                    <span class="field-label">
+                      {{ 'challenge.tagLine' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer2TagLine"
+                      type="text"
+                      [(ngModel)]="duoPlayer2TagLine"
+                      [placeholder]="'challenge.tagLinePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer2TagLine')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer2TagLine')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer2TagLine')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer2TagLine'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="edit-challenge-modal__form-actions">
+              <button
+                type="submit"
+                class="edit-challenge-modal__action edit-challenge-modal__action--add"
+                [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                [attr.aria-label]="'challenge.addDuoButton' | t"
+                [attr.title]="'challenge.addDuoButton' | t"
+              >
+                @if (addingParticipant()) {
+                  <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (participantFormError()) {
+              <p class="form-error" role="alert">{{ participantFormError() }}</p>
+            }
+          </form>
+        }
+      </section>
+    </section>
+  </div>
+}

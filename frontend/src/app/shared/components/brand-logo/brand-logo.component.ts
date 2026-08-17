@@ -46,9 +46,16 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
   `,
 })
 export class BrandLogoComponent {
-  readonly size = input<'md' | 'sm'>('md');
+  readonly size = input<'md' | 'sm' | 'lg'>('md');
 
   protected dimension(): number {
-    return this.size() === 'sm' ? 28 : 36;
+    switch (this.size()) {
+      case 'sm':
+        return 28;
+      case 'lg':
+        return 56;
+      default:
+        return 36;
+    }
   }
 }

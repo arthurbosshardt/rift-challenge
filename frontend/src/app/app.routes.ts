@@ -8,12 +8,11 @@ import {
 import { AuthCallbackPageComponent } from './features/auth/auth-callback-page.component';
 import { LoginRedirectComponent } from './features/auth/login-redirect.component';
 import { SettingsPageComponent } from './features/settings/settings-page.component';
-import { CreatedRacesPageComponent } from './features/home/created-races-page.component';
 import { LandingPageComponent } from './features/home/landing-page.component';
-import { MyRacesPageComponent } from './features/home/my-races-page.component';
-import { PublicRacesPageComponent } from './features/home/public-races-page.component';
-import { CreateRaceRedirectComponent } from './features/race/create-race-redirect.component';
-import { RaceDetailPageComponent } from './features/race/race-detail-page.component';
+import { MyChallengesPageComponent } from './features/home/my-challenges-page.component';
+import { PublicChallengesPageComponent } from './features/home/public-challenges-page.component';
+import { CreateChallengeRedirectComponent } from './features/challenge/create-challenge-redirect.component';
+import { ChallengeDetailPageComponent } from './features/challenge/challenge-detail-page.component';
 
 export const routes: Routes = [
   {
@@ -22,8 +21,12 @@ export const routes: Routes = [
     component: LandingPageComponent,
   },
   {
-    path: 'concept',
+    path: 'home',
     component: LandingPageComponent,
+  },
+  {
+    path: 'concept',
+    redirectTo: 'home',
   },
   {
     path: 'login',
@@ -35,14 +38,21 @@ export const routes: Routes = [
     component: AuthCallbackPageComponent,
   },
   {
-    path: 'my-races',
-    component: MyRacesPageComponent,
+    path: 'my-challenges',
+    component: MyChallengesPageComponent,
     canActivate: [linkedAccountGuard],
   },
   {
+    path: 'my-races',
+    redirectTo: 'my-challenges',
+  },
+  {
     path: 'created-races',
-    component: CreatedRacesPageComponent,
-    canActivate: [authHomeGuard],
+    redirectTo: 'my-challenges',
+  },
+  {
+    path: 'created-challenges',
+    redirectTo: 'my-challenges',
   },
   {
     path: 'settings',
@@ -50,17 +60,29 @@ export const routes: Routes = [
     canActivate: [authHomeGuard],
   },
   {
-    path: 'public-races',
-    component: PublicRacesPageComponent,
+    path: 'public-challenges',
+    component: PublicChallengesPageComponent,
   },
   {
-    path: 'races/new',
-    component: CreateRaceRedirectComponent,
+    path: 'public-races',
+    redirectTo: 'public-challenges',
+  },
+  {
+    path: 'challenges/new',
+    component: CreateChallengeRedirectComponent,
     canActivate: [authHomeGuard],
   },
   {
+    path: 'races/new',
+    redirectTo: 'challenges/new',
+  },
+  {
+    path: 'challenges/:shareSlug',
+    component: ChallengeDetailPageComponent,
+  },
+  {
     path: 'races/:shareSlug',
-    component: RaceDetailPageComponent,
+    redirectTo: ({ params }) => `/challenges/${params['shareSlug']}`,
   },
   {
     path: '**',

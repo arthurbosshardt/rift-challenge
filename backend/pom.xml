@@ -11,11 +11,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.riftrace</groupId>
-    <artifactId>riftrace-backend</artifactId>
+    <groupId>com.riftchallenge</groupId>
+    <artifactId>riftchallenge-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>riftrace-backend</name>
-    <description>RiftRace backend</description>
+    <name>riftchallenge-backend</name>
+    <description>Rift Challenge backend</description>
 
     <properties>
         <java.version>21</java.version>

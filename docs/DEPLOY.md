@@ -1,4 +1,4 @@
-# Déploiement RiftRace (Render + Vercel)
+# Déploiement Rift Challenge (Render + Vercel)
 
 ## Vue d'ensemble
 
@@ -7,6 +7,8 @@
 | Backend Spring Boot | [Render](https://render.com) | API, Riot, PostgreSQL |
 | Frontend Angular | [Vercel](https://vercel.com) | UI statique + SPA |
 | Base de données | [Supabase](https://supabase.com) | PostgreSQL managé |
+
+> **Domaine custom** : optionnel pour l’instant. Render et Vercel fournissent des URLs par défaut au premier déploiement. Quand tu achèteras un nom de domaine, tu l’ajouteras dans Render/Vercel et tu mettras à jour `CORS_ORIGINS` + les redirect URLs Supabase/Google.
 
 ## 1. Supabase
 
@@ -31,15 +33,13 @@ Les migrations Flyway s'exécutent au démarrage du backend.
 1. Connecter le dépôt GitHub à Render.
 2. **New → Blueprint** (si `render.yaml` est détecté) ou **Web Service** manuel :
    - Root directory : `backend`
-   - Runtime : **Docker** (Render ne propose pas de runtime Java natif)
+   - Runtime : **Docker**
    - Dockerfile : `backend/Dockerfile`
    - Health check : `/actuator/health`
 
-   > Avec `rootDir: backend`, les chemins Docker sont relatifs à ce dossier : `./Dockerfile` et `.` (pas `./backend/...`).
-
 3. Variables d'environnement :
 
-   | Variable | Exemple |
+   | Variable | Valeur |
    |---|---|
    | `DATABASE_URL` | JDBC **Session pooler** Supabase (voir §1) |
    | `DB_USER` | `postgres.VOTRE_PROJECT_REF` |
@@ -49,44 +49,45 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | `RIOT_API_KEY` | *(clé dev/prod Riot)* |
    | `RIOT_PLATFORM` | `euw1` |
    | `RIOT_REGIONAL_ROUTING` | `europe` |
-   | `CORS_ORIGINS` | `https://votre-app.vercel.app` |
+   | `CORS_ORIGINS` | URL publique du front (voir §4) |
 
-4. Attendre le déploiement et vérifier : `https://votre-backend.onrender.com/actuator/health`
+4. Après déploiement : `https://<ton-service>.onrender.com/actuator/health`
 
 ## 3. Frontend sur Vercel
 
 1. Importer le dépôt GitHub sur Vercel.
 2. **Root Directory** : `frontend`
-3. **Framework Settings** (Settings → Build & Deployment) — activer **Override** et configurer :
+3. **Framework Settings** — activer **Override** :
 
    | Réglage | Valeur |
    |---|---|
-   | Framework Preset | **Other** (ou Angular + overrides ci-dessous) |
    | Build Command | `npm run build` |
    | Output Directory | `dist/frontend/browser` |
    | Install Command | `npm ci` |
 
-   > La prod peut rester bloquée sur d’anciens **Production Overrides** (`dist/frontend`). Si l’écran affiche « Overridden » avec l’ancienne valeur, mets à jour **Project Settings** puis **Redeploy** sans cache.
-
-4. Variables d'environnement (Settings → Environment Variables) :
+4. Variables d'environnement :
 
    | Variable | Valeur |
    |---|---|
    | `SUPABASE_URL` | URL Supabase |
    | `SUPABASE_PUBLISHABLE_KEY` | Clé publishable |
-   | `API_BASE_URL` | URL Render du backend (sans slash final) |
+   | `API_BASE_URL` | URL publique du backend Render (sans slash final) |
 
-5. Déployer (**Redeploy** → décocher « Use existing Build Cache »).
+5. Déployer (**Redeploy** sans cache si besoin).
 
 ## 4. CORS et auth
 
-Après le premier déploiement front, mettre à jour `CORS_ORIGINS` sur Render avec l'URL Vercel réelle (y compris le domaine de preview si besoin).
+Après le premier déploiement, récupère les **URLs réelles** affichées par Vercel et Render, puis :
 
-Configurer l'auth Google : voir [docs/GOOGLE_OAUTH.md](GOOGLE_OAUTH.md).
+1. Render → `CORS_ORIGINS` = URL du front Vercel (ex. `https://xxx.vercel.app`)
+2. Vercel → `API_BASE_URL` = URL du backend Render (ex. `https://xxx.onrender.com`)
+3. Auth Google : [docs/GOOGLE_OAUTH.md](GOOGLE_OAUTH.md) avec ces mêmes URLs
 
-Redirect URLs Supabase minimales :
-- `https://votre-app.vercel.app/**`
-- `http://localhost:4200/**` (dev)
+Quand tu achèteras un domaine custom, remplace ces URLs par tes domaines dans Render, Vercel, Supabase et Google — pas besoin de toucher au code.
+
+Redirect URLs Supabase (minimum au départ) :
+- URL front Vercel + `/**`
+- `http://localhost:4200/**` (dev local)
 
 ## 5. Riot API en production
 
@@ -97,7 +98,7 @@ Redirect URLs Supabase minimales :
 
 - [ ] Health backend OK
 - [ ] Connexion / inscription Supabase
-- [ ] Création de race
-- [ ] Page publique `/races/:shareSlug`
+- [ ] Création de challenge
+- [ ] Page publique `/challenges/:shareSlug`
 - [ ] Refresh manuel (cooldown 2 min)
 - [ ] Icônes de profil joueur visibles

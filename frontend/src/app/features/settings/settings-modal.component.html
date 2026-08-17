@@ -1,0 +1,283 @@
+@if (settingsModal.isOpen()) {
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'settings.title' | t"
+    (click)="close()"
+  >
+    <section class="modal-panel modal-panel--settings settings-modal" (click)="$event.stopPropagation()">
+      <header class="settings-modal__header">
+        <h2>{{ 'settings.title' | t }}</h2>
+        <button type="button" class="settings-modal__close" [attr.aria-label]="'auth.close' | t" (click)="close()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <div class="settings-modal__body">
+        <section class="settings-section">
+          <div class="settings-section__header">
+            <span class="settings-section__icon settings-section__icon--appearance" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 4V2M12 22v-2M4.93 4.93 3.52 3.52M20.48 20.48l-1.41-1.41M4 12H2M22 12h-2M4.93 19.07l-1.41 1.41M20.48 3.52l-1.41 1.41M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <div class="settings-section__copy">
+              <h3>{{ 'settings.appearanceTitle' | t }}</h3>
+              <p class="settings-section__hint">{{ 'settings.appearanceHint' | t }}</p>
+            </div>
+          </div>
+
+          <div class="theme-switch" role="group" [attr.aria-label]="'settings.themeLabel' | t">
+            <button
+              type="button"
+              class="theme-switch__button"
+              [class.theme-switch__button--active]="theme.theme() === 'dark'"
+              (click)="theme.setTheme('dark')"
+            >
+              {{ 'settings.themeDark' | t }}
+            </button>
+            <button
+              type="button"
+              class="theme-switch__button"
+              [class.theme-switch__button--active]="theme.theme() === 'light'"
+              (click)="theme.setTheme('light')"
+            >
+              {{ 'settings.themeLight' | t }}
+            </button>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <div class="settings-section__header">
+            <span class="settings-section__icon settings-section__icon--language" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <div class="settings-section__copy">
+              <h3>{{ 'settings.languageTitle' | t }}</h3>
+              <p class="settings-section__hint">{{ 'settings.languageHint' | t }}</p>
+            </div>
+          </div>
+
+          <div class="theme-switch" role="group" [attr.aria-label]="'nav.language' | t">
+            <button
+              type="button"
+              class="theme-switch__button"
+              [class.theme-switch__button--active]="i18n.locale() === 'fr'"
+              (click)="i18n.setLocale('fr')"
+            >
+              {{ 'settings.languageFr' | t }}
+            </button>
+            <button
+              type="button"
+              class="theme-switch__button"
+              [class.theme-switch__button--active]="i18n.locale() === 'en'"
+              (click)="i18n.setLocale('en')"
+            >
+              {{ 'settings.languageEn' | t }}
+            </button>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <div class="settings-section__header">
+            <span class="settings-section__icon settings-section__icon--riot" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <div class="settings-section__copy">
+              <h3>{{ 'accounts.title' | t }}</h3>
+              <p class="settings-section__hint">{{ 'accounts.hint' | t }}</p>
+            </div>
+          </div>
+
+          <div
+            class="settings-section__accounts-body"
+            [class.settings-section__accounts-body--loading]="accountsLoading()"
+          >
+            @if (accountsLoading()) {
+              <app-settings-accounts-skeleton />
+            } @else {
+              <div class="accounts-block">
+              <h4 class="accounts-block__title">{{ 'accounts.primaryTitle' | t }}</h4>
+              <p class="accounts-block__hint">{{ 'accounts.primaryHint' | t }}</p>
+
+              @if (primaryAccount(); as account) {
+                <div class="linked-account linked-account--primary">
+                  <app-player-avatar
+                    [profileIconId]="account.profileIconId"
+                    [gameName]="account.gameName"
+                    size="md"
+                  />
+                  <div class="linked-account__identity">
+                    <span class="linked-account__badge">{{ 'accounts.primaryBadge' | t }}</span>
+                    <strong>{{ account.gameName }}</strong>
+                    <span>{{ account.riotId }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="linked-account__remove"
+                    (click)="unlinkAccount(account)"
+                    [disabled]="unlinkingAccountId() === account.id"
+                  >
+                    {{
+                      unlinkingAccountId() === account.id
+                        ? ('accounts.unlinking' | t)
+                        : ('accounts.remove' | t)
+                    }}
+                  </button>
+                </div>
+              } @else {
+                <p class="settings-section__empty">{{ 'accounts.primaryEmpty' | t }}</p>
+
+                <form class="settings-form" (ngSubmit)="linkPrimaryAccount()">
+                  <div class="settings-form__row">
+                    <label>
+                      {{ 'challenge.gameName' | t }}
+                      <input
+                        name="primaryGameName"
+                        type="text"
+                        [(ngModel)]="primaryGameNameInput"
+                        [placeholder]="'challenge.gameNamePlaceholder' | t"
+                        [disabled]="linkingPrimary()"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <label>
+                      {{ 'challenge.tagLine' | t }}
+                      <input
+                        name="primaryTagLine"
+                        type="text"
+                        [(ngModel)]="primaryTagLineInput"
+                        [placeholder]="'challenge.tagLinePlaceholder' | t"
+                        [disabled]="linkingPrimary()"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <button type="submit" [disabled]="linkingPrimary()">
+                      {{ linkingPrimary() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+
+            @if (primaryAccount()) {
+              <div class="accounts-block accounts-block--smurfs">
+                <h4 class="accounts-block__title">{{ 'accounts.smurfsTitle' | t }}</h4>
+                <p class="accounts-block__hint">{{ 'accounts.smurfsHint' | t }}</p>
+
+                @if (smurfAccounts().length === 0) {
+                  <p class="settings-section__empty">{{ 'accounts.smurfsEmpty' | t }}</p>
+                } @else {
+                  <div class="linked-account-list">
+                    @for (account of smurfAccounts(); track account.id) {
+                      <div class="linked-account linked-account--smurf">
+                        <app-player-avatar
+                          [profileIconId]="account.profileIconId"
+                          [gameName]="account.gameName"
+                          size="md"
+                        />
+                        <div class="linked-account__identity">
+                          <span class="linked-account__badge linked-account__badge--smurf">{{
+                            'accounts.smurfBadge' | t
+                          }}</span>
+                          <strong>{{ account.gameName }}</strong>
+                          <span>{{ account.riotId }}</span>
+                        </div>
+                        <button
+                          type="button"
+                          class="linked-account__remove"
+                          (click)="unlinkAccount(account)"
+                          [disabled]="unlinkingAccountId() === account.id"
+                        >
+                          {{
+                            unlinkingAccountId() === account.id
+                              ? ('accounts.unlinking' | t)
+                              : ('accounts.remove' | t)
+                          }}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (canAddSmurf()) {
+                  <form class="settings-form" (ngSubmit)="linkSmurfAccount()">
+                    <div class="settings-form__row">
+                      <label>
+                        {{ 'challenge.gameName' | t }}
+                        <input
+                          name="smurfGameName"
+                          type="text"
+                          [(ngModel)]="smurfGameNameInput"
+                          [placeholder]="'challenge.gameNamePlaceholder' | t"
+                          [disabled]="linkingSmurf()"
+                          autocomplete="off"
+                        />
+                      </label>
+                      <label>
+                        {{ 'challenge.tagLine' | t }}
+                        <input
+                          name="smurfTagLine"
+                          type="text"
+                          [(ngModel)]="smurfTagLineInput"
+                          [placeholder]="'challenge.tagLinePlaceholder' | t"
+                          [disabled]="linkingSmurf()"
+                          autocomplete="off"
+                        />
+                      </label>
+                      <button type="submit" [disabled]="linkingSmurf()">
+                        {{ linkingSmurf() ? ('accounts.linking' | t) : ('accounts.linkSmurf' | t) }}
+                      </button>
+                    </div>
+                  </form>
+                } @else {
+                  <p class="settings-section__empty">{{ 'accounts.limitReached' | t }}</p>
+                }
+              </div>
+            }
+            }
+          </div>
+
+          @if (!accountsLoading()) {
+            @if (accountError()) {
+              <p class="settings-section__error">{{ accountError() }}</p>
+            }
+            @if (accountSuccess()) {
+              <p class="settings-section__success">{{ 'accounts.linkedSuccess' | t }}</p>
+            }
+          }
+        </section>
+      </div>
+    </section>
+  </div>
+}

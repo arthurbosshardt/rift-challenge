@@ -1,5 +1,5 @@
 ---
-description: Riot API integration rules for RiftRace
+description: Riot API integration rules for Rift Challenge
 globs:
   - "backend/**/*Riot*.java"
   - "backend/**/riot/**/*.java"
@@ -7,10 +7,10 @@ globs:
 alwaysApply: false
 ---
 
-# RiftRace Riot API Rules
+# Rift Challenge Riot API Rules
 
 ## Purpose
-RiftRace uses Riot API data to track League of Legends challenges.
+Rift Challenge uses Riot API data to track League of Legends challenges.
 
 The Riot API is an external dependency and must be treated as unreliable:
 - latency can vary;
@@ -63,7 +63,7 @@ The refresh operation should reuse already persisted information whenever possib
 Do not create a loop that polls Riot every few seconds.
 
 ## Rate limits
-Handle Riot rate-limit responses gracefully.
+Handle Riot rate-limit responses gchallengefully.
 Do not perform aggressive automatic retries.
 
 Use bounded retry/backoff only where justified.
@@ -82,7 +82,7 @@ The client must never be trusted to declare a match as a valid DuoQ match.
 ## Caching and persistence
 Persist useful Riot data in PostgreSQL so that page views do not trigger unnecessary Riot API calls.
 
-A challenge page should primarily read from RiftRace's database.
+A challenge page should primarily read from Rift Challenge's database.
 
 ## Testing
 Do not make real Riot API requests in normal unit tests.

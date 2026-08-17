@@ -1,16 +1,8 @@
 <div class="player-identity" [class.player-identity--compact]="compact()">
-  <div class="player-identity__rank">
-    @if (tier()) {
-      <app-rank-emblem [tier]="tier()" size="md" />
-    } @else {
-      <span class="player-identity__rank-placeholder" aria-hidden="true">—</span>
-    }
-  </div>
-
   <app-player-avatar
     [profileIconId]="profileIconId()"
     [gameName]="gameName()"
-    [tier]="null"
+    [tier]="tier()"
     [size]="compact() ? 'sm' : 'md'"
   />
 

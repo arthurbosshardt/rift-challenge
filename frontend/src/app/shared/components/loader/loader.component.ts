@@ -2,6 +2,10 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-loader',
+  host: {
+    '[class.loader-host--compact]': 'compact()',
+    '[class.loader-host--centered]': 'centered() && !compact()',
+  },
   template: `
     <div class="loader" [class.loader--compact]="compact()" role="status" [attr.aria-label]="label() || 'Loading'">
       <span class="loader__spinner" aria-hidden="true"></span>
@@ -12,6 +16,28 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
+    :host {
+      display: block;
+    }
+
+    :host(.loader-host--centered) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: min(45vh, 22rem);
+      flex: 1;
+    }
+
+    :host(.loader-host--compact) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      min-height: auto;
+      flex: none;
+    }
+
     .loader {
       display: inline-flex;
       align-items: center;
@@ -47,4 +73,5 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 export class LoaderComponent {
   readonly label = input<string>('');
   readonly compact = input(false);
+  readonly centered = input(true);
 }

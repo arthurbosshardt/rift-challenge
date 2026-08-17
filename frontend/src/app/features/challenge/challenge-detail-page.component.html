@@ -1,0 +1,448 @@
+@if (loading()) {
+  <app-page-shell [title]="''">
+    <app-challenge-detail-skeleton [ariaLabel]="'home.loading' | t" />
+  </app-page-shell>
+} @else if (error()) {
+  <app-page-shell [title]="''">
+    <p class="state state--error">{{ error() }}</p>
+  </app-page-shell>
+} @else if (challenge(); as currentChallenge) {
+  <app-page-shell [title]="''">
+    <header class="detail__heading">
+      <div class="detail__title-row">
+        <h1 class="detail__title">
+          <app-challenge-badge
+            size="title"
+            [kind]="challengeTypeBadgeKind(currentChallenge.type)"
+            [label]="typeLabel(currentChallenge.type)"
+          />
+          <span class="detail__title-text">{{ currentChallenge.name }}</span>
+        </h1>
+        <div class="detail__title-actions">
+          @if (currentChallenge.isOwner) {
+            <button
+              type="button"
+              class="icon-button"
+              (click)="openEditModal(currentChallenge)"
+              [attr.aria-label]="'challenge.editAria' | t"
+              [attr.title]="'challenge.editTitle' | t"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          }
+          <button
+            type="button"
+            class="icon-button"
+            [class.icon-button--copied]="copied()"
+            (click)="copyShareLink()"
+            [attr.aria-label]="copied() ? ('challenge.copied' | t) : ('challenge.copy' | t)"
+            [attr.title]="copied() ? ('challenge.copied' | t) : ('challenge.copy' | t)"
+          >
+            @if (copied()) {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+                />
+              </svg>
+            }
+          </button>
+          @if (currentChallenge.isOwner) {
+            <button
+              type="button"
+              class="icon-button icon-button--danger"
+              (click)="requestDeleteChallenge(currentChallenge)"
+              [disabled]="deleting()"
+              [attr.aria-label]="'challenge.deleteAria' | t"
+              [attr.title]="'challenge.delete' | t"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M6 7h12M9 7V5h6v2M10 11v6M14 11v6M8 7l1 14h6l1-14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (currentChallenge.status === 'ACTIVE' || currentChallenge.status === 'FINISHED') {
+        <div class="detail__refresh">
+        <button
+          type="button"
+          class="refresh-action-btn"
+          (click)="refreshChallenge()"
+          [disabled]="!currentChallenge.refreshAvailable || refreshing()"
+          [attr.aria-label]="refreshing() ? ('challenge.refreshing' | t) : ('challenge.refreshData' | t)"
+        >
+          <svg
+            class="refresh-action-btn__icon"
+            [class.refresh-action-btn__icon--spinning]="refreshing()"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+            />
+          </svg>
+          <span class="refresh-action-btn__label">
+            @if (refreshing()) {
+              {{ 'challenge.refreshing' | t }}
+            } @else {
+              {{ 'challenge.refreshData' | t }}
+            }
+          </span>
+        </button>
+
+        <div class="refresh__panel">
+          <div class="refresh__panel-row">
+          <div class="refresh__status">
+            <span class="refresh__status-label">{{ 'challenge.lastUpdateLabel' | t }}</span>
+            @if (currentChallenge.lastRefreshedAt) {
+              <span class="refresh__status-time">{{ lastUpdateRelative() }}</span>
+            } @else {
+              <span class="refresh__status-time refresh__status-time--muted">{{ 'challenge.noSync' | t }}</span>
+            }
+            <button
+              type="button"
+              class="refresh__info-btn"
+              [attr.aria-label]="'challenge.refreshHint' | t"
+            >
+              <span aria-hidden="true">i</span>
+              <span class="refresh__info-tooltip">{{ 'challenge.refreshHint' | t }}</span>
+            </button>
+          </div>
+
+          @if (!currentChallenge.refreshAvailable && refreshCountdown()) {
+            <div class="refresh__cooldown" role="status" aria-live="polite">
+              <span class="refresh__cooldown-label">{{ 'challenge.nextRefresh' | t }}</span>
+              <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
+            </div>
+          }
+
+          @if (currentChallenge.status === 'ACTIVE' && endCountdown()) {
+            <div class="refresh__end" role="status" aria-live="polite">
+              <span class="refresh__end-label">{{ 'challenge.endsIn' | t }}</span>
+              <span class="refresh__end-timer">{{ endCountdown() }}</span>
+            </div>
+          }
+          </div>
+
+          @if (refreshError()) {
+            <p class="refresh__error">{{ refreshError() }}</p>
+          }
+        </div>
+        </div>
+      }
+    </header>
+
+    @if (deleteError()) {
+      <p class="state state--error detail__delete-error" role="alert">{{ deleteError() }}</p>
+    }
+
+    <section class="detail">
+      <div class="detail__badges">
+        @if (currentChallenge.isPublic) {
+          <app-challenge-badge kind="public" [label]="'challenge.public' | t" />
+        } @else {
+          <app-challenge-badge kind="private" [label]="'challenge.private' | t" />
+        }
+      </div>
+
+      <dl class="detail__meta">
+        <div>
+          <dt>{{ 'challenge.start' | t }}</dt>
+          <dd>{{ currentChallenge.startAt | challengeDate }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'challenge.end' | t }}</dt>
+          <dd>
+            @if (currentChallenge.endAt) {
+              {{ currentChallenge.endAt | challengeDate }}
+            } @else {
+              —
+            }
+          </dd>
+        </div>
+      </dl>
+
+      <section class="participants">
+        <div class="participants__header">
+          <span class="participants__count">
+            {{ 'challenge.participantCountLabel' | t }}
+            {{ entryCount(currentChallenge) }} / {{ entryLimit(currentChallenge) }}
+          </span>
+        </div>
+
+        @if (entryCount(currentChallenge) === 0) {
+          <p class="participants__empty">
+            {{ currentChallenge.type === 'DUOQ' ? ('challenge.noDuos' | t) : ('challenge.noParticipants' | t) }}
+          </p>
+        } @else {
+          <div class="stats-panel" [class.stats-panel--refreshing]="refreshing()">
+            @if (refreshing()) {
+              <div class="stats-panel__overlay" role="status" aria-live="polite" [attr.aria-label]="'challenge.refreshingStats' | t">
+                <app-leaderboard-skeleton [rowCount]="4" />
+              </div>
+            }
+
+            <div class="stats-panel__content" [attr.aria-busy]="refreshing()">
+              @if (hasLeaderboard(currentChallenge)) {
+                <div class="sort-controls" role="toolbar" [attr.aria-label]="'challenge.sortAria' | t">
+                  <div class="sort-controls__criteria" role="tablist" [attr.aria-label]="'challenge.sortAria' | t">
+                    @for (option of sortOptions(); track option[0]) {
+                      <button
+                        type="button"
+                        role="tab"
+                        class="sort-controls__tab"
+                        [class.sort-controls__tab--active]="sortCriterion() === option[0]"
+                        [attr.aria-selected]="sortCriterion() === option[0]"
+                        (click)="setSortCriterion(option[0])"
+                        [disabled]="refreshing()"
+                      >
+                        @switch (option[0]) {
+                          @case ('RANK') {
+                            <svg class="sort-controls__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M12 2l2.4 4.8 5.4.8-3.9 3.8.9 5.3L12 14.3 7.2 16.7l.9-5.3-3.9-3.8 5.4-.8L12 2z"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.75"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                          }
+                          @case ('LP_GAIN') {
+                            <svg class="sort-controls__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M4 17l5-5 4 4 7-8M14 7h6v6"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.75"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                          }
+                          @case ('WIN_RATE') {
+                            <svg class="sort-controls__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                d="M4 19V5M4 19h16M8 16V9M12 16V7M16 16v-4"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.75"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                          }
+                        }
+                        <span>{{ option[1] }}</span>
+                      </button>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="sort-controls__direction"
+                    (click)="toggleSortDirection()"
+                    [disabled]="refreshing()"
+                    [attr.aria-label]="sortDirectionAriaLabel()"
+                  >
+                    <span class="sort-controls__direction-icon" aria-hidden="true">{{ sortDirectionIcon() }}</span>
+                  </button>
+                </div>
+
+                @if (currentChallenge.type === 'SOLOQ') {
+            <ol class="leaderboard">
+              @for (participant of sortedParticipants(); track leaderboardRowTrack(participant.id)) {
+                <li [class]="'leaderboard__item ' + (podiumTierForParticipant(participant.position) ?? '')">
+                  <span class="leaderboard__rank">#{{ participant.position }}</span>
+                  <app-player-identity
+                    class="leaderboard__identity"
+                    [compact]="true"
+                    [gameName]="participant.gameName"
+                    [tagLine]="participant.tagLine"
+                    [riotId]="participant.riotId"
+                    [profileIconId]="participant.profileIconId"
+                    [tier]="participant.hasRankData ? participant.currentTier : null"
+                    [rankLabel]="participantRankLabel(participant)"
+                  />
+                  <app-match-history-strip class="leaderboard__history" [soloEntries]="participant.recentMatches" />
+                  <div class="leaderboard__stats">
+                    <span
+                      class="leaderboard__lp"
+                      [class.leaderboard__lp--negative]="participant.lpGained < 0"
+                      [class.leaderboard__lp--positive]="participant.lpGained > 0"
+                    >
+                      {{ lpLabel(participant.lpGained, participant.hasRankData) }}
+                    </span>
+                    <span class="leaderboard__wl">
+                      <span [class]="'leaderboard__winrate ' + winRateClass(participant.winRate, participant.wins, participant.losses)">
+                        {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
+                      </span>
+                      @if (hasRecord(participant.wins, participant.losses)) {
+                        <span class="leaderboard__record">
+                          <span class="leaderboard__wins">
+                            {{ participant.wins }}<span class="leaderboard__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                          </span>
+                          <span class="leaderboard__record-sep" aria-hidden="true">/</span>
+                          <span class="leaderboard__losses">
+                            {{ participant.losses }}<span class="leaderboard__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                          </span>
+                        </span>
+                      }
+                    </span>
+                  </div>
+                </li>
+              }
+            </ol>
+          } @else {
+            <ol class="leaderboard">
+              @for (duo of sortedDuos(); track leaderboardRowTrack(duo.id)) {
+                <li
+                  [class]="'leaderboard__item leaderboard__item--duo ' + (podiumTierForDuo(duo) ?? '')"
+                  [class.leaderboard__item--ineligible]="!duo.eligible"
+                >
+                  <span class="leaderboard__rank">#{{ duo.position }}</span>
+                  <div class="leaderboard__identity leaderboard__identity--duo">
+                    <div class="leaderboard__duo-player-slot">
+                      <app-player-identity
+                        [compact]="true"
+                        [gameName]="duo.player1.gameName"
+                        [tagLine]="duo.player1.tagLine"
+                        [riotId]="duo.player1.riotId"
+                        [profileIconId]="duo.player1.profileIconId"
+                        [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                        [rankLabel]="participantRankLabel(duo.player1)"
+                      />
+                    </div>
+                    <div class="leaderboard__duo-player-slot">
+                      <app-player-identity
+                        [compact]="true"
+                        [gameName]="duo.player2.gameName"
+                        [tagLine]="duo.player2.tagLine"
+                        [riotId]="duo.player2.riotId"
+                        [profileIconId]="duo.player2.profileIconId"
+                        [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                        [rankLabel]="participantRankLabel(duo.player2)"
+                      />
+                    </div>
+                  </div>
+                  <app-match-history-strip
+                    class="leaderboard__history"
+                    [duoMode]="true"
+                    [duoEntries]="duo.recentMatches"
+                  />
+                  <div class="leaderboard__stats">
+                    <span
+                      class="leaderboard__lp"
+                      [class.leaderboard__lp--negative]="duo.combinedLpGained < 0"
+                      [class.leaderboard__lp--positive]="duo.combinedLpGained > 0"
+                    >
+                      {{ lpLabel(duo.combinedLpGained, duoHasRankData(duo)) }}
+                    </span>
+                    <span class="leaderboard__wl">
+                      <span [class]="'leaderboard__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                        {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
+                      </span>
+                      @if (hasRecord(duo.wins, duo.losses)) {
+                        <span class="leaderboard__record">
+                          <span class="leaderboard__wins">
+                            {{ duo.wins }}<span class="leaderboard__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                          </span>
+                          <span class="leaderboard__record-sep" aria-hidden="true">/</span>
+                          <span class="leaderboard__losses">
+                            {{ duo.losses }}<span class="leaderboard__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                          </span>
+                        </span>
+                      }
+                    </span>
+                  </div>
+                  @if (!duo.eligible && duo.ineligibilityReason) {
+                    <span class="leaderboard__ineligible">{{ ineligibilityLabel(duo.ineligibilityReason) }}</span>
+                  }
+                </li>
+              }
+            </ol>
+                }
+              } @else if (currentChallenge.type === 'SOLOQ') {
+          <ul class="participants__list">
+            @for (participant of currentChallenge.participants; track participant.id) {
+              <li class="participants__list-item">
+                <app-player-identity
+                  [compact]="true"
+                  [gameName]="participant.gameName"
+                  [tagLine]="participant.tagLine"
+                  [riotId]="participant.riotId"
+                  [profileIconId]="participant.profileIconId"
+                  [tier]="participant.hasRankData ? participant.currentTier : null"
+                />
+              </li>
+            }
+          </ul>
+                } @else {
+          <ul class="participants__list">
+            @for (duo of currentChallenge.duos; track duo.id) {
+              <li class="participants__list-item participants__list-item--duo">
+                <div class="participants__duo-stack">
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="duo.player1.gameName"
+                    [tagLine]="duo.player1.tagLine"
+                    [riotId]="duo.player1.riotId"
+                    [profileIconId]="duo.player1.profileIconId"
+                    [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                  />
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="duo.player2.gameName"
+                    [tagLine]="duo.player2.tagLine"
+                    [riotId]="duo.player2.riotId"
+                    [profileIconId]="duo.player2.profileIconId"
+                    [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                  />
+                </div>
+              </li>
+            }
+          </ul>
+                }
+            </div>
+          </div>
+        }
+      </section>
+
+      @if (currentChallenge.status === 'NOT_STARTED') {
+        <section class="start-countdown">
+          @if (startCountdown()) {
+            <p class="start-countdown__label">{{ 'challenge.startIn' | t }}</p>
+            <p class="start-countdown__timer" role="status" aria-live="polite">{{ startCountdown() }}</p>
+          }
+          <p class="notice">
+            {{ 'challenge.rankingLater' | t }}
+          </p>
+        </section>
+      }
+
+      @if (currentChallenge.status === 'FINISHED') {
+        <p class="notice">{{ 'challenge.finishedNotice' | t }}</p>
+      }
+    </section>
+  </app-page-shell>
+}
