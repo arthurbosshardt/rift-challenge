@@ -490,6 +490,37 @@
   }
 }
 
+@media (max-width: 640px) {
+  .landing__types {
+    grid-template-columns: 1fr;
+  }
+
+  .landing__cards {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(10rem, auto));
+    min-height: auto;
+    gap: 0.5rem;
+  }
+
+  .landing-card__body h3 {
+    font-size: 1.0625rem;
+  }
+
+  .landing-card__body p {
+    font-size: 0.875rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .landing__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing__actions .landing-btn {
+    width: 100%;
+  }
+}
+
 @media (max-height: 720px) {
   .landing__intro-brand {
     font-size: clamp(1.75rem, 3.5vw, 2.25rem);

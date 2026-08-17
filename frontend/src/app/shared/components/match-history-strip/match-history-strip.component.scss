@@ -175,3 +175,20 @@
     height: 3rem;
   }
 }
+
+@media (max-width: 640px) {
+  .match-history__viewport {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .match-history__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .match-history--fade-right .match-history__viewport {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}

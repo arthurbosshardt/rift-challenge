@@ -302,3 +302,26 @@
     flex: 0 0 auto;
   }
 }
+
+@media (max-width: 640px) {
+  .challenge-search__field--type,
+  .challenge-search__field--refresh {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .challenge-search__type {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .challenge-search__field--refresh .refresh-action-btn {
+    width: 100%;
+    justify-content: center;
+    padding-right: 0.875rem;
+  }
+
+  .link-banner {
+    width: 100%;
+  }
+}

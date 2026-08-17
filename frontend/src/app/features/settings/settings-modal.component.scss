@@ -302,3 +302,28 @@
   color: var(--gold);
   font-size: 0.875rem;
 }
+
+@media (max-width: 640px) {
+  .settings-modal__header,
+  .settings-modal__body {
+    padding-inline: 1rem;
+  }
+
+  .linked-account {
+    flex-wrap: wrap;
+    row-gap: 0.625rem;
+  }
+
+  .linked-account__remove {
+    margin-left: auto;
+  }
+
+  .settings-form__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-form__row button {
+    width: 100%;
+  }
+}

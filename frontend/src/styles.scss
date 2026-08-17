@@ -518,4 +518,38 @@ textarea:focus {
   stroke: currentColor;
 }
 
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .modal-panel {
+    max-height: calc(100dvh - 1.5rem);
+    padding: 1.25rem;
+  }
+
+  .refresh-action-btn {
+    --refresh-action-size: 2.5rem;
+    --refresh-action-icon-size: 1.25rem;
+  }
+}
+
+@media (hover: none) {
+  .refresh-action-btn:not(:disabled) {
+    padding-right: 0.875rem;
+  }
+
+  .refresh-action-btn:not(:disabled) .refresh-action-btn__label,
+  .refresh-action-btn:not(:disabled) .refresh-action-btn__label--short {
+    max-width: 11rem;
+    margin-left: 0.5rem;
+    opacity: 1;
+  }
+
+  .refresh-action-btn:not(:disabled) .refresh-action-btn__label--short {
+    max-width: 6rem;
+  }
+}
+
 @import 'app/features/challenge/challenge-form-shared';

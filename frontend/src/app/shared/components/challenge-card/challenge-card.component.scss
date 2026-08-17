@@ -472,3 +472,47 @@
     margin-top: 0;
   }
 }
+
+@media (max-width: 640px) {
+  .challenge-card {
+    padding: 1rem;
+  }
+
+  .challenge-card__preview-item {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'position rank names'
+      'stats stats stats';
+    row-gap: 0.375rem;
+  }
+
+  .challenge-card__preview-item--duo {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'position avatars'
+      'names names'
+      'stats stats';
+  }
+
+  .challenge-card__position {
+    grid-area: position;
+  }
+
+  .challenge-card__preview-rank {
+    grid-area: rank;
+  }
+
+  .challenge-card__duo-avatars {
+    grid-area: avatars;
+  }
+
+  .challenge-card__preview-text {
+    grid-area: names;
+  }
+
+  .challenge-card__stats {
+    grid-area: stats;
+    justify-items: start;
+    margin-left: 0;
+  }
+}
