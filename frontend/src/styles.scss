@@ -1,3 +1,5 @@
+@use 'app/features/challenge/challenge-form-shared';
+
 @font-face {
   font-family: 'LEMON MILK';
   src: url('/fonts/LemonMilk-Regular.woff') format('woff');
@@ -557,5 +559,3 @@ textarea:focus {
     max-width: 6rem;
   }
 }
-
-@import 'app/features/challenge/challenge-form-shared';
