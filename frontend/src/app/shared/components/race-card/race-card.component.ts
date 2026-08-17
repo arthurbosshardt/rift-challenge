@@ -1,11 +1,11 @@
-import { DatePipe } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RaceSummary } from '../../../core/models/race.models';
+import { RaceDatePipe } from '../../pipes/race-date.pipe';
 
 @Component({
   selector: 'app-race-card',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, RaceDatePipe],
   templateUrl: './race-card.component.html',
   styleUrl: './race-card.component.scss',
 })

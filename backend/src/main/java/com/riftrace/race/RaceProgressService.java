@@ -37,17 +37,17 @@ public class RaceProgressService {
             unsorted.add(buildForParticipant(participant));
         }
 
-        unsorted.sort(Comparator.comparingInt(ParticipantProgressResponse::lpGained).reversed());
+        unsorted.sort(Comparator.comparingInt(ParticipantProgressResponse::rankScore).reversed());
 
         List<ParticipantProgressResponse> ranked = new ArrayList<>();
         for (int index = 0; index < unsorted.size(); index++) {
-            ParticipantProgressResponse progress = unsorted.get(index);
-            ranked.add(progress.withPosition(index + 1));
+            ranked.add(unsorted.get(index).withPosition(index + 1));
         }
         return ranked;
     }
 
-    private ParticipantProgressResponse buildForParticipant(RaceParticipant participant) {
+    @Transactional(readOnly = true)
+    public ParticipantProgressResponse buildForParticipant(RaceParticipant participant) {
         UUID participantId = participant.getId();
 
         RankSnapshot baseline = rankSnapshotRepository
@@ -69,6 +69,11 @@ public class RaceProgressService {
         }
 
         int lpGained = computeLpGained(baseline, current, (int) wins, (int) losses);
+        int rankScore = RankScoreConverter.toScore(
+                current.getTier(),
+                current.getRankDivision(),
+                current.getLeaguePoints()
+        );
 
         return ParticipantProgressResponse.withRankData(
                 participant,
@@ -77,6 +82,7 @@ public class RaceProgressService {
                 current.getRankDivision(),
                 current.getLeaguePoints(),
                 lpGained,
+                rankScore,
                 (int) wins,
                 (int) losses
         );

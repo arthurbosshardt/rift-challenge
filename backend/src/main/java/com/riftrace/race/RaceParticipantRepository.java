@@ -14,4 +14,6 @@ public interface RaceParticipantRepository extends JpaRepository<RaceParticipant
     boolean existsByRaceIdAndRiotPuuid(UUID raceId, String riotPuuid);
 
     Optional<RaceParticipant> findByIdAndRaceId(UUID id, UUID raceId);
+
+    List<RaceParticipant> findByDuoIdOrderByCreatedAtAsc(UUID duoId);
 }

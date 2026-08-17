@@ -44,6 +44,9 @@ class RaceParticipantServiceTest {
     @Mock
     private RiotLeagueClient riotLeagueClient;
 
+    @Mock
+    private ParticipantProfileService participantProfileService;
+
     private final Clock clock = Clock.fixed(Instant.parse("2026-08-16T10:00:00Z"), ZoneOffset.UTC);
 
     @InjectMocks
@@ -57,6 +60,7 @@ class RaceParticipantServiceTest {
                 rankSnapshotRepository,
                 riotAccountClient,
                 riotLeagueClient,
+                participantProfileService,
                 clock
         );
     }

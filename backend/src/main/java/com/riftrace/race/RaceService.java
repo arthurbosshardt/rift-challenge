@@ -2,6 +2,7 @@ package com.riftrace.race;
 
 import com.riftrace.account.AppUserRepository;
 import com.riftrace.race.dto.CreateRaceRequest;
+import com.riftrace.race.dto.DuoProgressResponse;
 import com.riftrace.race.dto.ParticipantProgressResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
@@ -22,6 +23,8 @@ public class RaceService {
     private final AppUserRepository appUserRepository;
     private final RaceParticipantRepository participantRepository;
     private final RaceProgressService progressService;
+    private final RaceDuoProgressService duoProgressService;
+    private final ParticipantProfileService participantProfileService;
     private final RaceRefreshRepository raceRefreshRepository;
     private final RaceSyncService raceSyncService;
     private final Clock clock;
@@ -31,6 +34,8 @@ public class RaceService {
             AppUserRepository appUserRepository,
             RaceParticipantRepository participantRepository,
             RaceProgressService progressService,
+            RaceDuoProgressService duoProgressService,
+            ParticipantProfileService participantProfileService,
             RaceRefreshRepository raceRefreshRepository,
             RaceSyncService raceSyncService,
             Clock clock
@@ -39,6 +44,8 @@ public class RaceService {
         this.appUserRepository = appUserRepository;
         this.participantRepository = participantRepository;
         this.progressService = progressService;
+        this.duoProgressService = duoProgressService;
+        this.participantProfileService = participantProfileService;
         this.raceRefreshRepository = raceRefreshRepository;
         this.raceSyncService = raceSyncService;
         this.clock = clock;
@@ -47,7 +54,7 @@ public class RaceService {
     @Transactional(readOnly = true)
     public List<RaceSummaryResponse> listPublicRaces() {
         Instant now = clock.instant();
-        return raceRepository.findByIsPublicTrueOrderByStartAtDesc().stream()
+        return raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(now).stream()
                 .map(race -> RaceSummaryResponse.from(race, now))
                 .toList();
     }
@@ -98,9 +105,22 @@ public class RaceService {
 
     private RaceDetailResponse toDetailResponse(Race race, UUID callerId) {
         Instant now = clock.instant();
-        List<ParticipantProgressResponse> participants = progressService.buildProgress(
-                participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId())
-        );
+        List<RaceParticipant> raceParticipants = participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId());
+        raceParticipants.stream()
+                .filter(participant -> participant.getProfileIconId() == null)
+                .forEach(participant -> participantProfileService.ensureProfileIcon(participant.getId()));
+        raceParticipants = participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId());
+
+        List<ParticipantProgressResponse> participants;
+        List<DuoProgressResponse> duos;
+
+        if (race.getType() == RaceType.DUOQ) {
+            participants = List.of();
+            duos = duoProgressService.buildProgress(race.getId());
+        } else {
+            participants = progressService.buildProgress(raceParticipants);
+            duos = List.of();
+        }
 
         RefreshTiming refreshTiming = resolveRefreshTiming(race.getId(), now);
 
@@ -108,6 +128,7 @@ public class RaceService {
                 race,
                 now,
                 participants,
+                duos,
                 callerId,
                 refreshTiming.lastRefreshedAt(),
                 refreshTiming.refreshAvailable(),

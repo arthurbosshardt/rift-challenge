@@ -1,6 +1,7 @@
 package com.riftrace.race;
 
 import com.riftrace.authentication.AuthenticatedUserIds;
+import com.riftrace.race.dto.AddDuoRequest;
 import com.riftrace.race.dto.AddParticipantRequest;
 import com.riftrace.race.dto.CreateRaceRequest;
 import com.riftrace.race.dto.ParticipantResponse;
@@ -27,10 +28,16 @@ public class RaceController {
 
     private final RaceService raceService;
     private final RaceParticipantService participantService;
+    private final RaceDuoService duoService;
 
-    public RaceController(RaceService raceService, RaceParticipantService participantService) {
+    public RaceController(
+            RaceService raceService,
+            RaceParticipantService participantService,
+            RaceDuoService duoService
+    ) {
         this.raceService = raceService;
         this.participantService = participantService;
+        this.duoService = duoService;
     }
 
     @GetMapping("/public")
@@ -81,6 +88,28 @@ public class RaceController {
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         return participantService.addParticipant(raceId, ownerId, request);
+    }
+
+    @PostMapping("/{raceId}/duos")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void addDuo(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @Valid @RequestBody AddDuoRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        duoService.addDuo(raceId, ownerId, request);
+    }
+
+    @DeleteMapping("/{raceId}/duos/{duoId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeDuo(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @PathVariable UUID duoId
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        duoService.removeDuo(raceId, duoId, ownerId);
     }
 
     @DeleteMapping("/{raceId}/participants/{participantId}")

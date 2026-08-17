@@ -1,7 +1,6 @@
 package com.riftrace.race;
 
-import com.riftrace.race.dto.AddParticipantRequest;
-import com.riftrace.race.dto.ParticipantResponse;
+import com.riftrace.race.dto.AddDuoRequest;
 import com.riftrace.riot.RiotAccountClient;
 import com.riftrace.riot.RiotIdParser;
 import com.riftrace.riot.RiotLeagueClient;
@@ -11,7 +10,6 @@ import com.riftrace.synchronization.RankSnapshot;
 import com.riftrace.synchronization.RankSnapshotRepository;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,11 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-public class RaceParticipantService {
+public class RaceDuoService {
 
-    static final int MAX_PARTICIPANTS = 16;
+    static final int MAX_DUOS = 8;
 
     private final RaceRepository raceRepository;
+    private final RaceDuoRepository raceDuoRepository;
     private final RaceParticipantRepository participantRepository;
     private final RankSnapshotRepository rankSnapshotRepository;
     private final RiotAccountClient riotAccountClient;
@@ -31,8 +30,9 @@ public class RaceParticipantService {
     private final ParticipantProfileService participantProfileService;
     private final Clock clock;
 
-    public RaceParticipantService(
+    public RaceDuoService(
             RaceRepository raceRepository,
+            RaceDuoRepository raceDuoRepository,
             RaceParticipantRepository participantRepository,
             RankSnapshotRepository rankSnapshotRepository,
             RiotAccountClient riotAccountClient,
@@ -41,6 +41,7 @@ public class RaceParticipantService {
             Clock clock
     ) {
         this.raceRepository = raceRepository;
+        this.raceDuoRepository = raceDuoRepository;
         this.participantRepository = participantRepository;
         this.rankSnapshotRepository = rankSnapshotRepository;
         this.riotAccountClient = riotAccountClient;
@@ -49,15 +50,8 @@ public class RaceParticipantService {
         this.clock = clock;
     }
 
-    @Transactional(readOnly = true)
-    public List<ParticipantResponse> listByRaceId(UUID raceId) {
-        return participantRepository.findByRaceIdOrderByCreatedAtAsc(raceId).stream()
-                .map(ParticipantResponse::from)
-                .toList();
-    }
-
     @Transactional
-    public ParticipantResponse addParticipant(UUID raceId, UUID ownerId, AddParticipantRequest request) {
+    public void addDuo(UUID raceId, UUID ownerId, AddDuoRequest request) {
         Race race = raceRepository.findById(raceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Race not found"));
 
@@ -65,30 +59,49 @@ public class RaceParticipantService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not the race owner");
         }
 
-        if (race.getType() == RaceType.DUOQ) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Use the duo endpoint for DuoQ races");
+        if (race.getType() != RaceType.DUOQ) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duos can only be added to DuoQ races");
         }
 
-        if (participantRepository.countByRaceId(raceId) >= MAX_PARTICIPANTS) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Participant limit reached");
+        if (raceDuoRepository.countByRaceId(raceId) >= MAX_DUOS) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duo limit reached");
         }
 
-        RiotIdParser.ParsedRiotId parsed = RiotIdParser.parse(request.riotId());
-        RiotAccountDto account = riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
+        RiotIdParser.ParsedRiotId parsed1 = RiotIdParser.parse(request.player1RiotId());
+        RiotIdParser.ParsedRiotId parsed2 = RiotIdParser.parse(request.player2RiotId());
 
-        if (participantRepository.existsByRaceIdAndRiotPuuid(raceId, account.puuid())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Participant already added");
+        if (parsed1.gameName().equalsIgnoreCase(parsed2.gameName())
+                && parsed1.tagLine().equalsIgnoreCase(parsed2.tagLine())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A duo must contain two different players");
         }
 
-        RaceParticipant participant = RaceParticipant.create(raceId, account);
-        RaceParticipant saved = participantRepository.save(participant);
-        captureBaselineIfRanked(saved);
-        participantProfileService.ensureProfileIcon(saved.getId());
-        return ParticipantResponse.from(saved);
+        RiotAccountDto account1 = riotAccountClient.getAccountByRiotId(parsed1.gameName(), parsed1.tagLine());
+        RiotAccountDto account2 = riotAccountClient.getAccountByRiotId(parsed2.gameName(), parsed2.tagLine());
+
+        if (participantRepository.existsByRaceIdAndRiotPuuid(raceId, account1.puuid())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Player already added");
+        }
+        if (participantRepository.existsByRaceIdAndRiotPuuid(raceId, account2.puuid())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Player already added");
+        }
+
+        RaceDuo duo = raceDuoRepository.save(RaceDuo.create(raceId));
+
+        RaceParticipant participant1 = participantRepository.save(
+                RaceParticipant.create(raceId, account1, duo.getId())
+        );
+        RaceParticipant participant2 = participantRepository.save(
+                RaceParticipant.create(raceId, account2, duo.getId())
+        );
+
+        captureBaselineIfRanked(participant1);
+        captureBaselineIfRanked(participant2);
+        participantProfileService.ensureProfileIcon(participant1.getId());
+        participantProfileService.ensureProfileIcon(participant2.getId());
     }
 
     @Transactional
-    public void removeParticipant(UUID raceId, UUID participantId, UUID ownerId) {
+    public void removeDuo(UUID raceId, UUID duoId, UUID ownerId) {
         Race race = raceRepository.findById(raceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Race not found"));
 
@@ -96,10 +109,14 @@ public class RaceParticipantService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not the race owner");
         }
 
-        RaceParticipant participant = participantRepository.findByIdAndRaceId(participantId, raceId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
+        RaceDuo duo = raceDuoRepository.findById(duoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duo not found"));
 
-        participantRepository.delete(participant);
+        if (!duo.getRaceId().equals(raceId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Duo not found");
+        }
+
+        raceDuoRepository.delete(duo);
     }
 
     private void captureBaselineIfRanked(RaceParticipant participant) {

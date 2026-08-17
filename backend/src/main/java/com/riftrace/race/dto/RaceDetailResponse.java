@@ -20,13 +20,15 @@ public record RaceDetailResponse(
         Instant lastRefreshedAt,
         Instant nextRefreshAvailableAt,
         boolean refreshAvailable,
-        List<ParticipantProgressResponse> participants
+        List<ParticipantProgressResponse> participants,
+        List<DuoProgressResponse> duos
 ) {
 
     public static RaceDetailResponse from(
             Race race,
             Instant now,
             List<ParticipantProgressResponse> participants,
+            List<DuoProgressResponse> duos,
             UUID callerId,
             Instant lastRefreshedAt,
             boolean refreshAvailable,
@@ -49,7 +51,8 @@ public record RaceDetailResponse(
                 lastRefreshedAt,
                 nextRefreshAvailableAt,
                 raceStarted && refreshAvailable,
-                participants
+                participants,
+                duos
         );
     }
 }

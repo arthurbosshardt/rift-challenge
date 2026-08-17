@@ -1,0 +1,10 @@
+<div class="player-avatar" [class.player-avatar--sm]="size() === 'sm'">
+  @if (iconUrl(); as url) {
+    <img class="player-avatar__icon" [src]="url" [alt]="iconAlt()" loading="lazy" (error)="onIconError()" />
+  } @else {
+    <span class="player-avatar__fallback" aria-hidden="true">{{ initial() }}</span>
+  }
+  @if (tier()) {
+    <app-rank-emblem class="player-avatar__rank-badge" [tier]="tier()" size="sm" />
+  }
+</div>

@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  AddDuoRequest,
   AddParticipantRequest,
   AuthMeResponse,
   CreateRaceRequest,
-  ParticipantProgress,
   RaceDetail,
   RaceSummary,
 } from '../models/race.models';
@@ -31,6 +31,14 @@ export class RaceApiService {
 
   createRace(request: CreateRaceRequest): Observable<RaceDetail> {
     return this.http.post<RaceDetail>(this.baseUrl, request);
+  }
+
+  addDuo(raceId: string, request: AddDuoRequest): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${raceId}/duos`, request);
+  }
+
+  removeDuo(raceId: string, duoId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${raceId}/duos/${duoId}`);
   }
 
   addParticipant(raceId: string, request: AddParticipantRequest): Observable<unknown> {

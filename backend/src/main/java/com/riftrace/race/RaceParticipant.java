@@ -29,6 +29,12 @@ public class RaceParticipant {
     @Column(name = "riot_tag_line", nullable = false, length = 5)
     private String riotTagLine;
 
+    @Column(name = "duo_id")
+    private UUID duoId;
+
+    @Column(name = "profile_icon_id")
+    private Integer profileIconId;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -39,12 +45,17 @@ public class RaceParticipant {
     }
 
     public static RaceParticipant create(UUID raceId, RiotAccountDto account) {
+        return create(raceId, account, null);
+    }
+
+    public static RaceParticipant create(UUID raceId, RiotAccountDto account, UUID duoId) {
         RaceParticipant participant = new RaceParticipant();
         participant.id = UUID.randomUUID();
         participant.raceId = raceId;
         participant.riotPuuid = account.puuid();
         participant.riotGameName = account.gameName();
         participant.riotTagLine = account.tagLine();
+        participant.duoId = duoId;
         return participant;
     }
 
@@ -82,5 +93,17 @@ public class RaceParticipant {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public UUID getDuoId() {
+        return duoId;
+    }
+
+    public Integer getProfileIconId() {
+        return profileIconId;
+    }
+
+    public void updateProfileIconId(Integer profileIconId) {
+        this.profileIconId = profileIconId;
     }
 }

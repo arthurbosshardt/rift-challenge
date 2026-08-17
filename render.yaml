@@ -1,14 +1,18 @@
 services:
   - type: web
     name: riftrace-backend
-    runtime: java
+    runtime: docker
     rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
-    buildCommand: mvn -DskipTests package
-    startCommand: java -jar target/riftrace-backend-0.0.1-SNAPSHOT.jar
     healthCheckPath: /actuator/health
     envVars:
       - key: DATABASE_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
         sync: false
       - key: SUPABASE_URL
         sync: false

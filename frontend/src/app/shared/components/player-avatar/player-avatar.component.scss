@@ -1,0 +1,37 @@
+.player-avatar {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.player-avatar--sm {
+  width: 44px;
+  height: 44px;
+}
+
+.player-avatar__icon,
+.player-avatar__fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.player-avatar__fallback {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.player-avatar__rank-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: block;
+  width: 24px;
+  height: 24px;
+}

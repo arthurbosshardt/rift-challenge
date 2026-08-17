@@ -1,5 +1,6 @@
 package com.riftrace.synchronization;
 
+import com.riftrace.race.ParticipantProfileService;
 import com.riftrace.race.Race;
 import com.riftrace.race.RaceParticipant;
 import com.riftrace.riot.RiotLeagueClient;
@@ -23,19 +24,22 @@ public class RaceParticipantSyncService {
     private final RaceParticipantMatchRepository participantMatchRepository;
     private final RiotLeagueClient riotLeagueClient;
     private final RiotMatchClient riotMatchClient;
+    private final ParticipantProfileService participantProfileService;
 
     public RaceParticipantSyncService(
             RankSnapshotRepository rankSnapshotRepository,
             RiotMatchRepository riotMatchRepository,
             RaceParticipantMatchRepository participantMatchRepository,
             RiotLeagueClient riotLeagueClient,
-            RiotMatchClient riotMatchClient
+            RiotMatchClient riotMatchClient,
+            ParticipantProfileService participantProfileService
     ) {
         this.rankSnapshotRepository = rankSnapshotRepository;
         this.riotMatchRepository = riotMatchRepository;
         this.participantMatchRepository = participantMatchRepository;
         this.riotLeagueClient = riotLeagueClient;
         this.riotMatchClient = riotMatchClient;
+        this.participantProfileService = participantProfileService;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -43,6 +47,7 @@ public class RaceParticipantSyncService {
         ensureBaselineSnapshot(participant, now);
         syncMatches(race, participant);
         captureRefreshSnapshot(participant, now);
+        participantProfileService.ensureProfileIcon(participant.getId());
     }
 
     private void ensureBaselineSnapshot(RaceParticipant participant, Instant now) {
@@ -99,7 +104,13 @@ public class RaceParticipantSyncService {
             boolean win = match.info().participants().stream()
                     .filter(part -> participant.getRiotPuuid().equals(part.puuid()))
                     .findFirst()
-                    .map(RiotMatchDetailDto.Participant::win)
+                    .map(participantData -> {
+                        participantProfileService.updateProfileIconIfMissing(
+                                participant.getId(),
+                                participantData.profileIcon()
+                        );
+                        return participantData.win();
+                    })
                     .orElse(false);
 
             participantMatchRepository.save(

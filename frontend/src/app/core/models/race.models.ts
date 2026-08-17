@@ -22,9 +22,26 @@ export interface ParticipantProgress {
   currentRank: string | null;
   currentLp: number;
   lpGained: number;
+  rankScore: number;
   wins: number;
   losses: number;
+  winRate: number;
+  profileIconId: number | null;
   hasRankData: boolean;
+}
+
+export interface DuoProgress {
+  id: string;
+  player1: ParticipantProgress;
+  player2: ParticipantProgress;
+  combinedRankScore: number;
+  combinedLpGained: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  eligible: boolean;
+  ineligibilityReason: string | null;
+  position: number;
 }
 
 export interface RaceDetail extends RaceSummary {
@@ -35,6 +52,7 @@ export interface RaceDetail extends RaceSummary {
   nextRefreshAvailableAt: string | null;
   refreshAvailable: boolean;
   participants: ParticipantProgress[];
+  duos: DuoProgress[];
 }
 
 export interface CreateRaceRequest {
@@ -46,6 +64,11 @@ export interface CreateRaceRequest {
 
 export interface AddParticipantRequest {
   riotId: string;
+}
+
+export interface AddDuoRequest {
+  player1RiotId: string;
+  player2RiotId: string;
 }
 
 export interface AuthMeResponse {

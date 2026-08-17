@@ -19,14 +19,27 @@
       </select>
     </label>
 
-    <label>
-      Date et heure de début
-      <input name="startAtLocal" type="datetime-local" [(ngModel)]="startAtLocal" required />
-    </label>
+    <fieldset class="race-form__datetime">
+      <legend>Date et heure de début</legend>
+      <div class="race-form__datetime-row">
+        <label>
+          Date
+          <input name="startDate" type="date" [(ngModel)]="startDate" required />
+        </label>
+        <label>
+          Heure
+          <select name="startHour" [(ngModel)]="startHour" required>
+            @for (hour of hourOptions; track hour) {
+              <option [ngValue]="hour">{{ hour }}h</option>
+            }
+          </select>
+        </label>
+      </div>
+    </fieldset>
 
     <label class="checkbox">
       <input name="isPublic" type="checkbox" [(ngModel)]="isPublic" />
-      Race publique (visible dans la liste publique)
+      Race publique (visible dans la liste publique une fois la race commencée)
     </label>
 
     @if (error()) {

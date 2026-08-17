@@ -90,3 +90,7 @@ En attendant l’auth réelle, le backend accepte l’en-tête `X-Dev-User-Id: <
 - `GET /api/races/mine` (auth)
 - `GET /api/races/share/{shareSlug}`
 - `POST /api/races` (auth)
+
+## Déploiement
+
+Voir [docs/DEPLOY.md](docs/DEPLOY.md) — backend Render, frontend Vercel, base Supabase.

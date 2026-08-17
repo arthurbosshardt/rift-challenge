@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RaceApiService } from '../../core/services/race-api.service';
 import { RaceType } from '../../core/models/race.models';
+import { buildLocalStartAtIso } from '../../core/utils/race-date';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 
 @Component({
@@ -17,7 +18,9 @@ export class CreateRacePageComponent {
 
   protected name = '';
   protected type: RaceType = 'SOLOQ';
-  protected startAtLocal = '';
+  protected startDate = '';
+  protected startHour = 12;
+  protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
   protected isPublic = false;
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -25,7 +28,7 @@ export class CreateRacePageComponent {
   protected async submit(): Promise<void> {
     this.error.set(null);
 
-    const startAt = this.toUtcInstant(this.startAtLocal);
+    const startAt = buildLocalStartAtIso(this.startDate, this.startHour);
     if (!startAt) {
       this.error.set('La date de début est invalide.');
       return;
@@ -49,16 +52,5 @@ export class CreateRacePageComponent {
           this.loading.set(false);
         },
       });
-  }
-
-  private toUtcInstant(localDateTime: string): string | null {
-    if (!localDateTime) {
-      return null;
-    }
-    const date = new Date(localDateTime);
-    if (Number.isNaN(date.getTime())) {
-      return null;
-    }
-    return date.toISOString();
   }
 }

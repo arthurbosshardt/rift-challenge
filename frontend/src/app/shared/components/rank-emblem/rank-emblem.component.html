@@ -1,0 +1,11 @@
+@if (emblemUrl(); as url) {
+  <img
+    class="rank-emblem"
+    [class.rank-emblem--sm]="size() === 'sm'"
+    [src]="url"
+    [alt]="emblemAlt()"
+    loading="lazy"
+    width="48"
+    height="48"
+  />
+}

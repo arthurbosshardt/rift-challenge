@@ -17,6 +17,6 @@ public record RiotMatchDetailDto(
     ) {
     }
 
-    public record Participant(String puuid, boolean win) {
+    public record Participant(String puuid, boolean win, Integer profileIcon) {
     }
 }

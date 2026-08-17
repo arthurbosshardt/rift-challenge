@@ -1,5 +1,6 @@
 package com.riftrace.synchronization;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,4 +23,35 @@ public interface RaceParticipantMatchRepository extends JpaRepository<RacePartic
             WHERE rpm.participantId = :participantId AND rpm.win = false
             """)
     long countLossesByParticipantId(@Param("participantId") UUID participantId);
+
+    @Query("""
+            SELECT rpm.riotMatchId
+            FROM RaceParticipantMatch rpm
+            WHERE rpm.participantId = :participantId
+            """)
+    List<String> findMatchIdsByParticipantId(@Param("participantId") UUID participantId);
+
+    @Query("""
+            SELECT COUNT(rpm)
+            FROM RaceParticipantMatch rpm
+            WHERE rpm.participantId = :participantId
+              AND rpm.riotMatchId IN :matchIds
+              AND rpm.win = true
+            """)
+    long countWinsByParticipantIdAndMatchIds(
+            @Param("participantId") UUID participantId,
+            @Param("matchIds") List<String> matchIds
+    );
+
+    @Query("""
+            SELECT COUNT(rpm)
+            FROM RaceParticipantMatch rpm
+            WHERE rpm.participantId = :participantId
+              AND rpm.riotMatchId IN :matchIds
+              AND rpm.win = false
+            """)
+    long countLossesByParticipantIdAndMatchIds(
+            @Param("participantId") UUID participantId,
+            @Param("matchIds") List<String> matchIds
+    );
 }

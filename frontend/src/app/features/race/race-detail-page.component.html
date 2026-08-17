@@ -7,10 +7,10 @@
     <p class="state state--error">{{ error() }}</p>
   </app-page-shell>
 } @else if (race(); as currentRace) {
-  <app-page-shell [title]="currentRace.name" subtitle="Détail de la race">
+  <app-page-shell [title]="raceTitle(currentRace)" subtitle="Détail de la race">
     <section class="detail">
       <div class="detail__badges">
-        <span class="badge">{{ currentRace.type === 'SOLOQ' ? 'SoloQ' : 'DuoQ' }}</span>
+        <span class="badge badge--type">{{ typeLabel(currentRace.type) }}</span>
         <span class="badge">{{ statusLabel(currentRace.status) }}</span>
         @if (currentRace.isPublic) {
           <span class="badge badge--public">Publique</span>
@@ -20,7 +20,7 @@
       <dl class="detail__meta">
         <div>
           <dt>Début</dt>
-          <dd>{{ currentRace.startAt | date: 'full' }}</dd>
+          <dd>{{ currentRace.startAt | raceDate }}</dd>
         </div>
         <div>
           <dt>Lien de partage</dt>
@@ -37,7 +37,7 @@
         <section class="refresh">
           <div class="refresh__info">
             @if (currentRace.lastRefreshedAt) {
-              <p>Dernière MAJ : {{ currentRace.lastRefreshedAt | date: 'short' }}</p>
+              <p>Dernière MAJ : {{ currentRace.lastRefreshedAt | raceDate }}</p>
             } @else {
               <p>Aucune synchronisation pour le moment.</p>
             }
@@ -75,50 +75,142 @@
 
       <section class="participants">
         <div class="participants__header">
-          <h2>Participants</h2>
+          <h2>{{ currentRace.type === 'DUOQ' ? 'Duos' : 'Participants' }}</h2>
           <span class="participants__count">
-            {{ currentRace.participants.length }} / {{ participantLimit }}
+            {{ entryCount(currentRace) }} / {{ entryLimit(currentRace) }}
           </span>
         </div>
 
-        @if (currentRace.participants.length === 0) {
-          <p class="participants__empty">Aucun participant pour le moment.</p>
+        @if (entryCount(currentRace) === 0) {
+          <p class="participants__empty">
+            {{ currentRace.type === 'DUOQ' ? 'Aucun duo pour le moment.' : 'Aucun participant pour le moment.' }}
+          </p>
         } @else if (currentRace.status === 'ACTIVE' && currentRace.lastRefreshedAt) {
-          <ol class="leaderboard">
-            @for (participant of currentRace.participants; track participant.id) {
-              <li class="leaderboard__item">
-                <span class="leaderboard__rank">#{{ participant.position }}</span>
-                <div class="leaderboard__body">
-                  <strong>{{ participant.riotId }}</strong>
-                  <span class="leaderboard__meta">
-                    @if (participant.hasRankData) {
-                      {{ rankLabel(participant) }}
-                    } @else {
-                      Non classé en SoloQ
-                    }
-                  </span>
-                </div>
-                <div class="leaderboard__stats">
-                  <span class="leaderboard__lp" [class.leaderboard__lp--negative]="participant.lpGained < 0">
-                    {{ lpLabel(participant) }}
-                  </span>
-                  <span class="leaderboard__wl">{{ participant.wins }}V · {{ participant.losses }}D</span>
-                </div>
-                @if (currentRace.isOwner) {
-                  <button
-                    type="button"
-                    class="participant-remove"
-                    (click)="removeParticipant(participant)"
-                    [disabled]="removingParticipantId() === participant.id"
-                    [attr.aria-label]="'Retirer ' + participant.riotId"
-                  >
-                    {{ removingParticipantId() === participant.id ? '…' : 'Retirer' }}
-                  </button>
+          <div class="sort-bar" role="toolbar" aria-label="Critère de classement">
+            @for (option of sortOptions; track option[0]) {
+              <button
+                type="button"
+                class="sort-bar__button"
+                [class.sort-bar__button--active]="sortCriterion() === option[0]"
+                (click)="setSort(option[0])"
+                [attr.aria-sort]="sortCriterion() === option[0] ? (sortDirection() === 'desc' ? 'descending' : 'ascending') : 'none'"
+              >
+                @if (sortArrow(option[0]); as arrow) {
+                  <span class="sort-bar__arrow" aria-hidden="true">{{ arrow }}</span>
                 }
-              </li>
+                <span>{{ option[1] }}</span>
+              </button>
             }
-          </ol>
-        } @else {
+          </div>
+
+          @if (currentRace.type === 'SOLOQ') {
+            <ol class="leaderboard">
+              @for (participant of sortedParticipants(); track participant.id) {
+                <li class="leaderboard__item" [class.leaderboard__item--leader]="participant.position === 1">
+                  <span class="leaderboard__rank">#{{ participant.position }}</span>
+                  <app-player-avatar
+                    [profileIconId]="participant.profileIconId"
+                    [gameName]="participant.gameName"
+                    [tier]="participant.hasRankData ? participant.currentTier : null"
+                  />
+                  <div class="leaderboard__body">
+                    <strong>{{ participant.riotId }}</strong>
+                    <span class="leaderboard__meta">
+                      @if (participant.hasRankData) {
+                        {{ rankLabel(participant) }}
+                      } @else {
+                        Non classé en SoloQ
+                      }
+                    </span>
+                  </div>
+                  <div class="leaderboard__stats">
+                    <span
+                      class="leaderboard__lp"
+                      [class.leaderboard__lp--negative]="participant.lpGained < 0"
+                      [class.leaderboard__lp--positive]="participant.lpGained > 0"
+                    >
+                      {{ lpLabel(participant.lpGained, participant.hasRankData) }}
+                    </span>
+                    <span class="leaderboard__wl">
+                      {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
+                      · {{ participant.wins }}V / {{ participant.losses }}D
+                    </span>
+                  </div>
+                  @if (currentRace.isOwner) {
+                    <button
+                      type="button"
+                      class="participant-remove"
+                      (click)="removeParticipant(participant)"
+                      [disabled]="removingParticipantId() === participant.id"
+                      [attr.aria-label]="'Retirer ' + participant.riotId"
+                    >
+                      {{ removingParticipantId() === participant.id ? '…' : 'Retirer' }}
+                    </button>
+                  }
+                </li>
+              }
+            </ol>
+          } @else {
+            <ol class="leaderboard">
+              @for (duo of sortedDuos(); track duo.id) {
+                <li
+                  class="leaderboard__item leaderboard__item--duo"
+                  [class.leaderboard__item--leader]="duo.eligible && duo.position === 1"
+                  [class.leaderboard__item--ineligible]="!duo.eligible"
+                >
+                  <span class="leaderboard__rank">#{{ duo.position }}</span>
+                  <div class="leaderboard__duo-avatars">
+                    <app-player-avatar
+                      size="sm"
+                      [profileIconId]="duo.player1.profileIconId"
+                      [gameName]="duo.player1.gameName"
+                      [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                    />
+                    <app-player-avatar
+                      size="sm"
+                      [profileIconId]="duo.player2.profileIconId"
+                      [gameName]="duo.player2.gameName"
+                      [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                    />
+                  </div>
+                  <div class="leaderboard__body">
+                    <strong>{{ duoLabel(duo) }}</strong>
+                    <span class="leaderboard__meta">
+                      {{ rankLabel(duo.player1) }} · {{ rankLabel(duo.player2) }}
+                    </span>
+                    @if (!duo.eligible && duo.ineligibilityReason) {
+                      <span class="leaderboard__ineligible">{{ duo.ineligibilityReason }}</span>
+                    }
+                  </div>
+                  <div class="leaderboard__stats">
+                    <span
+                      class="leaderboard__lp"
+                      [class.leaderboard__lp--negative]="duo.combinedLpGained < 0"
+                      [class.leaderboard__lp--positive]="duo.combinedLpGained > 0"
+                    >
+                      {{ lpLabel(duo.combinedLpGained, duo.eligible) }}
+                    </span>
+                    <span class="leaderboard__wl">
+                      {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
+                      · {{ duo.wins }}V / {{ duo.losses }}D
+                    </span>
+                  </div>
+                  @if (currentRace.isOwner) {
+                    <button
+                      type="button"
+                      class="participant-remove"
+                      (click)="removeDuo(duo)"
+                      [disabled]="removingDuoId() === duo.id"
+                      [attr.aria-label]="'Retirer le duo ' + duoLabel(duo)"
+                    >
+                      {{ removingDuoId() === duo.id ? '…' : 'Retirer' }}
+                    </button>
+                  }
+                </li>
+              }
+            </ol>
+          }
+        } @else if (currentRace.type === 'SOLOQ') {
           <ul class="participants__list">
             @for (participant of currentRace.participants; track participant.id) {
               <li class="participants__list-item">
@@ -137,37 +229,97 @@
               </li>
             }
           </ul>
+        } @else {
+          <ul class="participants__list">
+            @for (duo of currentRace.duos; track duo.id) {
+              <li class="participants__list-item">
+                <span>{{ duoLabel(duo) }}</span>
+                @if (currentRace.isOwner) {
+                  <button
+                    type="button"
+                    class="participant-remove"
+                    (click)="removeDuo(duo)"
+                    [disabled]="removingDuoId() === duo.id"
+                    [attr.aria-label]="'Retirer le duo ' + duoLabel(duo)"
+                  >
+                    {{ removingDuoId() === duo.id ? '…' : 'Retirer' }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
         }
 
         @if (currentRace.isOwner) {
-          <form class="participants__form" (ngSubmit)="addParticipant()">
-            <label for="riotId">Ajouter un joueur</label>
-            <div class="participants__form-row">
-              <input
-                id="riotId"
-                name="riotId"
-                type="text"
-                [(ngModel)]="riotIdInput"
-                placeholder="Tanor#7154"
-                [disabled]="addingParticipant() || currentRace.participants.length >= participantLimit"
-                autocomplete="off"
-              />
-              <button
-                type="submit"
-                [disabled]="addingParticipant() || currentRace.participants.length >= participantLimit"
-              >
-                {{ addingParticipant() ? 'Ajout…' : 'Ajouter' }}
-              </button>
-            </div>
-            @if (participantError()) {
-              <p class="participants__error">{{ participantError() }}</p>
-            }
-          </form>
+          @if (currentRace.type === 'SOLOQ') {
+            <form class="participants__form" (ngSubmit)="addParticipant()">
+              <label for="riotId">Ajouter un joueur</label>
+              <div class="participants__form-row">
+                <input
+                  id="riotId"
+                  name="riotId"
+                  type="text"
+                  [(ngModel)]="riotIdInput"
+                  placeholder="Tanor#7154"
+                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                  autocomplete="off"
+                />
+                <button
+                  type="submit"
+                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                >
+                  {{ addingParticipant() ? 'Ajout…' : 'Ajouter' }}
+                </button>
+              </div>
+            </form>
+          } @else {
+            <form class="participants__form" (ngSubmit)="addDuo()">
+              <label>Ajouter un duo (2 joueurs SoloQ)</label>
+              <div class="participants__form-row">
+                <input
+                  name="duoPlayer1"
+                  type="text"
+                  [(ngModel)]="duoPlayer1Input"
+                  placeholder="Joueur 1 — Tanor#7154"
+                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                  autocomplete="off"
+                />
+                <input
+                  name="duoPlayer2"
+                  type="text"
+                  [(ngModel)]="duoPlayer2Input"
+                  placeholder="Joueur 2 — Kaori#EUW33"
+                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                  autocomplete="off"
+                />
+                <button
+                  type="submit"
+                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                >
+                  {{ addingParticipant() ? 'Ajout…' : 'Ajouter le duo' }}
+                </button>
+              </div>
+              <p class="participants__hint">
+                Seules les parties SoloQ jouées ensemble depuis le début comptent pour le duo.
+              </p>
+            </form>
+          }
+          @if (participantError()) {
+            <p class="participants__error">{{ participantError() }}</p>
+          }
         }
       </section>
 
       @if (currentRace.status === 'NOT_STARTED') {
-        <p class="notice">Cette race n'a pas encore commencé. Le classement sera disponible après le début et une première actualisation.</p>
+        <section class="start-countdown">
+          @if (startCountdown()) {
+            <p class="start-countdown__label">Début de la race dans</p>
+            <p class="start-countdown__timer" role="status" aria-live="polite">{{ startCountdown() }}</p>
+          }
+          <p class="notice">
+            Le classement sera disponible après le début et une première actualisation.
+          </p>
+        </section>
       }
     </section>
   </app-page-shell>

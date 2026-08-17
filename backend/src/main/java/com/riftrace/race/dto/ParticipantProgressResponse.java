@@ -13,8 +13,11 @@ public record ParticipantProgressResponse(
         String currentRank,
         int currentLp,
         int lpGained,
+        int rankScore,
         int wins,
         int losses,
+        double winRate,
+        Integer profileIconId,
         boolean hasRankData
 ) {
 
@@ -29,8 +32,11 @@ public record ParticipantProgressResponse(
                 null,
                 0,
                 0,
+                0,
                 wins,
                 losses,
+                winRate(wins, losses),
+                participant.getProfileIconId(),
                 false
         );
     }
@@ -42,6 +48,7 @@ public record ParticipantProgressResponse(
             String currentRank,
             int currentLp,
             int lpGained,
+            int rankScore,
             int wins,
             int losses
     ) {
@@ -55,8 +62,11 @@ public record ParticipantProgressResponse(
                 currentRank,
                 currentLp,
                 lpGained,
+                rankScore,
                 wins,
                 losses,
+                winRate(wins, losses),
+                participant.getProfileIconId(),
                 true
         );
     }
@@ -72,9 +82,20 @@ public record ParticipantProgressResponse(
                 currentRank,
                 currentLp,
                 lpGained,
+                rankScore,
                 wins,
                 losses,
+                winRate,
+                profileIconId,
                 hasRankData
         );
+    }
+
+    private static double winRate(int wins, int losses) {
+        int total = wins + losses;
+        if (total == 0) {
+            return 0.0;
+        }
+        return (double) wins / total;
     }
 }
