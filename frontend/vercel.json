@@ -1,6 +1,6 @@
 {
   "buildCommand": "node scripts/write-production-env.mjs && npm run build",
-  "outputDirectory": "dist/frontend",
+  "outputDirectory": "dist/frontend/browser",
   "installCommand": "npm ci",
   "framework": null,
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
