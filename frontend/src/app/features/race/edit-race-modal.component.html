@@ -1,0 +1,507 @@
+@if (editRaceModal.isOpen() && editRaceModal.race(); as race) {
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'race.editTitle' | t"
+    (click)="close()"
+  >
+    <section class="modal-panel modal-panel--edit edit-race-modal" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="edit-race-modal__close"
+        [attr.aria-label]="'auth.close' | t"
+        [disabled]="savingSchedule() || savingName() || addingParticipant() || savingVisibility()"
+        (click)="close()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <header class="edit-race-modal__header">
+        <h2>{{ 'race.editTitle' | t }}</h2>
+      </header>
+
+      <section class="edit-race-modal__meta">
+        <form class="race-form edit-race-modal__name-form" (ngSubmit)="saveName()">
+          <label [class.race-form__field--invalid]="isNameInvalid('name')">
+            <span class="field-label">
+              {{ 'create.name' | t }}
+              <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+            </span>
+            <input
+              name="raceName"
+              type="text"
+              [(ngModel)]="nameInput"
+              maxlength="120"
+              [placeholder]="'create.namePlaceholder' | t"
+              [class.race-form__control--invalid]="isNameInvalid('name')"
+              [attr.aria-invalid]="isNameInvalid('name')"
+              (ngModelChange)="clearNameInvalid('name')"
+              [disabled]="savingName()"
+            />
+            @if (nameFieldError('name'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
+            }
+          </label>
+          <span class="badge badge--type">{{ typeLabel(race.type) }}</span>
+          <div class="race-form__actions">
+            <button type="submit" [disabled]="savingName()">
+              {{ savingName() ? ('race.savingName' | t) : ('race.saveName' | t) }}
+            </button>
+          </div>
+          @if (nameFormError()) {
+            <p class="form-error" role="alert">{{ nameFormError() }}</p>
+          }
+          @if (nameSuccess()) {
+            <p class="edit-race-modal__success">{{ 'race.nameUpdated' | t }}</p>
+          }
+        </form>
+
+        <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
+          <div class="visibility-switch__label" [class.visibility-switch__label--active]="!isPublicInput">
+            <span>{{ 'create.private' | t }}</span>
+            <button
+              type="button"
+              class="visibility-switch__info"
+              [attr.aria-label]="'create.privateInfoAria' | t"
+              (click)="$event.stopPropagation()"
+            >
+              i
+              <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.privateHint' | t }}</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="visibility-switch__toggle"
+            role="switch"
+            [attr.aria-checked]="isPublicInput"
+            [class.visibility-switch__toggle--public]="isPublicInput"
+            [disabled]="savingVisibility() || savingSchedule() || savingName() || addingParticipant()"
+            (click)="toggleVisibility()"
+          >
+            @if (isPublicInput) {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M3 3l18 18M9.9 9.9a3 3 0 1 0 4.24 4.24M6.12 6.12A10.94 10.94 0 0 0 2 12s4 8 11 8c1.74 0 3.37-.42 4.78-1.16M14.12 14.12A3 3 0 0 1 9.88 9.88"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            }
+          </button>
+
+          <div class="visibility-switch__label" [class.visibility-switch__label--active]="isPublicInput">
+            <span>{{ 'create.publicLabel' | t }}</span>
+            <button
+              type="button"
+              class="visibility-switch__info visibility-switch__info--end"
+              [attr.aria-label]="'create.publicInfoAria' | t"
+              (click)="$event.stopPropagation()"
+            >
+              i
+              <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.publicHint' | t }}</span>
+            </button>
+          </div>
+        </div>
+
+        @if (visibilityFormError()) {
+          <p class="form-error" role="alert">{{ visibilityFormError() }}</p>
+        }
+        @if (visibilitySuccess()) {
+          <p class="edit-race-modal__success">{{ 'race.visibilityUpdated' | t }}</p>
+        }
+      </section>
+
+      <section class="edit-race-modal__section edit-race-modal__section--schedule">
+        <form class="race-form" (ngSubmit)="saveSchedule()">
+          <div class="race-form__schedule race-form__schedule--columns">
+            <section
+              class="race-form__schedule-block"
+              [class.race-form__schedule-block--invalid]="isScheduleInvalid('startDate')"
+              aria-labelledby="edit-race-start-title"
+            >
+              <h3 id="edit-race-start-title" class="race-form__schedule-title">
+                {{ 'create.startLegend' | t }}
+                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+              </h3>
+              <div class="race-form__datetime-row">
+                <label class="race-form__datetime-field" [class.race-form__field--invalid]="isScheduleInvalid('startDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="startDateInput"
+                    type="date"
+                    [(ngModel)]="startDateInput"
+                    required
+                    [class.race-form__control--invalid]="isScheduleInvalid('startDate')"
+                    [attr.aria-invalid]="isScheduleInvalid('startDate')"
+                    (ngModelChange)="clearScheduleInvalid('startDate')"
+                  />
+                </label>
+                <label class="race-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="startHourInput" [(ngModel)]="startHourInput" required>
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (scheduleFieldError('startDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </section>
+
+            <section
+              class="race-form__schedule-block"
+              [class.race-form__schedule-block--invalid]="isScheduleInvalid('endDate')"
+              aria-labelledby="edit-race-end-title"
+            >
+              <h3 id="edit-race-end-title" class="race-form__schedule-title">
+                {{ 'create.endLegend' | t }}
+                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+              </h3>
+              <div class="race-form__datetime-row">
+                <label class="race-form__datetime-field" [class.race-form__field--invalid]="isScheduleInvalid('endDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="endDateInput"
+                    type="date"
+                    [(ngModel)]="endDateInput"
+                    required
+                    [class.race-form__control--invalid]="isScheduleInvalid('endDate')"
+                    [attr.aria-invalid]="isScheduleInvalid('endDate')"
+                    (ngModelChange)="clearScheduleInvalid('endDate')"
+                  />
+                </label>
+                <label class="race-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="endHourInput" [(ngModel)]="endHourInput" required>
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (scheduleFieldError('endDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </section>
+          </div>
+
+          @if (scheduleFormError()) {
+            <p class="form-error" role="alert">{{ scheduleFormError() }}</p>
+          }
+          @if (scheduleSuccess()) {
+            <p class="edit-race-modal__success">{{ 'race.scheduleUpdated' | t }}</p>
+          }
+
+          <div class="race-form__actions">
+            <button type="submit" [disabled]="savingSchedule()">
+              {{ savingSchedule() ? ('race.savingSchedule' | t) : ('race.saveSchedule' | t) }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="edit-race-modal__section edit-race-modal__section--participants">
+        <div class="edit-race-modal__section-header">
+          <span class="edit-race-modal__count">{{ entryCount(race) }} / {{ entryLimit(race) }}</span>
+          <h3>{{ race.type === 'DUOQ' ? ('race.duos' | t) : ('race.participants' | t) }}</h3>
+        </div>
+
+        <div class="edit-race-modal__participants-scroll">
+        @if (entryCount(race) === 0) {
+          <p class="edit-race-modal__empty">
+            {{ race.type === 'DUOQ' ? ('race.noDuos' | t) : ('race.noParticipants' | t) }}
+          </p>
+        } @else if (race.type === 'SOLOQ') {
+          <ul [class]="participantListClass(race)">
+            @for (participant of race.participants; track participant.id) {
+              <li class="edit-race-modal__list-item">
+                <app-player-identity
+                  [compact]="true"
+                  [gameName]="participant.gameName"
+                  [tagLine]="participant.tagLine"
+                  [riotId]="participant.riotId"
+                  [profileIconId]="participant.profileIconId"
+                  [tier]="participant.hasRankData ? participant.currentTier : null"
+                />
+                <button
+                  type="button"
+                  class="edit-race-modal__action edit-race-modal__action--remove"
+                  (click)="removeParticipant(participant)"
+                  [disabled]="removingParticipantId() === participant.id"
+                  [attr.aria-label]="'race.removeAria' | t:{ name: participant.riotId }"
+                  [attr.title]="'race.remove' | t"
+                >
+                  @if (removingParticipantId() === participant.id) {
+                    <span class="edit-race-modal__action-loading" aria-hidden="true">…</span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <ul [class]="participantListClass(race)">
+            @for (duo of race.duos; track duo.id) {
+              <li class="edit-race-modal__list-item edit-race-modal__list-item--duo">
+                <div class="edit-race-modal__duo-stack">
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="duo.player1.gameName"
+                    [tagLine]="duo.player1.tagLine"
+                    [riotId]="duo.player1.riotId"
+                    [profileIconId]="duo.player1.profileIconId"
+                    [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                  />
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="duo.player2.gameName"
+                    [tagLine]="duo.player2.tagLine"
+                    [riotId]="duo.player2.riotId"
+                    [profileIconId]="duo.player2.profileIconId"
+                    [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="edit-race-modal__action edit-race-modal__action--remove"
+                  (click)="removeDuo(duo)"
+                  [disabled]="removingDuoId() === duo.id"
+                  [attr.aria-label]="'race.removeDuoAria' | t:{ name: duoLabel(duo) }"
+                  [attr.title]="'race.remove' | t"
+                >
+                  @if (removingDuoId() === duo.id) {
+                    <span class="edit-race-modal__action-loading" aria-hidden="true">…</span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        </div>
+
+        @if (race.type === 'SOLOQ') {
+          <form class="race-form edit-race-modal__form" (ngSubmit)="addParticipant()">
+            <span class="edit-race-modal__form-title">{{ 'race.addPlayer' | t }}</span>
+            <div class="edit-race-modal__form-row">
+              <label [class.race-form__field--invalid]="isParticipantInvalid('gameName')">
+                <span class="field-label">
+                  {{ 'race.gameName' | t }}
+                  <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                </span>
+                <input
+                  name="gameName"
+                  type="text"
+                  [(ngModel)]="gameNameInput"
+                  [placeholder]="'race.gameNamePlaceholder' | t"
+                  [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                  [class.race-form__control--invalid]="isParticipantInvalid('gameName')"
+                  [attr.aria-invalid]="isParticipantInvalid('gameName')"
+                  (ngModelChange)="clearParticipantInvalid('gameName')"
+                  autocomplete="off"
+                />
+                @if (participantFieldError('gameName'); as message) {
+                  <span class="field-error" role="alert">{{ message }}</span>
+                }
+              </label>
+              <label [class.race-form__field--invalid]="isParticipantInvalid('tagLine')">
+                <span class="field-label">
+                  {{ 'race.tagLine' | t }}
+                  <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                </span>
+                <input
+                  name="tagLine"
+                  type="text"
+                  [(ngModel)]="tagLineInput"
+                  [placeholder]="'race.tagLinePlaceholder' | t"
+                  [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                  [class.race-form__control--invalid]="isParticipantInvalid('tagLine')"
+                  [attr.aria-invalid]="isParticipantInvalid('tagLine')"
+                  (ngModelChange)="clearParticipantInvalid('tagLine')"
+                  autocomplete="off"
+                />
+                @if (participantFieldError('tagLine'); as message) {
+                  <span class="field-error" role="alert">{{ message }}</span>
+                }
+              </label>
+              <button
+                type="submit"
+                class="edit-race-modal__action edit-race-modal__action--add"
+                [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                [attr.aria-label]="'race.add' | t"
+                [attr.title]="'race.add' | t"
+              >
+                @if (addingParticipant()) {
+                  <span class="edit-race-modal__action-loading" aria-hidden="true">…</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (participantFormError()) {
+              <p class="form-error" role="alert">{{ participantFormError() }}</p>
+            }
+          </form>
+        } @else {
+          <form class="race-form edit-race-modal__form" (ngSubmit)="addDuo()">
+            <span class="edit-race-modal__form-title">{{ 'race.addDuo' | t }}</span>
+            <div class="edit-race-modal__duo-fields">
+              <div class="edit-race-modal__duo-player">
+                <span>{{ 'race.duoPlayer1Title' | t }}</span>
+                <div class="edit-race-modal__form-row">
+                  <label [class.race-form__field--invalid]="isParticipantInvalid('duoPlayer1GameName')">
+                    <span class="field-label">
+                      {{ 'race.gameName' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer1GameName"
+                      type="text"
+                      [(ngModel)]="duoPlayer1GameName"
+                      [placeholder]="'race.gameNamePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                      [class.race-form__control--invalid]="isParticipantInvalid('duoPlayer1GameName')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer1GameName')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer1GameName')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer1GameName'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                  <label [class.race-form__field--invalid]="isParticipantInvalid('duoPlayer1TagLine')">
+                    <span class="field-label">
+                      {{ 'race.tagLine' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer1TagLine"
+                      type="text"
+                      [(ngModel)]="duoPlayer1TagLine"
+                      [placeholder]="'race.tagLinePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                      [class.race-form__control--invalid]="isParticipantInvalid('duoPlayer1TagLine')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer1TagLine')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer1TagLine')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer1TagLine'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                </div>
+              </div>
+              <div class="edit-race-modal__duo-player">
+                <span>{{ 'race.duoPlayer2Title' | t }}</span>
+                <div class="edit-race-modal__form-row">
+                  <label [class.race-form__field--invalid]="isParticipantInvalid('duoPlayer2GameName')">
+                    <span class="field-label">
+                      {{ 'race.gameName' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer2GameName"
+                      type="text"
+                      [(ngModel)]="duoPlayer2GameName"
+                      [placeholder]="'race.gameNamePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                      [class.race-form__control--invalid]="isParticipantInvalid('duoPlayer2GameName')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer2GameName')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer2GameName')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer2GameName'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                  <label [class.race-form__field--invalid]="isParticipantInvalid('duoPlayer2TagLine')">
+                    <span class="field-label">
+                      {{ 'race.tagLine' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <input
+                      name="duoPlayer2TagLine"
+                      type="text"
+                      [(ngModel)]="duoPlayer2TagLine"
+                      [placeholder]="'race.tagLinePlaceholder' | t"
+                      [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                      [class.race-form__control--invalid]="isParticipantInvalid('duoPlayer2TagLine')"
+                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer2TagLine')"
+                      (ngModelChange)="clearParticipantInvalid('duoPlayer2TagLine')"
+                      autocomplete="off"
+                    />
+                    @if (participantFieldError('duoPlayer2TagLine'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="edit-race-modal__form-actions">
+              <button
+                type="submit"
+                class="edit-race-modal__action edit-race-modal__action--add"
+                [disabled]="addingParticipant() || entryCount(race) >= entryLimit(race)"
+                [attr.aria-label]="'race.addDuoButton' | t"
+                [attr.title]="'race.addDuoButton' | t"
+              >
+                @if (addingParticipant()) {
+                  <span class="edit-race-modal__action-loading" aria-hidden="true">…</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (participantFormError()) {
+              <p class="form-error" role="alert">{{ participantFormError() }}</p>
+            }
+          </form>
+        }
+      </section>
+    </section>
+  </div>
+}

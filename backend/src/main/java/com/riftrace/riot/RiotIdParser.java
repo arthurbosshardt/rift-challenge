@@ -25,7 +25,7 @@ public final class RiotIdParser {
             );
         }
 
-        String gameName = trimmed.substring(0, hashIndex).trim();
+        String gameName = normalizeGameName(trimmed.substring(0, hashIndex));
         String tagLine = trimmed.substring(hashIndex + 1).trim();
         if (gameName.isEmpty() || tagLine.isEmpty()) {
             throw new ResponseStatusException(
@@ -41,5 +41,9 @@ public final class RiotIdParser {
         }
 
         return new ParsedRiotId(gameName, tagLine);
+    }
+
+    private static String normalizeGameName(String gameName) {
+        return gameName.replaceAll("\\s+", "");
     }
 }

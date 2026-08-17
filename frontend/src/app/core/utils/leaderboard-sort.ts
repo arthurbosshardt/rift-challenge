@@ -10,7 +10,7 @@ export function sortParticipants(
 ): ParticipantProgress[] {
   const sorted = [...participants];
   sorted.sort((left, right) => compareParticipants(left, right, sort, direction));
-  return sorted.map((participant, index) => ({ ...participant, position: index + 1 }));
+  return assignPositions(sorted, direction);
 }
 
 export function sortDuos(
@@ -20,7 +20,30 @@ export function sortDuos(
 ): DuoProgress[] {
   const sorted = [...duos];
   sorted.sort((left, right) => compareDuos(left, right, sort, direction));
-  return sorted.map((duo, index) => ({ ...duo, position: index + 1 }));
+  return assignPositions(sorted, direction);
+}
+
+function assignPositions<T extends { position: number }>(
+  sorted: T[],
+  direction: SortDirection,
+): T[] {
+  const total = sorted.length;
+  return sorted.map((entry, index) => ({
+    ...entry,
+    position: leaderboardPosition(index, total, direction),
+  }));
+}
+
+export function leaderboardPosition(
+  index: number,
+  total: number,
+  direction: SortDirection,
+): number {
+  return direction === 'desc' ? index + 1 : total - index;
+}
+
+export function leaderPosition(): number {
+  return 1;
 }
 
 function compareParticipants(
@@ -119,6 +142,35 @@ export function sortDirectionArrow(direction: SortDirection): string {
   return direction === 'desc' ? '↓' : '↑';
 }
 
-export function isLeaderboardLeader(index: number, direction: SortDirection, eligible = true): boolean {
-  return eligible && direction === 'desc' && index === 0;
+export type PodiumTier = 'gold' | 'silver' | 'bronze';
+
+export function podiumTier(
+  position: number,
+  total: number,
+  eligible = true,
+): PodiumTier | null {
+  if (!eligible || total <= 0) {
+    return null;
+  }
+  if (position === 1) {
+    return 'gold';
+  }
+  if (position === 2) {
+    return 'silver';
+  }
+  if (position === 3 && total >= 3) {
+    return 'bronze';
+  }
+  return null;
+}
+
+export function isLeaderboardLeader(
+  position: number,
+  _direction: SortDirection,
+  options: { eligible?: boolean; total: number; eligibleCount?: number },
+): boolean {
+  if (options.eligible === false || options.total <= 0) {
+    return false;
+  }
+  return position === leaderPosition();
 }

@@ -2,6 +2,34 @@ export type RaceType = 'SOLOQ' | 'DUOQ';
 
 export type RaceStatus = 'NOT_STARTED' | 'ACTIVE' | 'FINISHED';
 
+export interface ParticipantPreview {
+  id: string;
+  gameName: string;
+  tagLine: string;
+  riotId: string;
+  profileIconId: number | null;
+  currentTier: string | null;
+  currentRank: string | null;
+  currentLp: number;
+  lpGained: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  position: number;
+}
+
+export interface DuoPreview {
+  id: string;
+  player1: ParticipantPreview;
+  player2: ParticipantPreview;
+  combinedLpGained: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  position: number;
+  eligible: boolean;
+}
+
 export interface RaceSummary {
   id: string;
   shareSlug: string;
@@ -11,6 +39,10 @@ export interface RaceSummary {
   endAt: string | null;
   isPublic: boolean;
   status: RaceStatus;
+  entryCount: number;
+  participantGameNames: string[];
+  previewParticipants: ParticipantPreview[];
+  previewDuos: DuoPreview[];
 }
 
 export interface ParticipantProgress {
@@ -74,6 +106,14 @@ export interface UpdateRaceStartRequest {
 export interface UpdateRaceScheduleRequest {
   startAt: string;
   endAt: string;
+}
+
+export interface UpdateRaceVisibilityRequest {
+  isPublic: boolean;
+}
+
+export interface UpdateRaceNameRequest {
+  name: string;
 }
 
 export interface AddParticipantRequest {

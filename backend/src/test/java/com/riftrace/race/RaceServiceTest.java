@@ -14,6 +14,9 @@ import com.riftrace.race.dto.RaceSummaryResponse;
 import com.riftrace.race.dto.UpdateRaceEndRequest;
 import com.riftrace.race.dto.UpdateRaceScheduleRequest;
 import com.riftrace.race.dto.UpdateRaceStartRequest;
+import com.riftrace.race.dto.UpdateRaceNameRequest;
+import com.riftrace.race.dto.UpdateRaceVisibilityRequest;
+import com.riftrace.riot.dto.RiotAccountDto;
 import com.riftrace.synchronization.RaceSyncService;
 import java.time.Clock;
 import java.time.Instant;
@@ -79,6 +82,130 @@ class RaceServiceTest {
     }
 
     @Test
+    void listPublicRaces_withSearch_filtersByRaceName() {
+        Race matchingRace = Race.create(
+                UUID.randomUUID(),
+                "Les petits soldats",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(60),
+                true
+        );
+        Race otherRace = Race.create(
+                UUID.randomUUID(),
+                "Autre challenge",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(120),
+                true
+        );
+        when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                .thenReturn(List.of(matchingRace, otherRace));
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(matchingRace.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+
+        List<RaceSummaryResponse> races = raceService.listPublicRaces("soldats", null, null);
+
+        assertThat(races).hasSize(1);
+        assertThat(races.getFirst().name()).isEqualTo("Les petits soldats");
+    }
+
+    @Test
+    void listPublicRaces_withSearch_filtersByParticipant() {
+        Race race = Race.create(
+                UUID.randomUUID(),
+                "Duo challenge",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(60),
+                true
+        );
+        when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                .thenReturn(List.of(race));
+        when(participantRepository.findDistinctPublicRaceIdsByParticipantSearch(NOW, "tanor"))
+                .thenReturn(List.of(race.getId()));
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+
+        List<RaceSummaryResponse> races = raceService.listPublicRaces(null, "tanor", null);
+
+        assertThat(races).hasSize(1);
+        assertThat(races.getFirst().name()).isEqualTo("Duo challenge");
+    }
+
+    @Test
+    void listPublicRaces_withShortSearch_ignoresSearchFilters() {
+        Race race = Race.create(
+                UUID.randomUUID(),
+                "Les petits soldats",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(60),
+                true
+        );
+        when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                .thenReturn(List.of(race));
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+
+        List<RaceSummaryResponse> races = raceService.listPublicRaces("so", "ta", null);
+
+        assertThat(races).hasSize(1);
+        verify(participantRepository, never()).findDistinctPublicRaceIdsByParticipantSearch(any(), any());
+    }
+
+    @Test
+    void listPublicRaces_withTypeFilter_returnsOnlyMatchingType() {
+        Race soloRace = Race.create(
+                UUID.randomUUID(),
+                "Solo race",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(60),
+                true
+        );
+        Race duoRace = Race.create(
+                UUID.randomUUID(),
+                "Duo race",
+                RaceType.DUOQ,
+                NOW.minusSeconds(120),
+                true
+        );
+        when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                .thenReturn(List.of(soloRace, duoRace));
+        when(duoProgressService.buildProgress(duoRace.getId())).thenReturn(List.of());
+
+        List<RaceSummaryResponse> races = raceService.listPublicRaces(null, null, RaceType.DUOQ);
+
+        assertThat(races).hasSize(1);
+        assertThat(races.getFirst().type()).isEqualTo(RaceType.DUOQ);
+    }
+
+    @Test
+    void listPublicRaces_withRaceNameAndSummoner_appliesBothFilters() {
+        Race matchingRace = Race.create(
+                UUID.randomUUID(),
+                "Les petits soldats",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(60),
+                true
+        );
+        Race otherRace = Race.create(
+                UUID.randomUUID(),
+                "Les petits soldats bis",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(120),
+                true
+        );
+        when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                .thenReturn(List.of(matchingRace, otherRace));
+        when(participantRepository.findDistinctPublicRaceIdsByParticipantSearch(NOW, "tanor"))
+                .thenReturn(List.of(matchingRace.getId()));
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(matchingRace.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+
+        List<RaceSummaryResponse> races = raceService.listPublicRaces("soldats", "tanor", null);
+
+        assertThat(races).hasSize(1);
+        assertThat(races.getFirst().id()).isEqualTo(matchingRace.getId());
+    }
+
+    @Test
     void listPublicRaces_returnsOnlyStartedPublicRaces() {
         Race activeRace = Race.create(
                 UUID.randomUUID(),
@@ -89,6 +216,8 @@ class RaceServiceTest {
         );
         when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(activeRace));
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(activeRace.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
 
         List<RaceSummaryResponse> races = raceService.listPublicRaces();
 
@@ -145,6 +274,60 @@ class RaceServiceTest {
         verify(raceSyncService).refreshRace(raceId);
         assertThat(response.startAt()).isEqualTo(newStart);
         assertThat(response.endAt()).isEqualTo(newEnd);
+    }
+
+    @Test
+    void updateVisibility_whenOwner_updatesIsPublic() {
+        UUID ownerId = UUID.randomUUID();
+        Race race = Race.create(
+                ownerId,
+                "Test",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(3600),
+                NOW.plusSeconds(3600),
+                false
+        );
+        UUID raceId = race.getId();
+        when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
+        when(raceRepository.save(race)).thenReturn(race);
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(raceRefreshRepository.findByRaceId(any())).thenReturn(Optional.empty());
+
+        var response = raceService.updateVisibility(
+                raceId,
+                ownerId,
+                new UpdateRaceVisibilityRequest(true)
+        );
+
+        assertThat(race.isPublic()).isTrue();
+        assertThat(response.isPublic()).isTrue();
+        verify(raceRepository).save(race);
+    }
+
+    @Test
+    void updateName_whenOwner_updatesName() {
+        UUID ownerId = UUID.randomUUID();
+        Race race = Race.create(
+                ownerId,
+                "Old name",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(3600),
+                NOW.plusSeconds(3600),
+                false
+        );
+        UUID raceId = race.getId();
+        when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
+        when(raceRepository.save(race)).thenReturn(race);
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(raceRefreshRepository.findByRaceId(any())).thenReturn(Optional.empty());
+
+        var response = raceService.updateName(raceId, ownerId, new UpdateRaceNameRequest("New name"));
+
+        assertThat(race.getName()).isEqualTo("New name");
+        assertThat(response.name()).isEqualTo("New name");
+        verify(raceRepository).save(race);
     }
 
     @Test
@@ -337,6 +520,7 @@ class RaceServiceTest {
         when(userRiotAccountService.listLinkedPuids(userId)).thenReturn(List.of("puuid-1"));
         when(participantRepository.findDistinctRaceIdsByRiotPuuidIn(List.of("puuid-1"))).thenReturn(List.of(raceId));
         when(raceRepository.findByIdInOrderByStartAtDesc(List.of(raceId))).thenReturn(List.of(race));
+        when(duoProgressService.buildProgress(any())).thenReturn(List.of());
 
         List<RaceSummaryResponse> races = raceService.listParticipatingRaces(userId);
 
@@ -350,5 +534,36 @@ class RaceServiceTest {
         when(userRiotAccountService.listLinkedPuids(userId)).thenReturn(List.of());
 
         assertThat(raceService.listParticipatingRaces(userId)).isEmpty();
+    }
+
+    @Test
+    void listPublicRaces_includesParticipantGameNamesForSoloRace() {
+        Race race = Race.create(
+                UUID.randomUUID(),
+                "Les petits soldats",
+                RaceType.SOLOQ,
+                NOW.minusSeconds(60),
+                true
+        );
+        RaceParticipant tanor = RaceParticipant.create(
+                race.getId(),
+                new RiotAccountDto("puuid-1", "Tanor", "7154")
+        );
+        RaceParticipant kaori = RaceParticipant.create(
+                race.getId(),
+                new RiotAccountDto("puuid-2", "Kaori", "EUW33")
+        );
+
+        when(raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                .thenReturn(List.of(race));
+        when(participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId()))
+                .thenReturn(List.of(tanor, kaori));
+        when(progressService.buildProgress(List.of(tanor, kaori))).thenReturn(List.of());
+
+        List<RaceSummaryResponse> races = raceService.listPublicRaces(null, null, null);
+
+        assertThat(races).hasSize(1);
+        assertThat(races.getFirst().entryCount()).isEqualTo(2);
+        assertThat(races.getFirst().participantGameNames()).containsExactly("Tanor", "Kaori");
     }
 }

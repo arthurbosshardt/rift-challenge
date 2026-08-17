@@ -1,4 +1,30 @@
-<app-page-shell [title]="'settings.title' | t" [subtitle]="'settings.subtitle' | t">
+<app-page-shell [title]="'settings.title' | t">
+  <section class="settings-section">
+    <div class="settings-section__header">
+      <h2>{{ 'settings.appearanceTitle' | t }}</h2>
+      <p class="settings-section__hint">{{ 'settings.appearanceHint' | t }}</p>
+    </div>
+
+    <div class="theme-switch" role="group" [attr.aria-label]="'settings.themeLabel' | t">
+      <button
+        type="button"
+        class="theme-switch__button"
+        [class.theme-switch__button--active]="theme.theme() === 'dark'"
+        (click)="theme.setTheme('dark')"
+      >
+        {{ 'settings.themeDark' | t }}
+      </button>
+      <button
+        type="button"
+        class="theme-switch__button"
+        [class.theme-switch__button--active]="theme.theme() === 'light'"
+        (click)="theme.setTheme('light')"
+      >
+        {{ 'settings.themeLight' | t }}
+      </button>
+    </div>
+  </section>
+
   <section class="settings-section">
     <div class="settings-section__header">
       <h2>{{ 'accounts.title' | t }}</h2>

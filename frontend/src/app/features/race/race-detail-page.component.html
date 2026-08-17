@@ -1,19 +1,101 @@
 @if (loading()) {
-  <app-page-shell title="Race" subtitle="">
+  <app-page-shell [title]="'race.pageTitle' | t">
     <app-loader [label]="'home.loading' | t" />
   </app-page-shell>
 } @else if (error()) {
-  <app-page-shell title="Race" subtitle="">
+  <app-page-shell [title]="'race.pageTitle' | t">
     <p class="state state--error">{{ error() }}</p>
   </app-page-shell>
 } @else if (race(); as currentRace) {
-  <app-page-shell [title]="raceTitle(currentRace)" [subtitle]="'race.detailSubtitle' | t">
+  <app-page-shell [title]="''">
+    <header class="detail__heading">
+      <h1 class="detail__title">{{ raceTitle(currentRace) }}</h1>
+
+      @if (currentRace.status === 'ACTIVE' || currentRace.status === 'FINISHED') {
+        <button
+          type="button"
+          class="refresh-action-btn"
+          (click)="refreshRace()"
+          [disabled]="!currentRace.refreshAvailable || refreshing()"
+          [attr.aria-label]="refreshing() ? ('race.refreshing' | t) : ('race.refreshData' | t)"
+        >
+          <svg
+            class="refresh-action-btn__icon"
+            [class.refresh-action-btn__icon--spinning]="refreshing()"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+            />
+          </svg>
+          <span class="refresh-action-btn__label">
+            @if (refreshing()) {
+              {{ 'race.refreshing' | t }}
+            } @else {
+              {{ 'race.refreshData' | t }}
+            }
+          </span>
+        </button>
+
+        <div class="refresh__panel">
+          <div class="refresh__status">
+            <span class="refresh__status-label">{{ 'race.lastUpdateLabel' | t }}</span>
+            @if (currentRace.lastRefreshedAt) {
+              <span class="refresh__status-time">{{ lastUpdateRelative() }}</span>
+            } @else {
+              <span class="refresh__status-time refresh__status-time--muted">{{ 'race.noSync' | t }}</span>
+            }
+            <button
+              type="button"
+              class="refresh__info-btn"
+              [attr.aria-label]="'race.refreshHint' | t"
+            >
+              <span aria-hidden="true">i</span>
+              <span class="refresh__info-tooltip">{{ 'race.refreshHint' | t }}</span>
+            </button>
+          </div>
+
+          @if (!currentRace.refreshAvailable && refreshCountdown()) {
+            <div class="refresh__cooldown" role="status" aria-live="polite">
+              <span class="refresh__cooldown-label">{{ 'race.nextRefresh' | t }}</span>
+              <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
+            </div>
+          }
+
+          @if (refreshError()) {
+            <p class="refresh__error">{{ refreshError() }}</p>
+          }
+        </div>
+      }
+    </header>
+
     <section class="detail">
       <div class="detail__badges">
         <span class="badge badge--type">{{ typeLabel(currentRace.type) }}</span>
         <span class="badge">{{ statusLabel(currentRace.status) }}</span>
         @if (currentRace.isPublic) {
           <span class="badge badge--public">{{ 'race.public' | t }}</span>
+        }
+        @if (currentRace.isOwner) {
+          <button
+            type="button"
+            class="icon-button"
+            (click)="openEditModal(currentRace)"
+            [attr.aria-label]="'race.editAria' | t"
+            [attr.title]="'race.editTitle' | t"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
         }
         <button
           type="button"
@@ -53,112 +135,6 @@
         </div>
       </dl>
 
-      @if (currentRace.isOwner) {
-        <section class="end-edit">
-          @if (!editingSchedule()) {
-            <button type="button" class="end-edit__toggle" (click)="startEditingSchedule()">
-              {{ 'race.editSchedule' | t }}
-            </button>
-          } @else {
-            <form class="end-edit__form" (ngSubmit)="saveSchedule()">
-              <div class="end-edit__group">
-                <span class="end-edit__group-title">{{ 'race.start' | t }}</span>
-                <div class="end-edit__row">
-                  <label>
-                    {{ 'create.date' | t }}
-                    <input name="startDateInput" type="date" [(ngModel)]="startDateInput" required />
-                  </label>
-                  <label>
-                    {{ 'create.hour' | t }}
-                    <select name="startHourInput" [(ngModel)]="startHourInput" required>
-                      @for (hour of hourOptions; track hour) {
-                        <option [ngValue]="hour">{{ hour }}h</option>
-                      }
-                    </select>
-                  </label>
-                </div>
-              </div>
-              <div class="end-edit__group">
-                <span class="end-edit__group-title">{{ 'race.end' | t }}</span>
-                <div class="end-edit__row">
-                  <label>
-                    {{ 'create.date' | t }}
-                    <input name="endDateInput" type="date" [(ngModel)]="endDateInput" required />
-                  </label>
-                  <label>
-                    {{ 'create.hour' | t }}
-                    <select name="endHourInput" [(ngModel)]="endHourInput" required>
-                      @for (hour of hourOptions; track hour) {
-                        <option [ngValue]="hour">{{ hour }}h</option>
-                      }
-                    </select>
-                  </label>
-                </div>
-              </div>
-              <div class="end-edit__actions">
-                <button type="submit" [disabled]="savingSchedule()">
-                  {{ savingSchedule() ? ('race.savingSchedule' | t) : ('race.saveSchedule' | t) }}
-                </button>
-                <button
-                  type="button"
-                  class="end-edit__cancel"
-                  (click)="cancelEditingSchedule()"
-                  [disabled]="savingSchedule()"
-                >
-                  {{ 'create.cancel' | t }}
-                </button>
-              </div>
-            </form>
-          }
-          @if (scheduleError()) {
-            <p class="end-edit__error">{{ scheduleError() }}</p>
-          }
-          @if (scheduleSuccess()) {
-            <p class="end-edit__success">{{ 'race.scheduleUpdated' | t }}</p>
-          }
-        </section>
-      }
-
-      @if (currentRace.status === 'ACTIVE' || currentRace.status === 'FINISHED') {
-        <section class="refresh">
-          <div class="refresh__info">
-            @if (currentRace.lastRefreshedAt) {
-              <p>{{ 'race.lastUpdate' | t:{ date: (currentRace.lastRefreshedAt | raceDate) } }}</p>
-            } @else {
-              <p>{{ 'race.noSync' | t }}</p>
-            }
-            <p class="refresh__hint">
-              {{ 'race.refreshHint' | t }}
-            </p>
-          </div>
-
-          @if (!currentRace.refreshAvailable && refreshCountdown()) {
-            <div class="refresh__cooldown" role="status" aria-live="polite">
-              <span class="refresh__cooldown-label">{{ 'race.nextRefresh' | t }}</span>
-              <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
-            </div>
-          }
-
-          <button
-            type="button"
-            class="refresh__button"
-            (click)="refreshRace()"
-            [disabled]="!currentRace.refreshAvailable || refreshing()"
-          >
-            @if (refreshing()) {
-              <app-loader [compact]="true" [label]="'race.refreshing' | t" />
-            } @else if (currentRace.refreshAvailable) {
-              {{ 'race.refresh' | t }}
-            } @else {
-              {{ 'race.refreshUnavailable' | t }}
-            }
-          </button>
-          @if (refreshError()) {
-            <p class="refresh__error">{{ refreshError() }}</p>
-          }
-        </section>
-      }
-
       <section class="participants">
         <div class="participants__header">
           <h2>{{ currentRace.type === 'DUOQ' ? ('race.duos' | t) : ('race.participants' | t) }}</h2>
@@ -181,34 +157,41 @@
 
             <div class="stats-panel__content" [attr.aria-busy]="refreshing()">
               @if (hasLeaderboard(currentRace)) {
-                <div class="sort-bar" role="toolbar" [attr.aria-label]="'race.sortAria' | t">
-                  @for (option of sortOptions(); track option[0]) {
-                    <button
-                      type="button"
-                      class="sort-bar__button"
-                      [class.sort-bar__button--active]="sortCriterion() === option[0]"
-                      (click)="setSort(option[0])"
-                      [disabled]="refreshing()"
-                      [attr.aria-sort]="sortCriterion() === option[0] ? (sortDirection() === 'desc' ? 'descending' : 'ascending') : 'none'"
-                    >
-                      @if (sortArrow(option[0]); as arrow) {
-                        <span class="sort-bar__arrow" aria-hidden="true">{{ arrow }}</span>
-                      }
-                      <span>{{ option[1] }}</span>
-                    </button>
-                  }
+                <div class="sort-controls" role="toolbar" [attr.aria-label]="'race.sortAria' | t">
+                  <div class="sort-controls__criteria" role="tablist" [attr.aria-label]="'race.sortAria' | t">
+                    @for (option of sortOptions(); track option[0]) {
+                      <button
+                        type="button"
+                        role="tab"
+                        class="sort-controls__tab"
+                        [class.sort-controls__tab--active]="sortCriterion() === option[0]"
+                        [attr.aria-selected]="sortCriterion() === option[0]"
+                        (click)="setSortCriterion(option[0])"
+                        [disabled]="refreshing()"
+                      >
+                        {{ option[1] }}
+                      </button>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="sort-controls__direction"
+                    (click)="toggleSortDirection()"
+                    [disabled]="refreshing()"
+                    [attr.aria-label]="sortDirectionAriaLabel()"
+                  >
+                    <span class="sort-controls__direction-icon" aria-hidden="true">{{ sortDirectionIcon() }}</span>
+                  </button>
                 </div>
 
                 @if (currentRace.type === 'SOLOQ') {
             <ol class="leaderboard">
               @for (participant of sortedParticipants(); track leaderboardRowTrack(participant.id)) {
-                <li
-                  class="leaderboard__item"
-                  [class.leaderboard__item--leader]="isLeader(participant.position - 1)"
-                >
+                <li [class]="'leaderboard__item ' + (podiumTierForParticipant(participant.position) ?? '')">
                   <span class="leaderboard__rank">#{{ participant.position }}</span>
                   <app-player-identity
                     class="leaderboard__identity"
+                    [compact]="true"
                     [gameName]="participant.gameName"
                     [tagLine]="participant.tagLine"
                     [riotId]="participant.riotId"
@@ -225,21 +208,22 @@
                       {{ lpLabel(participant.lpGained, participant.hasRankData) }}
                     </span>
                     <span class="leaderboard__wl">
-                      {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
-                      · {{ 'race.winsLosses' | t:{ wins: participant.wins, losses: participant.losses } }}
+                      <span [class]="'leaderboard__winrate ' + winRateClass(participant.winRate, participant.wins, participant.losses)">
+                        {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
+                      </span>
+                      @if (hasRecord(participant.wins, participant.losses)) {
+                        <span class="leaderboard__record">
+                          <span class="leaderboard__wins">
+                            {{ participant.wins }}<span class="leaderboard__record-abbr">{{ 'race.winAbbr' | t }}</span>
+                          </span>
+                          <span class="leaderboard__record-sep" aria-hidden="true">/</span>
+                          <span class="leaderboard__losses">
+                            {{ participant.losses }}<span class="leaderboard__record-abbr">{{ 'race.lossAbbr' | t }}</span>
+                          </span>
+                        </span>
+                      }
                     </span>
                   </div>
-                  @if (currentRace.isOwner) {
-                    <button
-                      type="button"
-                      class="participant-remove"
-                      (click)="removeParticipant(participant)"
-                      [disabled]="removingParticipantId() === participant.id"
-                      [attr.aria-label]="'race.removeAria' | t:{ name: participant.riotId }"
-                    >
-                      {{ removingParticipantId() === participant.id ? '…' : ('race.remove' | t) }}
-                    </button>
-                  }
                 </li>
               }
             </ol>
@@ -247,8 +231,7 @@
             <ol class="leaderboard">
               @for (duo of sortedDuos(); track leaderboardRowTrack(duo.id)) {
                 <li
-                  class="leaderboard__item leaderboard__item--duo"
-                  [class.leaderboard__item--leader]="isLeader(duo.position - 1, duo.eligible)"
+                  [class]="'leaderboard__item leaderboard__item--duo ' + (podiumTierForDuo(duo) ?? '')"
                   [class.leaderboard__item--ineligible]="!duo.eligible"
                 >
                   <span class="leaderboard__rank">#{{ duo.position }}</span>
@@ -284,21 +267,22 @@
                       {{ lpLabel(duo.combinedLpGained, duoHasRankData(duo)) }}
                     </span>
                     <span class="leaderboard__wl">
-                      {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
-                      · {{ 'race.winsLosses' | t:{ wins: duo.wins, losses: duo.losses } }}
+                      <span [class]="'leaderboard__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                        {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
+                      </span>
+                      @if (hasRecord(duo.wins, duo.losses)) {
+                        <span class="leaderboard__record">
+                          <span class="leaderboard__wins">
+                            {{ duo.wins }}<span class="leaderboard__record-abbr">{{ 'race.winAbbr' | t }}</span>
+                          </span>
+                          <span class="leaderboard__record-sep" aria-hidden="true">/</span>
+                          <span class="leaderboard__losses">
+                            {{ duo.losses }}<span class="leaderboard__record-abbr">{{ 'race.lossAbbr' | t }}</span>
+                          </span>
+                        </span>
+                      }
                     </span>
                   </div>
-                  @if (currentRace.isOwner) {
-                    <button
-                      type="button"
-                      class="participant-remove"
-                      (click)="removeDuo(duo)"
-                      [disabled]="removingDuoId() === duo.id"
-                      [attr.aria-label]="'race.removeDuoAria' | t:{ name: duoLabel(duo) }"
-                    >
-                      {{ removingDuoId() === duo.id ? '…' : ('race.remove' | t) }}
-                    </button>
-                  }
                 </li>
               }
             </ol>
@@ -315,17 +299,6 @@
                   [profileIconId]="participant.profileIconId"
                   [tier]="participant.hasRankData ? participant.currentTier : null"
                 />
-                @if (currentRace.isOwner) {
-                  <button
-                    type="button"
-                    class="participant-remove"
-                    (click)="removeParticipant(participant)"
-                    [disabled]="removingParticipantId() === participant.id"
-                    [attr.aria-label]="'race.removeAria' | t:{ name: participant.riotId }"
-                  >
-                    {{ removingParticipantId() === participant.id ? '…' : ('race.remove' | t) }}
-                  </button>
-                }
               </li>
             }
           </ul>
@@ -351,133 +324,12 @@
                     [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
                   />
                 </div>
-                @if (currentRace.isOwner) {
-                  <button
-                    type="button"
-                    class="participant-remove"
-                    (click)="removeDuo(duo)"
-                    [disabled]="removingDuoId() === duo.id"
-                    [attr.aria-label]="'race.removeDuoAria' | t:{ name: duoLabel(duo) }"
-                  >
-                    {{ removingDuoId() === duo.id ? '…' : ('race.remove' | t) }}
-                  </button>
-                }
               </li>
             }
           </ul>
                 }
             </div>
           </div>
-        }
-
-        @if (currentRace.isOwner) {
-          @if (currentRace.type === 'SOLOQ') {
-            <form class="participants__form" (ngSubmit)="addParticipant()">
-              <span class="participants__form-title">{{ 'race.addPlayer' | t }}</span>
-              <div class="participants__form-row participants__form-row--split">
-                <label>
-                  {{ 'race.gameName' | t }}
-                  <input
-                    name="gameName"
-                    type="text"
-                    [(ngModel)]="gameNameInput"
-                    [placeholder]="'race.gameNamePlaceholder' | t"
-                    [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                    autocomplete="off"
-                  />
-                </label>
-                <label>
-                  {{ 'race.tagLine' | t }}
-                  <input
-                    name="tagLine"
-                    type="text"
-                    [(ngModel)]="tagLineInput"
-                    [placeholder]="'race.tagLinePlaceholder' | t"
-                    [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                    autocomplete="off"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                >
-                  {{ addingParticipant() ? ('race.adding' | t) : ('race.add' | t) }}
-                </button>
-              </div>
-            </form>
-          } @else {
-            <form class="participants__form" (ngSubmit)="addDuo()">
-              <span class="participants__form-title">{{ 'race.addDuo' | t }}</span>
-              <div class="participants__duo-fields">
-                <div class="participants__duo-player">
-                  <span class="participants__duo-player-title">{{ 'race.duoPlayer1Title' | t }}</span>
-                  <div class="participants__form-row participants__form-row--split">
-                    <label>
-                      {{ 'race.gameName' | t }}
-                      <input
-                        name="duoPlayer1GameName"
-                        type="text"
-                        [(ngModel)]="duoPlayer1GameName"
-                        [placeholder]="'race.gameNamePlaceholder' | t"
-                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                        autocomplete="off"
-                      />
-                    </label>
-                    <label>
-                      {{ 'race.tagLine' | t }}
-                      <input
-                        name="duoPlayer1TagLine"
-                        type="text"
-                        [(ngModel)]="duoPlayer1TagLine"
-                        [placeholder]="'race.tagLinePlaceholder' | t"
-                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                        autocomplete="off"
-                      />
-                    </label>
-                  </div>
-                </div>
-                <div class="participants__duo-player">
-                  <span class="participants__duo-player-title">{{ 'race.duoPlayer2Title' | t }}</span>
-                  <div class="participants__form-row participants__form-row--split">
-                    <label>
-                      {{ 'race.gameName' | t }}
-                      <input
-                        name="duoPlayer2GameName"
-                        type="text"
-                        [(ngModel)]="duoPlayer2GameName"
-                        [placeholder]="'race.gameNamePlaceholder' | t"
-                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                        autocomplete="off"
-                      />
-                    </label>
-                    <label>
-                      {{ 'race.tagLine' | t }}
-                      <input
-                        name="duoPlayer2TagLine"
-                        type="text"
-                        [(ngModel)]="duoPlayer2TagLine"
-                        [placeholder]="'race.tagLinePlaceholder' | t"
-                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                        autocomplete="off"
-                      />
-                    </label>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                >
-                  {{ addingParticipant() ? ('race.adding' | t) : ('race.addDuoButton' | t) }}
-                </button>
-              </div>
-              <p class="participants__hint">
-                {{ 'race.duoHint' | t }}
-              </p>
-            </form>
-          }
-          @if (participantError()) {
-            <p class="participants__error">{{ participantError() }}</p>
-          }
         }
       </section>
 

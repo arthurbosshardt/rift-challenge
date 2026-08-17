@@ -31,7 +31,7 @@ public class Race {
     @Column(name = "start_at", nullable = false)
     private Instant startAt;
 
-    @Column(name = "end_at")
+    @Column(name = "end_at", nullable = false)
     private Instant endAt;
 
     @Column(name = "is_public", nullable = false)
@@ -135,5 +135,9 @@ public class Race {
 
     public void updateStartAt(Instant startAt) {
         this.startAt = startAt;
+    }
+
+    public void updateName(String name) {
+        this.name = name;
     }
 }

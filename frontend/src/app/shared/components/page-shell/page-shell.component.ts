@@ -1,27 +1,34 @@
 import { Component, ElementRef, HostListener, inject, input, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthModalService } from '../../../core/services/auth-modal.service';
+import { CreateRaceModalService } from '../../../core/services/create-race-modal.service';
+import { LogoutConfirmService } from '../../../core/services/logout-confirm.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
+import { BrandLogoComponent } from '../brand-logo/brand-logo.component';
 import { LoaderComponent } from '../loader/loader.component';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
+import { SiteFooterComponent } from '../site-footer/site-footer.component';
 
 @Component({
   selector: 'app-page-shell',
-  imports: [RouterLink, RouterLinkActive, TranslatePipe, LoaderComponent, PlayerAvatarComponent],
+  imports: [RouterLink, RouterLinkActive, TranslatePipe, BrandLogoComponent, LoaderComponent, PlayerAvatarComponent, SiteFooterComponent],
   templateUrl: './page-shell.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './page-shell.component.scss',
 })
 export class PageShellComponent {
   readonly title = input.required<string>();
-  readonly subtitle = input<string>('');
+  readonly centered = input(false);
 
   protected readonly auth = inject(AuthService);
+  protected readonly authModal = inject(AuthModalService);
+  protected readonly createRaceModal = inject(CreateRaceModalService);
+  protected readonly logoutConfirm = inject(LogoutConfirmService);
   protected readonly i18n = inject(I18nService);
   protected readonly userMenuOpen = signal(false);
   private readonly userMenuRef = viewChild<ElementRef<HTMLElement>>('userMenu');
-  private readonly router = inject(Router);
 
   @HostListener('document:click', ['$event'])
   protected closeUserMenuOnClickOutside(event: MouseEvent): void {
@@ -48,9 +55,8 @@ export class PageShellComponent {
     this.userMenuOpen.set(false);
   }
 
-  protected async logout(): Promise<void> {
+  protected openLogoutConfirm(): void {
     this.closeUserMenu();
-    await this.auth.logout();
-    await this.router.navigateByUrl('/');
+    this.logoutConfirm.open();
   }
 }

@@ -1,4 +1,4 @@
-<app-page-shell [title]="'home.myRacesTitle' | t" [subtitle]="'home.myRacesSubtitle' | t">
+<app-page-shell [title]="'home.myRacesTitle' | t">
   @if (auth.isProfileLoading()) {
     <app-loader [label]="'home.loading' | t" />
   } @else if (!auth.linkedAccount()) {

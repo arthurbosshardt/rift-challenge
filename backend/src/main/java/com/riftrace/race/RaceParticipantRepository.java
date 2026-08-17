@@ -1,5 +1,6 @@
 package com.riftrace.race;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -26,4 +27,14 @@ public interface RaceParticipantRepository extends JpaRepository<RaceParticipant
             WHERE rp.riotPuuid IN :puuids
             """)
     List<UUID> findDistinctRaceIdsByRiotPuuidIn(@Param("puuids") Collection<String> puuids);
+
+    @Query("""
+            SELECT DISTINCT rp.raceId
+            FROM RaceParticipant rp
+            JOIN Race r ON r.id = rp.raceId
+            WHERE r.isPublic = true
+              AND r.startAt <= :now
+              AND LOWER(REPLACE(rp.riotGameName, ' ', '')) LIKE CONCAT('%', :query, '%')
+            """)
+    List<UUID> findDistinctPublicRaceIdsByParticipantSearch(@Param("now") Instant now, @Param("query") String query);
 }

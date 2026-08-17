@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { LinkRiotAccountRequest, UserRiotAccount } from '../models/race.models';
 import { apiUrl } from '../utils/api-url';
+import { normalizeRiotId } from '../utils/riot-id';
 
 @Injectable({ providedIn: 'root' })
 export class UserRiotAccountApiService {
@@ -15,7 +16,9 @@ export class UserRiotAccountApiService {
   }
 
   linkAccount(request: LinkRiotAccountRequest): Observable<UserRiotAccount> {
-    return this.http.post<UserRiotAccount>(this.baseUrl, request);
+    return this.http.post<UserRiotAccount>(this.baseUrl, {
+      riotId: normalizeRiotId(request.riotId),
+    });
   }
 
   unlinkAccount(accountId: string): Observable<void> {

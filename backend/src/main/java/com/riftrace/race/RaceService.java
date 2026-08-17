@@ -3,17 +3,24 @@ package com.riftrace.race;
 import com.riftrace.account.AppUserRepository;
 import com.riftrace.account.UserRiotAccountService;
 import com.riftrace.race.dto.CreateRaceRequest;
+import com.riftrace.race.dto.DuoPreviewResponse;
 import com.riftrace.race.dto.DuoProgressResponse;
+import com.riftrace.race.dto.ParticipantPreviewResponse;
 import com.riftrace.race.dto.ParticipantProgressResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
 import com.riftrace.race.dto.UpdateRaceEndRequest;
+import com.riftrace.race.dto.UpdateRaceNameRequest;
 import com.riftrace.race.dto.UpdateRaceScheduleRequest;
 import com.riftrace.race.dto.UpdateRaceStartRequest;
+import com.riftrace.race.dto.UpdateRaceVisibilityRequest;
 import com.riftrace.synchronization.RaceSyncService;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -58,11 +65,65 @@ public class RaceService {
         this.clock = clock;
     }
 
+    private static final int PREVIEW_LIMIT = 10;
+
     @Transactional(readOnly = true)
     public List<RaceSummaryResponse> listPublicRaces() {
+        return listPublicRaces(null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RaceSummaryResponse> listPublicRaces(String raceName, String summoner, RaceType type) {
         Instant now = clock.instant();
-        return raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(now).stream()
-                .map(race -> RaceSummaryResponse.from(race, now))
+        List<Race> publicRaces = raceRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(now);
+
+        List<Race> candidates = type == null
+                ? publicRaces
+                : publicRaces.stream().filter(race -> race.getType() == type).toList();
+
+        String normalizedRaceName = normalizeRaceNameSearch(raceName);
+        String normalizedSummoner = normalizeSummonerSearch(summoner);
+
+        if (normalizedRaceName == null && normalizedSummoner == null) {
+            return candidates.stream()
+                    .map(race -> toSummaryResponse(race, now))
+                    .toList();
+        }
+
+        Set<UUID> candidateIds = candidates.stream()
+                .map(Race::getId)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+
+        Set<UUID> matchingRaceIds = null;
+
+        if (normalizedRaceName != null) {
+            Set<UUID> nameMatches = new LinkedHashSet<>();
+            for (Race race : candidates) {
+                if (matchesSearchTerm(race.getName(), normalizedRaceName)) {
+                    nameMatches.add(race.getId());
+                }
+            }
+            matchingRaceIds = nameMatches;
+        }
+
+        if (normalizedSummoner != null) {
+            Set<UUID> summonerMatches = participantRepository
+                    .findDistinctPublicRaceIdsByParticipantSearch(now, normalizedSummoner)
+                    .stream()
+                    .filter(candidateIds::contains)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+
+            matchingRaceIds = matchingRaceIds == null
+                    ? summonerMatches
+                    : matchingRaceIds.stream().filter(summonerMatches::contains)
+                            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        }
+
+        final Set<UUID> finalMatchingRaceIds = matchingRaceIds == null ? Set.of() : matchingRaceIds;
+
+        return candidates.stream()
+                .filter(race -> finalMatchingRaceIds.contains(race.getId()))
+                .map(race -> toSummaryResponse(race, now))
                 .toList();
     }
 
@@ -70,7 +131,7 @@ public class RaceService {
     public List<RaceSummaryResponse> listOwnedRaces(UUID ownerId) {
         Instant now = clock.instant();
         return raceRepository.findByOwnerIdOrderByStartAtDesc(ownerId).stream()
-                .map(race -> RaceSummaryResponse.from(race, now))
+                .map(race -> toSummaryResponse(race, now))
                 .toList();
     }
 
@@ -88,8 +149,51 @@ public class RaceService {
 
         Instant now = clock.instant();
         return raceRepository.findByIdInOrderByStartAtDesc(raceIds).stream()
-                .map(race -> RaceSummaryResponse.from(race, now))
+                .map(race -> toSummaryResponse(race, now))
                 .toList();
+    }
+
+    private RaceSummaryResponse toSummaryResponse(Race race, Instant now) {
+        String status = RaceSummaryResponse.resolveStatus(race.getStartAt(), race.getEndAt(), now);
+        boolean started = !"NOT_STARTED".equals(status);
+
+        if (race.getType() == RaceType.DUOQ) {
+            List<DuoProgressResponse> duos = duoProgressService.buildProgress(race.getId());
+            List<String> participantGameNames = duos.stream()
+                    .flatMap(duo -> java.util.stream.Stream.of(
+                            duo.player1().gameName(),
+                            duo.player2().gameName()))
+                    .toList();
+            List<DuoPreviewResponse> previewDuos = duos.stream()
+                    .limit(PREVIEW_LIMIT)
+                    .map(DuoPreviewResponse::from)
+                    .toList();
+            return RaceSummaryResponse.from(
+                    race, now, duos.size(), participantGameNames, List.of(), previewDuos);
+        }
+
+        List<RaceParticipant> participants = participantRepository.findByRaceIdOrderByCreatedAtAsc(race.getId());
+        List<String> participantGameNames = participants.stream()
+                .map(RaceParticipant::getRiotGameName)
+                .toList();
+        List<ParticipantPreviewResponse> previewParticipants;
+
+        if (started) {
+            previewParticipants = progressService.buildProgress(participants).stream()
+                    .limit(PREVIEW_LIMIT)
+                    .map(ParticipantPreviewResponse::from)
+                    .toList();
+        } else {
+            previewParticipants = new java.util.ArrayList<>();
+            for (int index = 0; index < Math.min(PREVIEW_LIMIT, participants.size()); index++) {
+                previewParticipants.add(
+                        ParticipantPreviewResponse.fromParticipant(participants.get(index), index + 1)
+                );
+            }
+        }
+
+        return RaceSummaryResponse.from(
+                race, now, participants.size(), participantGameNames, previewParticipants, List.of());
     }
 
     @Transactional(readOnly = true)
@@ -144,6 +248,22 @@ public class RaceService {
     public RaceDetailResponse updateEndAt(UUID raceId, UUID ownerId, UpdateRaceEndRequest request) {
         Race race = requireOwnedRace(raceId, ownerId);
         return saveSchedule(race, race.getStartAt(), request.endAt(), ownerId);
+    }
+
+    @Transactional
+    public RaceDetailResponse updateVisibility(UUID raceId, UUID ownerId, UpdateRaceVisibilityRequest request) {
+        Race race = requireOwnedRace(raceId, ownerId);
+        race.updateVisibility(request.isPublic());
+        raceRepository.save(race);
+        return getById(race.getId(), ownerId);
+    }
+
+    @Transactional
+    public RaceDetailResponse updateName(UUID raceId, UUID ownerId, UpdateRaceNameRequest request) {
+        Race race = requireOwnedRace(raceId, ownerId);
+        race.updateName(request.name().trim());
+        raceRepository.save(race);
+        return getById(race.getId(), ownerId);
     }
 
     private RaceDetailResponse saveSchedule(Race race, Instant startAt, Instant endAt, UUID ownerId) {
@@ -243,5 +363,39 @@ public class RaceService {
             boolean refreshAvailable,
             Instant nextRefreshAvailableAt
     ) {
+    }
+
+    private static String normalizeRaceNameSearch(String search) {
+        return normalizeSearchParam(search);
+    }
+
+    private static String normalizeSummonerSearch(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+
+        String trimmed = search.trim();
+        int hashIndex = trimmed.indexOf('#');
+        if (hashIndex > 0) {
+            trimmed = trimmed.substring(0, hashIndex);
+        }
+
+        return normalizeSearchParam(trimmed);
+    }
+
+    private static String normalizeSearchParam(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+
+        String normalized = search.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+        return normalized.length() >= 3 ? normalized : null;
+    }
+
+    private static boolean matchesSearchTerm(String value, String normalizedSearch) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", "").contains(normalizedSearch);
     }
 }

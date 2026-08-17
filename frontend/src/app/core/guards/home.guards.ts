@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { AuthModalService } from '../../core/services/auth-modal.service';
 
 async function defaultAuthenticatedRoute(auth: AuthService): Promise<string[]> {
   if (!auth.linkedAccount()) {
@@ -20,24 +21,28 @@ export const guestHomeGuard: CanActivateFn = async () => {
   return true;
 };
 
-export const authHomeGuard: CanActivateFn = async () => {
+export const authHomeGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
+  const authModal = inject(AuthModalService);
   const router = inject(Router);
   await auth.waitUntilReady();
 
   if (!auth.isAuthenticated()) {
-    return router.createUrlTree(['/login']);
+    authModal.open({ returnUrl: state.url });
+    return router.createUrlTree(['/public-races']);
   }
   return true;
 };
 
-export const linkedAccountGuard: CanActivateFn = async () => {
+export const linkedAccountGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
+  const authModal = inject(AuthModalService);
   const router = inject(Router);
   await auth.waitUntilReady();
 
   if (!auth.isAuthenticated()) {
-    return router.createUrlTree(['/login']);
+    authModal.open({ returnUrl: state.url });
+    return router.createUrlTree(['/public-races']);
   }
 
   if (!auth.linkedAccount()) {

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isLeaderboardLeader,
+  leaderboardPosition,
+  podiumTier,
   sortDirectionArrow,
   sortDuos,
   sortParticipants,
-  isLeaderboardLeader,
 } from './leaderboard-sort';
 import { DuoProgress, ParticipantProgress } from '../models/race.models';
 
@@ -29,7 +31,7 @@ function participant(overrides: Partial<ParticipantProgress>): ParticipantProgre
 }
 
 describe('leaderboard-sort', () => {
-  it('sorts participants by LP gained descending', () => {
+  it('sorts participants by LP gained descending with 1 2 3 numbers', () => {
     const sorted = sortParticipants(
       [
         participant({ id: 'low', lpGained: 10 }),
@@ -39,11 +41,10 @@ describe('leaderboard-sort', () => {
       'desc',
     );
     expect(sorted.map((item) => item.id)).toEqual(['high', 'low']);
-    expect(sorted[0].position).toBe(1);
-    expect(sorted[1].position).toBe(2);
+    expect(sorted.map((item) => item.position)).toEqual([1, 2]);
   });
 
-  it('sorts participants by LP gained ascending', () => {
+  it('sorts participants by LP gained ascending with reversed numbers at top', () => {
     const sorted = sortParticipants(
       [
         participant({ id: 'low', lpGained: 10 }),
@@ -53,10 +54,10 @@ describe('leaderboard-sort', () => {
       'asc',
     );
     expect(sorted.map((item) => item.id)).toEqual(['low', 'high']);
-    expect(sorted.map((item) => item.position)).toEqual([1, 2]);
+    expect(sorted.map((item) => item.position)).toEqual([2, 1]);
   });
 
-  it('reassigns rank numbers when direction changes', () => {
+  it('places 1 2 3 at the top in descending order and at the bottom in ascending order', () => {
     const participants = [
       participant({ id: 'a', lpGained: 30 }),
       participant({ id: 'b', lpGained: 60 }),
@@ -69,7 +70,7 @@ describe('leaderboard-sort', () => {
     expect(descending.map((item) => item.id)).toEqual(['b', 'a', 'c']);
     expect(ascending.map((item) => item.id)).toEqual(['c', 'a', 'b']);
     expect(descending.map((item) => item.position)).toEqual([1, 2, 3]);
-    expect(ascending.map((item) => item.position)).toEqual([1, 2, 3]);
+    expect(ascending.map((item) => item.position)).toEqual([3, 2, 1]);
   });
 
   it('reverses tied participants when direction changes', () => {
@@ -84,6 +85,8 @@ describe('leaderboard-sort', () => {
 
     expect(descending.map((item) => item.riotId)).toEqual(['Alpha#EUW', 'Bravo#EUW', 'Charlie#EUW']);
     expect(ascending.map((item) => item.riotId)).toEqual(['Charlie#EUW', 'Bravo#EUW', 'Alpha#EUW']);
+    expect(descending.map((item) => item.position)).toEqual([1, 2, 3]);
+    expect(ascending.map((item) => item.position)).toEqual([3, 2, 1]);
   });
 
   it('keeps ineligible duos after eligible ones', () => {
@@ -110,6 +113,7 @@ describe('leaderboard-sort', () => {
     const sorted = sortDuos([ineligible, eligible], 'RANK', 'desc');
     expect(sorted[0].id).toBe('ok');
     expect(sorted[1].id).toBe('ko');
+    expect(sorted.map((item) => item.position)).toEqual([1, 2]);
   });
 
   it('returns a direction arrow', () => {
@@ -117,9 +121,25 @@ describe('leaderboard-sort', () => {
     expect(sortDirectionArrow('asc')).toBe('↑');
   });
 
-  it('highlights only the first row in descending order', () => {
-    expect(isLeaderboardLeader(0, 'desc')).toBe(true);
-    expect(isLeaderboardLeader(1, 'desc')).toBe(false);
-    expect(isLeaderboardLeader(0, 'asc')).toBe(false);
+  it('computes leaderboard positions from direction', () => {
+    expect(leaderboardPosition(0, 3, 'desc')).toBe(1);
+    expect(leaderboardPosition(2, 3, 'desc')).toBe(3);
+    expect(leaderboardPosition(0, 3, 'asc')).toBe(3);
+    expect(leaderboardPosition(2, 3, 'asc')).toBe(1);
+  });
+
+  it('highlights position 1 as leader in both directions', () => {
+    expect(isLeaderboardLeader(1, 'desc', { total: 3 })).toBe(true);
+    expect(isLeaderboardLeader(3, 'desc', { total: 3 })).toBe(false);
+    expect(isLeaderboardLeader(1, 'asc', { total: 3 })).toBe(true);
+    expect(isLeaderboardLeader(3, 'asc', { total: 3 })).toBe(false);
+  });
+
+  it('assigns podium tiers to positions 1 2 3 regardless of direction', () => {
+    expect(podiumTier(1, 5)).toBe('gold');
+    expect(podiumTier(2, 5)).toBe('silver');
+    expect(podiumTier(3, 5)).toBe('bronze');
+    expect(podiumTier(4, 5)).toBeNull();
+    expect(podiumTier(1, 5, false)).toBeNull();
   });
 });

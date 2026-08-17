@@ -1,8 +1,6 @@
 package com.riftrace.riot;
 
 import com.riftrace.riot.dto.RiotAccountDto;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -21,14 +19,14 @@ public class RiotAccountClient {
     }
 
     public RiotAccountDto getAccountByRiotId(String gameName, String tagLine) {
-        String encodedGameName = encodePathSegment(gameName);
-        String encodedTagLine = encodePathSegment(tagLine);
-        String url = "https://%s.api.riotgames.com/riot/account/v1/accounts/by-riot-id/%s/%s"
-                .formatted(properties.regionalRouting(), encodedGameName, encodedTagLine);
-
         try {
             return riotRestClient.get()
-                    .uri(url)
+                    .uri(
+                            "https://{routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}",
+                            properties.regionalRouting(),
+                            gameName,
+                            tagLine
+                    )
                     .retrieve()
                     .body(RiotAccountDto.class);
         } catch (HttpClientErrorException.NotFound exception) {
@@ -41,9 +39,5 @@ public class RiotAccountClient {
                     "Riot API request failed"
             );
         }
-    }
-
-    private static String encodePathSegment(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 }

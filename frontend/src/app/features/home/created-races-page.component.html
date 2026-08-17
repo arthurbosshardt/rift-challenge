@@ -1,6 +1,8 @@
-<app-page-shell [title]="'home.createdRacesTitle' | t" [subtitle]="'home.createdRacesSubtitle' | t">
+<app-page-shell [title]="'home.createdRacesTitle' | t">
   <div class="toolbar">
-    <a routerLink="/races/new" class="create-link">{{ 'home.createLink' | t }}</a>
+    <button type="button" class="create-link" (click)="createRaceModal.open()">
+      {{ 'home.createLink' | t }}
+    </button>
   </div>
 
   @if (loading()) {

@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { RaceApiService } from '../../core/services/race-api.service';
-import { AuthService } from '../../core/services/auth.service';
+import { RaceApiService } from '../../core/services/race-api.service';import { AuthService } from '../../core/services/auth.service';
+import { CreateRaceModalService } from '../../core/services/create-race-modal.service';
 import { RaceSummary } from '../../core/models/race.models';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { RaceCardComponent } from '../../shared/components/race-card/race-card.component';
@@ -11,7 +10,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-created-races-page',
-  imports: [PageShellComponent, RaceCardComponent, RouterLink, LoaderComponent, TranslatePipe],
+  imports: [PageShellComponent, RaceCardComponent, LoaderComponent, TranslatePipe],
   templateUrl: './created-races-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './created-races-page.component.scss',
@@ -19,6 +18,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 export class CreatedRacesPageComponent implements OnInit {
   private readonly raceApi = inject(RaceApiService);
   protected readonly auth = inject(AuthService);
+  protected readonly createRaceModal = inject(CreateRaceModalService);
   private readonly i18n = inject(I18nService);
 
   protected readonly races = signal<RaceSummary[]>([]);

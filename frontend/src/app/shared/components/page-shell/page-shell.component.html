@@ -1,11 +1,10 @@
-<div class="shell">
+<div class="shell" [class.shell--centered]="centered()">
   <header class="shell__header">
     <div>
       <a routerLink="/" class="brand">
-        <img src="/logo.png" alt="" class="brand__logo" width="36" height="36" />
-        <span class="brand__name">RiftRace</span>
+        <app-brand-logo />
+        <span class="brand__name">Rift Race</span>
       </a>
-      <p class="shell__subtitle">{{ subtitle() }}</p>
     </div>
 
     <div class="shell__actions">
@@ -15,7 +14,21 @@
             <a routerLink="/my-races" routerLinkActive="active">{{ 'nav.myRaces' | t }}</a>
           }
           <a routerLink="/public-races" routerLinkActive="active">{{ 'nav.publicRaces' | t }}</a>
-          <a routerLink="/races/new" routerLinkActive="active">{{ 'nav.createRace' | t }}</a>
+          <button
+            type="button"
+            class="shell__nav-create"
+            [attr.aria-label]="'nav.createRace' | t"
+            [attr.title]="'nav.createRace' | t"
+            (click)="createRaceModal.open()"
+          >
+            <span class="shell__nav-create-plus" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="shell__nav-create-tooltip">{{ 'nav.createRace' | t }}</span>
+          </button>
         }
       </nav>
 
@@ -63,26 +76,75 @@
 
           @if (userMenuOpen()) {
             <div class="user-menu__dropdown" role="menu">
-              <a routerLink="/created-races" role="menuitem" (click)="closeUserMenu()">
-                {{ 'nav.createdRaces' | t }}
+              <a routerLink="/created-races" role="menuitem" class="user-menu__item" (click)="closeUserMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
+                  <path
+                    d="M8 21h8M12 17v4M7 4h10l1 4H6l1-4zM9 8v5a3 3 0 0 0 6 0V8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>{{ 'nav.createdRaces' | t }}</span>
               </a>
-              <a routerLink="/settings" role="menuitem" (click)="closeUserMenu()">
-                {{ 'nav.settings' | t }}
+              <a routerLink="/settings" role="menuitem" class="user-menu__item" (click)="closeUserMenu()">
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
+                  <path
+                    d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                  />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>{{ 'nav.settings' | t }}</span>
               </a>
-              <button type="button" role="menuitem" (click)="logout()">
-                {{ 'nav.logout' | t }}
-              </button>
             </div>
           }
         </div>
+
+        <button
+          type="button"
+          class="shell__logout"
+          [attr.aria-label]="'nav.logout' | t"
+          [attr.title]="'nav.logout' | t"
+          (click)="openLogoutConfirm()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 2v10M18.36 6.64a9 9 0 1 1-12.72 0"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       } @else {
-        <a routerLink="/login" class="linkish">{{ 'nav.login' | t }}</a>
+        <button type="button" class="linkish" (click)="authModal.open()">{{ 'nav.login' | t }}</button>
       }
     </div>
   </header>
 
-  <main class="shell__main">
-    <h1>{{ title() }}</h1>
+  <main class="shell__main" [class.shell__main--centered]="centered()">
+    @if (title()) {
+      <div class="shell__title-row">
+        <h1>{{ title() }}</h1>
+        <ng-content select="[shellTitleAction]" />
+      </div>
+    }
     <ng-content />
   </main>
+
+  <app-site-footer />
 </div>

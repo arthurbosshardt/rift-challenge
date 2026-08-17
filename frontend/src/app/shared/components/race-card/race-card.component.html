@@ -1,29 +1,181 @@
 <a class="race-card" [routerLink]="['/races', race().shareSlug]">
-  <div class="race-card__header">
-    <h2>{{ race().name }}</h2>
-    @if (race().isPublic) {
-      <span class="badge badge--public">{{ 'race.public' | t }}</span>
-    }
-  </div>
-
-  <dl class="race-card__meta">
-    <div>
-      <dt>{{ 'create.type' | t }}</dt>
-      <dd>{{ typeLabel(race().type) }}</dd>
-    </div>
-    <div>
-      <dt>{{ 'race.start' | t }}</dt>
-      <dd>{{ race().startAt | raceDate }}</dd>
-    </div>
-    @if (race().endAt) {
-      <div>
-        <dt>{{ 'race.end' | t }}</dt>
-        <dd>{{ race().endAt | raceDate }}</dd>
+  <div class="race-card__layout">
+    <div class="race-card__summary">
+      <div class="race-card__header">
+        <h2>{{ race().name }}</h2>
+        <div class="race-card__tags">
+          <span class="badge" [class]="typeClass(race().type)">{{ typeLabel(race().type) }}</span>
+          <span class="badge" [class]="statusClass(race().status)">{{ statusLabel(race().status) }}</span>
+          @if (race().isPublic && !hidePublicBadge()) {
+            <span class="badge badge--public">{{ 'race.public' | t }}</span>
+          }
+        </div>
       </div>
-    }
-    <div>
-      <dt>{{ 'race.status' | t }}</dt>
-      <dd>{{ statusLabel(race().status) }}</dd>
+
+      <dl class="race-card__meta">
+        <div>
+          <dt>{{ 'race.start' | t }}</dt>
+          <dd>{{ race().startAt | raceDate }}</dd>
+        </div>
+        @if (race().endAt) {
+          <div>
+            <dt>{{ 'race.end' | t }}</dt>
+            <dd>{{ race().endAt | raceDate }}</dd>
+          </div>
+        }
+        <div>
+          <dt>{{ race().type === 'DUOQ' ? ('race.duos' | t) : ('race.participants' | t) }}</dt>
+          <dd>{{ entryCountLabel() }}</dd>
+        </div>
+      </dl>
     </div>
-  </dl>
+
+    <div class="race-card__preview-panel">
+      @if (hasPreview()) {
+        <section class="race-card__preview">
+          <p class="race-card__preview-title">{{ previewTitle() }}</p>
+
+          @if (race().type === 'DUOQ') {
+            <ul class="race-card__preview-list">
+              @for (duo of displayedDuos(); track duo.id) {
+                <li
+                  class="race-card__preview-item race-card__preview-item--duo"
+                  [class]="duoPreviewItemClass(duo)"
+                >
+                  @if (showLeaderboardPreview()) {
+                    <span
+                      class="race-card__position"
+                      [class]="duoPositionClass(duo)"
+                      aria-hidden="true"
+                    >
+                      {{ duo.position }}
+                    </span>
+                  }
+                  <div class="race-card__duo-avatars">
+                    <app-player-avatar
+                      [profileIconId]="duo.player1.profileIconId"
+                      [gameName]="duo.player1.gameName"
+                      size="xs"
+                    />
+                    <app-player-avatar
+                      [profileIconId]="duo.player2.profileIconId"
+                      [gameName]="duo.player2.gameName"
+                      size="xs"
+                    />
+                  </div>
+                  <div class="race-card__preview-text">
+                    <span class="race-card__preview-names">
+                      {{ duo.player1.gameName }} / {{ duo.player2.gameName }}
+                    </span>
+                    <span class="race-card__preview-ranks">
+                      @if (rankLabel(duo.player1); as p1Rank) {
+                        <span>{{ p1Rank }}</span>
+                      }
+                      @if (rankLabel(duo.player2); as p2Rank) {
+                        <span>{{ p2Rank }}</span>
+                      }
+                    </span>
+                  </div>
+                  @if (showLeaderboardPreview()) {
+                    <div class="race-card__stats">
+                      <span class="race-card__lp" [class]="lpClass(duo.combinedLpGained)">
+                        {{ lpLabel(duo.combinedLpGained) }}
+                      </span>
+                      <span class="race-card__wl">
+                        <span [class]="'race-card__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                          {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
+                        </span>
+                        @if (hasRecord(duo.wins, duo.losses)) {
+                          <span class="race-card__record">
+                            <span class="race-card__wins">
+                              {{ duo.wins }}<span class="race-card__record-abbr">{{ 'race.winAbbr' | t }}</span>
+                            </span>
+                            <span class="race-card__record-sep" aria-hidden="true">/</span>
+                            <span class="race-card__losses">
+                              {{ duo.losses }}<span class="race-card__record-abbr">{{ 'race.lossAbbr' | t }}</span>
+                            </span>
+                          </span>
+                        }
+                      </span>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <ul class="race-card__preview-list">
+              @for (participant of displayedParticipants(); track participant.id) {
+                <li class="race-card__preview-item" [class]="participantPreviewItemClass(participant)">
+                  @if (showLeaderboardPreview()) {
+                    <span
+                      class="race-card__position"
+                      [class]="participantPositionClass(participant)"
+                      aria-hidden="true"
+                    >
+                      {{ participant.position }}
+                    </span>
+                  }
+                  <div class="race-card__preview-rank">
+                    @if (participant.currentTier) {
+                      <app-rank-emblem [tier]="participant.currentTier" size="sm" />
+                    } @else {
+                      <span class="race-card__rank-placeholder" aria-hidden="true">—</span>
+                    }
+                  </div>
+                  <app-player-avatar
+                    [profileIconId]="participant.profileIconId"
+                    [gameName]="participant.gameName"
+                    size="xs"
+                  />
+                  <div class="race-card__preview-text">
+                    <span class="race-card__preview-names">{{ participant.gameName }}</span>
+                    @if (rankLabel(participant); as label) {
+                      <span class="race-card__preview-rank-label">{{ label }}</span>
+                    } @else {
+                      <span class="race-card__preview-rank-label race-card__preview-rank-label--muted">
+                        {{ participant.riotId }}
+                      </span>
+                    }
+                  </div>
+                  @if (showLeaderboardPreview()) {
+                    <div class="race-card__stats">
+                      <span class="race-card__lp" [class]="lpClass(participant.lpGained)">
+                        {{ lpLabel(participant.lpGained) }}
+                      </span>
+                      <span class="race-card__wl">
+                        <span
+                          [class]="'race-card__winrate ' + winRateClass(participant.winRate, participant.wins, participant.losses)"
+                        >
+                          {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
+                        </span>
+                        @if (hasRecord(participant.wins, participant.losses)) {
+                          <span class="race-card__record">
+                            <span class="race-card__wins">
+                              {{ participant.wins }}<span class="race-card__record-abbr">{{ 'race.winAbbr' | t }}</span>
+                            </span>
+                            <span class="race-card__record-sep" aria-hidden="true">/</span>
+                            <span class="race-card__losses">
+                              {{ participant.losses }}<span class="race-card__record-abbr">{{ 'race.lossAbbr' | t }}</span>
+                            </span>
+                          </span>
+                        }
+                      </span>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          @if (remainingCount() > 0) {
+            <p class="race-card__more">{{ 'race.andMore' | t: { count: remainingCount() } }}</p>
+          }
+        </section>
+      } @else {
+        <p class="race-card__empty">
+          {{ race().type === 'DUOQ' ? ('race.noDuos' | t) : ('race.noParticipants' | t) }}
+        </p>
+      }
+    </div>
+  </div>
 </a>

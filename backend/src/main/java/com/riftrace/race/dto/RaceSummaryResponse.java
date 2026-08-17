@@ -3,6 +3,7 @@ package com.riftrace.race.dto;
 import com.riftrace.race.Race;
 import com.riftrace.race.RaceType;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record RaceSummaryResponse(
@@ -13,10 +14,21 @@ public record RaceSummaryResponse(
         Instant startAt,
         Instant endAt,
         boolean isPublic,
-        String status
+        String status,
+        int entryCount,
+        List<String> participantGameNames,
+        List<ParticipantPreviewResponse> previewParticipants,
+        List<DuoPreviewResponse> previewDuos
 ) {
 
-    public static RaceSummaryResponse from(Race race, Instant now) {
+    public static RaceSummaryResponse from(
+            Race race,
+            Instant now,
+            int entryCount,
+            List<String> participantGameNames,
+            List<ParticipantPreviewResponse> previewParticipants,
+            List<DuoPreviewResponse> previewDuos
+    ) {
         return new RaceSummaryResponse(
                 race.getId(),
                 race.getShareSlug(),
@@ -25,7 +37,11 @@ public record RaceSummaryResponse(
                 race.getStartAt(),
                 race.getEndAt(),
                 race.isPublic(),
-                resolveStatus(race.getStartAt(), race.getEndAt(), now)
+                resolveStatus(race.getStartAt(), race.getEndAt(), now),
+                entryCount,
+                participantGameNames,
+                previewParticipants,
+                previewDuos
         );
     }
 

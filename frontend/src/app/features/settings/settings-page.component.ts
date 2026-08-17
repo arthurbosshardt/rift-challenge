@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { UserRiotAccountApiService } from '../../core/services/user-riot-account-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { LinkedRiotAccount } from '../../core/models/race.models';
-import { buildRiotId } from '../../core/utils/riot-id';
+import { buildRiotId, normalizeGameName, normalizeTagLine } from '../../core/utils/riot-id';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { ThemeService } from '../../core/theme/theme.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -27,6 +28,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 export class SettingsPageComponent implements OnInit {
   private readonly accountApi = inject(UserRiotAccountApiService);
   protected readonly auth = inject(AuthService);
+  protected readonly theme = inject(ThemeService);
   private readonly i18n = inject(I18nService);
 
   protected readonly linking = signal(false);
@@ -50,12 +52,15 @@ export class SettingsPageComponent implements OnInit {
       return;
     }
 
+    this.gameNameInput = normalizeGameName(this.gameNameInput);
+    this.tagLineInput = normalizeTagLine(this.tagLineInput);
+
     const riotId = buildRiotId(this.gameNameInput, this.tagLineInput);
-    if (!this.gameNameInput.trim()) {
+    if (!this.gameNameInput) {
       this.accountError.set(this.i18n.t('errors.gameNameRequired'));
       return;
     }
-    if (!this.tagLineInput.trim()) {
+    if (!this.tagLineInput) {
       this.accountError.set(this.i18n.t('errors.tagLineRequired'));
       return;
     }

@@ -8,8 +8,10 @@ import com.riftrace.race.dto.ParticipantResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
 import com.riftrace.race.dto.UpdateRaceEndRequest;
+import com.riftrace.race.dto.UpdateRaceNameRequest;
 import com.riftrace.race.dto.UpdateRaceScheduleRequest;
 import com.riftrace.race.dto.UpdateRaceStartRequest;
+import com.riftrace.race.dto.UpdateRaceVisibilityRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,8 +47,12 @@ public class RaceController {
     }
 
     @GetMapping("/public")
-    public List<RaceSummaryResponse> listPublicRaces() {
-        return raceService.listPublicRaces();
+    public List<RaceSummaryResponse> listPublicRaces(
+            @RequestParam(required = false) String raceName,
+            @RequestParam(required = false) String summoner,
+            @RequestParam(required = false) RaceType type
+    ) {
+        return raceService.listPublicRaces(raceName, summoner, type);
     }
 
     @GetMapping("/owned")
@@ -113,6 +120,26 @@ public class RaceController {
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         return raceService.updateEndAt(raceId, ownerId, request);
+    }
+
+    @PatchMapping("/{raceId}/visibility")
+    public RaceDetailResponse updateVisibility(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @Valid @RequestBody UpdateRaceVisibilityRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.updateVisibility(raceId, ownerId, request);
+    }
+
+    @PatchMapping("/{raceId}/name")
+    public RaceDetailResponse updateName(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @Valid @RequestBody UpdateRaceNameRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.updateName(raceId, ownerId, request);
     }
 
     @PostMapping("/{raceId}/refresh")

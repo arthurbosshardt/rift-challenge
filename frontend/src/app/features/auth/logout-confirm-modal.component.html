@@ -1,0 +1,23 @@
+@if (logoutConfirm.isOpen()) {
+  <div
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'auth.logoutConfirmTitle' | t"
+    (click)="close()"
+  >
+    <section class="modal-panel" (click)="$event.stopPropagation()">
+      <h2 class="logout-confirm__title">{{ 'auth.logoutConfirmTitle' | t }}</h2>
+      <p class="logout-confirm__message">{{ 'auth.logoutConfirmMessage' | t }}</p>
+
+      <div class="logout-confirm__actions">
+        <button type="button" class="logout-confirm__cancel" (click)="close()">
+          {{ 'create.cancel' | t }}
+        </button>
+        <button type="button" class="logout-confirm__confirm" (click)="confirm()">
+          {{ 'nav.logout' | t }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
