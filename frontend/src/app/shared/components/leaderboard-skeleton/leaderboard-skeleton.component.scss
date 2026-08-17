@@ -88,4 +88,13 @@
   .leaderboard-skeleton__history {
     display: none;
   }
+
+  .leaderboard-skeleton__sort {
+    width: 100%;
+  }
+
+  .leaderboard-skeleton__criteria {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }
