@@ -57,7 +57,17 @@ Les migrations Flyway s'exécutent au démarrage du backend.
 
 1. Importer le dépôt GitHub sur Vercel.
 2. **Root Directory** : `frontend`
-3. Vercel lit `frontend/vercel.json` (build + rewrite SPA).
+3. **Framework Settings** (Settings → Build & Deployment) — activer **Override** et configurer :
+
+   | Réglage | Valeur |
+   |---|---|
+   | Framework Preset | **Other** (ou Angular + overrides ci-dessous) |
+   | Build Command | `npm run build` |
+   | Output Directory | `dist/frontend/browser` |
+   | Install Command | `npm ci` |
+
+   > La prod peut rester bloquée sur d’anciens **Production Overrides** (`dist/frontend`). Si l’écran affiche « Overridden » avec l’ancienne valeur, mets à jour **Project Settings** puis **Redeploy** sans cache.
+
 4. Variables d'environnement (Settings → Environment Variables) :
 
    | Variable | Valeur |
@@ -66,7 +76,7 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | `SUPABASE_PUBLISHABLE_KEY` | Clé publishable |
    | `API_BASE_URL` | URL Render du backend (sans slash final) |
 
-5. Déployer. Le script `scripts/write-production-env.mjs` génère `environment.prod.ts` au build.
+5. Déployer (**Redeploy** → décocher « Use existing Build Cache »).
 
 ## 4. CORS et auth
 
