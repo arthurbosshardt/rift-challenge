@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const envDir = join(root, 'src/environments');
 
 const supabaseUrl = process.env.SUPABASE_URL ?? 'https://YOUR_PROJECT.supabase.co';
 const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? '';
@@ -16,5 +17,7 @@ const content = `export const environment = {
 };
 `;
 
-writeFileSync(join(root, 'src/environments/environment.prod.ts'), content, 'utf8');
-console.log('Generated src/environments/environment.prod.ts');
+for (const fileName of ['environment.ts', 'environment.prod.ts']) {
+  writeFileSync(join(envDir, fileName), content, 'utf8');
+  console.log(`Generated src/environments/${fileName}`);
+}

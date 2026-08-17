@@ -13,7 +13,9 @@ frontend/.angular/
 .env.*
 !.env.example
 **/application-local.yml
-frontend/src/environments/environment.ts
+
+# Local overrides (tracked placeholder committed; copy real values locally without committing)
+# frontend/src/environments/environment.ts
 
 # OS / IDE
 .DS_Store

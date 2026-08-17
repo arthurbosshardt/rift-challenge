@@ -12,13 +12,17 @@
 
 1. Créer un projet Supabase.
 2. Noter l'URL du projet et la clé **publishable** (Project Settings → API).
-3. Récupérer la connection string JDBC :
-   - Project Settings → Database → Connection string → **URI**
-   - Convertir en JDBC pour Spring Boot :
+3. Récupérer la connection string JDBC pour **Render** (connexion externe) :
+   - Supabase → **Connect** → **Session pooler** (pas « Direct connection »)
+   - Render ne supporte pas bien l’IPv6 Supabase → la connexion directe (`db.xxx.supabase.co`) échoue souvent avec `Network unreachable`
+   - Exemple JDBC Session pooler :
      ```
-     jdbc:postgresql://db.YOUR_PROJECT.supabase.co:5432/postgres?sslmode=require
+     jdbc:postgresql://aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require
      ```
-   - Utilisateur / mot de passe : ceux indiqués dans Supabase.
+   - `DB_USER` = `postgres.VOTRE_PROJECT_REF` (format pooler Supabase)
+   - `DB_PASSWORD` = mot de passe base Supabase
+
+   > Flyway a besoin du **Session pooler** (port 5432), pas du Transaction pooler (port 6543).
 
 Les migrations Flyway s'exécutent au démarrage du backend.
 
@@ -37,8 +41,8 @@ Les migrations Flyway s'exécutent au démarrage du backend.
 
    | Variable | Exemple |
    |---|---|
-   | `DATABASE_URL` | `jdbc:postgresql://db.xxx.supabase.co:5432/postgres?sslmode=require` |
-   | `DB_USER` | `postgres` |
+   | `DATABASE_URL` | JDBC **Session pooler** Supabase (voir §1) |
+   | `DB_USER` | `postgres.VOTRE_PROJECT_REF` |
    | `DB_PASSWORD` | *(mot de passe Supabase)* |
    | `SUPABASE_URL` | `https://xxx.supabase.co` |
    | `SUPABASE_PUBLISHABLE_KEY` | `eyJ...` |
