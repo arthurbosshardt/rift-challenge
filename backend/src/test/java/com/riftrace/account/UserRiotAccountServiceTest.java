@@ -96,6 +96,25 @@ class UserRiotAccountServiceTest {
     }
 
     @Test
+    void findLinkedAccount_whenRiotUnavailable_keepsAccountWithoutIcon() {
+        UUID userId = UUID.randomUUID();
+        UserRiotAccount account = UserRiotAccount.create(
+                userId,
+                new RiotAccountDto("puuid-1", "Tanor", "7154")
+        );
+
+        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
+        when(riotSummonerClient.findProfileIconId("puuid-1"))
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS, "rate limit"));
+
+        var response = userRiotAccountService.findLinkedAccount(userId);
+
+        assertThat(response).isPresent();
+        assertThat(response.get().profileIconId()).isNull();
+        verify(userRiotAccountRepository, never()).save(any());
+    }
+
+    @Test
     void listLinkedPuids_returnsStoredPuids() {
         UUID userId = UUID.randomUUID();
         when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(

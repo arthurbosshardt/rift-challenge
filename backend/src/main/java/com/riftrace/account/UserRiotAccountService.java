@@ -33,7 +33,7 @@ public class UserRiotAccountService {
         this.riotSummonerClient = riotSummonerClient;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<UserRiotAccountResponse> listAccounts(UUID userId) {
         return userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
                 .map(this::enrichProfileIcon)
@@ -77,7 +77,7 @@ public class UserRiotAccountService {
         UserRiotAccount saved = userRiotAccountRepository.save(
                 UserRiotAccount.create(userId, account, profileIconId)
         );
-        return UserRiotAccountResponse.from(saved);
+        return enrichProfileIcon(saved);
     }
 
     @Transactional
@@ -92,11 +92,15 @@ public class UserRiotAccountService {
             return UserRiotAccountResponse.from(account);
         }
 
-        return riotSummonerClient.findProfileIconId(account.getRiotPuuid())
-                .map(profileIconId -> {
-                    account.updateProfileIconId(profileIconId);
-                    return UserRiotAccountResponse.from(userRiotAccountRepository.save(account));
-                })
-                .orElseGet(() -> UserRiotAccountResponse.from(account));
+        try {
+            return riotSummonerClient.findProfileIconId(account.getRiotPuuid())
+                    .map(profileIconId -> {
+                        account.updateProfileIconId(profileIconId);
+                        return UserRiotAccountResponse.from(userRiotAccountRepository.save(account));
+                    })
+                    .orElseGet(() -> UserRiotAccountResponse.from(account));
+        } catch (ResponseStatusException ignored) {
+            return UserRiotAccountResponse.from(account);
+        }
     }
 }

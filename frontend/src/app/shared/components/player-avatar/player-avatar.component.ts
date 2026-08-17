@@ -1,5 +1,5 @@
 import { Component, effect, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
-import { profileIconInitial, profileIconUrl } from '../../../core/utils/profile-icon';
+import { profileIconInitial, profileIconUrls } from '../../../core/utils/profile-icon';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 import { I18nService } from '../../../core/i18n/i18n.service';
 
@@ -18,11 +18,13 @@ export class PlayerAvatarComponent {
   private readonly i18n = inject(I18nService);
 
   protected readonly iconFailed = signal(false);
+  private readonly iconUrlIndex = signal(0);
 
   constructor() {
     effect(() => {
       this.profileIconId();
       this.iconFailed.set(false);
+      this.iconUrlIndex.set(0);
     });
   }
 
@@ -30,7 +32,9 @@ export class PlayerAvatarComponent {
     if (this.iconFailed()) {
       return null;
     }
-    return profileIconUrl(this.profileIconId());
+    const urls = profileIconUrls(this.profileIconId());
+    const index = this.iconUrlIndex();
+    return urls[index] ?? null;
   }
 
   protected initial(): string {
@@ -44,6 +48,11 @@ export class PlayerAvatarComponent {
   }
 
   protected onIconError(): void {
+    const nextIndex = this.iconUrlIndex() + 1;
+    if (nextIndex < profileIconUrls(this.profileIconId()).length) {
+      this.iconUrlIndex.set(nextIndex);
+      return;
+    }
     this.iconFailed.set(true);
   }
 }
