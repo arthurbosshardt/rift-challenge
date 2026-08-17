@@ -19,7 +19,11 @@ export class AuthCallbackPageComponent implements OnInit {
   private readonly router = inject(Router);
 
   async ngOnInit(): Promise<void> {
-    await this.auth.completeOAuthOrEmailCallback();
+    const error = await this.auth.completeOAuthOrEmailCallback();
+    if (error) {
+      await this.router.navigate(['/login'], { queryParams: { error } });
+      return;
+    }
     await this.router.navigateByUrl(this.auth.isAuthenticated() ? '/my-races' : '/login');
   }
 }

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.List;
 import java.util.Map;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -65,7 +66,12 @@ public class SupabaseBearerAuthenticationFilter extends OncePerRequestFilter {
         if (userMetadata == null) {
             return null;
         }
-        Object username = userMetadata.get("username");
-        return username == null ? null : username.toString();
+        for (String key : List.of("username", "preferred_username", "full_name", "name")) {
+            Object value = userMetadata.get(key);
+            if (value != null && !value.toString().isBlank()) {
+                return value.toString();
+            }
+        }
+        return null;
     }
 }

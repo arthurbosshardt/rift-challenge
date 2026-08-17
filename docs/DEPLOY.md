@@ -82,7 +82,9 @@ Les migrations Flyway s'exécutent au démarrage du backend.
 
 Après le premier déploiement front, mettre à jour `CORS_ORIGINS` sur Render avec l'URL Vercel réelle (y compris le domaine de preview si besoin).
 
-Configurer l'auth Google dans Supabase (Redirect URLs) :
+Configurer l'auth Google : voir [docs/GOOGLE_OAUTH.md](GOOGLE_OAUTH.md).
+
+Redirect URLs Supabase minimales :
 - `https://votre-app.vercel.app/**`
 - `http://localhost:4200/**` (dev)
 

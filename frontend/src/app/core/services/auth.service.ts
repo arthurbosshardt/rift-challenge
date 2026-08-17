@@ -42,10 +42,26 @@ export class AuthService {
     }
   }
 
-  async completeOAuthOrEmailCallback(): Promise<void> {
+  async completeOAuthOrEmailCallback(): Promise<string | null> {
     await this.waitUntilReady();
+
+    const callbackUrl = window.location.href;
+    const hasOAuthCode =
+      new URL(callbackUrl).searchParams.has('code') || callbackUrl.includes('access_token=');
+
+    if (hasOAuthCode) {
+      const { data, error } = await this.supabase.auth.exchangeCodeForSession(callbackUrl);
+      if (error) {
+        this.session.set(null);
+        return error.message;
+      }
+      this.session.set(data.session);
+      return null;
+    }
+
     const { data } = await this.supabase.auth.getSession();
     this.session.set(data.session);
+    return null;
   }
 
   getAccessToken(): string | null {

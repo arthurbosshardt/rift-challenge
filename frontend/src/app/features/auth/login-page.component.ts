@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
@@ -10,9 +10,10 @@ import { PageShellComponent } from '../../shared/components/page-shell/page-shel
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
 })
-export class LoginPageComponent {
+export class LoginPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected mode: 'login' | 'signup' = 'login';
   protected email = '';
@@ -20,6 +21,14 @@ export class LoginPageComponent {
   protected username = '';
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
+  protected readonly googleLoading = signal(false);
+
+  ngOnInit(): void {
+    const oauthError = this.route.snapshot.queryParamMap.get('error');
+    if (oauthError) {
+      this.error.set(oauthError);
+    }
+  }
 
   protected async submit(): Promise<void> {
     this.error.set(null);
@@ -47,7 +56,9 @@ export class LoginPageComponent {
 
   protected async signInWithGoogle(): Promise<void> {
     this.error.set(null);
+    this.googleLoading.set(true);
     const message = await this.auth.signInWithGoogle();
+    this.googleLoading.set(false);
     if (message) {
       this.error.set(message);
     }

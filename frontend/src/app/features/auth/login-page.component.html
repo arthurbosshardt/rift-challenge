@@ -40,6 +40,8 @@
 
     <div class="divider">ou</div>
 
-    <button type="button" class="google" (click)="signInWithGoogle()">Continuer avec Google</button>
+    <button type="button" class="google" [disabled]="googleLoading()" (click)="signInWithGoogle()">
+      {{ googleLoading() ? 'Redirection…' : 'Continuer avec Google' }}
+    </button>
   </section>
 </app-page-shell>
