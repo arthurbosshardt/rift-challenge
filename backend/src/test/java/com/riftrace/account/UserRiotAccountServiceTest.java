@@ -76,6 +76,26 @@ class UserRiotAccountServiceTest {
     }
 
     @Test
+    void findLinkedAccount_whenProfileIconMissing_fetchesAndPersistsIcon() {
+        UUID userId = UUID.randomUUID();
+        UserRiotAccount account = UserRiotAccount.create(
+                userId,
+                new RiotAccountDto("puuid-1", "Tanor", "7154")
+        );
+
+        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
+        when(riotSummonerClient.findProfileIconId("puuid-1")).thenReturn(Optional.of(5678));
+        when(userRiotAccountRepository.save(account)).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = userRiotAccountService.findLinkedAccount(userId);
+
+        assertThat(response).isPresent();
+        assertThat(response.get().profileIconId()).isEqualTo(5678);
+        assertThat(account.getProfileIconId()).isEqualTo(5678);
+        verify(userRiotAccountRepository).save(account);
+    }
+
+    @Test
     void listLinkedPuids_returnsStoredPuids() {
         UUID userId = UUID.randomUUID();
         when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(

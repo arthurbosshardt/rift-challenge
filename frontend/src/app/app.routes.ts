@@ -1,5 +1,10 @@
 import { Routes } from '@angular/router';
-import { authHomeGuard, guestAuthGuard, guestHomeGuard } from './core/guards/home.guards';
+import {
+  authHomeGuard,
+  guestAuthGuard,
+  guestHomeGuard,
+  linkedAccountGuard,
+} from './core/guards/home.guards';
 import { AuthCallbackPageComponent } from './features/auth/auth-callback-page.component';
 import { LoginPageComponent } from './features/auth/login-page.component';
 import { SettingsPageComponent } from './features/settings/settings-page.component';
@@ -27,7 +32,7 @@ export const routes: Routes = [
   {
     path: 'my-races',
     component: MyRacesPageComponent,
-    canActivate: [authHomeGuard],
+    canActivate: [linkedAccountGuard],
   },
   {
     path: 'created-races',

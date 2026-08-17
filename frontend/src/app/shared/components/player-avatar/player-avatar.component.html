@@ -1,4 +1,4 @@
-<div class="player-avatar" [class.player-avatar--sm]="size() === 'sm'">
+<div class="player-avatar" [class.player-avatar--xs]="size() === 'xs'" [class.player-avatar--sm]="size() === 'sm'">
   @if (iconUrl(); as url) {
     <img class="player-avatar__icon" [src]="url" [alt]="iconAlt()" loading="lazy" (error)="onIconError()" />
   } @else {

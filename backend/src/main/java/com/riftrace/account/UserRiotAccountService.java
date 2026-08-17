@@ -36,15 +36,15 @@ public class UserRiotAccountService {
     @Transactional(readOnly = true)
     public List<UserRiotAccountResponse> listAccounts(UUID userId) {
         return userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
-                .map(UserRiotAccountResponse::from)
+                .map(this::enrichProfileIcon)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<UserRiotAccountResponse> findLinkedAccount(UUID userId) {
         return userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
                 .findFirst()
-                .map(UserRiotAccountResponse::from);
+                .map(this::enrichProfileIcon);
     }
 
     @Transactional(readOnly = true)
@@ -85,5 +85,18 @@ public class UserRiotAccountService {
         UserRiotAccount account = userRiotAccountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Linked account not found"));
         userRiotAccountRepository.delete(account);
+    }
+
+    private UserRiotAccountResponse enrichProfileIcon(UserRiotAccount account) {
+        if (account.getProfileIconId() != null) {
+            return UserRiotAccountResponse.from(account);
+        }
+
+        return riotSummonerClient.findProfileIconId(account.getRiotPuuid())
+                .map(profileIconId -> {
+                    account.updateProfileIconId(profileIconId);
+                    return UserRiotAccountResponse.from(userRiotAccountRepository.save(account));
+                })
+                .orElseGet(() -> UserRiotAccountResponse.from(account));
     }
 }

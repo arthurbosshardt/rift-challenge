@@ -1,4 +1,21 @@
 <app-page-shell [title]="'home.publicTitle' | t" [subtitle]="'home.publicSubtitle' | t">
+  @if (showLinkBanner()) {
+    <aside class="link-banner">
+      <p class="link-banner__text">
+        @if (auth.isAuthenticated()) {
+          {{ 'home.linkAccountBanner' | t }}
+        } @else {
+          {{ 'home.loginToLinkBanner' | t }}
+        }
+      </p>
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/settings" class="link-banner__action">{{ 'home.openSettings' | t }}</a>
+      } @else {
+        <a routerLink="/login" class="link-banner__action">{{ 'nav.login' | t }}</a>
+      }
+    </aside>
+  }
+
   @if (loading()) {
     <app-loader [label]="'home.loading' | t" />
   } @else if (error()) {

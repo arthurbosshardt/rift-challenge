@@ -40,7 +40,7 @@ export class SettingsPageComponent implements OnInit {
   protected tagLineInput = '';
 
   ngOnInit(): void {
-    void this.auth.waitUntilReady();
+    void this.auth.waitUntilReady().then(() => this.auth.refreshProfile());
   }
 
   protected linkedAccount(): LinkedRiotAccount | null {

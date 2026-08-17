@@ -10,6 +10,15 @@
   height: 44px;
 }
 
+.player-avatar--xs {
+  width: 32px;
+  height: 32px;
+}
+
+.player-avatar--xs .player-avatar__fallback {
+  font-size: 0.875rem;
+}
+
 .player-avatar__icon,
 .player-avatar__fallback {
   width: 100%;

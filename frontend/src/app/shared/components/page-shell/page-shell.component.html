@@ -11,7 +11,9 @@
     <div class="shell__actions">
       <nav class="shell__nav">
         @if (auth.isAuthenticated()) {
-          <a routerLink="/my-races" routerLinkActive="active">{{ 'nav.myRaces' | t }}</a>
+          @if (auth.linkedAccount()) {
+            <a routerLink="/my-races" routerLinkActive="active">{{ 'nav.myRaces' | t }}</a>
+          }
           <a routerLink="/public-races" routerLinkActive="active">{{ 'nav.publicRaces' | t }}</a>
           <a routerLink="/races/new" routerLinkActive="active">{{ 'nav.createRace' | t }}</a>
         }
@@ -37,14 +39,14 @@
       </div>
 
       @if (auth.isAuthenticated()) {
-        <div class="user-menu" (mouseleave)="closeUserMenu()">
+        <div class="user-menu" #userMenu>
           @if (auth.isProfileLoading()) {
             <app-loader [compact]="true" />
           } @else if (auth.headerIdentity(); as identity) {
             <button
               type="button"
               class="user-menu__trigger"
-              (click)="toggleUserMenu()"
+              (click)="toggleUserMenu($event)"
               [attr.aria-expanded]="userMenuOpen()"
               aria-haspopup="menu"
             >
@@ -52,7 +54,7 @@
                 <app-player-avatar
                   [profileIconId]="identity.profileIconId"
                   [gameName]="identity.gameName"
-                  size="sm"
+                  size="xs"
                 />
               }
               <span class="user-menu__label">{{ identity.label }}</span>

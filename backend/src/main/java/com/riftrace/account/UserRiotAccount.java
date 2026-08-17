@@ -91,4 +91,8 @@ public class UserRiotAccount {
     public Integer getProfileIconId() {
         return profileIconId;
     }
+
+    public void updateProfileIconId(Integer profileIconId) {
+        this.profileIconId = profileIconId;
+    }
 }

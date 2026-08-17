@@ -3,6 +3,36 @@
   gap: 1rem;
 }
 
+.link-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  border-radius: 12px;
+  background: var(--gold-a08);
+}
+
+.link-banner__text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.link-banner__action {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link-banner__action:hover {
+  text-decoration: underline;
+}
+
 .state {
   color: var(--text-muted);
 }

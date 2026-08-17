@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, input, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -20,14 +20,27 @@ export class PageShellComponent {
   protected readonly auth = inject(AuthService);
   protected readonly i18n = inject(I18nService);
   protected readonly userMenuOpen = signal(false);
+  private readonly userMenuRef = viewChild<ElementRef<HTMLElement>>('userMenu');
   private readonly router = inject(Router);
+
+  @HostListener('document:click', ['$event'])
+  protected closeUserMenuOnClickOutside(event: MouseEvent): void {
+    if (!this.userMenuOpen()) {
+      return;
+    }
+    const menu = this.userMenuRef()?.nativeElement;
+    if (menu && !menu.contains(event.target as Node)) {
+      this.closeUserMenu();
+    }
+  }
 
   @HostListener('document:keydown.escape')
   protected closeUserMenuOnEscape(): void {
     this.userMenuOpen.set(false);
   }
 
-  protected toggleUserMenu(): void {
+  protected toggleUserMenu(event: MouseEvent): void {
+    event.stopPropagation();
     this.userMenuOpen.update((open) => !open);
   }
 

@@ -1,7 +1,9 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthMeResponse, LinkedRiotAccount } from '../models/race.models';
+import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/race.models';
 import { apiUrl } from '../utils/api-url';
 import {
   SESSION_LAST_SEEN_KEY,
@@ -12,6 +14,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly http = inject(HttpClient);
+
   private readonly supabase: SupabaseClient = createClient(
     environment.supabaseUrl,
     environment.supabasePublishableKey,
@@ -256,26 +260,48 @@ export class AuthService {
         return;
       }
 
-      const response = await fetch(apiUrl('/api/auth/me'), {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        await this.logout();
-        return;
-      }
-      if (!response.ok) {
+      let me: AuthMeResponse;
+      try {
+        me = await firstValueFrom(this.http.get<AuthMeResponse>(apiUrl('/api/auth/me')));
+      } catch (error) {
+        if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+          await this.logout();
+          return;
+        }
         this.profileUsername.set(null);
         this.linkedRiotAccount.set(null);
         return;
       }
-      const me = (await response.json()) as AuthMeResponse;
+
       this.profileUsername.set(me.username?.trim() || null);
-      this.linkedRiotAccount.set(me.linkedRiotAccount ?? null);
+      const linked = me.linkedRiotAccount ?? (await this.fetchLinkedAccountFallback());
+      this.linkedRiotAccount.set(linked);
     } catch {
       this.profileUsername.set(null);
       this.linkedRiotAccount.set(null);
     } finally {
       this.profileLoading.set(false);
+    }
+  }
+
+  private async fetchLinkedAccountFallback(): Promise<LinkedRiotAccount | null> {
+    try {
+      const accounts = await firstValueFrom(
+        this.http.get<UserRiotAccount[]>(apiUrl('/api/me/riot-accounts')),
+      );
+      const account = accounts[0];
+      if (!account) {
+        return null;
+      }
+      return {
+        id: account.id,
+        gameName: account.gameName,
+        tagLine: account.tagLine,
+        riotId: account.riotId,
+        profileIconId: account.profileIconId,
+      };
+    } catch {
+      return null;
     }
   }
 

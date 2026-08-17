@@ -14,7 +14,7 @@ export class PlayerAvatarComponent {
   readonly profileIconId = input<number | null>(null);
   readonly gameName = input<string>('');
   readonly tier = input<string | null>(null);
-  readonly size = input<'sm' | 'md'>('md');
+  readonly size = input<'xs' | 'sm' | 'md'>('md');
   private readonly i18n = inject(I18nService);
 
   protected readonly iconFailed = signal(false);
