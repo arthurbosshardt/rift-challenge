@@ -31,7 +31,7 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    - Dockerfile : `backend/Dockerfile`
    - Health check : `/actuator/health`
 
-   > Le Blueprint `render.yaml` configure déjà `runtime: docker` — pas besoin de commandes build/start Maven.
+   > Avec `rootDir: backend`, les chemins Docker sont relatifs à ce dossier : `./Dockerfile` et `.` (pas `./backend/...`).
 
 3. Variables d'environnement :
 
