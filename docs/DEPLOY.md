@@ -51,6 +51,7 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | `RIOT_PLATFORM` | `euw1` |
    | `RIOT_REGIONAL_ROUTING` | `europe` |
    | `CORS_ORIGINS` | `https://rift-challenge.com,https://www.rift-challenge.com` |
+   | `HIKARI_MAX_POOL_SIZE` | `3` (le session pooler Supabase plafonne ~15 clients) |
 
 4. Après déploiement : `https://<ton-service>.onrender.com/actuator/health`
 
