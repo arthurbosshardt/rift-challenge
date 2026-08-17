@@ -11,13 +11,34 @@ const TIER_LABELS_FR: Record<string, string> = {
   CHALLENGER: 'Challenger',
 };
 
+const TIER_LABELS_EN: Record<string, string> = {
+  IRON: 'Iron',
+  BRONZE: 'Bronze',
+  SILVER: 'Silver',
+  GOLD: 'Gold',
+  PLATINUM: 'Platinum',
+  EMERALD: 'Emerald',
+  DIAMOND: 'Diamond',
+  MASTER: 'Master',
+  GRANDMASTER: 'Grandmaster',
+  CHALLENGER: 'Challenger',
+};
+
 const HIGH_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
 
-export function tierLabelFr(tier: string | null | undefined): string {
+export function tierLabel(
+  tier: string | null | undefined,
+  locale: 'fr' | 'en' = 'fr',
+): string {
   if (!tier) {
-    return 'Non classé';
+    return locale === 'en' ? 'Unranked' : 'Non classé';
   }
-  return TIER_LABELS_FR[tier.toUpperCase()] ?? tier;
+  const labels = locale === 'en' ? TIER_LABELS_EN : TIER_LABELS_FR;
+  return labels[tier.toUpperCase()] ?? tier;
+}
+
+export function tierLabelFr(tier: string | null | undefined): string {
+  return tierLabel(tier, 'fr');
 }
 
 export function rankEmblemUrl(tier: string | null | undefined): string | null {
@@ -31,21 +52,26 @@ export function formatRankLabel(
   tier: string | null | undefined,
   rank: string | null | undefined,
   lp: number,
+  locale: 'fr' | 'en' = 'fr',
 ): string {
   if (!tier) {
-    return 'Non classé';
+    return locale === 'en' ? 'Unranked' : 'Non classé';
   }
 
-  const tierFr = tierLabelFr(tier);
+  const labeledTier = tierLabel(tier, locale);
   if (HIGH_TIERS.has(tier.toUpperCase())) {
-    return `${tierFr} · ${lp} LP`;
+    return `${labeledTier} · ${lp} LP`;
   }
 
   const division = rank ? ` ${rank}` : '';
-  return `${tierFr}${division} · ${lp} LP`;
+  return `${labeledTier}${division} · ${lp} LP`;
 }
 
-export function formatDurationCountdown(targetIso: string, nowMs = Date.now()): string | null {
+export function formatDurationCountdown(
+  targetIso: string,
+  nowMs = Date.now(),
+  locale: 'fr' | 'en' = 'fr',
+): string | null {
   const remainingMs = new Date(targetIso).getTime() - nowMs;
   if (Number.isNaN(remainingMs) || remainingMs <= 0) {
     return null;
@@ -56,9 +82,10 @@ export function formatDurationCountdown(targetIso: string, nowMs = Date.now()): 
   const hours = Math.floor((totalSeconds % 86_400) / 3_600);
   const minutes = Math.floor((totalSeconds % 3_600) / 60);
   const seconds = totalSeconds % 60;
+  const dayUnit = locale === 'en' ? 'd' : 'j';
 
   if (days > 0) {
-    return `${days}j ${hours}h ${minutes.toString().padStart(2, '0')}m`;
+    return `${days}${dayUnit} ${hours}h ${minutes.toString().padStart(2, '0')}m`;
   }
   if (hours > 0) {
     return `${hours}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;

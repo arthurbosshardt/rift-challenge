@@ -53,7 +53,7 @@ export class RaceApiService {
     return this.http.post<RaceDetail>(`${this.baseUrl}/${raceId}/refresh`, {});
   }
 
-  getCurrentUserId(): Observable<AuthMeResponse> {
+  getCurrentUser(): Observable<AuthMeResponse> {
     return this.http.get<AuthMeResponse>(apiUrl('/api/auth/me'));
   }
 }

@@ -1,14 +1,14 @@
-<app-page-shell title="Mes races" subtitle="Vos races privées et publiques">
+<app-page-shell [title]="'home.myRacesTitle' | t" [subtitle]="'home.myRacesSubtitle' | t">
   <div class="toolbar">
-    <a routerLink="/races/new" class="create-link">+ Créer une race</a>
+    <a routerLink="/races/new" class="create-link">{{ 'home.createLink' | t }}</a>
   </div>
 
   @if (loading()) {
-    <p class="state">Chargement…</p>
+    <app-loader [label]="'home.loading' | t" />
   } @else if (error()) {
     <p class="state state--error">{{ error() }}</p>
   } @else if (races().length === 0) {
-    <p class="state">Aucune race pour le moment.</p>
+    <p class="state">{{ 'home.emptyMine' | t }}</p>
   } @else {
     <div class="race-grid">
       @for (race of races(); track race.id) {

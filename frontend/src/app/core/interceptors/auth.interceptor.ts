@@ -8,7 +8,7 @@ function isPublicApiRequest(url: string): boolean {
 }
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
-  if (isPublicApiRequest(request.url)) {
+  if (request.method === 'OPTIONS' || isPublicApiRequest(request.url)) {
     return next(request);
   }
 

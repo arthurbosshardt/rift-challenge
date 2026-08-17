@@ -23,6 +23,7 @@ describe('refresh-countdown', () => {
     expect(
       isRefreshCooldownActive(
         { refreshAvailable: false, nextRefreshAvailableAt: next },
+        now,
       ),
     ).toBe(true);
     expect(formatRefreshCountdown(next, now)).toBe('1:00');

@@ -1,31 +1,35 @@
-<app-page-shell title="Connexion" subtitle="Accédez à vos races RiftRace">
+<app-page-shell [title]="'auth.title' | t" [subtitle]="'auth.subtitle' | t">
   <section class="auth-card">
     <div class="auth-card__tabs">
-      <button type="button" [class.active]="mode === 'login'" (click)="mode = 'login'">Connexion</button>
-      <button type="button" [class.active]="mode === 'signup'" (click)="mode = 'signup'">Inscription</button>
+      <button type="button" [class.active]="mode === 'login'" (click)="mode = 'login'">
+        {{ 'auth.loginTab' | t }}
+      </button>
+      <button type="button" [class.active]="mode === 'signup'" (click)="mode = 'signup'">
+        {{ 'auth.signupTab' | t }}
+      </button>
     </div>
 
     <form (ngSubmit)="submit()">
       @if (mode === 'signup') {
         <label>
-          Nom d'utilisateur
+          {{ 'auth.username' | t }}
           <input name="username" [(ngModel)]="username" required maxlength="64" />
         </label>
       }
 
       <label>
-        Email
+        {{ 'auth.email' | t }}
         <input name="email" type="email" [(ngModel)]="email" required autocomplete="email" />
       </label>
 
       <label>
-        Mot de passe
+        {{ 'auth.password' | t }}
         <input
           name="password"
           type="password"
           [(ngModel)]="password"
           required
-          autocomplete="current-password"
+          [autocomplete]="mode === 'signup' ? 'new-password' : 'current-password'"
         />
       </label>
 
@@ -34,14 +38,14 @@
       }
 
       <button type="submit" [disabled]="loading()">
-        {{ loading() ? 'Chargement…' : mode === 'login' ? 'Se connecter' : "S'inscrire" }}
+        {{ loading() ? ('home.loading' | t) : mode === 'login' ? ('auth.submitLogin' | t) : ('auth.submitSignup' | t) }}
       </button>
     </form>
 
-    <div class="divider">ou</div>
+    <div class="divider">{{ 'auth.or' | t }}</div>
 
     <button type="button" class="google" [disabled]="googleLoading()" (click)="signInWithGoogle()">
-      {{ googleLoading() ? 'Redirection…' : 'Continuer avec Google' }}
+      {{ googleLoading() ? ('auth.googleRedirect' | t) : ('auth.google' | t) }}
     </button>
   </section>
 </app-page-shell>

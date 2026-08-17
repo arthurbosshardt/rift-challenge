@@ -10,12 +10,15 @@ export function formatRefreshCountdown(nextRefreshAvailableAt: string, nowMs = D
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export function isRefreshCooldownActive(race: {
-  refreshAvailable: boolean;
-  nextRefreshAvailableAt: string | null;
-}): boolean {
+export function isRefreshCooldownActive(
+  race: {
+    refreshAvailable: boolean;
+    nextRefreshAvailableAt: string | null;
+  },
+  nowMs = Date.now(),
+): boolean {
   if (race.refreshAvailable || !race.nextRefreshAvailableAt) {
     return false;
   }
-  return formatRefreshCountdown(race.nextRefreshAvailableAt) !== null;
+  return formatRefreshCountdown(race.nextRefreshAvailableAt, nowMs) !== null;
 }

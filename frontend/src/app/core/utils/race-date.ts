@@ -1,4 +1,7 @@
-export function formatRaceDateTime(value: string | Date | null | undefined): string {
+export function formatRaceDateTime(
+  value: string | Date | null | undefined,
+  locale: 'fr' | 'en' = 'fr',
+): string {
   if (!value) {
     return '—';
   }
@@ -13,6 +16,9 @@ export function formatRaceDateTime(value: string | Date | null | undefined): str
   const year = date.getFullYear();
   const hour = date.getHours();
 
+  if (locale === 'en') {
+    return `${month}/${day}/${year} ${hour}h`;
+  }
   return `${day}/${month}/${year} ${hour}h`;
 }
 

@@ -5,16 +5,19 @@ import { RaceApiService } from '../../core/services/race-api.service';
 import { RaceType } from '../../core/models/race.models';
 import { buildLocalStartAtIso } from '../../core/utils/race-date';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-create-race-page',
-  imports: [FormsModule, RouterLink, PageShellComponent],
+  imports: [FormsModule, RouterLink, PageShellComponent, TranslatePipe],
   templateUrl: './create-race-page.component.html',
   styleUrl: './create-race-page.component.scss',
 })
 export class CreateRacePageComponent {
   private readonly raceApi = inject(RaceApiService);
   private readonly router = inject(Router);
+  private readonly i18n = inject(I18nService);
 
   protected name = '';
   protected type: RaceType = 'SOLOQ';
@@ -30,7 +33,7 @@ export class CreateRacePageComponent {
 
     const startAt = buildLocalStartAtIso(this.startDate, this.startHour);
     if (!startAt) {
-      this.error.set('La date de début est invalide.');
+      this.error.set(this.i18n.t('create.invalidDate'));
       return;
     }
 
@@ -48,7 +51,7 @@ export class CreateRacePageComponent {
           await this.router.navigate(['/races', race.shareSlug]);
         },
         error: () => {
-          this.error.set('Impossible de créer la race.');
+          this.error.set(this.i18n.t('create.error'));
           this.loading.set(false);
         },
       });

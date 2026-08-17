@@ -66,6 +66,6 @@ class DuoEligibilityServiceTest {
         DuoEligibilityService.DuoEligibility eligibility = duoEligibilityService.evaluate(player1, player2);
 
         assertThat(eligibility.eligible()).isFalse();
-        assertThat(eligibility.reason()).contains("Tanor#7154");
+        assertThat(eligibility.reason()).isEqualTo("SOLOQ_WITHOUT_PARTNER|Tanor#7154");
     }
 }

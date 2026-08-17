@@ -5,16 +5,20 @@ import { AuthService } from '../../core/services/auth.service';
 import { RaceSummary } from '../../core/models/race.models';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { RaceCardComponent } from '../../shared/components/race-card/race-card.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-my-races-page',
-  imports: [PageShellComponent, RaceCardComponent, RouterLink],
+  imports: [PageShellComponent, RaceCardComponent, RouterLink, LoaderComponent, TranslatePipe],
   templateUrl: './my-races-page.component.html',
   styleUrl: './my-races-page.component.scss',
 })
 export class MyRacesPageComponent implements OnInit {
   private readonly raceApi = inject(RaceApiService);
   protected readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
 
   protected readonly races = signal<RaceSummary[]>([]);
   protected readonly loading = signal(true);
@@ -28,7 +32,7 @@ export class MyRacesPageComponent implements OnInit {
     await this.auth.waitUntilReady();
 
     if (!(await this.auth.resolveAccessToken())) {
-      this.error.set('Session expirée. Reconnectez-vous.');
+      this.error.set(this.i18n.t('home.sessionExpired'));
       this.loading.set(false);
       return;
     }
@@ -40,9 +44,9 @@ export class MyRacesPageComponent implements OnInit {
       },
       error: (err: { status?: number }) => {
         if (err.status === 401) {
-          this.error.set('Session expirée. Reconnectez-vous.');
+          this.error.set(this.i18n.t('home.sessionExpired'));
         } else {
-          this.error.set('Impossible de charger vos races.');
+          this.error.set(this.i18n.t('home.loadMineError'));
         }
         this.loading.set(false);
       },

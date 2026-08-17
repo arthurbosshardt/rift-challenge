@@ -7,17 +7,41 @@
 
     <div class="shell__actions">
       <nav class="shell__nav">
-      @if (auth.isAuthenticated()) {
-        <a routerLink="/my-races" routerLinkActive="active">Mes races</a>
-        <a routerLink="/public-races" routerLinkActive="active">Races publiques</a>
-        <a routerLink="/races/new" routerLinkActive="active">Créer</a>
-      }
+        @if (auth.isAuthenticated()) {
+          <a routerLink="/my-races" routerLinkActive="active">{{ 'nav.myRaces' | t }}</a>
+          <a routerLink="/public-races" routerLinkActive="active">{{ 'nav.publicRaces' | t }}</a>
+          <a routerLink="/races/new" routerLinkActive="active">{{ 'nav.createRace' | t }}</a>
+        }
       </nav>
 
+      <div class="lang" role="group" [attr.aria-label]="'nav.language' | t">
+        <button
+          type="button"
+          class="lang__button"
+          [class.lang__button--active]="i18n.locale() === 'fr'"
+          (click)="i18n.setLocale('fr')"
+        >
+          FR
+        </button>
+        <button
+          type="button"
+          class="lang__button"
+          [class.lang__button--active]="i18n.locale() === 'en'"
+          (click)="i18n.setLocale('en')"
+        >
+          EN
+        </button>
+      </div>
+
       @if (auth.isAuthenticated()) {
-        <button type="button" class="linkish" (click)="logout()">Déconnexion</button>
+        @if (auth.isProfileLoading()) {
+          <app-loader [compact]="true" />
+        } @else if (auth.displayName(); as name) {
+          <span class="shell__user">{{ name }}</span>
+        }
+        <button type="button" class="linkish" (click)="logout()">{{ 'nav.logout' | t }}</button>
       } @else {
-        <a routerLink="/login" class="linkish">Connexion</a>
+        <a routerLink="/login" class="linkish">{{ 'nav.login' | t }}</a>
       }
     </div>
   </header>

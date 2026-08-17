@@ -1,19 +1,24 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RaceSummary } from '../../../core/models/race.models';
 import { RaceDatePipe } from '../../pipes/race-date.pipe';
+import { TranslatePipe } from '../../../core/i18n/t.pipe';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-race-card',
-  imports: [RouterLink, RaceDatePipe],
+  imports: [RouterLink, RaceDatePipe, TranslatePipe],
   templateUrl: './race-card.component.html',
   styleUrl: './race-card.component.scss',
 })
 export class RaceCardComponent {
   readonly race = input.required<RaceSummary>();
+  private readonly i18n = inject(I18nService);
 
   statusLabel(status: RaceSummary['status']): string {
-    return status === 'NOT_STARTED' ? 'Pas encore commencée' : 'En cours';
+    return status === 'NOT_STARTED'
+      ? this.i18n.t('race.statusNotStarted')
+      : this.i18n.t('race.statusActive');
   }
 
   typeLabel(type: RaceSummary['type']): string {

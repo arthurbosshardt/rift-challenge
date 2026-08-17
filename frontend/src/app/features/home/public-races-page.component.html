@@ -1,13 +1,10 @@
-<app-page-shell
-  title="Races publiques"
-  subtitle="Découvrez les races partagées par la communauté"
->
+<app-page-shell [title]="'home.publicTitle' | t" [subtitle]="'home.publicSubtitle' | t">
   @if (loading()) {
-    <p class="state">Chargement…</p>
+    <app-loader [label]="'home.loading' | t" />
   } @else if (error()) {
     <p class="state state--error">{{ error() }}</p>
   } @else if (races().length === 0) {
-    <p class="state">Aucune race publique pour le moment.</p>
+    <p class="state">{{ 'home.emptyPublic' | t }}</p>
   } @else {
     <div class="race-grid">
       @for (race of races(); track race.id) {

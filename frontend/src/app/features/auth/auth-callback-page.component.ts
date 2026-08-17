@@ -1,15 +1,21 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-auth-callback-page',
-  template: '<p class="state">Connexion en cours…</p>',
+  imports: [TranslatePipe, LoaderComponent],
+  template: `
+    <div class="callback">
+      <app-loader [label]="'auth.callback' | t" />
+    </div>
+  `,
   styles: [
     `
-      .state {
+      .callback {
         padding: 2rem;
-        color: var(--text-muted);
       }
     `,
   ],

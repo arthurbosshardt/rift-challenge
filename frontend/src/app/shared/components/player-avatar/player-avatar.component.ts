@@ -1,6 +1,7 @@
-import { Component, effect, input, signal } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { profileIconInitial, profileIconUrl } from '../../../core/utils/profile-icon';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-player-avatar',
@@ -13,6 +14,7 @@ export class PlayerAvatarComponent {
   readonly gameName = input<string>('');
   readonly tier = input<string | null>(null);
   readonly size = input<'sm' | 'md'>('md');
+  private readonly i18n = inject(I18nService);
 
   protected readonly iconFailed = signal(false);
 
@@ -35,7 +37,9 @@ export class PlayerAvatarComponent {
   }
 
   protected iconAlt(): string {
-    return `Icône de ${this.gameName() || 'joueur'}`;
+    return this.i18n.t('avatar.iconAlt', {
+      name: this.gameName() || this.i18n.t('avatar.player'),
+    });
   }
 
   protected onIconError(): void {

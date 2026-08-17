@@ -4,6 +4,37 @@
   gap: 1rem;
 }
 
+.shell__user {
+  color: var(--gold);
+  font-weight: 600;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lang {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.lang__button {
+  border: none;
+  border-radius: 0;
+  padding: 0.35rem 0.65rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.lang__button--active {
+  background: rgba(200, 170, 110, 0.18);
+  color: var(--gold);
+}
+
 .linkish {
   color: var(--gold);
   text-decoration: none;
@@ -42,6 +73,8 @@
 
 .shell__nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 

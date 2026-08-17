@@ -3,10 +3,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-login-page',
-  imports: [FormsModule, PageShellComponent],
+  imports: [FormsModule, PageShellComponent, TranslatePipe],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
 })
@@ -14,6 +16,7 @@ export class LoginPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly i18n = inject(I18nService);
 
   protected mode: 'login' | 'signup' = 'login';
   protected email = '';
@@ -47,7 +50,7 @@ export class LoginPageComponent implements OnInit {
     }
 
     if (this.mode === 'signup') {
-      this.error.set('Compte créé. Vérifiez votre email si la confirmation est activée.');
+      this.error.set(this.i18n.t('auth.signupOk'));
       return;
     }
 
@@ -59,6 +62,10 @@ export class LoginPageComponent implements OnInit {
     this.googleLoading.set(true);
     const message = await this.auth.signInWithGoogle();
     this.googleLoading.set(false);
+    if (message === 'auth.googleStartError') {
+      this.error.set(this.i18n.t('auth.googleStartError'));
+      return;
+    }
     if (message) {
       this.error.set(message);
     }

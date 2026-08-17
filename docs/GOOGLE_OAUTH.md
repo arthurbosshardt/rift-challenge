@@ -34,11 +34,19 @@ L’app utilise **Supabase Auth** pour Google. Le front redirige vers Google, Su
    - Save
 2. **Authentication → URL Configuration**
    - **Site URL** : `https://rift-race-beta.vercel.app`
-   - **Redirect URLs** :
+   - **Redirect URLs** (allow list, pas OAuth Server) — une URL par ligne, **exactes** :
      ```
+     https://rift-race-beta.vercel.app
      https://rift-race-beta.vercel.app/**
+     https://rift-race-beta.vercel.app/auth/callback
+     http://localhost:4200
      http://localhost:4200/**
+     http://localhost:4200/auth/callback
      ```
+
+   Si tu atterris sur `localhost:3000`, le **Site URL** du projet est encore `http://localhost:3000` (valeur par défaut), ou Google a `http://localhost:3000` dans **Authorized redirect URIs**.
+
+   Ne confonds pas avec **Authentication → OAuth Server / OAuth Apps** : ce n’est pas la liste pour Google login.
 
 ## 3. Vérification
 

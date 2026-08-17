@@ -6,7 +6,6 @@ import { RaceApiService } from '../../core/services/race-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DuoProgress, ParticipantProgress, RaceDetail } from '../../core/models/race.models';
 import {
-  LEADERBOARD_SORT_LABELS,
   LeaderboardSort,
   SortDirection,
   sortDirectionArrow,
@@ -19,10 +18,13 @@ import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { RaceDatePipe } from '../../shared/pipes/race-date.pipe';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-race-detail-page',
-  imports: [PageShellComponent, FormsModule, PlayerAvatarComponent, RaceDatePipe],
+  imports: [PageShellComponent, FormsModule, PlayerAvatarComponent, RaceDatePipe, LoaderComponent, TranslatePipe],
   templateUrl: './race-detail-page.component.html',
   styleUrl: './race-detail-page.component.scss',
 })
@@ -30,6 +32,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly raceApi = inject(RaceApiService);
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
 
   private shareSlug = '';
   private countdownTimer: number | null = null;
@@ -49,7 +52,14 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   protected readonly sortCriterion = signal<LeaderboardSort>('RANK');
   protected readonly sortDirection = signal<SortDirection>('desc');
 
-  protected readonly sortOptions = Object.entries(LEADERBOARD_SORT_LABELS) as [LeaderboardSort, string][];
+  protected readonly sortOptions = computed(() => {
+    this.i18n.locale();
+    return [
+      ['RANK', this.i18n.t('sort.rank')],
+      ['LP_GAIN', this.i18n.t('sort.lp')],
+      ['WIN_RATE', this.i18n.t('sort.winRate')],
+    ] as [LeaderboardSort, string][];
+  });
 
   protected readonly sortedParticipants = computed(() => {
     const currentRace = this.race();
@@ -74,7 +84,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.shareSlug = this.route.snapshot.paramMap.get('shareSlug') ?? '';
     if (!this.shareSlug) {
-      this.error.set('Lien de race invalide.');
+      this.error.set(this.i18n.t('race.invalidLink'));
       this.loading.set(false);
       return;
     }
@@ -96,7 +106,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
         this.startTimersIfNeeded();
       },
       error: () => {
-        this.error.set('Race introuvable.');
+        this.error.set(this.i18n.t('race.notFound'));
         this.loading.set(false);
       },
     });
@@ -155,7 +165,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
     const riotId = this.riotIdInput.trim();
     if (!riotId) {
-      this.participantError.set('Saisissez un Riot ID (ex. Tanor#7154).');
+      this.participantError.set(this.i18n.t('errors.riotIdRequired'));
       return;
     }
 
@@ -184,7 +194,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     const player1RiotId = this.duoPlayer1Input.trim();
     const player2RiotId = this.duoPlayer2Input.trim();
     if (!player1RiotId || !player2RiotId) {
-      this.participantError.set('Saisissez les deux Riot ID du duo.');
+      this.participantError.set(this.i18n.t('errors.duoIdsRequired'));
       return;
     }
 
@@ -220,7 +230,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
         void this.loadRace();
       },
       error: () => {
-        this.participantError.set('Impossible de retirer ce participant.');
+        this.participantError.set(this.i18n.t('errors.removeParticipant'));
         this.removingParticipantId.set(null);
       },
     });
@@ -241,7 +251,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
         void this.loadRace();
       },
       error: () => {
-        this.participantError.set('Impossible de retirer ce duo.');
+        this.participantError.set(this.i18n.t('errors.removeDuo'));
         this.removingDuoId.set(null);
       },
     });
@@ -273,14 +283,21 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   }
 
   protected statusLabel(status: RaceDetail['status']): string {
-    return status === 'NOT_STARTED' ? 'Pas encore commencée' : 'En cours';
+    return status === 'NOT_STARTED'
+      ? this.i18n.t('race.statusNotStarted')
+      : this.i18n.t('race.statusActive');
   }
 
   protected rankLabel(participant: ParticipantProgress): string {
     if (!participant.hasRankData) {
-      return 'Non classé en SoloQ';
+      return this.i18n.t('race.unranked');
     }
-    return formatRankLabel(participant.currentTier, participant.currentRank, participant.currentLp);
+    return formatRankLabel(
+      participant.currentTier,
+      participant.currentRank,
+      participant.currentLp,
+      this.i18n.locale(),
+    );
   }
 
   protected lpLabel(value: number, hasData = true): string {
@@ -297,6 +314,17 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
   protected duoLabel(duo: DuoProgress): string {
     return `${duo.player1.riotId} & ${duo.player2.riotId}`;
+  }
+
+  protected ineligibilityLabel(reason: string | null | undefined): string {
+    if (!reason) {
+      return '';
+    }
+    const [code, name] = reason.split('|');
+    if (code === 'SOLOQ_WITHOUT_PARTNER' && name) {
+      return this.i18n.t('duo.ineligibleSolo', { name });
+    }
+    return reason;
   }
 
   private normalizeRace(race: RaceDetail): RaceDetail {
@@ -344,7 +372,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const countdown = formatDurationCountdown(currentRace.startAt);
+    const countdown = formatDurationCountdown(currentRace.startAt, Date.now(), this.i18n.locale());
     if (!countdown) {
       this.startCountdown.set(null);
       this.clearCountdown();
@@ -388,31 +416,31 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     const message = typeof err.error?.message === 'string' ? err.error.message : '';
 
     if (err.status === 404 && message.includes('Riot account')) {
-      return 'Compte Riot introuvable. Vérifiez le Riot ID.';
+      return this.i18n.t('errors.riotNotFound');
     }
     if (err.status === 409) {
-      return 'Ce joueur est déjà inscrit.';
+      return this.i18n.t('errors.alreadyAdded');
     }
     if (err.status === 400 && message.includes('Duo limit')) {
-      return 'Limite de 8 duos atteinte.';
+      return this.i18n.t('errors.duoLimit');
     }
     if (err.status === 400 && message.includes('Participant limit')) {
-      return 'Limite de participants atteinte.';
+      return this.i18n.t('errors.participantLimit');
     }
     if (err.status === 400 && message.includes('duo endpoint')) {
-      return 'Ajoutez les joueurs par paires en DuoQ.';
+      return this.i18n.t('errors.useDuoEndpoint');
     }
     if (err.status === 400 && message.includes('two different players')) {
-      return 'Un duo doit contenir deux joueurs différents.';
+      return this.i18n.t('errors.duoDifferentPlayers');
     }
     if (err.status === 400 && message.includes('gameName#tagLine')) {
-      return 'Format invalide. Utilisez gameName#tagLine (ex. Tanor#7154).';
+      return this.i18n.t('errors.riotIdFormat');
     }
     if (err.status === 429) {
-      return 'API Riot saturée. Réessayez dans un instant.';
+      return this.i18n.t('errors.riotRateLimit');
     }
 
-    return 'Impossible d\'ajouter ce participant.';
+    return this.i18n.t('errors.addParticipant');
   }
 
   private mapRefreshError(err: HttpErrorResponse): string {
@@ -420,19 +448,19 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
     if (err.status === 429) {
       if (message.includes('partial sync')) {
-        return 'Actualisation partielle enregistrée. L\'API Riot limite les appels — réessayez dans 2 minutes.';
+        return this.i18n.t('errors.refreshPartial');
       }
       if (message.includes('Riot API rate limit')) {
-        return 'API Riot saturée. Réessayez dans un instant.';
+        return this.i18n.t('errors.riotRateLimit');
       }
-      return 'Refresh indisponible. Attendez 2 minutes entre chaque actualisation.';
+      return this.i18n.t('errors.refreshCooldown');
     }
     if (err.status === 400) {
-      return 'La race n\'a pas encore commencé.';
+      return this.i18n.t('errors.raceNotStarted');
     }
     if (err.status === 502 || err.status === 503) {
-      return 'L\'API Riot est indisponible. Réessayez plus tard.';
+      return this.i18n.t('errors.riotUnavailable');
     }
-    return 'Impossible d\'actualiser les données Riot.';
+    return this.i18n.t('errors.refreshFailed');
   }
 }

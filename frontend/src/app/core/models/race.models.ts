@@ -73,4 +73,5 @@ export interface AddDuoRequest {
 
 export interface AuthMeResponse {
   userId: string;
+  username: string;
 }

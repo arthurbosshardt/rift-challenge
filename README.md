@@ -73,8 +73,6 @@ mvn spring-boot:run
 
 Les clés dev Riot expirent toutes les 24 h — regénérer sur le portail si besoin.
 
-En attendant l’auth réelle, le backend accepte l’en-tête `X-Dev-User-Id: <uuid>` pour simuler un utilisateur connecté.
-
 ## Routes UI
 
 | Route | Visiteur | Connecté |

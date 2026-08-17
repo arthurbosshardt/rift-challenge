@@ -13,6 +13,7 @@ describe('rank-display', () => {
 
   it('formats rank with division', () => {
     expect(formatRankLabel('GOLD', 'II', 75)).toBe('Or II · 75 LP');
+    expect(formatRankLabel('GOLD', 'II', 75, 'en')).toBe('Gold II · 75 LP');
   });
 
   it('formats high tier without division', () => {
@@ -24,5 +25,6 @@ describe('rank-display', () => {
     const target = '2026-08-18T10:30:00.000Z';
 
     expect(formatDurationCountdown(target, now)).toBe('2j 0h 30m');
+    expect(formatDurationCountdown(target, now, 'en')).toBe('2d 0h 30m');
   });
 });

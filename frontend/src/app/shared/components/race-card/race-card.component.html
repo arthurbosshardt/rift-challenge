@@ -2,21 +2,21 @@
   <div class="race-card__header">
     <h2>{{ race().name }}</h2>
     @if (race().isPublic) {
-      <span class="badge badge--public">Publique</span>
+      <span class="badge badge--public">{{ 'race.public' | t }}</span>
     }
   </div>
 
   <dl class="race-card__meta">
     <div>
-      <dt>Type</dt>
+      <dt>{{ 'create.type' | t }}</dt>
       <dd>{{ typeLabel(race().type) }}</dd>
     </div>
     <div>
-      <dt>Début</dt>
+      <dt>{{ 'race.start' | t }}</dt>
       <dd>{{ race().startAt | raceDate }}</dd>
     </div>
     <div>
-      <dt>Statut</dt>
+      <dt>{{ 'race.status' | t }}</dt>
       <dd>{{ statusLabel(race().status) }}</dd>
     </div>
   </dl>

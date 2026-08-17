@@ -36,14 +36,14 @@ public class DuoEligibilityService {
         if (!soloPlayer1.isEmpty()) {
             return new DuoEligibility(
                     false,
-                    formatRiotId(player1) + " a joué en SoloQ sans son coéquipier",
+                    "SOLOQ_WITHOUT_PARTNER|" + formatRiotId(player1),
                     togetherMatches
             );
         }
 
         return new DuoEligibility(
                 false,
-                formatRiotId(player2) + " a joué en SoloQ sans son coéquipier",
+                "SOLOQ_WITHOUT_PARTNER|" + formatRiotId(player2),
                 togetherMatches
         );
     }

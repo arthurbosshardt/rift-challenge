@@ -1,33 +1,33 @@
 @if (loading()) {
   <app-page-shell title="Race" subtitle="">
-    <p class="state">Chargement…</p>
+    <app-loader [label]="'home.loading' | t" />
   </app-page-shell>
 } @else if (error()) {
   <app-page-shell title="Race" subtitle="">
     <p class="state state--error">{{ error() }}</p>
   </app-page-shell>
 } @else if (race(); as currentRace) {
-  <app-page-shell [title]="raceTitle(currentRace)" subtitle="Détail de la race">
+  <app-page-shell [title]="raceTitle(currentRace)" [subtitle]="'race.detailSubtitle' | t">
     <section class="detail">
       <div class="detail__badges">
         <span class="badge badge--type">{{ typeLabel(currentRace.type) }}</span>
         <span class="badge">{{ statusLabel(currentRace.status) }}</span>
         @if (currentRace.isPublic) {
-          <span class="badge badge--public">Publique</span>
+          <span class="badge badge--public">{{ 'race.public' | t }}</span>
         }
       </div>
 
       <dl class="detail__meta">
         <div>
-          <dt>Début</dt>
+          <dt>{{ 'race.start' | t }}</dt>
           <dd>{{ currentRace.startAt | raceDate }}</dd>
         </div>
         <div>
-          <dt>Lien de partage</dt>
+          <dt>{{ 'race.shareLink' | t }}</dt>
           <dd class="share-row">
             <code>/races/{{ currentRace.shareSlug }}</code>
             <button type="button" (click)="copyShareLink()">
-              {{ copied() ? 'Copié' : 'Copier le lien' }}
+              {{ copied() ? ('race.copied' | t) : ('race.copy' | t) }}
             </button>
           </dd>
         </div>
@@ -37,18 +37,18 @@
         <section class="refresh">
           <div class="refresh__info">
             @if (currentRace.lastRefreshedAt) {
-              <p>Dernière MAJ : {{ currentRace.lastRefreshedAt | raceDate }}</p>
+              <p>{{ 'race.lastUpdate' | t:{ date: (currentRace.lastRefreshedAt | raceDate) } }}</p>
             } @else {
-              <p>Aucune synchronisation pour le moment.</p>
+              <p>{{ 'race.noSync' | t }}</p>
             }
             <p class="refresh__hint">
-              Les données Riot ne sont pas en temps réel. Une actualisation est possible au maximum toutes les 2 minutes.
+              {{ 'race.refreshHint' | t }}
             </p>
           </div>
 
           @if (!currentRace.refreshAvailable && refreshCountdown()) {
             <div class="refresh__cooldown" role="status" aria-live="polite">
-              <span class="refresh__cooldown-label">Prochaine actualisation dans</span>
+              <span class="refresh__cooldown-label">{{ 'race.nextRefresh' | t }}</span>
               <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
             </div>
           }
@@ -60,11 +60,11 @@
             [disabled]="!currentRace.refreshAvailable || refreshing()"
           >
             @if (refreshing()) {
-              Actualisation…
+              {{ 'race.refreshing' | t }}
             } @else if (currentRace.refreshAvailable) {
-              Actualiser
+              {{ 'race.refresh' | t }}
             } @else {
-              Actualiser (indisponible)
+              {{ 'race.refreshUnavailable' | t }}
             }
           </button>
           @if (refreshError()) {
@@ -75,7 +75,7 @@
 
       <section class="participants">
         <div class="participants__header">
-          <h2>{{ currentRace.type === 'DUOQ' ? 'Duos' : 'Participants' }}</h2>
+          <h2>{{ currentRace.type === 'DUOQ' ? ('race.duos' | t) : ('race.participants' | t) }}</h2>
           <span class="participants__count">
             {{ entryCount(currentRace) }} / {{ entryLimit(currentRace) }}
           </span>
@@ -83,11 +83,11 @@
 
         @if (entryCount(currentRace) === 0) {
           <p class="participants__empty">
-            {{ currentRace.type === 'DUOQ' ? 'Aucun duo pour le moment.' : 'Aucun participant pour le moment.' }}
+            {{ currentRace.type === 'DUOQ' ? ('race.noDuos' | t) : ('race.noParticipants' | t) }}
           </p>
         } @else if (currentRace.status === 'ACTIVE' && currentRace.lastRefreshedAt) {
-          <div class="sort-bar" role="toolbar" aria-label="Critère de classement">
-            @for (option of sortOptions; track option[0]) {
+          <div class="sort-bar" role="toolbar" [attr.aria-label]="'race.sortAria' | t">
+            @for (option of sortOptions(); track option[0]) {
               <button
                 type="button"
                 class="sort-bar__button"
@@ -119,7 +119,7 @@
                       @if (participant.hasRankData) {
                         {{ rankLabel(participant) }}
                       } @else {
-                        Non classé en SoloQ
+                        {{ 'race.unranked' | t }}
                       }
                     </span>
                   </div>
@@ -133,7 +133,7 @@
                     </span>
                     <span class="leaderboard__wl">
                       {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
-                      · {{ participant.wins }}V / {{ participant.losses }}D
+                      · {{ 'race.winsLosses' | t:{ wins: participant.wins, losses: participant.losses } }}
                     </span>
                   </div>
                   @if (currentRace.isOwner) {
@@ -142,9 +142,9 @@
                       class="participant-remove"
                       (click)="removeParticipant(participant)"
                       [disabled]="removingParticipantId() === participant.id"
-                      [attr.aria-label]="'Retirer ' + participant.riotId"
+                      [attr.aria-label]="'race.removeAria' | t:{ name: participant.riotId }"
                     >
-                      {{ removingParticipantId() === participant.id ? '…' : 'Retirer' }}
+                      {{ removingParticipantId() === participant.id ? '…' : ('race.remove' | t) }}
                     </button>
                   }
                 </li>
@@ -179,7 +179,7 @@
                       {{ rankLabel(duo.player1) }} · {{ rankLabel(duo.player2) }}
                     </span>
                     @if (!duo.eligible && duo.ineligibilityReason) {
-                      <span class="leaderboard__ineligible">{{ duo.ineligibilityReason }}</span>
+                      <span class="leaderboard__ineligible">{{ ineligibilityLabel(duo.ineligibilityReason) }}</span>
                     }
                   </div>
                   <div class="leaderboard__stats">
@@ -192,7 +192,7 @@
                     </span>
                     <span class="leaderboard__wl">
                       {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
-                      · {{ duo.wins }}V / {{ duo.losses }}D
+                      · {{ 'race.winsLosses' | t:{ wins: duo.wins, losses: duo.losses } }}
                     </span>
                   </div>
                   @if (currentRace.isOwner) {
@@ -201,9 +201,9 @@
                       class="participant-remove"
                       (click)="removeDuo(duo)"
                       [disabled]="removingDuoId() === duo.id"
-                      [attr.aria-label]="'Retirer le duo ' + duoLabel(duo)"
+                      [attr.aria-label]="'race.removeDuoAria' | t:{ name: duoLabel(duo) }"
                     >
-                      {{ removingDuoId() === duo.id ? '…' : 'Retirer' }}
+                      {{ removingDuoId() === duo.id ? '…' : ('race.remove' | t) }}
                     </button>
                   }
                 </li>
@@ -221,9 +221,9 @@
                     class="participant-remove"
                     (click)="removeParticipant(participant)"
                     [disabled]="removingParticipantId() === participant.id"
-                    [attr.aria-label]="'Retirer ' + participant.riotId"
+                    [attr.aria-label]="'race.removeAria' | t:{ name: participant.riotId }"
                   >
-                    {{ removingParticipantId() === participant.id ? '…' : 'Retirer' }}
+                    {{ removingParticipantId() === participant.id ? '…' : ('race.remove' | t) }}
                   </button>
                 }
               </li>
@@ -240,9 +240,9 @@
                     class="participant-remove"
                     (click)="removeDuo(duo)"
                     [disabled]="removingDuoId() === duo.id"
-                    [attr.aria-label]="'Retirer le duo ' + duoLabel(duo)"
+                    [attr.aria-label]="'race.removeDuoAria' | t:{ name: duoLabel(duo) }"
                   >
-                    {{ removingDuoId() === duo.id ? '…' : 'Retirer' }}
+                    {{ removingDuoId() === duo.id ? '…' : ('race.remove' | t) }}
                   </button>
                 }
               </li>
@@ -253,7 +253,7 @@
         @if (currentRace.isOwner) {
           @if (currentRace.type === 'SOLOQ') {
             <form class="participants__form" (ngSubmit)="addParticipant()">
-              <label for="riotId">Ajouter un joueur</label>
+              <label for="riotId">{{ 'race.addPlayer' | t }}</label>
               <div class="participants__form-row">
                 <input
                   id="riotId"
@@ -268,19 +268,19 @@
                   type="submit"
                   [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
                 >
-                  {{ addingParticipant() ? 'Ajout…' : 'Ajouter' }}
+                  {{ addingParticipant() ? ('race.adding' | t) : ('race.add' | t) }}
                 </button>
               </div>
             </form>
           } @else {
             <form class="participants__form" (ngSubmit)="addDuo()">
-              <label>Ajouter un duo (2 joueurs SoloQ)</label>
+              <label>{{ 'race.addDuo' | t }}</label>
               <div class="participants__form-row">
                 <input
                   name="duoPlayer1"
                   type="text"
                   [(ngModel)]="duoPlayer1Input"
-                  placeholder="Joueur 1 — Tanor#7154"
+                  [placeholder]="'race.duoPlayer1' | t"
                   [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
                   autocomplete="off"
                 />
@@ -288,7 +288,7 @@
                   name="duoPlayer2"
                   type="text"
                   [(ngModel)]="duoPlayer2Input"
-                  placeholder="Joueur 2 — Kaori#EUW33"
+                  [placeholder]="'race.duoPlayer2' | t"
                   [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
                   autocomplete="off"
                 />
@@ -296,11 +296,11 @@
                   type="submit"
                   [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
                 >
-                  {{ addingParticipant() ? 'Ajout…' : 'Ajouter le duo' }}
+                  {{ addingParticipant() ? ('race.adding' | t) : ('race.addDuoButton' | t) }}
                 </button>
               </div>
               <p class="participants__hint">
-                Seules les parties SoloQ jouées ensemble depuis le début comptent pour le duo.
+                {{ 'race.duoHint' | t }}
               </p>
             </form>
           }
@@ -313,11 +313,11 @@
       @if (currentRace.status === 'NOT_STARTED') {
         <section class="start-countdown">
           @if (startCountdown()) {
-            <p class="start-countdown__label">Début de la race dans</p>
+            <p class="start-countdown__label">{{ 'race.startIn' | t }}</p>
             <p class="start-countdown__timer" role="status" aria-live="polite">{{ startCountdown() }}</p>
           }
           <p class="notice">
-            Le classement sera disponible après le début et une première actualisation.
+            {{ 'race.rankingLater' | t }}
           </p>
         </section>
       }

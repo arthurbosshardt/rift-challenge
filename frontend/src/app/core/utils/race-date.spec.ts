@@ -7,6 +7,11 @@ describe('race-date', () => {
     expect(formatted).toBe('17/08/2026 14h');
   });
 
+  it('formats English dates as MM/dd/yyyy HHh', () => {
+    const formatted = formatRaceDateTime(new Date(2026, 7, 17, 14, 30, 0), 'en');
+    expect(formatted).toBe('08/17/2026 14h');
+  });
+
   it('builds ISO string from local date and hour', () => {
     const iso = buildLocalStartAtIso('2026-08-17', 14);
     expect(iso).not.toBeNull();

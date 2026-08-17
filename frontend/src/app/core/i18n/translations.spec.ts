@@ -1,0 +1,23 @@
+import { describe, expect, it } from 'vitest';
+import { detectLocale, interpolate, TRANSLATIONS } from './translations';
+
+describe('i18n translations', () => {
+  it('detects French from browser language', () => {
+    expect(detectLocale('fr-FR')).toBe('fr');
+    expect(detectLocale('fr')).toBe('fr');
+  });
+
+  it('falls back to English for other languages', () => {
+    expect(detectLocale('en-US')).toBe('en');
+    expect(detectLocale('de-DE')).toBe('en');
+    expect(detectLocale(null)).toBe('en');
+  });
+
+  it('interpolates named placeholders', () => {
+    expect(interpolate('{name} played SoloQ', { name: 'Tanor#7154' })).toBe('Tanor#7154 played SoloQ');
+  });
+
+  it('keeps French and English keys in sync', () => {
+    expect(Object.keys(TRANSLATIONS.en).sort()).toEqual(Object.keys(TRANSLATIONS.fr).sort());
+  });
+});
