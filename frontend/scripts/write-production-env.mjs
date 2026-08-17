@@ -1,8 +1,16 @@
-import { writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const envDir = join(root, 'src/environments');
+const envTs = join(envDir, 'environment.ts');
+const exampleTs = join(envDir, 'environment.example.ts');
+
+if (!existsSync(envTs) && existsSync(exampleTs)) {
+  copyFileSync(exampleTs, envTs);
+  console.log('Created src/environments/environment.ts from example');
+}
 
 const supabaseUrl = process.env.SUPABASE_URL ?? 'https://YOUR_PROJECT.supabase.co';
 const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? '';
@@ -16,5 +24,5 @@ const content = `export const environment = {
 };
 `;
 
-writeFileSync(join(root, 'src/environments/environment.prod.ts'), content, 'utf8');
+writeFileSync(join(envDir, 'environment.prod.ts'), content, 'utf8');
 console.log('Generated src/environments/environment.prod.ts');
