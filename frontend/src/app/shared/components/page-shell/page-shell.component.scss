@@ -93,28 +93,6 @@
   color: var(--gold);
 }
 
-.lang {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.lang__button {
-  border: none;
-  border-radius: 0;
-  padding: 0.35rem 0.65rem;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.lang__button--active {
-  background: var(--gold-a18);
-  color: var(--gold);
-}
-
 .linkish {
   color: var(--gold);
   text-decoration: none;

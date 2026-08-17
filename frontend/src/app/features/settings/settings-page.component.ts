@@ -29,7 +29,7 @@ export class SettingsPageComponent implements OnInit {
   private readonly accountApi = inject(UserRiotAccountApiService);
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly linking = signal(false);
   protected readonly unlinking = signal(false);

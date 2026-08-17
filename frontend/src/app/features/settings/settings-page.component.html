@@ -27,6 +27,32 @@
 
   <section class="settings-section">
     <div class="settings-section__header">
+      <h2>{{ 'settings.languageTitle' | t }}</h2>
+      <p class="settings-section__hint">{{ 'settings.languageHint' | t }}</p>
+    </div>
+
+    <div class="theme-switch" role="group" [attr.aria-label]="'nav.language' | t">
+      <button
+        type="button"
+        class="theme-switch__button"
+        [class.theme-switch__button--active]="i18n.locale() === 'fr'"
+        (click)="i18n.setLocale('fr')"
+      >
+        {{ 'settings.languageFr' | t }}
+      </button>
+      <button
+        type="button"
+        class="theme-switch__button"
+        [class.theme-switch__button--active]="i18n.locale() === 'en'"
+        (click)="i18n.setLocale('en')"
+      >
+        {{ 'settings.languageEn' | t }}
+      </button>
+    </div>
+  </section>
+
+  <section class="settings-section">
+    <div class="settings-section__header">
       <h2>{{ 'accounts.title' | t }}</h2>
       <p class="settings-section__hint">{{ 'accounts.hint' | t }}</p>
     </div>

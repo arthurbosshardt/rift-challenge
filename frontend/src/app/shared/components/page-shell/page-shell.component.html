@@ -32,25 +32,6 @@
         }
       </nav>
 
-      <div class="lang" role="group" [attr.aria-label]="'nav.language' | t">
-        <button
-          type="button"
-          class="lang__button"
-          [class.lang__button--active]="i18n.locale() === 'fr'"
-          (click)="i18n.setLocale('fr')"
-        >
-          FR
-        </button>
-        <button
-          type="button"
-          class="lang__button"
-          [class.lang__button--active]="i18n.locale() === 'en'"
-          (click)="i18n.setLocale('en')"
-        >
-          EN
-        </button>
-      </div>
-
       @if (auth.isAuthenticated()) {
         <div class="user-menu" #userMenu>
           @if (auth.isProfileLoading()) {

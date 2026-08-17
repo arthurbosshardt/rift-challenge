@@ -4,7 +4,6 @@ import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { CreateRaceModalService } from '../../../core/services/create-race-modal.service';
 import { LogoutConfirmService } from '../../../core/services/logout-confirm.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { BrandLogoComponent } from '../brand-logo/brand-logo.component';
 import { LoaderComponent } from '../loader/loader.component';
@@ -26,7 +25,6 @@ export class PageShellComponent {
   protected readonly authModal = inject(AuthModalService);
   protected readonly createRaceModal = inject(CreateRaceModalService);
   protected readonly logoutConfirm = inject(LogoutConfirmService);
-  protected readonly i18n = inject(I18nService);
   protected readonly userMenuOpen = signal(false);
   private readonly userMenuRef = viewChild<ElementRef<HTMLElement>>('userMenu');
 
