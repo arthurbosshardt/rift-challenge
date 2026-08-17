@@ -15,6 +15,7 @@ import {
 } from '../../core/utils/leaderboard-sort';
 import { formatDurationCountdown, formatRankLabel } from '../../core/utils/rank-display';
 import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
+import { buildLocalStartAtIso, splitLocalDateHour } from '../../core/utils/race-date';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { RaceDatePipe } from '../../shared/pipes/race-date.pipe';
@@ -47,6 +48,11 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   protected readonly refreshError = signal<string | null>(null);
   protected readonly refreshCountdown = signal<string | null>(null);
   protected readonly startCountdown = signal<string | null>(null);
+  protected readonly endCountdown = signal<string | null>(null);
+  protected readonly editingEnd = signal(false);
+  protected readonly savingEnd = signal(false);
+  protected readonly endError = signal<string | null>(null);
+  protected readonly endSuccess = signal(false);
   protected readonly removingParticipantId = signal<string | null>(null);
   protected readonly removingDuoId = signal<string | null>(null);
   protected readonly sortCriterion = signal<LeaderboardSort>('RANK');
@@ -80,6 +86,9 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   protected riotIdInput = '';
   protected duoPlayer1Input = '';
   protected duoPlayer2Input = '';
+  protected endDateInput = '';
+  protected endHourInput = 12;
+  protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
 
   ngOnInit(): void {
     this.shareSlug = this.route.snapshot.paramMap.get('shareSlug') ?? '';
@@ -101,7 +110,9 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
     this.raceApi.getRaceByShareSlug(this.shareSlug).subscribe({
       next: (race) => {
-        this.race.set(this.normalizeRace(race));
+        const normalized = this.normalizeRace(race);
+        this.race.set(normalized);
+        this.syncEndInputs(normalized);
         this.loading.set(false);
         this.startTimersIfNeeded();
       },
@@ -122,6 +133,64 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     await navigator.clipboard.writeText(url);
     this.copied.set(true);
     window.setTimeout(() => this.copied.set(false), 2000);
+  }
+
+  protected startEditingEnd(): void {
+    const race = this.race();
+    if (!race?.isOwner) {
+      return;
+    }
+    this.syncEndInputs(race);
+    this.endError.set(null);
+    this.endSuccess.set(false);
+    this.editingEnd.set(true);
+  }
+
+  protected cancelEditingEnd(): void {
+    const race = this.race();
+    if (race) {
+      this.syncEndInputs(race);
+    }
+    this.editingEnd.set(false);
+    this.endError.set(null);
+  }
+
+  protected saveEnd(): void {
+    const race = this.race();
+    if (!race?.isOwner || this.savingEnd()) {
+      return;
+    }
+
+    const endAt = buildLocalStartAtIso(this.endDateInput, this.endHourInput);
+    if (!endAt) {
+      this.endError.set(this.i18n.t('create.invalidEndDate'));
+      return;
+    }
+    if (new Date(endAt).getTime() <= new Date(race.startAt).getTime()) {
+      this.endError.set(this.i18n.t('create.endBeforeStart'));
+      return;
+    }
+
+    this.endError.set(null);
+    this.endSuccess.set(false);
+    this.savingEnd.set(true);
+
+    this.raceApi.updateRaceEnd(race.id, { endAt }).subscribe({
+      next: (updated) => {
+        const normalized = this.normalizeRace(updated);
+        this.race.set(normalized);
+        this.syncEndInputs(normalized);
+        this.savingEnd.set(false);
+        this.editingEnd.set(false);
+        this.endSuccess.set(true);
+        this.startTimersIfNeeded();
+        window.setTimeout(() => this.endSuccess.set(false), 2500);
+      },
+      error: () => {
+        this.endError.set(this.i18n.t('race.endUpdateError'));
+        this.savingEnd.set(false);
+      },
+    });
   }
 
   protected setSort(criterion: LeaderboardSort): void {
@@ -283,9 +352,13 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   }
 
   protected statusLabel(status: RaceDetail['status']): string {
-    return status === 'NOT_STARTED'
-      ? this.i18n.t('race.statusNotStarted')
-      : this.i18n.t('race.statusActive');
+    if (status === 'NOT_STARTED') {
+      return this.i18n.t('race.statusNotStarted');
+    }
+    if (status === 'FINISHED') {
+      return this.i18n.t('race.statusFinished');
+    }
+    return this.i18n.t('race.statusActive');
   }
 
   protected rankLabel(participant: ParticipantProgress): string {
@@ -330,6 +403,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   private normalizeRace(race: RaceDetail): RaceDetail {
     return {
       ...race,
+      endAt: race.endAt ?? null,
       participants: (race.participants ?? []).map((participant) => ({
         ...participant,
         rankScore: participant.rankScore ?? 0,
@@ -353,11 +427,23 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     };
   }
 
+  private syncEndInputs(race: RaceDetail): void {
+    const parts = splitLocalDateHour(race.endAt);
+    if (!parts) {
+      this.endDateInput = '';
+      this.endHourInput = 12;
+      return;
+    }
+    this.endDateInput = parts.date;
+    this.endHourInput = parts.hour;
+  }
+
   private startTimersIfNeeded(): void {
     this.clearCountdown();
 
     const update = (): void => {
       this.updateStartCountdown();
+      this.updateEndCountdown();
       this.updateRefreshCountdown();
     };
 
@@ -381,6 +467,24 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     }
 
     this.startCountdown.set(countdown);
+  }
+
+  private updateEndCountdown(): void {
+    const currentRace = this.race();
+    if (!currentRace?.endAt || currentRace.status !== 'ACTIVE') {
+      this.endCountdown.set(null);
+      return;
+    }
+
+    const countdown = formatDurationCountdown(currentRace.endAt, Date.now(), this.i18n.locale());
+    if (!countdown) {
+      this.endCountdown.set(null);
+      this.clearCountdown();
+      void this.loadRace();
+      return;
+    }
+
+    this.endCountdown.set(countdown);
   }
 
   private updateRefreshCountdown(): void {

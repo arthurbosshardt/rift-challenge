@@ -95,6 +95,9 @@ public class RaceParticipantSyncService {
             if (gameStart.isBefore(race.getStartAt())) {
                 continue;
             }
+            if (race.getEndAt() != null && !gameStart.isBefore(race.getEndAt())) {
+                continue;
+            }
             if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
                 continue;
             }

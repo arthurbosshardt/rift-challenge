@@ -7,6 +7,7 @@ import com.riftrace.race.dto.CreateRaceRequest;
 import com.riftrace.race.dto.ParticipantResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
+import com.riftrace.race.dto.UpdateRaceEndRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -67,6 +69,16 @@ public class RaceController {
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         return raceService.createRace(ownerId, request);
+    }
+
+    @PatchMapping("/{raceId}/end")
+    public RaceDetailResponse updateEndAt(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @Valid @RequestBody UpdateRaceEndRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.updateEndAt(raceId, ownerId, request);
     }
 
     @PostMapping("/{raceId}/refresh")

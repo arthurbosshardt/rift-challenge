@@ -6,6 +6,7 @@ import com.riftrace.race.dto.DuoProgressResponse;
 import com.riftrace.race.dto.ParticipantProgressResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
+import com.riftrace.race.dto.UpdateRaceEndRequest;
 import com.riftrace.synchronization.RaceSyncService;
 import java.time.Clock;
 import java.time.Instant;
@@ -87,13 +88,29 @@ public class RaceService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown owner");
         }
 
+        requireEndAfterStart(request.startAt(), request.endAt());
+
         Race race = Race.create(
                 ownerId,
                 request.name().trim(),
                 request.type(),
                 request.startAt(),
+                request.endAt(),
                 request.isPublic()
         );
+        return toDetailResponse(raceRepository.save(race), ownerId);
+    }
+
+    @Transactional
+    public RaceDetailResponse updateEndAt(UUID raceId, UUID ownerId, UpdateRaceEndRequest request) {
+        Race race = raceRepository.findById(raceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Race not found"));
+        if (!race.getOwnerId().equals(ownerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the race owner can update the end date");
+        }
+
+        requireEndAfterStart(race.getStartAt(), request.endAt());
+        race.updateEndAt(request.endAt());
         return toDetailResponse(raceRepository.save(race), ownerId);
     }
 
@@ -101,6 +118,12 @@ public class RaceService {
     public RaceDetailResponse refreshRace(UUID raceId, UUID callerId) {
         raceSyncService.refreshRace(raceId);
         return getById(raceId, callerId);
+    }
+
+    private static void requireEndAfterStart(Instant startAt, Instant endAt) {
+        if (endAt == null || !endAt.isAfter(startAt)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after start date");
+        }
     }
 
     private RaceDetailResponse toDetailResponse(Race race, UUID callerId) {

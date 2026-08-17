@@ -16,9 +16,13 @@ export class RaceCardComponent {
   private readonly i18n = inject(I18nService);
 
   statusLabel(status: RaceSummary['status']): string {
-    return status === 'NOT_STARTED'
-      ? this.i18n.t('race.statusNotStarted')
-      : this.i18n.t('race.statusActive');
+    if (status === 'NOT_STARTED') {
+      return this.i18n.t('race.statusNotStarted');
+    }
+    if (status === 'FINISHED') {
+      return this.i18n.t('race.statusFinished');
+    }
+    return this.i18n.t('race.statusActive');
   }
 
   typeLabel(type: RaceSummary['type']): string {

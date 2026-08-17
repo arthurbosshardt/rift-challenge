@@ -12,6 +12,7 @@ public record RaceDetailResponse(
         String name,
         RaceType type,
         Instant startAt,
+        Instant endAt,
         boolean isPublic,
         String status,
         String sharePath,
@@ -34,7 +35,8 @@ public record RaceDetailResponse(
             Instant nextRefreshAvailableAt
     ) {
         boolean isOwner = callerId != null && callerId.equals(race.getOwnerId());
-        boolean raceStarted = !now.isBefore(race.getStartAt());
+        String status = RaceSummaryResponse.resolveStatus(race.getStartAt(), race.getEndAt(), now);
+        boolean raceActive = "ACTIVE".equals(status);
 
         return new RaceDetailResponse(
                 race.getId(),
@@ -42,13 +44,14 @@ public record RaceDetailResponse(
                 race.getName(),
                 race.getType(),
                 race.getStartAt(),
+                race.getEndAt(),
                 race.isPublic(),
-                RaceSummaryResponse.resolveStatus(race.getStartAt(), now),
+                status,
                 "/races/" + race.getShareSlug(),
                 isOwner,
                 lastRefreshedAt,
                 nextRefreshAvailableAt,
-                raceStarted && refreshAvailable,
+                raceActive && refreshAvailable,
                 participants,
                 duos
         );

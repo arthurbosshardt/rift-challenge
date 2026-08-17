@@ -39,3 +39,34 @@ export function buildLocalStartAtIso(dateValue: string, hour: number): string | 
 
   return date.toISOString();
 }
+
+export function addDaysToIso(iso: string, days: number): string | null {
+  const wholeDays = Number(days);
+  if (!Number.isInteger(wholeDays) || wholeDays < 1) {
+    return null;
+  }
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setDate(date.getDate() + wholeDays);
+  return date.toISOString();
+}
+
+export function splitLocalDateHour(iso: string | null | undefined): { date: string; hour: number } | null {
+  if (!iso) {
+    return null;
+  }
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return { date: `${year}-${month}-${day}`, hour: date.getHours() };
+}

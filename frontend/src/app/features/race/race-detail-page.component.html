@@ -23,6 +23,16 @@
           <dd>{{ currentRace.startAt | raceDate }}</dd>
         </div>
         <div>
+          <dt>{{ 'race.end' | t }}</dt>
+          <dd>
+            @if (currentRace.endAt) {
+              {{ currentRace.endAt | raceDate }}
+            } @else {
+              —
+            }
+          </dd>
+        </div>
+        <div>
           <dt>{{ 'race.shareLink' | t }}</dt>
           <dd class="share-row">
             <code>/races/{{ currentRace.shareSlug }}</code>
@@ -32,6 +42,45 @@
           </dd>
         </div>
       </dl>
+
+      @if (currentRace.isOwner) {
+        <section class="end-edit">
+          @if (!editingEnd()) {
+            <button type="button" class="end-edit__toggle" (click)="startEditingEnd()">
+              {{ 'race.editEnd' | t }}
+            </button>
+          } @else {
+            <form class="end-edit__form" (ngSubmit)="saveEnd()">
+              <div class="end-edit__row">
+                <label>
+                  {{ 'create.date' | t }}
+                  <input name="endDateInput" type="date" [(ngModel)]="endDateInput" required />
+                </label>
+                <label>
+                  {{ 'create.hour' | t }}
+                  <select name="endHourInput" [(ngModel)]="endHourInput" required>
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+                <button type="submit" [disabled]="savingEnd()">
+                  {{ savingEnd() ? ('race.savingEnd' | t) : ('race.saveEnd' | t) }}
+                </button>
+                <button type="button" class="end-edit__cancel" (click)="cancelEditingEnd()" [disabled]="savingEnd()">
+                  {{ 'create.cancel' | t }}
+                </button>
+              </div>
+            </form>
+          }
+          @if (endError()) {
+            <p class="end-edit__error">{{ endError() }}</p>
+          }
+          @if (endSuccess()) {
+            <p class="end-edit__success">{{ 'race.endUpdated' | t }}</p>
+          }
+        </section>
+      }
 
       @if (currentRace.status === 'ACTIVE') {
         <section class="refresh">
@@ -85,7 +134,10 @@
           <p class="participants__empty">
             {{ currentRace.type === 'DUOQ' ? ('race.noDuos' | t) : ('race.noParticipants' | t) }}
           </p>
-        } @else if (currentRace.status === 'ACTIVE' && currentRace.lastRefreshedAt) {
+        } @else if (
+          (currentRace.status === 'ACTIVE' || currentRace.status === 'FINISHED') &&
+          currentRace.lastRefreshedAt
+        ) {
           <div class="sort-bar" role="toolbar" [attr.aria-label]="'race.sortAria' | t">
             @for (option of sortOptions(); track option[0]) {
               <button
@@ -320,6 +372,17 @@
             {{ 'race.rankingLater' | t }}
           </p>
         </section>
+      }
+
+      @if (currentRace.status === 'ACTIVE' && endCountdown()) {
+        <section class="start-countdown">
+          <p class="start-countdown__label">{{ 'race.endsIn' | t }}</p>
+          <p class="start-countdown__timer" role="status" aria-live="polite">{{ endCountdown() }}</p>
+        </section>
+      }
+
+      @if (currentRace.status === 'FINISHED') {
+        <p class="notice">{{ 'race.finishedNotice' | t }}</p>
       }
     </section>
   </app-page-shell>

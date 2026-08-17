@@ -10,6 +10,7 @@ public record CreateRaceRequest(
         @NotBlank @Size(max = 120) String name,
         @NotNull RaceType type,
         @NotNull Instant startAt,
+        @NotNull Instant endAt,
         boolean isPublic
 ) {
 }

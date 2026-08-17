@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildLocalStartAtIso, formatRaceDateTime } from './race-date';
+import {
+  addDaysToIso,
+  buildLocalStartAtIso,
+  formatRaceDateTime,
+  splitLocalDateHour,
+} from './race-date';
 
 describe('race-date', () => {
   it('formats date as dd/MM/yyyy HHh without minutes', () => {
@@ -17,5 +22,15 @@ describe('race-date', () => {
     expect(iso).not.toBeNull();
     expect(new Date(iso!).getHours()).toBe(14);
     expect(new Date(iso!).getMinutes()).toBe(0);
+  });
+
+  it('adds whole days to an ISO timestamp', () => {
+    const iso = addDaysToIso('2026-08-17T12:00:00.000Z', 7);
+    expect(iso).toBe('2026-08-24T12:00:00.000Z');
+  });
+
+  it('splits a local date and hour from ISO', () => {
+    const parts = splitLocalDateHour(new Date(2026, 7, 17, 14, 0, 0).toISOString());
+    expect(parts).toEqual({ date: '2026-08-17', hour: 14 });
   });
 });

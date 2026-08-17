@@ -15,6 +15,12 @@
       <dt>{{ 'race.start' | t }}</dt>
       <dd>{{ race().startAt | raceDate }}</dd>
     </div>
+    @if (race().endAt) {
+      <div>
+        <dt>{{ 'race.end' | t }}</dt>
+        <dd>{{ race().endAt | raceDate }}</dd>
+      </div>
+    }
     <div>
       <dt>{{ 'race.status' | t }}</dt>
       <dd>{{ statusLabel(race().status) }}</dd>

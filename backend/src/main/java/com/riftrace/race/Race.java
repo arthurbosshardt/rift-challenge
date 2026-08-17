@@ -31,6 +31,9 @@ public class Race {
     @Column(name = "start_at", nullable = false)
     private Instant startAt;
 
+    @Column(name = "end_at")
+    private Instant endAt;
+
     @Column(name = "is_public", nullable = false)
     private boolean isPublic;
 
@@ -47,12 +50,24 @@ public class Race {
     }
 
     public static Race create(UUID ownerId, String name, RaceType type, Instant startAt, boolean isPublic) {
+        return create(ownerId, name, type, startAt, null, isPublic);
+    }
+
+    public static Race create(
+            UUID ownerId,
+            String name,
+            RaceType type,
+            Instant startAt,
+            Instant endAt,
+            boolean isPublic
+    ) {
         Race race = new Race();
         race.id = UUID.randomUUID();
         race.ownerId = ownerId;
         race.name = name;
         race.type = type;
         race.startAt = startAt;
+        race.endAt = endAt;
         race.isPublic = isPublic;
         race.shareSlug = UUID.randomUUID();
         return race;
@@ -90,6 +105,10 @@ public class Race {
         return startAt;
     }
 
+    public Instant getEndAt() {
+        return endAt;
+    }
+
     public boolean isPublic() {
         return isPublic;
     }
@@ -108,5 +127,9 @@ public class Race {
 
     public void updateVisibility(boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    public void updateEndAt(Instant endAt) {
+        this.endAt = endAt;
     }
 }

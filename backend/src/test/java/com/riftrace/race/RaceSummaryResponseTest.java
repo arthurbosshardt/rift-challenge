@@ -23,4 +23,21 @@ class RaceSummaryResponseTest {
 
         assertThat(RaceSummaryResponse.resolveStatus(startAt, now)).isEqualTo("ACTIVE");
     }
+
+    @Test
+    void resolveStatus_afterEnd_isFinished() {
+        Instant startAt = Instant.parse("2026-01-01T18:00:00Z");
+        Instant endAt = Instant.parse("2026-01-08T18:00:00Z");
+        Instant now = Instant.parse("2026-01-09T12:00:00Z");
+
+        assertThat(RaceSummaryResponse.resolveStatus(startAt, endAt, now)).isEqualTo("FINISHED");
+    }
+
+    @Test
+    void resolveStatus_exactlyAtEnd_isFinished() {
+        Instant startAt = Instant.parse("2026-01-01T18:00:00Z");
+        Instant endAt = Instant.parse("2026-01-08T18:00:00Z");
+
+        assertThat(RaceSummaryResponse.resolveStatus(startAt, endAt, endAt)).isEqualTo("FINISHED");
+    }
 }

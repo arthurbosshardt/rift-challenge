@@ -8,6 +8,7 @@ import {
   CreateRaceRequest,
   RaceDetail,
   RaceSummary,
+  UpdateRaceEndRequest,
 } from '../models/race.models';
 import { apiUrl } from '../utils/api-url';
 
@@ -31,6 +32,10 @@ export class RaceApiService {
 
   createRace(request: CreateRaceRequest): Observable<RaceDetail> {
     return this.http.post<RaceDetail>(this.baseUrl, request);
+  }
+
+  updateRaceEnd(raceId: string, request: UpdateRaceEndRequest): Observable<RaceDetail> {
+    return this.http.patch<RaceDetail>(`${this.baseUrl}/${raceId}/end`, request);
   }
 
   addDuo(raceId: string, request: AddDuoRequest): Observable<void> {

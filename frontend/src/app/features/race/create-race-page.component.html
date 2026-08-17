@@ -37,6 +37,46 @@
       </div>
     </fieldset>
 
+    <fieldset class="race-form__datetime">
+      <legend>{{ 'create.endLegend' | t }}</legend>
+      <div class="end-mode" role="group" [attr.aria-label]="'create.endMode' | t">
+        <label class="end-mode__option">
+          <input name="endMode" type="radio" value="duration" [(ngModel)]="endMode" />
+          {{ 'create.endByDuration' | t }}
+        </label>
+        <label class="end-mode__option">
+          <input name="endMode" type="radio" value="date" [(ngModel)]="endMode" />
+          {{ 'create.endByDate' | t }}
+        </label>
+      </div>
+
+      @if (endMode === 'duration') {
+        <label>
+          {{ 'create.duration' | t }}
+          <select name="durationDays" [(ngModel)]="durationDays" required>
+            @for (days of durationOptions; track days) {
+              <option [ngValue]="days">{{ 'create.durationDays' | t:{ count: days } }}</option>
+            }
+          </select>
+        </label>
+      } @else {
+        <div class="race-form__datetime-row">
+          <label>
+            {{ 'create.date' | t }}
+            <input name="endDate" type="date" [(ngModel)]="endDate" required />
+          </label>
+          <label>
+            {{ 'create.hour' | t }}
+            <select name="endHour" [(ngModel)]="endHour" required>
+              @for (hour of hourOptions; track hour) {
+                <option [ngValue]="hour">{{ hour }}h</option>
+              }
+            </select>
+          </label>
+        </div>
+      }
+    </fieldset>
+
     <label class="checkbox">
       <input name="isPublic" type="checkbox" [(ngModel)]="isPublic" />
       {{ 'create.public' | t }}

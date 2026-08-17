@@ -1,6 +1,6 @@
 export type RaceType = 'SOLOQ' | 'DUOQ';
 
-export type RaceStatus = 'NOT_STARTED' | 'ACTIVE';
+export type RaceStatus = 'NOT_STARTED' | 'ACTIVE' | 'FINISHED';
 
 export interface RaceSummary {
   id: string;
@@ -8,6 +8,7 @@ export interface RaceSummary {
   name: string;
   type: RaceType;
   startAt: string;
+  endAt: string | null;
   isPublic: boolean;
   status: RaceStatus;
 }
@@ -58,7 +59,12 @@ export interface CreateRaceRequest {
   name: string;
   type: RaceType;
   startAt: string;
+  endAt: string;
   isPublic: boolean;
+}
+
+export interface UpdateRaceEndRequest {
+  endAt: string;
 }
 
 export interface AddParticipantRequest {
