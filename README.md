@@ -106,11 +106,11 @@ Guides détaillés :
 
 ### Checklist rapide (domaine custom)
 
-1. **Vercel** — ajouter `rift-challenge.com` et `www.rift-challenge.com` au projet front
-2. **Registrar / DNS** — pointer le domaine vers Vercel (records indiqués par Vercel)
+1. **Vercel → Settings → Domains** — ajouter `rift-challenge.com` puis `www.rift-challenge.com` ; copier les enregistrements DNS affichés par Vercel dans la zone DNS chez ton registrar (OVH, Cloudflare, etc.)
+2. **Vercel** — domaine principal : `rift-challenge.com` ; le `www` redirige automatiquement (config dans `frontend/vercel.json`)
 3. **Render** — `CORS_ORIGINS=https://rift-challenge.com,https://www.rift-challenge.com`
-4. **Vercel** — `API_BASE_URL` = URL publique du backend Render
-5. **Supabase** — Site URL `https://rift-challenge.com` + redirect URLs (voir GOOGLE_OAUTH.md)
-6. **Google Cloud** — origins `https://rift-challenge.com` et `https://www.rift-challenge.com`
+4. **Vercel → Environment Variables** — `API_BASE_URL` = URL publique du backend Render (ex. `https://ton-backend.onrender.com`)
+5. **Supabase** — Site URL `https://rift-challenge.com` + redirect URLs (voir [GOOGLE_OAUTH.md](docs/GOOGLE_OAUTH.md))
+6. **Google Cloud** — autoriser `https://rift-challenge.com` et `https://www.rift-challenge.com` dans les origins OAuth
 7. Redéployer front + backend, puis tester login, création de challenge et lien partageable
 

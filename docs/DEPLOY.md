@@ -9,7 +9,7 @@
 | Base de données | [Supabase](https://supabase.com) | PostgreSQL managé |
 
 **Production** : [https://rift-challenge.com](https://rift-challenge.com)  
-(`www.rift-challenge.com` redirige vers l’apex via `frontend/vercel.json`.)
+(`www.rift-challenge.com` redirige vers l’adresse sans `www`.)
 
 ## 1. Supabase
 
@@ -66,9 +66,34 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | Output Directory | `dist/frontend/browser` |
    | Install Command | `npm ci` |
 
-4. **Domains** (Vercel → Project → Settings → Domains) :
-   - `rift-challenge.com` (primary)
-   - `www.rift-challenge.com` (alias, redirigé vers l’apex)
+4. **Brancher ton nom de domaine** (Vercel → ton projet → **Settings** → **Domains**) :
+
+   Tu as acheté **rift-challenge.com**. Il faut dire à Vercel d’afficher le site à cette adresse.
+
+   **Étape A — Ajouter les deux adresses du site**
+
+   Clique **Add**, puis ajoute **une par une** :
+   - `rift-challenge.com` → c’est l’adresse **sans** `www` (celle que tu veux comme adresse principale)
+   - `www.rift-challenge.com` → c’est la variante **avec** `www`
+
+   **Étape B — Configurer le DNS chez ton registrar**
+
+   Là où tu as acheté le domaine (OVH, Cloudflare, Google Domains, etc.), ouvre la gestion **DNS** / **Zone DNS**.
+
+   Vercel affiche des **enregistrements à copier** (souvent un enregistrement **A** ou **CNAME**). Recopie-les tels quels.
+
+   En résumé :
+   - pour `rift-challenge.com` → Vercel te dira quoi mettre (souvent type **A**, valeur une IP, ou **CNAME** `cname.vercel-dns.com`)
+   - pour `www.rift-challenge.com` → en général un **CNAME** vers `cname.vercel-dns.com`
+
+   Attends quelques minutes (parfois plus). Vercel passe le domaine en **Valid** quand c’est bon.
+
+   **Étape C — Adresse principale et redirection www**
+
+   - Dans Vercel, mets **`rift-challenge.com`** comme domaine **Primary** (principal).
+   - Le fichier `frontend/vercel.json` du repo redirige déjà `www.rift-challenge.com` vers `rift-challenge.com` : si quelqu’un tape le `www`, il arrive quand même sur la bonne adresse.
+
+   **Résultat attendu** : le site répond sur `https://rift-challenge.com`, et `https://www.rift-challenge.com` renvoie vers la même chose.
 
 5. Variables d'environnement :
 
@@ -79,6 +104,8 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | `API_BASE_URL` | URL publique du backend Render (sans slash final) |
 
 6. Déployer (**Redeploy** sans cache si besoin).
+
+> **En cas de blocage DNS** : dans Vercel, onglet Domains → clique sur le domaine → lis les valeurs exactes à mettre chez ton registrar. Ne devine pas : copie ce que Vercel affiche.
 
 ## 4. CORS et auth
 
@@ -106,7 +133,7 @@ Supabase → **Site URL** : `https://rift-challenge.com`
 ## 6. Vérifications post-déploiement
 
 - [ ] Health backend OK
-- [ ] `https://rift-challenge.com` et redirection `www` → apex
+- [ ] `https://rift-challenge.com` fonctionne, et `https://www.rift-challenge.com` redirige vers la même adresse (sans `www`)
 - [ ] Connexion / inscription Supabase
 - [ ] Google OAuth depuis le domaine custom
 - [ ] Création de challenge

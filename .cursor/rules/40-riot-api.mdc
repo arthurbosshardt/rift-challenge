@@ -63,7 +63,7 @@ The refresh operation should reuse already persisted information whenever possib
 Do not create a loop that polls Riot every few seconds.
 
 ## Rate limits
-Handle Riot rate-limit responses gchallengefully.
+Handle Riot rate-limit responses gracefully.
 Do not perform aggressive automatic retries.
 
 Use bounded retry/backoff only where justified.
