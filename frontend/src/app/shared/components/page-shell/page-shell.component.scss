@@ -303,7 +303,6 @@ button.linkish:focus-visible {
 
 .shell__nav--primary a,
 .shell__nav-mobile-login {
-  display: inline-flex;
   align-items: center;
   gap: 0.4375rem;
   padding: 0.5rem 0.875rem;
@@ -319,6 +318,10 @@ button.linkish:focus-visible {
   transition:
     color 0.15s ease,
     background 0.15s ease;
+}
+
+.shell__nav--primary a {
+  display: inline-flex;
 }
 
 .shell__nav-mobile-login {
