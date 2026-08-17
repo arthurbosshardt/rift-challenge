@@ -21,20 +21,22 @@
 
 .race-card__layout {
   display: grid;
-  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
 }
 
 @media (min-width: 1100px) {
   .race-card__layout {
-    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+    gap: 1.5rem;
   }
 }
 
 .race-card__summary {
   display: grid;
   gap: 1rem;
+  width: max-content;
+  max-width: 15rem;
   min-width: 0;
   padding-right: 1.25rem;
   border-right: 1px solid var(--border);
@@ -94,6 +96,18 @@
   margin: 0;
 }
 
+@media (min-width: 900px) {
+  .race-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem 1.25rem;
+  }
+
+  .race-card__meta > div {
+    min-width: 5.5rem;
+  }
+}
+
 .race-card__meta dt {
   margin: 0 0 0.25rem;
   font-size: 0.6875rem;
@@ -136,26 +150,27 @@
 }
 
 .race-card__preview-list--columns {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  column-gap: 1rem;
   row-gap: 0.5rem;
   align-items: start;
+  justify-content: start;
+}
+
+.race-card__preview-list--columns-3 {
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  column-gap: 1rem;
 }
 
 .race-card__preview-list--columns .race-card__preview-item {
-  gap: 0.375rem;
-}
-
-.race-card__preview-list--columns .race-card__preview-text {
-  flex: 1 1 auto;
-}
-
-.race-card__preview-list--columns .race-card__stats {
-  margin-left: 0.375rem;
+  width: max-content;
+  max-width: 100%;
+  justify-self: start;
 }
 
 .race-card__preview-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, max-content) auto;
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
@@ -166,6 +181,11 @@
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.race-card__preview-item--duo {
+  grid-template-columns: auto auto minmax(0, max-content) auto;
+  gap: 0.625rem;
 }
 
 .race-card__preview-item--gold {
@@ -197,10 +217,6 @@
 
 .race-card__preview-item--bronze .race-card__preview-names {
   color: #d4b088;
-}
-
-.race-card__preview-item--duo {
-  gap: 0.625rem;
 }
 
 .race-card__position {
@@ -275,7 +291,6 @@
   display: grid;
   gap: 0.125rem;
   min-width: 0;
-  flex: 1;
 }
 
 .race-card__preview-names {
@@ -310,8 +325,7 @@
   display: grid;
   justify-items: end;
   gap: 0.25rem;
-  flex-shrink: 0;
-  margin-left: auto;
+  margin-left: 0.375rem;
 }
 
 .race-card__lp {

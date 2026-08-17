@@ -36,10 +36,7 @@
           <p class="race-card__preview-title">{{ previewTitle() }}</p>
 
           @if (race().type === 'DUOQ') {
-            <ul
-              class="race-card__preview-list"
-              [class.race-card__preview-list--columns]="usePreviewColumns()"
-            >
+            <ul class="race-card__preview-list" [ngClass]="previewListClass()">
               @for (duo of displayedDuos(); track duo.id; let index = $index) {
                 <li
                   class="race-card__preview-item race-card__preview-item--duo"
@@ -108,10 +105,7 @@
               }
             </ul>
           } @else {
-            <ul
-              class="race-card__preview-list"
-              [class.race-card__preview-list--columns]="usePreviewColumns()"
-            >
+            <ul class="race-card__preview-list" [ngClass]="previewListClass()">
               @for (participant of displayedParticipants(); track participant.id; let index = $index) {
                 <li
                   class="race-card__preview-item"

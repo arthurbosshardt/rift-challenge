@@ -1,4 +1,5 @@
 import { Component, computed, HostListener, inject, input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
   DuoPreview,
@@ -14,14 +15,14 @@ import { resolveRaceCardPreviewLimit } from '../../../core/utils/race-summary';
 import {
   raceCardPreviewGridColumn,
   raceCardPreviewGridRow,
-  shouldUseRaceCardPreviewColumns,
+  resolveRaceCardPreviewColumnCount,
 } from '../../../core/utils/race-card-preview-grid';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 
 @Component({
   selector: 'app-race-card',
-  imports: [RouterLink, RaceDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent],
+  imports: [RouterLink, NgClass, RaceDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent],
   templateUrl: './race-card.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './race-card.component.scss',
@@ -54,12 +55,12 @@ export class RaceCardComponent implements OnInit {
   protected readonly showLeaderboardPreview = computed(
     () => this.race().status !== 'NOT_STARTED',
   );
-  protected readonly usePreviewColumns = computed(() => {
+  protected readonly previewColumnCount = computed(() => {
     const count =
       this.race().type === 'DUOQ'
         ? this.displayedDuos().length
         : this.displayedParticipants().length;
-    return shouldUseRaceCardPreviewColumns(this.viewportWidth(), count);
+    return resolveRaceCardPreviewColumnCount(this.viewportWidth(), count);
   });
 
   ngOnInit(): void {
@@ -207,10 +208,18 @@ export class RaceCardComponent implements OnInit {
   }
 
   protected previewGridColumn(index: number): number | null {
-    return raceCardPreviewGridColumn(index, this.usePreviewColumns());
+    return raceCardPreviewGridColumn(index, this.previewColumnCount());
   }
 
   protected previewGridRow(index: number): number | null {
-    return raceCardPreviewGridRow(index, this.usePreviewColumns());
+    return raceCardPreviewGridRow(index, this.previewColumnCount());
+  }
+
+  protected previewListClass(): Record<string, boolean> {
+    const count = this.previewColumnCount();
+    return {
+      'race-card__preview-list--columns': count > 1,
+      'race-card__preview-list--columns-3': count === 3,
+    };
   }
 }
