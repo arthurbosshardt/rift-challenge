@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { UserRiotAccountApiService } from '../../core/services/user-riot-account-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { LinkedRiotAccount } from '../../core/models/race.models';
@@ -20,7 +19,6 @@ import { I18nService } from '../../core/i18n/i18n.service';
     LoaderComponent,
     TranslatePipe,
     FormsModule,
-    RouterLink,
   ],
   templateUrl: './settings-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

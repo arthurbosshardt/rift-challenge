@@ -1,12 +1,7 @@
-@import './public-races-page.component.scss';
+@use './race-list-shared' as *;
 
 .state {
   margin: 0;
-  color: var(--text-muted);
-}
-
-.state--error {
-  color: var(--danger);
 }
 
 .state a {

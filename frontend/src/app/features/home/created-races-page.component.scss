@@ -1,4 +1,4 @@
-@import './public-races-page.component.scss';
+@use './race-list-shared' as *;
 
 .toolbar {
   margin-bottom: 1rem;
