@@ -2,7 +2,6 @@ package com.riftrace.authentication;
 
 import com.riftrace.account.AppUser;
 import com.riftrace.account.AppUserRepository;
-import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -22,13 +21,10 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public Map<String, String> me(Authentication authentication) {
+    public AuthMeResponse me(Authentication authentication) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         AppUser user = appUserRepository.findById(ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-        return Map.of(
-                "userId", user.getId().toString(),
-                "username", user.getUsername()
-        );
+        return new AuthMeResponse(user.getId().toString(), user.getUsername());
     }
 }

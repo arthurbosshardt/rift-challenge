@@ -233,11 +233,18 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
   },
 };
 
-export function detectLocale(language: string | null | undefined): AppLocale {
-  if (language && language.toLowerCase().startsWith('fr')) {
-    return 'fr';
+/** Français si la langue du navigateur est le français, sinon anglais. */
+export function detectLocale(
+  language: string | null | undefined,
+  languages: readonly string[] | null | undefined = undefined,
+): AppLocale {
+  const primary = language?.trim() || languages?.[0] || null;
+  if (!primary) {
+    return 'en';
   }
-  return 'en';
+
+  const normalized = primary.toLowerCase().replaceAll('_', '-');
+  return normalized === 'fr' || normalized.startsWith('fr-') ? 'fr' : 'en';
 }
 
 export function interpolate(template: string, params?: Record<string, string | number>): string {

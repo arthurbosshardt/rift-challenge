@@ -1,9 +1,10 @@
 package com.riftrace.race.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record AddDuoRequest(
-        @NotBlank String player1RiotId,
-        @NotBlank String player2RiotId
+        @NotBlank @Size(max = 22) String player1RiotId,
+        @NotBlank @Size(max = 22) String player2RiotId
 ) {
 }

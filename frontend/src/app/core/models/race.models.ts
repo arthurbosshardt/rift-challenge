@@ -46,7 +46,6 @@ export interface DuoProgress {
 
 export interface RaceDetail extends RaceSummary {
   sharePath: string;
-  ownerId: string;
   isOwner: boolean;
   lastRefreshedAt: string | null;
   nextRefreshAvailableAt: string | null;

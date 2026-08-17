@@ -18,10 +18,6 @@ import { Component, input } from '@angular/core';
       color: var(--text-muted);
     }
 
-    .loader--block {
-      display: flex;
-    }
-
     .loader__spinner {
       width: 1.1rem;
       height: 1.1rem;

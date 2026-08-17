@@ -26,14 +26,15 @@ export class AuthService {
   );
 
   private readonly session = signal<Session | null>(null);
-  private readonly initialized = signal(false);
   private readonly profileUsername = signal<string | null>(null);
   private readonly profileLoading = signal(false);
-  private visibilityHandler?: () => void;
+  private readyResolve: (() => void) | null = null;
+  private readonly ready = new Promise<void>((resolve) => {
+    this.readyResolve = resolve;
+  });
+  private activityBound = false;
 
   readonly isAuthenticated = computed(() => this.session() !== null);
-  readonly isInitialized = computed(() => this.initialized());
-  readonly userEmail = computed(() => this.session()?.user.email ?? null);
   readonly displayName = computed(() => this.profileUsername());
   readonly isProfileLoading = computed(() => this.profileLoading());
 
@@ -42,43 +43,44 @@ export class AuthService {
   }
 
   private async initialize(): Promise<void> {
-    const { data } = await this.supabase.auth.getSession();
-    const validSession = this.sessionWithinTtl(data.session) ? data.session : null;
+    try {
+      const { data } = await this.supabase.auth.getSession();
+      const validSession = this.sessionWithinTtl(data.session) ? data.session : null;
 
-    if (data.session && !validSession) {
-      await this.supabase.auth.signOut();
-      this.clearLastSeen();
-    }
-
-    this.session.set(validSession);
-    if (validSession) {
-      this.touchLastSeen();
-      void this.loadProfile(validSession.access_token);
-    }
-    this.initialized.set(true);
-    this.bindActivityTracking();
-
-    this.supabase.auth.onAuthStateChange((_event, session) => {
-      if (session && !this.sessionWithinTtl(session, true)) {
-        void this.logout();
-        return;
-      }
-      this.session.set(session);
-      if (session) {
-        this.touchLastSeen();
-        void this.loadProfile(session.access_token);
-      } else {
-        this.profileUsername.set(null);
-        this.profileLoading.set(false);
+      if (data.session && !validSession) {
+        await this.supabase.auth.signOut();
         this.clearLastSeen();
       }
-    });
+
+      this.session.set(validSession);
+      if (validSession) {
+        this.touchLastSeen();
+        void this.loadProfile(validSession.access_token);
+      }
+      this.bindActivityTracking();
+
+      this.supabase.auth.onAuthStateChange((_event, session) => {
+        if (session && !this.sessionWithinTtl(session, true)) {
+          void this.logout();
+          return;
+        }
+        this.session.set(session);
+        if (session) {
+          this.touchLastSeen();
+          void this.loadProfile(session.access_token);
+        } else {
+          this.profileUsername.set(null);
+          this.profileLoading.set(false);
+          this.clearLastSeen();
+        }
+      });
+    } finally {
+      this.readyResolve?.();
+    }
   }
 
   async waitUntilReady(): Promise<void> {
-    while (!this.initialized()) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
+    await this.ready;
   }
 
   async completeOAuthOrEmailCallback(): Promise<string | null> {
@@ -105,10 +107,6 @@ export class AuthService {
     const { data } = await this.supabase.auth.getSession();
     this.session.set(data.session);
     return null;
-  }
-
-  getAccessToken(): string | null {
-    return this.session()?.access_token ?? null;
   }
 
   async resolveAccessToken(): Promise<string | null> {
@@ -224,7 +222,12 @@ export class AuthService {
   }
 
   private bindActivityTracking(): void {
-    this.visibilityHandler = () => {
+    if (this.activityBound) {
+      return;
+    }
+    this.activityBound = true;
+
+    const onVisibilityChange = () => {
       if (document.visibilityState !== 'visible') {
         this.touchLastSeen();
         return;
@@ -235,8 +238,10 @@ export class AuthService {
       }
       this.touchLastSeen();
     };
-    document.addEventListener('visibilitychange', this.visibilityHandler);
-    window.addEventListener('pagehide', () => this.touchLastSeen());
+    const onPageHide = () => this.touchLastSeen();
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', onPageHide);
     window.setInterval(() => {
       if (document.visibilityState === 'visible' && this.session()) {
         this.touchLastSeen();

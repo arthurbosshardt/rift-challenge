@@ -3,12 +3,6 @@ import { ParticipantProgress, DuoProgress } from '../models/race.models';
 export type LeaderboardSort = 'RANK' | 'LP_GAIN' | 'WIN_RATE';
 export type SortDirection = 'asc' | 'desc';
 
-export const LEADERBOARD_SORT_LABELS: Record<LeaderboardSort, string> = {
-  RANK: 'Meilleur rang',
-  LP_GAIN: 'Gain de LP',
-  WIN_RATE: 'Ratio V/D',
-};
-
 export function sortParticipants(
   participants: ParticipantProgress[],
   sort: LeaderboardSort,
