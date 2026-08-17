@@ -3,5 +3,13 @@
   "outputDirectory": "dist/frontend/browser",
   "installCommand": "npm ci",
   "framework": null,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.rift-challenge.com" }],
+      "destination": "https://rift-challenge.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

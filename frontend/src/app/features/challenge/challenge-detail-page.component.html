@@ -80,6 +80,11 @@
               </svg>
             </button>
           }
+          @if (currentChallenge.isPublic) {
+            <app-challenge-badge kind="public" [label]="'challenge.public' | t" />
+          } @else {
+            <app-challenge-badge kind="private" [label]="'challenge.private' | t" />
+          }
         </div>
       </div>
 
@@ -158,14 +163,6 @@
     }
 
     <section class="detail">
-      <div class="detail__badges">
-        @if (currentChallenge.isPublic) {
-          <app-challenge-badge kind="public" [label]="'challenge.public' | t" />
-        } @else {
-          <app-challenge-badge kind="private" [label]="'challenge.private' | t" />
-        }
-      </div>
-
       <dl class="detail__meta">
         <div>
           <dt>{{ 'challenge.start' | t }}</dt>
@@ -214,6 +211,7 @@
                         class="sort-controls__tab"
                         [class.sort-controls__tab--active]="sortCriterion() === option[0]"
                         [attr.aria-selected]="sortCriterion() === option[0]"
+                        [attr.aria-label]="option[1]"
                         (click)="setSortCriterion(option[0])"
                         [disabled]="refreshing()"
                       >
@@ -254,7 +252,7 @@
                             </svg>
                           }
                         }
-                        <span>{{ option[1] }}</span>
+                        <span class="sort-controls__tab-label">{{ option[1] }}</span>
                       </button>
                     }
                   </div>

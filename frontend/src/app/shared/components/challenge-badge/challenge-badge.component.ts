@@ -27,24 +27,26 @@ export class ChallengeBadgeComponent {
   readonly kind = input.required<ChallengeBadgeKind>();
   readonly label = input.required<string>();
   readonly size = input<'default' | 'title'>('default');
+  readonly iconOnly = input(false);
 
   protected readonly badgeClass = computed(() => {
     const sizeClass = this.size() === 'title' ? ' badge--title' : '';
+    const iconOnlyClass = this.iconOnly() ? ' badge--icon-only' : '';
     switch (this.kind()) {
       case 'soloq':
-        return `badge badge--soloq${sizeClass}`;
+        return `badge badge--soloq${sizeClass}${iconOnlyClass}`;
       case 'duoq':
-        return `badge badge--duoq${sizeClass}`;
+        return `badge badge--duoq${sizeClass}${iconOnlyClass}`;
       case 'not-started':
-        return `badge badge--status-not-started${sizeClass}`;
+        return `badge badge--status-not-started${sizeClass}${iconOnlyClass}`;
       case 'active':
-        return `badge badge--status-active${sizeClass}`;
+        return `badge badge--status-active${sizeClass}${iconOnlyClass}`;
       case 'finished':
-        return `badge badge--status-finished${sizeClass}`;
+        return `badge badge--status-finished${sizeClass}${iconOnlyClass}`;
       case 'public':
-        return `badge badge--public${sizeClass}`;
+        return `badge badge--public${sizeClass}${iconOnlyClass}`;
       case 'private':
-        return `badge badge--private${sizeClass}`;
+        return `badge badge--private${sizeClass}${iconOnlyClass}`;
     }
   });
 }

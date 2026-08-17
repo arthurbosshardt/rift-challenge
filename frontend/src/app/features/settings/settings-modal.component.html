@@ -232,7 +232,7 @@
 
                 @if (canAddSmurf()) {
                   <form class="settings-form" (ngSubmit)="linkSmurfAccount()">
-                    <div class="settings-form__row">
+                    <div class="settings-form__row settings-form__row--inline">
                       <label>
                         {{ 'challenge.gameName' | t }}
                         <input
@@ -240,6 +240,7 @@
                           type="text"
                           [(ngModel)]="smurfGameNameInput"
                           [placeholder]="'challenge.gameNamePlaceholder' | t"
+                          [attr.aria-label]="'challenge.gameName' | t"
                           [disabled]="linkingSmurf()"
                           autocomplete="off"
                         />
@@ -251,6 +252,7 @@
                           type="text"
                           [(ngModel)]="smurfTagLineInput"
                           [placeholder]="'challenge.tagLinePlaceholder' | t"
+                          [attr.aria-label]="'challenge.tagLine' | t"
                           [disabled]="linkingSmurf()"
                           autocomplete="off"
                         />

@@ -29,9 +29,12 @@ import {
 } from '../../../core/utils/challenge-card-preview-grid';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
+import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
 import {
   ChallengeBadgeComponent,
+  challengeStatusBadgeKind,
   challengeTypeBadgeKind,
+  ChallengeBadgeKind,
 } from '../challenge-badge/challenge-badge.component';
 
 @Component({
@@ -48,10 +51,12 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly previewViewport = viewChild<ElementRef<HTMLElement>>('previewViewport');
   private readonly previewTrack = viewChild<ElementRef<HTMLElement>>('previewTrack');
+  private readonly cardLayout = viewChild<ElementRef<HTMLElement>>('cardLayout');
   private resizeObserver: ResizeObserver | null = null;
 
   protected readonly showPreviewFade = signal(false);
   protected readonly previewViewportWidth = signal(0);
+  protected readonly cardLayoutWidth = signal(0);
   protected readonly entryCount = computed(() => this.challenge().entryCount ?? 0);
   protected readonly previewParticipants = computed(() => this.challenge().previewParticipants ?? []);
   protected readonly previewDuos = computed(() => this.challenge().previewDuos ?? []);
@@ -59,10 +64,18 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     this.challenge().type === 'DUOQ' ? this.previewDuos().length : this.previewParticipants().length,
   );
   protected readonly visiblePreviewCount = computed(() =>
-    resolveChallengeCardPreviewVisibleCount(this.previewViewportWidth(), this.previewEntryCount()),
+    resolveChallengeCardPreviewVisibleCount(
+      this.previewViewportWidth(),
+      this.previewEntryCount(),
+      this.cardLayoutWidth(),
+    ),
   );
   protected readonly previewColumnCount = computed(() =>
-    resolveChallengeCardPreviewColumnCount(this.previewViewportWidth(), this.visiblePreviewCount()),
+    resolveChallengeCardPreviewColumnCount(
+      this.previewViewportWidth(),
+      this.visiblePreviewCount(),
+      this.cardLayoutWidth(),
+    ),
   );
   protected readonly visiblePreviewParticipants = computed(() =>
     this.previewParticipants().slice(0, this.visiblePreviewCount()),
@@ -110,22 +123,31 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
 
     const viewportElement = this.previewViewport()?.nativeElement;
     const trackElement = this.previewTrack()?.nativeElement;
+    const layoutElement = this.cardLayout()?.nativeElement;
     if (!viewportElement || !trackElement) {
       this.updatePreviewFade();
       return;
     }
 
     if (typeof ResizeObserver === 'undefined') {
+      this.cardLayoutWidth.set(layoutElement?.clientWidth ?? 0);
       this.updatePreviewFade();
       return;
     }
 
     this.resizeObserver = new ResizeObserver(() => {
       this.previewViewportWidth.set(viewportElement.clientWidth);
+      if (layoutElement) {
+        this.cardLayoutWidth.set(layoutElement.clientWidth);
+      }
       this.updatePreviewFade();
     });
     this.resizeObserver.observe(viewportElement);
     this.resizeObserver.observe(trackElement);
+    if (layoutElement) {
+      this.resizeObserver.observe(layoutElement);
+      this.cardLayoutWidth.set(layoutElement.clientWidth);
+    }
     this.previewViewportWidth.set(viewportElement.clientWidth);
     this.updatePreviewFade();
   }
@@ -146,6 +168,44 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   }
 
   protected readonly challengeTypeBadgeKind = challengeTypeBadgeKind;
+  protected readonly challengeStatusBadgeKind = challengeStatusBadgeKind;
+
+  entryLimit(): number {
+    return this.challenge().type === 'DUOQ' ? 8 : 16;
+  }
+
+  entryCountCompact(): string {
+    return `${this.entryCount()}/${this.entryLimit()}`;
+  }
+
+  dateRangeCompact(): string {
+    const locale = this.i18n.locale();
+    const start = formatChallengeDateCompact(this.challenge().startAt, locale);
+    const end = this.challenge().endAt
+      ? formatChallengeDateCompact(this.challenge().endAt, locale)
+      : null;
+    return end ? `${start} → ${end}` : start;
+  }
+
+  visibilityBadgeKind(): ChallengeBadgeKind {
+    return this.challenge().isPublic ? 'public' : 'private';
+  }
+
+  visibilityLabel(): string {
+    return this.challenge().isPublic
+      ? this.i18n.t('challenge.public')
+      : this.i18n.t('challenge.private');
+  }
+
+  metaCompactAriaLabel(): string {
+    const parts = [
+      this.statusLabel(this.challenge().status),
+      !this.hidePublicBadge() ? this.visibilityLabel() : null,
+      this.dateRangeCompact(),
+      this.entryCountCompact(),
+    ].filter(Boolean);
+    return parts.join(', ');
+  }
 
   statusLabel(status: ChallengeSummary['status']): string {
     if (status === 'NOT_STARTED') {

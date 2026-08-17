@@ -1,4 +1,4 @@
-<span [class]="badgeClass()">
+<span [class]="badgeClass()" [attr.aria-label]="iconOnly() ? label() : null" [attr.title]="iconOnly() ? label() : null">
   <svg class="badge__icon" viewBox="0 0 24 24" aria-hidden="true">
     @switch (kind()) {
       @case ('soloq') {
@@ -45,5 +45,7 @@
       }
     }
   </svg>
-  <span>{{ label() }}</span>
+  @if (!iconOnly()) {
+    <span>{{ label() }}</span>
+  }
 </span>

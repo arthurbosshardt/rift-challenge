@@ -8,7 +8,8 @@
 | Frontend Angular | [Vercel](https://vercel.com) | UI statique + SPA |
 | Base de données | [Supabase](https://supabase.com) | PostgreSQL managé |
 
-> **Domaine custom** : optionnel pour l’instant. Render et Vercel fournissent des URLs par défaut au premier déploiement. Quand tu achèteras un nom de domaine, tu l’ajouteras dans Render/Vercel et tu mettras à jour `CORS_ORIGINS` + les redirect URLs Supabase/Google.
+**Production** : [https://rift-challenge.com](https://rift-challenge.com)  
+(`www.rift-challenge.com` redirige vers l’apex via `frontend/vercel.json`.)
 
 ## 1. Supabase
 
@@ -49,7 +50,7 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | `RIOT_API_KEY` | *(clé dev/prod Riot)* |
    | `RIOT_PLATFORM` | `euw1` |
    | `RIOT_REGIONAL_ROUTING` | `europe` |
-   | `CORS_ORIGINS` | URL publique du front (voir §4) |
+   | `CORS_ORIGINS` | `https://rift-challenge.com,https://www.rift-challenge.com` |
 
 4. Après déploiement : `https://<ton-service>.onrender.com/actuator/health`
 
@@ -65,7 +66,11 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | Output Directory | `dist/frontend/browser` |
    | Install Command | `npm ci` |
 
-4. Variables d'environnement :
+4. **Domains** (Vercel → Project → Settings → Domains) :
+   - `rift-challenge.com` (primary)
+   - `www.rift-challenge.com` (alias, redirigé vers l’apex)
+
+5. Variables d'environnement :
 
    | Variable | Valeur |
    |---|---|
@@ -73,21 +78,25 @@ Les migrations Flyway s'exécutent au démarrage du backend.
    | `SUPABASE_PUBLISHABLE_KEY` | Clé publishable |
    | `API_BASE_URL` | URL publique du backend Render (sans slash final) |
 
-5. Déployer (**Redeploy** sans cache si besoin).
+6. Déployer (**Redeploy** sans cache si besoin).
 
 ## 4. CORS et auth
 
-Après le premier déploiement, récupère les **URLs réelles** affichées par Vercel et Render, puis :
-
-1. Render → `CORS_ORIGINS` = URL du front Vercel (ex. `https://xxx.vercel.app`)
+1. Render → `CORS_ORIGINS` = `https://rift-challenge.com,https://www.rift-challenge.com`
 2. Vercel → `API_BASE_URL` = URL du backend Render (ex. `https://xxx.onrender.com`)
-3. Auth Google : [docs/GOOGLE_OAUTH.md](GOOGLE_OAUTH.md) avec ces mêmes URLs
+3. Auth Google : [docs/GOOGLE_OAUTH.md](GOOGLE_OAUTH.md)
 
-Quand tu achèteras un domaine custom, remplace ces URLs par tes domaines dans Render, Vercel, Supabase et Google — pas besoin de toucher au code.
+Redirect URLs Supabase (prod + dev) :
 
-Redirect URLs Supabase (minimum au départ) :
-- URL front Vercel + `/**`
+- `https://rift-challenge.com`
+- `https://rift-challenge.com/**`
+- `https://rift-challenge.com/auth/callback`
+- `https://www.rift-challenge.com`
+- `https://www.rift-challenge.com/**`
+- `https://www.rift-challenge.com/auth/callback`
 - `http://localhost:4200/**` (dev local)
+
+Supabase → **Site URL** : `https://rift-challenge.com`
 
 ## 5. Riot API en production
 
@@ -97,7 +106,9 @@ Redirect URLs Supabase (minimum au départ) :
 ## 6. Vérifications post-déploiement
 
 - [ ] Health backend OK
+- [ ] `https://rift-challenge.com` et redirection `www` → apex
 - [ ] Connexion / inscription Supabase
+- [ ] Google OAuth depuis le domaine custom
 - [ ] Création de challenge
 - [ ] Page publique `/challenges/:shareSlug`
 - [ ] Refresh manuel (cooldown 2 min)

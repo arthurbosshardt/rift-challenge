@@ -1,4 +1,13 @@
-import { Component, ElementRef, HostListener, inject, input, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  HostListener,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
@@ -33,31 +42,58 @@ export class PageShellComponent {
   protected readonly settingsModal = inject(SettingsModalService);
   protected readonly logoutConfirm = inject(LogoutConfirmService);
   protected readonly userMenuOpen = signal(false);
+  protected readonly mobileNavOpen = signal(false);
   private readonly userMenuRef = viewChild<ElementRef<HTMLElement>>('userMenu');
+  private readonly mobileNavRootRef = viewChild<ElementRef<HTMLElement>>('mobileNavRoot');
 
   @HostListener('document:click', ['$event'])
-  protected closeUserMenuOnClickOutside(event: MouseEvent): void {
-    if (!this.userMenuOpen()) {
-      return;
+  protected closeMenusOnClickOutside(event: MouseEvent): void {
+    const target = event.target as Node;
+
+    if (this.userMenuOpen()) {
+      const menu = this.userMenuRef()?.nativeElement;
+      if (menu && !menu.contains(target)) {
+        this.closeUserMenu();
+      }
     }
-    const menu = this.userMenuRef()?.nativeElement;
-    if (menu && !menu.contains(event.target as Node)) {
-      this.closeUserMenu();
+
+    if (this.mobileNavOpen()) {
+      const header = this.mobileNavRootRef()?.nativeElement;
+      if (header && !header.contains(target)) {
+        this.closeMobileNav();
+      }
     }
   }
 
   @HostListener('document:keydown.escape')
-  protected closeUserMenuOnEscape(): void {
+  protected closeMenusOnEscape(): void {
     this.userMenuOpen.set(false);
+    this.mobileNavOpen.set(false);
   }
 
   protected toggleUserMenu(event: MouseEvent): void {
     event.stopPropagation();
+    this.closeMobileNav();
     this.userMenuOpen.update((open) => !open);
   }
 
   protected closeUserMenu(): void {
     this.userMenuOpen.set(false);
+  }
+
+  protected toggleMobileNav(event: MouseEvent): void {
+    event.stopPropagation();
+    this.closeUserMenu();
+    this.mobileNavOpen.update((open) => !open);
+  }
+
+  protected closeMobileNav(): void {
+    this.mobileNavOpen.set(false);
+  }
+
+  protected openLoginFromMobileNav(): void {
+    this.closeMobileNav();
+    this.authModal.open();
   }
 
   protected openSettings(): void {

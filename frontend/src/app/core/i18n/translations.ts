@@ -9,6 +9,8 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.createChallenge': 'Créer un challenge',
     'nav.login': 'Connexion',
     'nav.logout': 'Déconnexion',
+    'nav.openMenu': 'Ouvrir le menu',
+    'nav.closeMenu': 'Fermer le menu',
     'nav.language': 'Langue',
     'footer.legal':
       "Rift Challenge n'est pas un site officiel de Riot Games et n'est en aucun cas approuvé, sponsorisé ou endossé par Riot Games, Inc. League of Legends et Riot Games sont des marques déposées de Riot Games, Inc.",
@@ -50,9 +52,9 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'landing.step3Text':
       'Classement LP, rangs et ratio V/D. Les données peuvent être rafraîchies manuellement toutes les 2 minutes. Partagez l\'avancement avec vos amis et comparez vos classements !',
     'landing.typesTitle': 'Deux formats',
-    'landing.soloqTitle': 'SoloQ',
+    'landing.soloqTitle': 'SoloQ challenge',
     'landing.soloqText': 'Chaque joueur grimpe en solo. Idéal pour comparer jusqu\'à 16 amis.',
-    'landing.duoqTitle': 'DuoQ',
+    'landing.duoqTitle': 'DuoQ challenge',
     'landing.duoqText': 'Des duos de deux joueurs. Seules les parties jouées ensemble comptent.',
     'landing.disclaimer':
       'Rift Challenge n\'est pas affilié à Riot Games. Les classements ne sont pas en temps réel.',
@@ -325,6 +327,8 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.createChallenge': 'Create a challenge',
     'nav.login': 'Sign in',
     'nav.logout': 'Sign out',
+    'nav.openMenu': 'Open menu',
+    'nav.closeMenu': 'Close menu',
     'nav.language': 'Language',
     'footer.legal':
       'Rift Challenge is not an official Riot Games site and is not approved, sponsored, or endorsed by Riot Games, Inc. League of Legends and Riot Games are trademarks of Riot Games, Inc.',
@@ -364,9 +368,9 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'landing.step3Text':
       'LP leaderboard, ranks, and win rate. Data can be refreshed manually every 2 minutes.',
     'landing.typesTitle': 'Two formats',
-    'landing.soloqTitle': 'SoloQ',
+    'landing.soloqTitle': 'SoloQ challenge',
     'landing.soloqText': 'Each player climbs solo. Great for comparing up to 16 friends.',
-    'landing.duoqTitle': 'DuoQ',
+    'landing.duoqTitle': 'DuoQ challenge',
     'landing.duoqText': 'Pairs of two players. Only games played together count.',
     'landing.disclaimer':
       'Rift Challenge is not affiliated with Riot Games. Rankings are not real-time.',

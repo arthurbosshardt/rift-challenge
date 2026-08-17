@@ -22,6 +22,29 @@ export function formatChallengeDateTime(
   return `${day}/${month}/${year} à ${hour}h`;
 }
 
+export function formatChallengeDateCompact(
+  value: string | Date | null | undefined,
+  locale: 'fr' | 'en' = 'fr',
+): string {
+  if (!value) {
+    return '—';
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const hour = date.getHours();
+
+  if (locale === 'en') {
+    return `${month}/${day} ${hour}h`;
+  }
+  return `${day}/${month} ${hour}h`;
+}
+
 export function buildLocalStartAtIso(dateValue: string, hour: number): string | null {
   if (!dateValue || hour < 0 || hour > 23) {
     return null;

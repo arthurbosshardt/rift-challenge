@@ -1,4 +1,5 @@
 export const CHALLENGE_CARD_PREVIEW_NARROW_MAX_WIDTH = 420;
+export const CHALLENGE_CARD_LAYOUT_COMPACT_MAX_WIDTH = 760;
 export const CHALLENGE_CARD_PREVIEW_TWO_COLUMN_MIN_WIDTH = 421;
 export const CHALLENGE_CARD_PREVIEW_THIRD_COLUMN_MIN_WIDTH = 680;
 export const CHALLENGE_CARD_PREVIEW_COLUMN_MAX_ITEMS = 9;
@@ -6,14 +7,29 @@ export const CHALLENGE_CARD_PODIUM_COLUMN_SIZE = 3;
 export const CHALLENGE_CARD_PREVIEW_SLOT_COLUMNS = 3;
 export const CHALLENGE_CARD_PREVIEW_NARROW_VISIBLE_COUNT = 3;
 
+function isCompactChallengeCardPreviewLayout(
+  cardWidth: number | undefined,
+  viewportWidth: number,
+): boolean {
+  if (
+    cardWidth !== undefined &&
+    cardWidth > 0 &&
+    cardWidth <= CHALLENGE_CARD_LAYOUT_COMPACT_MAX_WIDTH
+  ) {
+    return true;
+  }
+  return viewportWidth <= CHALLENGE_CARD_PREVIEW_NARROW_MAX_WIDTH;
+}
+
 export function resolveChallengeCardPreviewVisibleCount(
   viewportWidth: number,
   totalCount: number,
+  cardWidth?: number,
 ): number {
   if (totalCount <= 0) {
     return 0;
   }
-  if (viewportWidth <= CHALLENGE_CARD_PREVIEW_NARROW_MAX_WIDTH) {
+  if (isCompactChallengeCardPreviewLayout(cardWidth, viewportWidth)) {
     return Math.min(CHALLENGE_CARD_PREVIEW_NARROW_VISIBLE_COUNT, totalCount);
   }
   return totalCount;
@@ -22,8 +38,9 @@ export function resolveChallengeCardPreviewVisibleCount(
 export function resolveChallengeCardPreviewColumnCount(
   viewportWidth: number,
   displayedCount: number,
+  cardWidth?: number,
 ): number {
-  if (displayedCount <= 0 || viewportWidth <= CHALLENGE_CARD_PREVIEW_NARROW_MAX_WIDTH) {
+  if (displayedCount <= 0 || isCompactChallengeCardPreviewLayout(cardWidth, viewportWidth)) {
     return 1;
   }
   if (displayedCount > CHALLENGE_CARD_PREVIEW_COLUMN_MAX_ITEMS) {

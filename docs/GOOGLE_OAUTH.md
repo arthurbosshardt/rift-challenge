@@ -2,7 +2,7 @@
 
 L’app utilise **Supabase Auth** pour Google. Le front redirige vers Google, Supabase gère le callback OAuth, puis renvoie l’utilisateur sur `/auth/callback`.
 
-Utilise les **URLs réelles** de ton déploiement (Vercel, puis domaine custom plus tard si tu en achètes un).
+**Production** : [https://rift-challenge.com](https://rift-challenge.com)
 
 ## 1. Google Cloud Console
 
@@ -18,10 +18,10 @@ Utilise les **URLs réelles** de ton déploiement (Vercel, puis domaine custom p
    - **Authorized JavaScript origins** :
      ```
      http://localhost:4200
-     https://TON-URL-VERCEL.vercel.app
+     https://rift-challenge.com
+     https://www.rift-challenge.com
      ```
-     *(ajoute ton domaine custom ici quand tu l’auras)*
-   - **Authorized redirect URIs** — **important : URL Supabase, pas l’URL Vercel** :
+   - **Authorized redirect URIs** — **important : URL Supabase, pas l’URL du front** :
      ```
      https://VOTRE_PROJECT_REF.supabase.co/auth/v1/callback
      ```
@@ -34,22 +34,23 @@ Utilise les **URLs réelles** de ton déploiement (Vercel, puis domaine custom p
    - Colle **Client ID** et **Client Secret**
    - Save
 2. **Authentication → URL Configuration**
-   - **Site URL** : URL de prod du front (Vercel pour l’instant)
+   - **Site URL** : `https://rift-challenge.com`
    - **Redirect URLs** — une URL par ligne :
      ```
-     https://TON-URL-VERCEL.vercel.app
-     https://TON-URL-VERCEL.vercel.app/**
-     https://TON-URL-VERCEL.vercel.app/auth/callback
+     https://rift-challenge.com
+     https://rift-challenge.com/**
+     https://rift-challenge.com/auth/callback
+     https://www.rift-challenge.com
+     https://www.rift-challenge.com/**
+     https://www.rift-challenge.com/auth/callback
      http://localhost:4200
      http://localhost:4200/**
      http://localhost:4200/auth/callback
      ```
 
-   Quand tu auras un domaine custom, ajoute les mêmes entrées avec ce domaine (sans retirer localhost).
-
 ## 3. Vérification
 
-1. Ouvre l’URL de prod → login
+1. Ouvre `https://rift-challenge.com` → login
 2. **Continuer avec Google**
 3. Retour sur `/auth/callback` → redirection `/my-challenges`
 
@@ -58,7 +59,7 @@ Utilise les **URLs réelles** de ton déploiement (Vercel, puis domaine custom p
 | Erreur | Cause probable |
 |---|---|
 | `redirect_uri_mismatch` | Redirect URI Google ≠ `https://xxx.supabase.co/auth/v1/callback` |
-| Retour login sans session | Redirect URLs Supabase manquantes pour l’URL du front |
+| Retour login sans session | Redirect URLs Supabase manquantes pour `https://rift-challenge.com` |
 | `Access blocked: app not verified` | App Google en Testing → ajoute ton email en test user |
 
 ## Secrets

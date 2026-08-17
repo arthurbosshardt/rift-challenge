@@ -126,11 +126,26 @@ button.linkish:focus-visible {
   padding: 1.5rem;
 }
 
+.shell-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  appearance: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  background: var(--overlay-backdrop);
+  cursor: pointer;
+}
+
 .shell__main {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
+  z-index: 0;
 }
 
 .shell--centered {
@@ -153,22 +168,55 @@ button.linkish:focus-visible {
 }
 
 .shell__header {
+  position: relative;
+  z-index: 40;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
+}
+
+.shell__header-bar {
+  display: contents;
 }
 
 .shell__header-start {
   justify-self: start;
   min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.shell__mobile-menu {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  position: relative;
+}
+
+.shell__nav--primary {
+  justify-self: center;
 }
 
 .shell__actions {
   justify-self: end;
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.shell__menu-toggle {
+  display: none;
+}
+
+.shell__nav-mobile-login {
+  display: none;
+}
+
+.shell__login-desktop {
+  display: inline-flex;
 }
 
 .shell--floating-nav {
@@ -183,7 +231,7 @@ button.linkish:focus-visible {
   top: 1rem;
   right: 2%;
   left: 2%;
-  z-index: 100;
+  z-index: 130;
   width: auto;
   max-width: none;
   margin: 0;
@@ -249,12 +297,12 @@ button.linkish:focus-visible {
 }
 
 .shell__nav--primary {
-  justify-self: center;
   justify-content: center;
   gap: 0.75rem;
 }
 
-.shell__nav--primary a {
+.shell__nav--primary a,
+.shell__nav-mobile-login {
   display: inline-flex;
   align-items: center;
   gap: 0.4375rem;
@@ -273,6 +321,15 @@ button.linkish:focus-visible {
     background 0.15s ease;
 }
 
+.shell__nav-mobile-login {
+  width: 100%;
+  justify-content: flex-start;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
 .shell__nav-icon {
   width: 1.125rem;
   height: 1.125rem;
@@ -280,7 +337,9 @@ button.linkish:focus-visible {
 }
 
 .shell__nav--primary a.active,
-.shell__nav--primary a:hover {
+.shell__nav--primary a:hover,
+.shell__nav-mobile-login:hover,
+.shell__nav-mobile-login:focus-visible {
   color: var(--gold);
   background: var(--gold-a12);
 }
@@ -396,6 +455,46 @@ button.linkish:focus-visible {
   background: rgba(232, 93, 93, 0.1);
 }
 
+.shell__menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.shell__menu-toggle:hover,
+.shell__menu-toggle:focus-visible,
+.shell__header--nav-open .shell__menu-toggle {
+  color: var(--gold);
+  border-color: rgba(197, 160, 89, 0.35);
+  background: var(--gold-a08);
+}
+
+.shell__menu-toggle-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.shell__menu-toggle-icon--close {
+  display: none;
+}
+
+.shell__header--nav-open .shell__menu-toggle-icon--open {
+  display: none;
+}
+
+.shell__header--nav-open .shell__menu-toggle-icon--close {
+  display: block;
+}
+
 .shell__title-row {
   display: inline-flex;
   align-items: center;
@@ -471,35 +570,97 @@ button.linkish:focus-visible {
   }
 
   .shell__header:not(.shell__header--floating) {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: stretch;
-    gap: 0.75rem;
     margin-bottom: 1.25rem;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .shell__header {
+    display: block;
+    z-index: 130;
+  }
+
+  .shell__header-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem 0.625rem;
     padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
   }
 
-  .shell__header-start,
+  .shell__header-start {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
   .shell__actions {
-    justify-self: stretch;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+    grid-column: unset;
+    grid-row: unset;
+    justify-self: unset;
   }
 
-  .shell__nav--primary {
-    justify-self: stretch;
-    order: 3;
+  .shell__mobile-menu {
+    position: relative;
+    flex: 0 0 auto;
+    grid-column: unset;
+    grid-row: unset;
+    justify-self: unset;
+  }
+
+  .shell__menu-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .shell__login-desktop {
+    display: none;
+  }
+
+  .shell__nav--mobile-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    left: auto;
+    z-index: 2;
+    width: min(16rem, calc(100dvw - 2rem));
+    min-width: 12rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.375rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-elevated);
+    box-shadow: var(--shadow-card);
+  }
+
+  .shell__nav--mobile-panel-open {
+    display: flex;
+  }
+
+  .shell__nav--primary a,
+  .shell__nav-mobile-login {
+    flex: none;
     width: 100%;
+    justify-content: flex-start;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+    text-transform: none;
+    letter-spacing: 0.02em;
   }
 
-  .shell__nav--primary a {
-    flex: 1 1 calc(50% - 0.375rem);
-    justify-content: center;
-    font-size: 0.8125rem;
-    padding: 0.4375rem 0.625rem;
+  .shell__nav-mobile-login {
+    display: inline-flex;
   }
 
-  .shell__actions {
-    order: 2;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+  .shell--floating-nav .shell__header-bar {
+    padding-bottom: 0;
+    border-bottom: none;
   }
 
   .brand {
@@ -508,7 +669,7 @@ button.linkish:focus-visible {
   }
 
   .user-menu__label {
-    max-width: 5.5rem;
+    display: none;
   }
 
   .shell__title-row h1 {

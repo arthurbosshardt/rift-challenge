@@ -322,6 +322,11 @@ textarea:focus {
   flex-shrink: 0;
 }
 
+.badge--icon-only {
+  gap: 0;
+  padding: 0.3125rem;
+}
+
 .badge--soloq {
   color: var(--gold);
   background: color-mix(in srgb, var(--gold) 12%, transparent);
@@ -521,7 +526,8 @@ textarea:focus {
 @media (max-width: 640px) {
   .modal-overlay {
     padding: 0.75rem;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
   }
 
   .modal-panel {

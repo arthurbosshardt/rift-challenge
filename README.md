@@ -91,4 +91,26 @@ Les clés dev Riot expirent toutes les 24 h — regénérer sur le portail si be
 
 ## Déploiement
 
-Voir [docs/DEPLOY.md](docs/DEPLOY.md) — backend Render, frontend Vercel, base Supabase.
+**Production** : [https://rift-challenge.com](https://rift-challenge.com)
+
+| Composant | Hébergeur |
+|---|---|
+| Frontend | Vercel (`rift-challenge.com`) |
+| Backend API | Render |
+| PostgreSQL | Supabase |
+
+Guides détaillés :
+
+- [docs/DEPLOY.md](docs/DEPLOY.md) — Render, Vercel, Supabase, CORS, domaine custom
+- [docs/GOOGLE_OAUTH.md](docs/GOOGLE_OAUTH.md) — Google + Supabase pour la prod
+
+### Checklist rapide (domaine custom)
+
+1. **Vercel** — ajouter `rift-challenge.com` et `www.rift-challenge.com` au projet front
+2. **Registrar / DNS** — pointer le domaine vers Vercel (records indiqués par Vercel)
+3. **Render** — `CORS_ORIGINS=https://rift-challenge.com,https://www.rift-challenge.com`
+4. **Vercel** — `API_BASE_URL` = URL publique du backend Render
+5. **Supabase** — Site URL `https://rift-challenge.com` + redirect URLs (voir GOOGLE_OAUTH.md)
+6. **Google Cloud** — origins `https://rift-challenge.com` et `https://www.rift-challenge.com`
+7. Redéployer front + backend, puis tester login, création de challenge et lien partageable
+

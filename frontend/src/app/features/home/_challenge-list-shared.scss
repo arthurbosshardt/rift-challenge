@@ -304,19 +304,27 @@
 }
 
 @media (max-width: 640px) {
+  .challenge-search__filters {
+    row-gap: 0.625rem;
+  }
+
   .challenge-search__field--type,
   .challenge-search__field--refresh {
-    flex: 1 1 100%;
-    width: 100%;
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .challenge-search__field--refresh {
+    margin-left: auto;
   }
 
   .challenge-search__type {
-    width: 100%;
-    justify-content: space-between;
+    width: max-content;
+    justify-content: flex-start;
   }
 
   .challenge-search__field--refresh .refresh-action-btn {
-    width: 100%;
+    width: auto;
     justify-content: center;
     padding-right: 0.875rem;
   }

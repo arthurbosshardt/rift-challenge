@@ -11,6 +11,8 @@ describe('challenge-card-preview-grid', () => {
     expect(resolveChallengeCardPreviewVisibleCount(420, 8)).toBe(3);
     expect(resolveChallengeCardPreviewVisibleCount(300, 2)).toBe(2);
     expect(resolveChallengeCardPreviewVisibleCount(500, 8)).toBe(8);
+    expect(resolveChallengeCardPreviewVisibleCount(720, 8, 760)).toBe(3);
+    expect(resolveChallengeCardPreviewVisibleCount(720, 8, 761)).toBe(8);
   });
 
   it('resolves column count from preview viewport width', () => {
@@ -21,6 +23,8 @@ describe('challenge-card-preview-grid', () => {
     expect(resolveChallengeCardPreviewColumnCount(680, 7)).toBe(3);
     expect(resolveChallengeCardPreviewColumnCount(680, 9)).toBe(3);
     expect(resolveChallengeCardPreviewColumnCount(500, 10)).toBe(1);
+    expect(resolveChallengeCardPreviewColumnCount(720, 8, 760)).toBe(1);
+    expect(resolveChallengeCardPreviewColumnCount(720, 8, 761)).toBe(2);
   });
 
   it('keeps the top three entries in the first column', () => {

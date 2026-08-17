@@ -8,7 +8,8 @@ class AppConfigTest {
 
     @Test
     void parseOrigins_trimsAndDropsEmptyValues() {
-        assertThat(AppConfig.parseOrigins(" https://app.example.com , http://localhost:4200 , "))
-                .containsExactly("https://app.example.com", "http://localhost:4200");
+        assertThat(AppConfig.parseOrigins(
+                        " https://rift-challenge.com , https://www.rift-challenge.com , http://localhost:4200 , "))
+                .containsExactly("https://rift-challenge.com", "https://www.rift-challenge.com", "http://localhost:4200");
     }
 }

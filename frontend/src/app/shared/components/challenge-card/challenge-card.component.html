@@ -1,5 +1,5 @@
   <a class="challenge-card" [routerLink]="['/challenges', challenge().shareSlug]">
-  <div class="challenge-card__layout" [class.challenge-card__layout--summary-only]="hidePreview()">
+  <div class="challenge-card__layout" [class.challenge-card__layout--summary-only]="hidePreview()" #cardLayout>
     <div class="challenge-card__summary">
       <div class="challenge-card__header">
         <h2 class="challenge-card__title">
@@ -13,41 +13,60 @@
       </div>
 
       <div class="challenge-card__meta-group">
-        <dl class="challenge-card__meta">
-          <div>
-            <dt>{{ 'challenge.status' | t }}</dt>
-            <dd>{{ statusLabel(challenge().status) }}</dd>
-          </div>
-          @if (!hidePublicBadge()) {
+        <div class="challenge-card__meta-full">
+          <dl class="challenge-card__meta">
             <div>
-              <dt>{{ 'challenge.visibility' | t }}</dt>
-              <dd>
-                @if (challenge().isPublic) {
-                  {{ 'challenge.public' | t }}
-                } @else {
-                  {{ 'challenge.private' | t }}
-                }
-              </dd>
+              <dt>{{ 'challenge.status' | t }}</dt>
+              <dd>{{ statusLabel(challenge().status) }}</dd>
             </div>
-          }
-        </dl>
+            @if (!hidePublicBadge()) {
+              <div>
+                <dt>{{ 'challenge.visibility' | t }}</dt>
+                <dd>
+                  @if (challenge().isPublic) {
+                    {{ 'challenge.public' | t }}
+                  } @else {
+                    {{ 'challenge.private' | t }}
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
 
-        <dl class="challenge-card__meta">
-          <div>
-            <dt>{{ 'challenge.start' | t }}</dt>
-            <dd>{{ challenge().startAt | challengeDate }}</dd>
-          </div>
-          @if (challenge().endAt) {
+          <dl class="challenge-card__meta">
             <div>
-              <dt>{{ 'challenge.end' | t }}</dt>
-              <dd>{{ challenge().endAt | challengeDate }}</dd>
+              <dt>{{ 'challenge.start' | t }}</dt>
+              <dd>{{ challenge().startAt | challengeDate }}</dd>
             </div>
+            @if (challenge().endAt) {
+              <div>
+                <dt>{{ 'challenge.end' | t }}</dt>
+                <dd>{{ challenge().endAt | challengeDate }}</dd>
+              </div>
+            }
+            <div>
+              <dt>{{ challenge().type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</dt>
+              <dd>{{ entryCountLabel() }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="challenge-card__meta-compact" [attr.aria-label]="metaCompactAriaLabel()">
+          <app-challenge-badge
+            [iconOnly]="true"
+            [kind]="challengeStatusBadgeKind(challenge().status)"
+            [label]="statusLabel(challenge().status)"
+          />
+          @if (!hidePublicBadge()) {
+            <app-challenge-badge
+              [iconOnly]="true"
+              [kind]="visibilityBadgeKind()"
+              [label]="visibilityLabel()"
+            />
           }
-          <div>
-            <dt>{{ challenge().type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</dt>
-            <dd>{{ entryCountLabel() }}</dd>
-          </div>
-        </dl>
+          <span class="challenge-card__meta-compact-dates">{{ dateRangeCompact() }}</span>
+          <span class="challenge-card__meta-compact-count">{{ entryCountCompact() }}</span>
+        </div>
       </div>
     </div>
 
@@ -84,30 +103,33 @@
                               {{ duo.position }}
                             </span>
                           }
-                          <div class="challenge-card__duo-avatars">
-                            <app-player-avatar
-                              [profileIconId]="duo.player1.profileIconId"
-                              [gameName]="duo.player1.gameName"
-                              size="xs"
-                            />
-                            <app-player-avatar
-                              [profileIconId]="duo.player2.profileIconId"
-                              [gameName]="duo.player2.gameName"
-                              size="xs"
-                            />
-                          </div>
-                          <div class="challenge-card__preview-text">
-                            <span class="challenge-card__preview-names">
-                              {{ duo.player1.gameName }} / {{ duo.player2.gameName }}
-                            </span>
-                            <span class="challenge-card__preview-ranks">
-                              @if (rankLabel(duo.player1); as p1Rank) {
-                                <span>{{ p1Rank }}</span>
-                              }
-                              @if (rankLabel(duo.player2); as p2Rank) {
-                                <span>{{ p2Rank }}</span>
-                              }
-                            </span>
+                          <div class="challenge-card__preview-text challenge-card__preview-text--duo">
+                            <div class="challenge-card__duo-player">
+                              <app-player-avatar
+                                [profileIconId]="duo.player1.profileIconId"
+                                [gameName]="duo.player1.gameName"
+                                size="xs"
+                              />
+                              <div class="challenge-card__duo-player-copy">
+                                <span class="challenge-card__preview-names">{{ duo.player1.gameName }}</span>
+                                @if (rankLabel(duo.player1); as p1Rank) {
+                                  <span class="challenge-card__preview-rank-label">{{ p1Rank }}</span>
+                                }
+                              </div>
+                            </div>
+                            <div class="challenge-card__duo-player">
+                              <app-player-avatar
+                                [profileIconId]="duo.player2.profileIconId"
+                                [gameName]="duo.player2.gameName"
+                                size="xs"
+                              />
+                              <div class="challenge-card__duo-player-copy">
+                                <span class="challenge-card__preview-names">{{ duo.player2.gameName }}</span>
+                                @if (rankLabel(duo.player2); as p2Rank) {
+                                  <span class="challenge-card__preview-rank-label">{{ p2Rank }}</span>
+                                }
+                              </div>
+                            </div>
                           </div>
                           @if (showLeaderboardPreview()) {
                             <div class="challenge-card__stats">
@@ -153,18 +175,20 @@
                               {{ participant.position }}
                             </span>
                           }
-                          <div class="challenge-card__preview-rank">
-                            @if (participant.currentTier) {
-                              <app-rank-emblem [tier]="participant.currentTier" size="sm" />
-                            } @else {
-                              <span class="challenge-card__rank-placeholder" aria-hidden="true">—</span>
-                            }
+                          <div class="challenge-card__preview-visual">
+                            <div class="challenge-card__preview-rank">
+                              @if (participant.currentTier) {
+                                <app-rank-emblem [tier]="participant.currentTier" size="sm" />
+                              } @else {
+                                <span class="challenge-card__rank-placeholder" aria-hidden="true">—</span>
+                              }
+                            </div>
+                            <app-player-avatar
+                              [profileIconId]="participant.profileIconId"
+                              [gameName]="participant.gameName"
+                              size="xs"
+                            />
                           </div>
-                          <app-player-avatar
-                            [profileIconId]="participant.profileIconId"
-                            [gameName]="participant.gameName"
-                            size="xs"
-                          />
                           <div class="challenge-card__preview-text">
                             <span class="challenge-card__preview-names">{{ participant.gameName }}</span>
                             @if (rankLabel(participant); as label) {

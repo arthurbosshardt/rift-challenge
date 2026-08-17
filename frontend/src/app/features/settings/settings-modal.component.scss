@@ -323,7 +323,36 @@
     align-items: stretch;
   }
 
-  .settings-form__row button {
+  .settings-form__row:not(.settings-form__row--inline) button {
     width: 100%;
+  }
+
+  .settings-form__row--inline {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .settings-form__row--inline label {
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 0;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .settings-form__row--inline label input {
+    font-size: 0.875rem;
+    line-height: normal;
+    padding: 0.5625rem 0.625rem;
+  }
+
+  .settings-form__row--inline button {
+    width: auto;
+    flex: 0 0 auto;
+    padding: 0.5625rem 0.75rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
   }
 }
