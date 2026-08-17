@@ -10,6 +10,17 @@ async function defaultAuthenticatedRoute(auth: AuthService): Promise<string[]> {
   return auth.linkedAccount() ? ['/my-races'] : ['/public-races'];
 }
 
+export const rootRedirectGuard: CanActivateFn = async () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  await auth.waitUntilReady();
+
+  if (auth.isAuthenticated()) {
+    return router.createUrlTree(await defaultAuthenticatedRoute(auth));
+  }
+  return router.createUrlTree(['/concept']);
+};
+
 export const guestHomeGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -29,7 +40,7 @@ export const authHomeGuard: CanActivateFn = async (_route, state) => {
 
   if (!auth.isAuthenticated()) {
     authModal.open({ returnUrl: state.url });
-    return router.createUrlTree(['/public-races']);
+    return router.createUrlTree(['/concept']);
   }
   return true;
 };
@@ -42,7 +53,7 @@ export const linkedAccountGuard: CanActivateFn = async (_route, state) => {
 
   if (!auth.isAuthenticated()) {
     authModal.open({ returnUrl: state.url });
-    return router.createUrlTree(['/public-races']);
+    return router.createUrlTree(['/concept']);
   }
 
   if (!auth.linkedAccount()) {

@@ -11,7 +11,16 @@ import {
 describe('race-summary utils', () => {
   it('resolveRaceCardPreviewLimit scales with viewport width', () => {
     expect(resolveRaceCardPreviewLimit(500)).toBe(3);
+    expect(resolveRaceCardPreviewLimit(679)).toBe(3);
+    expect(resolveRaceCardPreviewLimit(680)).toBe(5);
+    expect(resolveRaceCardPreviewLimit(819)).toBe(5);
+    expect(resolveRaceCardPreviewLimit(820)).toBe(6);
     expect(resolveRaceCardPreviewLimit(900)).toBe(6);
+    expect(resolveRaceCardPreviewLimit(999)).toBe(6);
+    expect(resolveRaceCardPreviewLimit(1000)).toBe(7);
+    expect(resolveRaceCardPreviewLimit(1200)).toBe(8);
+    expect(resolveRaceCardPreviewLimit(1400)).toBe(9);
+    expect(resolveRaceCardPreviewLimit(1600)).toBe(10);
     expect(resolveRaceCardPreviewLimit(1700)).toBe(10);
   });
 

@@ -36,11 +36,16 @@
           <p class="race-card__preview-title">{{ previewTitle() }}</p>
 
           @if (race().type === 'DUOQ') {
-            <ul class="race-card__preview-list">
-              @for (duo of displayedDuos(); track duo.id) {
+            <ul
+              class="race-card__preview-list"
+              [class.race-card__preview-list--columns]="usePreviewColumns()"
+            >
+              @for (duo of displayedDuos(); track duo.id; let index = $index) {
                 <li
                   class="race-card__preview-item race-card__preview-item--duo"
                   [class]="duoPreviewItemClass(duo)"
+                  [style.grid-column]="previewGridColumn(index)"
+                  [style.grid-row]="previewGridRow(index)"
                 >
                   @if (showLeaderboardPreview()) {
                     <span
@@ -103,9 +108,17 @@
               }
             </ul>
           } @else {
-            <ul class="race-card__preview-list">
-              @for (participant of displayedParticipants(); track participant.id) {
-                <li class="race-card__preview-item" [class]="participantPreviewItemClass(participant)">
+            <ul
+              class="race-card__preview-list"
+              [class.race-card__preview-list--columns]="usePreviewColumns()"
+            >
+              @for (participant of displayedParticipants(); track participant.id; let index = $index) {
+                <li
+                  class="race-card__preview-item"
+                  [class]="participantPreviewItemClass(participant)"
+                  [style.grid-column]="previewGridColumn(index)"
+                  [style.grid-row]="previewGridRow(index)"
+                >
                   @if (showLeaderboardPreview()) {
                     <span
                       class="race-card__position"

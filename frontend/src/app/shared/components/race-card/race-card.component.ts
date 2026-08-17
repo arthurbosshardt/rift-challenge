@@ -11,6 +11,11 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { formatRankLabel } from '../../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../../core/utils/record-display';
 import { resolveRaceCardPreviewLimit } from '../../../core/utils/race-summary';
+import {
+  raceCardPreviewGridColumn,
+  raceCardPreviewGridRow,
+  shouldUseRaceCardPreviewColumns,
+} from '../../../core/utils/race-card-preview-grid';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 
@@ -27,6 +32,7 @@ export class RaceCardComponent implements OnInit {
   private readonly i18n = inject(I18nService);
 
   protected readonly previewLimit = signal(resolveRaceCardPreviewLimit(window.innerWidth));
+  protected readonly viewportWidth = signal(window.innerWidth);
   protected readonly entryCount = computed(() => this.race().entryCount ?? 0);
   protected readonly previewParticipants = computed(() => this.race().previewParticipants ?? []);
   protected readonly previewDuos = computed(() => this.race().previewDuos ?? []);
@@ -48,6 +54,13 @@ export class RaceCardComponent implements OnInit {
   protected readonly showLeaderboardPreview = computed(
     () => this.race().status !== 'NOT_STARTED',
   );
+  protected readonly usePreviewColumns = computed(() => {
+    const count =
+      this.race().type === 'DUOQ'
+        ? this.displayedDuos().length
+        : this.displayedParticipants().length;
+    return shouldUseRaceCardPreviewColumns(this.viewportWidth(), count);
+  });
 
   ngOnInit(): void {
     this.updatePreviewLimit();
@@ -59,6 +72,7 @@ export class RaceCardComponent implements OnInit {
   }
 
   private updatePreviewLimit(): void {
+    this.viewportWidth.set(window.innerWidth);
     this.previewLimit.set(resolveRaceCardPreviewLimit(window.innerWidth));
   }
 
@@ -190,5 +204,13 @@ export class RaceCardComponent implements OnInit {
 
   protected winRateClass(winRate: number, wins: number, losses: number): string {
     return `race-card__winrate--${winRateToneModifier(winRate, wins, losses)}`;
+  }
+
+  protected previewGridColumn(index: number): number | null {
+    return raceCardPreviewGridColumn(index, this.usePreviewColumns());
+  }
+
+  protected previewGridRow(index: number): number | null {
+    return raceCardPreviewGridRow(index, this.usePreviewColumns());
   }
 }

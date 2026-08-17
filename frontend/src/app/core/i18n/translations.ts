@@ -5,6 +5,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.myRaces': 'Mes races',
     'nav.createdRaces': 'Races créées',
     'nav.settings': 'Paramètres',
+    'nav.concept': 'Concept',
     'nav.publicRaces': 'Races publiques',
     'nav.createRace': 'Créer une race',
     'nav.login': 'Connexion',
@@ -12,6 +13,48 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.language': 'Langue',
     'footer.legal':
       "Rift Race n'est pas un site officiel de Riot Games et n'est en aucun cas approuvé, sponsorisé ou endossé par Riot Games, Inc. League of Legends et Riot Games sont des marques déposées de Riot Games, Inc.",
+    'landing.heroTitle': 'Grimpez plus vite que vos amis',
+    'landing.heroSubtitle':
+      'Rift Race organise des défis SoloQ et DuoQ entre amis : créez une race, fixez une période, puis suivez qui gagne le plus de LP avant la fin.',
+    'landing.browsePublic': 'Voir les races publiques',
+    'landing.getStarted': 'Se connecter',
+    'landing.inspiredTitle': 'Inspiré des défis existants',
+    'landing.inspiredIntro':
+      'Rift Race reprend l\'esprit des courses au classement déjà populaires dans la communauté LoL — SoloQ coréenne, Iron to Challenger, défis DuoQ entre streamers, LP races entre amis — et les formalise dans un outil dédié.',
+    'landing.inspiredKoreaTitle': 'SoloQ coréenne',
+    'landing.inspiredKoreaText':
+      'Velja, Faker, Dopa… les pros et streamers se défient en SoloQ KR sur une période fixe.',
+    'landing.inspiredKoreaImageAlt': 'Miniature d\'un stream SoloQ coréen',
+    'landing.inspiredIronTitle': 'Iron to Challenger',
+    'landing.inspiredIronText':
+      'Le défi emblématique du fer au challenger, popularisé par la communauté et les streamers.',
+    'landing.inspiredIronImageAlt': 'Illustration League of Legends — Iron to Challenger',
+    'landing.inspiredDuoTitle': 'Défis DuoQ',
+    'landing.inspiredDuoText':
+      'Doublelift, Yogurt et d\'autres duos s\'affrontent en ne comptant que les games ensemble.',
+    'landing.inspiredDuoImageAlt': 'Miniature Doublelift en DuoQ',
+    'landing.inspiredLpTitle': 'LP race entre amis',
+    'landing.inspiredLpText':
+      'Qui gagne le plus de LP en une semaine ? Un format très suivi chez les streamers.',
+    'landing.inspiredLpImageAlt': 'Miniature d\'une LP race streamer',
+    'landing.inspiredLink': 'En savoir plus →',
+    'landing.howItWorks': 'Comment ça marche',
+    'landing.step1Title': 'Créez une race',
+    'landing.step1Text':
+      'Choisissez SoloQ ou DuoQ, une date de début et de fin, publique ou privée.',
+    'landing.step2Title': 'Ajoutez les joueurs',
+    'landing.step2Text':
+      'Inscrivez les invocateurs via leur Riot ID. Jusqu\'à 16 joueurs en SoloQ ou 8 duos en DuoQ.',
+    'landing.step3Title': 'Suivez la progression',
+    'landing.step3Text':
+      'Classement LP, rangs et ratio V/D. Les données peuvent être rafraîchies manuellement toutes les 2 minutes.',
+    'landing.typesTitle': 'Deux formats',
+    'landing.soloqTitle': 'SoloQ',
+    'landing.soloqText': 'Chaque joueur grimpe en solo. Idéal pour comparer jusqu\'à 16 amis.',
+    'landing.duoqTitle': 'DuoQ',
+    'landing.duoqText': 'Des duos de deux joueurs. Seules les parties jouées ensemble comptent.',
+    'landing.disclaimer':
+      'Rift Race n\'est pas affilié à Riot Games. Les classements ne sont pas en temps réel.',
     'home.myRacesTitle': 'Mes races',
     'home.createdRacesTitle': 'Races créées',
     'home.participatingTitle': 'Races rejointes',
@@ -247,6 +290,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.myRaces': 'My races',
     'nav.createdRaces': 'Created races',
     'nav.settings': 'Settings',
+    'nav.concept': 'Concept',
     'nav.publicRaces': 'Public races',
     'nav.createRace': 'Create a race',
     'nav.login': 'Sign in',
@@ -254,6 +298,46 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.language': 'Language',
     'footer.legal':
       'Rift Race is not an official Riot Games site and is not approved, sponsored, or endorsed by Riot Games, Inc. League of Legends and Riot Games are trademarks of Riot Games, Inc.',
+    'landing.heroTitle': 'Climb faster than your friends',
+    'landing.heroSubtitle':
+      'Rift Race runs SoloQ and DuoQ challenges with friends: create a race, set a time window, then see who gains the most LP before the end.',
+    'landing.browsePublic': 'Browse public races',
+    'landing.getStarted': 'Sign in',
+    'landing.inspiredTitle': 'Inspired by existing challenges',
+    'landing.inspiredIntro':
+      'Rift Race builds on community ranking races — Korean SoloQ streams, Iron to Challenger, streamer DuoQ challenges, LP races between friends — and turns them into a dedicated tool.',
+    'landing.inspiredKoreaTitle': 'Korean SoloQ',
+    'landing.inspiredKoreaText':
+      'Velja, Faker, Dopa… pros and streamers race in KR SoloQ over a fixed window.',
+    'landing.inspiredKoreaImageAlt': 'Korean SoloQ stream thumbnail',
+    'landing.inspiredIronTitle': 'Iron to Challenger',
+    'landing.inspiredIronText':
+      'The iconic Iron-to-Challenger climb, popularized by the community and streamers.',
+    'landing.inspiredIronImageAlt': 'League of Legends art — Iron to Challenger',
+    'landing.inspiredDuoTitle': 'DuoQ challenges',
+    'landing.inspiredDuoText':
+      'Doublelift, Yogurt and other duos compete counting only games played together.',
+    'landing.inspiredDuoImageAlt': 'Doublelift DuoQ stream thumbnail',
+    'landing.inspiredLpTitle': 'LP race with friends',
+    'landing.inspiredLpText':
+      'Who gains the most LP in a week? A format streamers and friends follow closely.',
+    'landing.inspiredLpImageAlt': 'Streamer LP race thumbnail',
+    'landing.inspiredLink': 'Learn more →',
+    'landing.howItWorks': 'How it works',
+    'landing.step1Title': 'Create a race',
+    'landing.step1Text': 'Pick SoloQ or DuoQ, a start and end date, public or private.',
+    'landing.step2Title': 'Add players',
+    'landing.step2Text': 'Register summoners by Riot ID. Up to 16 players in SoloQ or 8 duos in DuoQ.',
+    'landing.step3Title': 'Track progress',
+    'landing.step3Text':
+      'LP leaderboard, ranks, and win rate. Data can be refreshed manually every 2 minutes.',
+    'landing.typesTitle': 'Two formats',
+    'landing.soloqTitle': 'SoloQ',
+    'landing.soloqText': 'Each player climbs solo. Great for comparing up to 16 friends.',
+    'landing.duoqTitle': 'DuoQ',
+    'landing.duoqText': 'Pairs of two players. Only games played together count.',
+    'landing.disclaimer':
+      'Rift Race is not affiliated with Riot Games. Rankings are not real-time.',
     'home.myRacesTitle': 'My races',
     'home.createdRacesTitle': 'Created races',
     'home.participatingTitle': 'Joined races',

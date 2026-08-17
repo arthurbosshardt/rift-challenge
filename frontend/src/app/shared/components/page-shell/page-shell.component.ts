@@ -20,6 +20,7 @@ import { SiteFooterComponent } from '../site-footer/site-footer.component';
 export class PageShellComponent {
   readonly title = input.required<string>();
   readonly centered = input(false);
+  readonly floatingNav = input(false);
 
   protected readonly auth = inject(AuthService);
   protected readonly authModal = inject(AuthModalService);

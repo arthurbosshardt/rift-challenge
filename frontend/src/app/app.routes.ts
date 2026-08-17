@@ -2,13 +2,14 @@ import { Routes } from '@angular/router';
 import {
   authHomeGuard,
   guestAuthGuard,
-  guestHomeGuard,
   linkedAccountGuard,
+  rootRedirectGuard,
 } from './core/guards/home.guards';
 import { AuthCallbackPageComponent } from './features/auth/auth-callback-page.component';
 import { LoginRedirectComponent } from './features/auth/login-redirect.component';
 import { SettingsPageComponent } from './features/settings/settings-page.component';
 import { CreatedRacesPageComponent } from './features/home/created-races-page.component';
+import { LandingPageComponent } from './features/home/landing-page.component';
 import { MyRacesPageComponent } from './features/home/my-races-page.component';
 import { PublicRacesPageComponent } from './features/home/public-races-page.component';
 import { CreateRaceRedirectComponent } from './features/race/create-race-redirect.component';
@@ -17,8 +18,12 @@ import { RaceDetailPageComponent } from './features/race/race-detail-page.compon
 export const routes: Routes = [
   {
     path: '',
-    component: PublicRacesPageComponent,
-    canActivate: [guestHomeGuard],
+    canActivate: [rootRedirectGuard],
+    component: LandingPageComponent,
+  },
+  {
+    path: 'concept',
+    component: LandingPageComponent,
   },
   {
     path: 'login',
@@ -47,7 +52,6 @@ export const routes: Routes = [
   {
     path: 'public-races',
     component: PublicRacesPageComponent,
-    canActivate: [authHomeGuard],
   },
   {
     path: 'races/new',
