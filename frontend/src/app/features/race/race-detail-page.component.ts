@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,22 +11,25 @@ import {
   sortDirectionArrow,
   sortDuos,
   sortParticipants,
+  isLeaderboardLeader,
   winRateLabel,
 } from '../../core/utils/leaderboard-sort';
 import { formatDurationCountdown, formatRankLabel } from '../../core/utils/rank-display';
 import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { buildLocalStartAtIso, splitLocalDateHour } from '../../core/utils/race-date';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
-import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
+import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { RaceDatePipe } from '../../shared/pipes/race-date.pipe';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { buildRiotId } from '../../core/utils/riot-id';
 
 @Component({
   selector: 'app-race-detail-page',
-  imports: [PageShellComponent, FormsModule, PlayerAvatarComponent, RaceDatePipe, LoaderComponent, TranslatePipe],
+  imports: [PageShellComponent, FormsModule, PlayerIdentityComponent, RaceDatePipe, LoaderComponent, TranslatePipe],
   templateUrl: './race-detail-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './race-detail-page.component.scss',
 })
 export class RaceDetailPageComponent implements OnInit, OnDestroy {
@@ -49,10 +52,10 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
   protected readonly refreshCountdown = signal<string | null>(null);
   protected readonly startCountdown = signal<string | null>(null);
   protected readonly endCountdown = signal<string | null>(null);
-  protected readonly editingEnd = signal(false);
-  protected readonly savingEnd = signal(false);
-  protected readonly endError = signal<string | null>(null);
-  protected readonly endSuccess = signal(false);
+  protected readonly editingSchedule = signal(false);
+  protected readonly savingSchedule = signal(false);
+  protected readonly scheduleError = signal<string | null>(null);
+  protected readonly scheduleSuccess = signal(false);
   protected readonly removingParticipantId = signal<string | null>(null);
   protected readonly removingDuoId = signal<string | null>(null);
   protected readonly sortCriterion = signal<LeaderboardSort>('RANK');
@@ -69,25 +72,34 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
   protected readonly sortedParticipants = computed(() => {
     const currentRace = this.race();
+    const criterion = this.sortCriterion();
+    const direction = this.sortDirection();
     if (!currentRace) {
       return [];
     }
-    return sortParticipants(currentRace.participants, this.sortCriterion(), this.sortDirection());
+    return sortParticipants(currentRace.participants, criterion, direction);
   });
 
   protected readonly sortedDuos = computed(() => {
     const currentRace = this.race();
+    const criterion = this.sortCriterion();
+    const direction = this.sortDirection();
     if (!currentRace) {
       return [];
     }
-    return sortDuos(currentRace.duos, this.sortCriterion(), this.sortDirection());
+    return sortDuos(currentRace.duos, criterion, direction);
   });
 
-  protected riotIdInput = '';
-  protected duoPlayer1Input = '';
-  protected duoPlayer2Input = '';
+  protected gameNameInput = '';
+  protected tagLineInput = '';
+  protected duoPlayer1GameName = '';
+  protected duoPlayer1TagLine = '';
+  protected duoPlayer2GameName = '';
+  protected duoPlayer2TagLine = '';
   protected endDateInput = '';
   protected endHourInput = 12;
+  protected startDateInput = '';
+  protected startHourInput = 12;
   protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
 
   ngOnInit(): void {
@@ -112,7 +124,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
       next: (race) => {
         const normalized = this.normalizeRace(race);
         this.race.set(normalized);
-        this.syncEndInputs(normalized);
+        this.syncScheduleInputs(normalized);
         this.loading.set(false);
         this.startTimersIfNeeded();
       },
@@ -135,60 +147,78 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     window.setTimeout(() => this.copied.set(false), 2000);
   }
 
-  protected startEditingEnd(): void {
+  protected startEditingSchedule(): void {
     const race = this.race();
     if (!race?.isOwner) {
       return;
     }
-    this.syncEndInputs(race);
-    this.endError.set(null);
-    this.endSuccess.set(false);
-    this.editingEnd.set(true);
+    this.syncScheduleInputs(race);
+    this.scheduleError.set(null);
+    this.scheduleSuccess.set(false);
+    this.editingSchedule.set(true);
   }
 
-  protected cancelEditingEnd(): void {
+  protected cancelEditingSchedule(): void {
     const race = this.race();
     if (race) {
-      this.syncEndInputs(race);
+      this.syncScheduleInputs(race);
     }
-    this.editingEnd.set(false);
-    this.endError.set(null);
+    this.editingSchedule.set(false);
+    this.scheduleError.set(null);
   }
 
-  protected saveEnd(): void {
+  protected saveSchedule(): void {
     const race = this.race();
-    if (!race?.isOwner || this.savingEnd()) {
+    if (!race?.isOwner || this.savingSchedule()) {
+      return;
+    }
+
+    const startAt = buildLocalStartAtIso(this.startDateInput, this.startHourInput);
+    if (!startAt) {
+      this.scheduleError.set(this.i18n.t('create.invalidStartDate'));
       return;
     }
 
     const endAt = buildLocalStartAtIso(this.endDateInput, this.endHourInput);
     if (!endAt) {
-      this.endError.set(this.i18n.t('create.invalidEndDate'));
+      this.scheduleError.set(this.i18n.t('create.invalidEndDate'));
       return;
     }
-    if (new Date(endAt).getTime() <= new Date(race.startAt).getTime()) {
-      this.endError.set(this.i18n.t('create.endBeforeStart'));
+    if (new Date(endAt).getTime() <= new Date(startAt).getTime()) {
+      this.scheduleError.set(this.i18n.t('create.endBeforeStart'));
       return;
     }
 
-    this.endError.set(null);
-    this.endSuccess.set(false);
-    this.savingEnd.set(true);
+    this.scheduleError.set(null);
+    this.scheduleSuccess.set(false);
+    this.savingSchedule.set(true);
+    const willHaveStarted =
+      race.status !== 'NOT_STARTED' || new Date(startAt).getTime() <= Date.now();
+    const shouldAutoRefresh = willHaveStarted && race.refreshAvailable;
+    if (shouldAutoRefresh) {
+      this.refreshError.set(null);
+      this.refreshing.set(true);
+    }
 
-    this.raceApi.updateRaceEnd(race.id, { endAt }).subscribe({
+    this.raceApi.updateRaceSchedule(race.id, { startAt, endAt }).subscribe({
       next: (updated) => {
         const normalized = this.normalizeRace(updated);
         this.race.set(normalized);
-        this.syncEndInputs(normalized);
-        this.savingEnd.set(false);
-        this.editingEnd.set(false);
-        this.endSuccess.set(true);
+        this.syncScheduleInputs(normalized);
+        this.savingSchedule.set(false);
+        this.refreshing.set(false);
+        this.editingSchedule.set(false);
+        this.scheduleSuccess.set(true);
         this.startTimersIfNeeded();
-        window.setTimeout(() => this.endSuccess.set(false), 2500);
+        window.setTimeout(() => this.scheduleSuccess.set(false), 2500);
       },
-      error: () => {
-        this.endError.set(this.i18n.t('race.endUpdateError'));
-        this.savingEnd.set(false);
+      error: (err: HttpErrorResponse) => {
+        this.scheduleError.set(this.i18n.t('race.scheduleUpdateError'));
+        this.savingSchedule.set(false);
+        this.refreshing.set(false);
+        if (shouldAutoRefresh && err.status === 429) {
+          void this.loadRace();
+        }
       },
     });
   }
@@ -208,6 +238,14 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
       return null;
     }
     return sortDirectionArrow(this.sortDirection());
+  }
+
+  protected isLeader(index: number, eligible = true): boolean {
+    return isLeaderboardLeader(index, this.sortDirection(), eligible);
+  }
+
+  protected leaderboardRowTrack(participantId: string): string {
+    return `${this.sortCriterion()}:${this.sortDirection()}:${participantId}`;
   }
 
   protected raceTitle(race: RaceDetail): string {
@@ -232,7 +270,15 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const riotId = this.riotIdInput.trim();
+    const riotId = buildRiotId(this.gameNameInput, this.tagLineInput);
+    if (!this.gameNameInput.trim()) {
+      this.participantError.set(this.i18n.t('errors.gameNameRequired'));
+      return;
+    }
+    if (!this.tagLineInput.trim()) {
+      this.participantError.set(this.i18n.t('errors.tagLineRequired'));
+      return;
+    }
     if (!riotId) {
       this.participantError.set(this.i18n.t('errors.riotIdRequired'));
       return;
@@ -243,7 +289,8 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
     this.raceApi.addParticipant(race.id, { riotId }).subscribe({
       next: () => {
-        this.riotIdInput = '';
+        this.gameNameInput = '';
+        this.tagLineInput = '';
         this.addingParticipant.set(false);
         void this.loadRace();
       },
@@ -260,10 +307,10 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const player1RiotId = this.duoPlayer1Input.trim();
-    const player2RiotId = this.duoPlayer2Input.trim();
+    const player1RiotId = buildRiotId(this.duoPlayer1GameName, this.duoPlayer1TagLine);
+    const player2RiotId = buildRiotId(this.duoPlayer2GameName, this.duoPlayer2TagLine);
     if (!player1RiotId || !player2RiotId) {
-      this.participantError.set(this.i18n.t('errors.duoIdsRequired'));
+      this.participantError.set(this.i18n.t('errors.duoFieldsRequired'));
       return;
     }
 
@@ -272,8 +319,10 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
     this.raceApi.addDuo(race.id, { player1RiotId, player2RiotId }).subscribe({
       next: () => {
-        this.duoPlayer1Input = '';
-        this.duoPlayer2Input = '';
+        this.duoPlayer1GameName = '';
+        this.duoPlayer1TagLine = '';
+        this.duoPlayer2GameName = '';
+        this.duoPlayer2TagLine = '';
         this.addingParticipant.set(false);
         void this.loadRace();
       },
@@ -326,6 +375,29 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  protected hasLeaderboard(race: RaceDetail): boolean {
+    if (race.status !== 'ACTIVE' && race.status !== 'FINISHED') {
+      return false;
+    }
+
+    if (race.lastRefreshedAt) {
+      return true;
+    }
+
+    if (race.type === 'SOLOQ') {
+      return race.participants.some(
+        (participant) => participant.hasRankData || participant.wins + participant.losses > 0,
+      );
+    }
+
+    return race.duos.some(
+      (duo) =>
+        duo.player1.hasRankData ||
+        duo.player2.hasRankData ||
+        duo.wins + duo.losses > 0,
+    );
+  }
+
   protected refreshRace(): void {
     const race = this.race();
     if (!race?.refreshAvailable || this.refreshing()) {
@@ -371,6 +443,35 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
       participant.currentLp,
       this.i18n.locale(),
     );
+  }
+
+  protected participantRankLabel(participant: ParticipantProgress): string | null {
+    const parts: string[] = [];
+
+    if (participant.hasRankData) {
+      parts.push(
+        formatRankLabel(
+          participant.currentTier,
+          participant.currentRank,
+          participant.currentLp,
+          this.i18n.locale(),
+        ),
+      );
+    }
+
+    if (participant.wins + participant.losses > 0) {
+      parts.push(this.i18n.t('race.winsLosses', { wins: participant.wins, losses: participant.losses }));
+    }
+
+    if (parts.length === 0) {
+      return null;
+    }
+
+    return parts.join(' · ');
+  }
+
+  protected duoHasRankData(duo: DuoProgress): boolean {
+    return duo.player1.hasRankData || duo.player2.hasRankData;
   }
 
   protected lpLabel(value: number, hasData = true): string {
@@ -427,15 +528,24 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     };
   }
 
-  private syncEndInputs(race: RaceDetail): void {
-    const parts = splitLocalDateHour(race.endAt);
-    if (!parts) {
+  private syncScheduleInputs(race: RaceDetail): void {
+    const startParts = splitLocalDateHour(race.startAt);
+    if (!startParts) {
+      this.startDateInput = '';
+      this.startHourInput = 12;
+    } else {
+      this.startDateInput = startParts.date;
+      this.startHourInput = startParts.hour;
+    }
+
+    const endParts = splitLocalDateHour(race.endAt);
+    if (!endParts) {
       this.endDateInput = '';
       this.endHourInput = 12;
-      return;
+    } else {
+      this.endDateInput = endParts.date;
+      this.endHourInput = endParts.hour;
     }
-    this.endDateInput = parts.date;
-    this.endHourInput = parts.hour;
   }
 
   private startTimersIfNeeded(): void {
@@ -489,7 +599,7 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
 
   private updateRefreshCountdown(): void {
     const currentRace = this.race();
-    if (!currentRace || currentRace.status !== 'ACTIVE') {
+    if (!currentRace || (currentRace.status !== 'ACTIVE' && currentRace.status !== 'FINISHED')) {
       this.refreshCountdown.set(null);
       return;
     }
@@ -542,6 +652,12 @@ export class RaceDetailPageComponent implements OnInit, OnDestroy {
     }
     if (err.status === 429) {
       return this.i18n.t('errors.riotRateLimit');
+    }
+    if (err.status === 502 || err.status === 503 || message.includes('Riot API')) {
+      return this.i18n.t('errors.riotUnavailable');
+    }
+    if (err.status === 401) {
+      return this.i18n.t('errors.authRequired');
     }
 
     return this.i18n.t('errors.addParticipant');

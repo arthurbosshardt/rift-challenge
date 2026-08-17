@@ -9,6 +9,8 @@ import {
   RaceDetail,
   RaceSummary,
   UpdateRaceEndRequest,
+  UpdateRaceScheduleRequest,
+  UpdateRaceStartRequest,
 } from '../models/race.models';
 import { apiUrl } from '../utils/api-url';
 
@@ -22,8 +24,17 @@ export class RaceApiService {
     return this.http.get<RaceSummary[]>(`${this.baseUrl}/public`);
   }
 
+  listOwnedRaces(): Observable<RaceSummary[]> {
+    return this.http.get<RaceSummary[]>(`${this.baseUrl}/owned`);
+  }
+
+  listParticipatingRaces(): Observable<RaceSummary[]> {
+    return this.http.get<RaceSummary[]>(`${this.baseUrl}/participating`);
+  }
+
+  /** @deprecated Use listOwnedRaces() */
   listMyRaces(): Observable<RaceSummary[]> {
-    return this.http.get<RaceSummary[]>(`${this.baseUrl}/mine`);
+    return this.listOwnedRaces();
   }
 
   getRaceByShareSlug(shareSlug: string): Observable<RaceDetail> {
@@ -34,8 +45,16 @@ export class RaceApiService {
     return this.http.post<RaceDetail>(this.baseUrl, request);
   }
 
+  updateRaceSchedule(raceId: string, request: UpdateRaceScheduleRequest): Observable<RaceDetail> {
+    return this.http.patch<RaceDetail>(`${this.baseUrl}/${raceId}/schedule`, request);
+  }
+
   updateRaceEnd(raceId: string, request: UpdateRaceEndRequest): Observable<RaceDetail> {
     return this.http.patch<RaceDetail>(`${this.baseUrl}/${raceId}/end`, request);
+  }
+
+  updateRaceStart(raceId: string, request: UpdateRaceStartRequest): Observable<RaceDetail> {
+    return this.http.patch<RaceDetail>(`${this.baseUrl}/${raceId}/start`, request);
   }
 
   addDuo(raceId: string, request: AddDuoRequest): Observable<void> {

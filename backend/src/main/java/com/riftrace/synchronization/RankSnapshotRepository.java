@@ -11,4 +11,6 @@ public interface RankSnapshotRepository extends JpaRepository<RankSnapshot, UUID
             UUID participantId,
             SnapshotType snapshotType
     );
+
+    void deleteByParticipantIdAndSnapshotType(UUID participantId, SnapshotType snapshotType);
 }

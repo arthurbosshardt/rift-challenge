@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ParticipantProfileService {
@@ -44,10 +45,14 @@ public class ParticipantProfileService {
             return;
         }
 
-        riotSummonerClient.findProfileIconId(participant.getRiotPuuid())
-                .ifPresent(iconId -> {
-                    participant.updateProfileIconId(iconId);
-                    participantRepository.save(participant);
-                });
+        try {
+            riotSummonerClient.findProfileIconId(participant.getRiotPuuid())
+                    .ifPresent(iconId -> {
+                        participant.updateProfileIconId(iconId);
+                        participantRepository.save(participant);
+                    });
+        } catch (ResponseStatusException ignored) {
+            // Profile icon can be loaded on refresh if Riot is temporarily unavailable.
+        }
     }
 }

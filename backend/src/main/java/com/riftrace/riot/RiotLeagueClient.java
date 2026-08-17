@@ -13,7 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class RiotLeagueClient {
 
-    static final String RANKED_SOLO_QUEUE = "RANKED_SOLO_5x5";
+    public static final String RANKED_SOLO_QUEUE = "RANKED_SOLO_5x5";
 
     private final RestClient riotRestClient;
     private final RiotProperties properties;

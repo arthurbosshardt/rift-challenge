@@ -57,8 +57,18 @@ public class RaceProgressService {
                 .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(participantId, SnapshotType.REFRESH)
                 .orElse(baseline);
 
-        long wins = participantMatchRepository.countWinsByParticipantId(participantId);
-        long losses = participantMatchRepository.countLossesByParticipantId(participantId);
+        long syncedWins = participantMatchRepository.countWinsByParticipantId(participantId);
+        long syncedLosses = participantMatchRepository.countLossesByParticipantId(participantId);
+
+        long wins;
+        long losses;
+        if (syncedWins + syncedLosses > 0) {
+            wins = syncedWins;
+            losses = syncedLosses;
+        } else {
+            wins = resolveSnapshotStat(baseline, current, true);
+            losses = resolveSnapshotStat(baseline, current, false);
+        }
 
         if (current == null) {
             return ParticipantProgressResponse.withoutRankData(
@@ -126,5 +136,67 @@ public class RaceProgressService {
         return Objects.equals(left.getTier(), right.getTier())
                 && Objects.equals(left.getRankDivision(), right.getRankDivision())
                 && left.getLeaguePoints() == right.getLeaguePoints();
+    }
+
+    private static long resolveSnapshotStat(RankSnapshot baseline, RankSnapshot current, boolean wins) {
+        if (current == null) {
+            return 0;
+        }
+
+        if (isRaceWindowSnapshotPair(baseline, current)) {
+            return wins ? nullSafe(current.getWins()) : nullSafe(current.getLosses());
+        }
+
+        if (isSameSnapshot(baseline, current)) {
+            int total = nullSafe(current.getWins()) + nullSafe(current.getLosses());
+            if (total > 0) {
+                return wins ? nullSafe(current.getWins()) : nullSafe(current.getLosses());
+            }
+        }
+
+        return leagueStatDelta(baseline, current, wins);
+    }
+
+    private static boolean isRaceWindowSnapshotPair(RankSnapshot baseline, RankSnapshot current) {
+        if (baseline == null) {
+            return false;
+        }
+        int baselineTotal = nullSafe(baseline.getWins()) + nullSafe(baseline.getLosses());
+        int refreshTotal = nullSafe(current.getWins()) + nullSafe(current.getLosses());
+        return baselineTotal == 0 && refreshTotal > 0;
+    }
+
+    private static boolean isSameSnapshot(RankSnapshot baseline, RankSnapshot current) {
+        return baseline != null && baseline == current;
+    }
+
+    private static int nullSafe(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private static long leagueStatDelta(RankSnapshot baseline, RankSnapshot current, boolean wins) {
+        if (current == null) {
+            return 0;
+        }
+
+        Integer currentValue = wins ? current.getWins() : current.getLosses();
+        if (currentValue == null || currentValue <= 0) {
+            return 0;
+        }
+
+        Integer currentLosses = current.getLosses();
+        if (baseline == null || baseline.getWins() == null || baseline.getLosses() == null) {
+            if (wins) {
+                return currentValue;
+            }
+            return currentLosses == null ? 0 : currentLosses;
+        }
+
+        Integer baselineValue = wins ? baseline.getWins() : baseline.getLosses();
+        if (baselineValue == null) {
+            return wins ? currentValue : current.getLosses();
+        }
+
+        return Math.max(0, currentValue - baselineValue);
     }
 }

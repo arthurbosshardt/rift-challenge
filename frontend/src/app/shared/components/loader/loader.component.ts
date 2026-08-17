@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-loader',
@@ -10,6 +10,7 @@ import { Component, input } from '@angular/core';
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
     .loader {
       display: inline-flex;
@@ -21,7 +22,7 @@ import { Component, input } from '@angular/core';
     .loader__spinner {
       width: 1.1rem;
       height: 1.1rem;
-      border: 2px solid rgba(200, 170, 110, 0.2);
+      border: 2px solid var(--gold-a20);
       border-top-color: var(--gold);
       border-radius: 50%;
       animation: loader-spin 0.7s linear infinite;

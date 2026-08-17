@@ -132,4 +132,8 @@ public class Race {
     public void updateEndAt(Instant endAt) {
         this.endAt = endAt;
     }
+
+    public void updateStartAt(Instant startAt) {
+        this.startAt = startAt;
+    }
 }

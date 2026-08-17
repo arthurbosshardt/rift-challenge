@@ -1,7 +1,10 @@
 <div class="shell">
   <header class="shell__header">
     <div>
-      <a routerLink="/" class="brand">RiftRace</a>
+      <a routerLink="/" class="brand">
+        <img src="/logo.png" alt="" class="brand__logo" width="36" height="36" />
+        <span class="brand__name">RiftRace</span>
+      </a>
       <p class="shell__subtitle">{{ subtitle() }}</p>
     </div>
 
@@ -34,12 +37,42 @@
       </div>
 
       @if (auth.isAuthenticated()) {
-        @if (auth.isProfileLoading()) {
-          <app-loader [compact]="true" />
-        } @else if (auth.displayName(); as name) {
-          <span class="shell__user">{{ name }}</span>
-        }
-        <button type="button" class="linkish" (click)="logout()">{{ 'nav.logout' | t }}</button>
+        <div class="user-menu" (mouseleave)="closeUserMenu()">
+          @if (auth.isProfileLoading()) {
+            <app-loader [compact]="true" />
+          } @else if (auth.headerIdentity(); as identity) {
+            <button
+              type="button"
+              class="user-menu__trigger"
+              (click)="toggleUserMenu()"
+              [attr.aria-expanded]="userMenuOpen()"
+              aria-haspopup="menu"
+            >
+              @if (auth.linkedAccount()) {
+                <app-player-avatar
+                  [profileIconId]="identity.profileIconId"
+                  [gameName]="identity.gameName"
+                  size="sm"
+                />
+              }
+              <span class="user-menu__label">{{ identity.label }}</span>
+            </button>
+          }
+
+          @if (userMenuOpen()) {
+            <div class="user-menu__dropdown" role="menu">
+              <a routerLink="/created-races" role="menuitem" (click)="closeUserMenu()">
+                {{ 'nav.createdRaces' | t }}
+              </a>
+              <a routerLink="/settings" role="menuitem" (click)="closeUserMenu()">
+                {{ 'nav.settings' | t }}
+              </a>
+              <button type="button" role="menuitem" (click)="logout()">
+                {{ 'nav.logout' | t }}
+              </button>
+            </div>
+          }
+        </div>
       } @else {
         <a routerLink="/login" class="linkish">{{ 'nav.login' | t }}</a>
       }

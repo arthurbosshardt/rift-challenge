@@ -15,6 +15,25 @@
         @if (currentRace.isPublic) {
           <span class="badge badge--public">{{ 'race.public' | t }}</span>
         }
+        <button
+          type="button"
+          class="icon-button"
+          [class.icon-button--copied]="copied()"
+          (click)="copyShareLink()"
+          [attr.aria-label]="copied() ? ('race.copied' | t) : ('race.copy' | t)"
+        >
+          @if (copied()) {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+              />
+            </svg>
+          }
+        </button>
       </div>
 
       <dl class="detail__meta">
@@ -32,57 +51,75 @@
             }
           </dd>
         </div>
-        <div>
-          <dt>{{ 'race.shareLink' | t }}</dt>
-          <dd class="share-row">
-            <code>/races/{{ currentRace.shareSlug }}</code>
-            <button type="button" (click)="copyShareLink()">
-              {{ copied() ? ('race.copied' | t) : ('race.copy' | t) }}
-            </button>
-          </dd>
-        </div>
       </dl>
 
       @if (currentRace.isOwner) {
         <section class="end-edit">
-          @if (!editingEnd()) {
-            <button type="button" class="end-edit__toggle" (click)="startEditingEnd()">
-              {{ 'race.editEnd' | t }}
+          @if (!editingSchedule()) {
+            <button type="button" class="end-edit__toggle" (click)="startEditingSchedule()">
+              {{ 'race.editSchedule' | t }}
             </button>
           } @else {
-            <form class="end-edit__form" (ngSubmit)="saveEnd()">
-              <div class="end-edit__row">
-                <label>
-                  {{ 'create.date' | t }}
-                  <input name="endDateInput" type="date" [(ngModel)]="endDateInput" required />
-                </label>
-                <label>
-                  {{ 'create.hour' | t }}
-                  <select name="endHourInput" [(ngModel)]="endHourInput" required>
-                    @for (hour of hourOptions; track hour) {
-                      <option [ngValue]="hour">{{ hour }}h</option>
-                    }
-                  </select>
-                </label>
-                <button type="submit" [disabled]="savingEnd()">
-                  {{ savingEnd() ? ('race.savingEnd' | t) : ('race.saveEnd' | t) }}
+            <form class="end-edit__form" (ngSubmit)="saveSchedule()">
+              <div class="end-edit__group">
+                <span class="end-edit__group-title">{{ 'race.start' | t }}</span>
+                <div class="end-edit__row">
+                  <label>
+                    {{ 'create.date' | t }}
+                    <input name="startDateInput" type="date" [(ngModel)]="startDateInput" required />
+                  </label>
+                  <label>
+                    {{ 'create.hour' | t }}
+                    <select name="startHourInput" [(ngModel)]="startHourInput" required>
+                      @for (hour of hourOptions; track hour) {
+                        <option [ngValue]="hour">{{ hour }}h</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="end-edit__group">
+                <span class="end-edit__group-title">{{ 'race.end' | t }}</span>
+                <div class="end-edit__row">
+                  <label>
+                    {{ 'create.date' | t }}
+                    <input name="endDateInput" type="date" [(ngModel)]="endDateInput" required />
+                  </label>
+                  <label>
+                    {{ 'create.hour' | t }}
+                    <select name="endHourInput" [(ngModel)]="endHourInput" required>
+                      @for (hour of hourOptions; track hour) {
+                        <option [ngValue]="hour">{{ hour }}h</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="end-edit__actions">
+                <button type="submit" [disabled]="savingSchedule()">
+                  {{ savingSchedule() ? ('race.savingSchedule' | t) : ('race.saveSchedule' | t) }}
                 </button>
-                <button type="button" class="end-edit__cancel" (click)="cancelEditingEnd()" [disabled]="savingEnd()">
+                <button
+                  type="button"
+                  class="end-edit__cancel"
+                  (click)="cancelEditingSchedule()"
+                  [disabled]="savingSchedule()"
+                >
                   {{ 'create.cancel' | t }}
                 </button>
               </div>
             </form>
           }
-          @if (endError()) {
-            <p class="end-edit__error">{{ endError() }}</p>
+          @if (scheduleError()) {
+            <p class="end-edit__error">{{ scheduleError() }}</p>
           }
-          @if (endSuccess()) {
-            <p class="end-edit__success">{{ 'race.endUpdated' | t }}</p>
+          @if (scheduleSuccess()) {
+            <p class="end-edit__success">{{ 'race.scheduleUpdated' | t }}</p>
           }
         </section>
       }
 
-      @if (currentRace.status === 'ACTIVE') {
+      @if (currentRace.status === 'ACTIVE' || currentRace.status === 'FINISHED') {
         <section class="refresh">
           <div class="refresh__info">
             @if (currentRace.lastRefreshedAt) {
@@ -109,7 +146,7 @@
             [disabled]="!currentRace.refreshAvailable || refreshing()"
           >
             @if (refreshing()) {
-              {{ 'race.refreshing' | t }}
+              <app-loader [compact]="true" [label]="'race.refreshing' | t" />
             } @else if (currentRace.refreshAvailable) {
               {{ 'race.refresh' | t }}
             } @else {
@@ -134,47 +171,51 @@
           <p class="participants__empty">
             {{ currentRace.type === 'DUOQ' ? ('race.noDuos' | t) : ('race.noParticipants' | t) }}
           </p>
-        } @else if (
-          (currentRace.status === 'ACTIVE' || currentRace.status === 'FINISHED') &&
-          currentRace.lastRefreshedAt
-        ) {
-          <div class="sort-bar" role="toolbar" [attr.aria-label]="'race.sortAria' | t">
-            @for (option of sortOptions(); track option[0]) {
-              <button
-                type="button"
-                class="sort-bar__button"
-                [class.sort-bar__button--active]="sortCriterion() === option[0]"
-                (click)="setSort(option[0])"
-                [attr.aria-sort]="sortCriterion() === option[0] ? (sortDirection() === 'desc' ? 'descending' : 'ascending') : 'none'"
-              >
-                @if (sortArrow(option[0]); as arrow) {
-                  <span class="sort-bar__arrow" aria-hidden="true">{{ arrow }}</span>
-                }
-                <span>{{ option[1] }}</span>
-              </button>
+        } @else {
+          <div class="stats-panel" [class.stats-panel--refreshing]="refreshing()">
+            @if (refreshing()) {
+              <div class="stats-panel__overlay" role="status" aria-live="polite">
+                <app-loader [label]="'race.refreshingStats' | t" />
+              </div>
             }
-          </div>
 
-          @if (currentRace.type === 'SOLOQ') {
-            <ol class="leaderboard">
-              @for (participant of sortedParticipants(); track participant.id) {
-                <li class="leaderboard__item" [class.leaderboard__item--leader]="participant.position === 1">
-                  <span class="leaderboard__rank">#{{ participant.position }}</span>
-                  <app-player-avatar
-                    [profileIconId]="participant.profileIconId"
-                    [gameName]="participant.gameName"
-                    [tier]="participant.hasRankData ? participant.currentTier : null"
-                  />
-                  <div class="leaderboard__body">
-                    <strong>{{ participant.riotId }}</strong>
-                    <span class="leaderboard__meta">
-                      @if (participant.hasRankData) {
-                        {{ rankLabel(participant) }}
-                      } @else {
-                        {{ 'race.unranked' | t }}
+            <div class="stats-panel__content" [attr.aria-busy]="refreshing()">
+              @if (hasLeaderboard(currentRace)) {
+                <div class="sort-bar" role="toolbar" [attr.aria-label]="'race.sortAria' | t">
+                  @for (option of sortOptions(); track option[0]) {
+                    <button
+                      type="button"
+                      class="sort-bar__button"
+                      [class.sort-bar__button--active]="sortCriterion() === option[0]"
+                      (click)="setSort(option[0])"
+                      [disabled]="refreshing()"
+                      [attr.aria-sort]="sortCriterion() === option[0] ? (sortDirection() === 'desc' ? 'descending' : 'ascending') : 'none'"
+                    >
+                      @if (sortArrow(option[0]); as arrow) {
+                        <span class="sort-bar__arrow" aria-hidden="true">{{ arrow }}</span>
                       }
-                    </span>
-                  </div>
+                      <span>{{ option[1] }}</span>
+                    </button>
+                  }
+                </div>
+
+                @if (currentRace.type === 'SOLOQ') {
+            <ol class="leaderboard">
+              @for (participant of sortedParticipants(); track leaderboardRowTrack(participant.id)) {
+                <li
+                  class="leaderboard__item"
+                  [class.leaderboard__item--leader]="isLeader(participant.position - 1)"
+                >
+                  <span class="leaderboard__rank">#{{ participant.position }}</span>
+                  <app-player-identity
+                    class="leaderboard__identity"
+                    [gameName]="participant.gameName"
+                    [tagLine]="participant.tagLine"
+                    [riotId]="participant.riotId"
+                    [profileIconId]="participant.profileIconId"
+                    [tier]="participant.hasRankData ? participant.currentTier : null"
+                    [rankLabel]="participantRankLabel(participant)"
+                  />
                   <div class="leaderboard__stats">
                     <span
                       class="leaderboard__lp"
@@ -204,32 +245,32 @@
             </ol>
           } @else {
             <ol class="leaderboard">
-              @for (duo of sortedDuos(); track duo.id) {
+              @for (duo of sortedDuos(); track leaderboardRowTrack(duo.id)) {
                 <li
                   class="leaderboard__item leaderboard__item--duo"
-                  [class.leaderboard__item--leader]="duo.eligible && duo.position === 1"
+                  [class.leaderboard__item--leader]="isLeader(duo.position - 1, duo.eligible)"
                   [class.leaderboard__item--ineligible]="!duo.eligible"
                 >
                   <span class="leaderboard__rank">#{{ duo.position }}</span>
-                  <div class="leaderboard__duo-avatars">
-                    <app-player-avatar
-                      size="sm"
-                      [profileIconId]="duo.player1.profileIconId"
+                  <div class="leaderboard__duo-identities">
+                    <app-player-identity
+                      [compact]="true"
                       [gameName]="duo.player1.gameName"
+                      [tagLine]="duo.player1.tagLine"
+                      [riotId]="duo.player1.riotId"
+                      [profileIconId]="duo.player1.profileIconId"
                       [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                      [rankLabel]="participantRankLabel(duo.player1)"
                     />
-                    <app-player-avatar
-                      size="sm"
-                      [profileIconId]="duo.player2.profileIconId"
+                    <app-player-identity
+                      [compact]="true"
                       [gameName]="duo.player2.gameName"
+                      [tagLine]="duo.player2.tagLine"
+                      [riotId]="duo.player2.riotId"
+                      [profileIconId]="duo.player2.profileIconId"
                       [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                      [rankLabel]="participantRankLabel(duo.player2)"
                     />
-                  </div>
-                  <div class="leaderboard__body">
-                    <strong>{{ duoLabel(duo) }}</strong>
-                    <span class="leaderboard__meta">
-                      {{ rankLabel(duo.player1) }} · {{ rankLabel(duo.player2) }}
-                    </span>
                     @if (!duo.eligible && duo.ineligibilityReason) {
                       <span class="leaderboard__ineligible">{{ ineligibilityLabel(duo.ineligibilityReason) }}</span>
                     }
@@ -240,7 +281,7 @@
                       [class.leaderboard__lp--negative]="duo.combinedLpGained < 0"
                       [class.leaderboard__lp--positive]="duo.combinedLpGained > 0"
                     >
-                      {{ lpLabel(duo.combinedLpGained, duo.eligible) }}
+                      {{ lpLabel(duo.combinedLpGained, duoHasRankData(duo)) }}
                     </span>
                     <span class="leaderboard__wl">
                       {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
@@ -261,12 +302,19 @@
                 </li>
               }
             </ol>
-          }
-        } @else if (currentRace.type === 'SOLOQ') {
+                }
+              } @else if (currentRace.type === 'SOLOQ') {
           <ul class="participants__list">
             @for (participant of currentRace.participants; track participant.id) {
               <li class="participants__list-item">
-                <span>{{ participant.riotId }}</span>
+                <app-player-identity
+                  [compact]="true"
+                  [gameName]="participant.gameName"
+                  [tagLine]="participant.tagLine"
+                  [riotId]="participant.riotId"
+                  [profileIconId]="participant.profileIconId"
+                  [tier]="participant.hasRankData ? participant.currentTier : null"
+                />
                 @if (currentRace.isOwner) {
                   <button
                     type="button"
@@ -281,11 +329,28 @@
               </li>
             }
           </ul>
-        } @else {
+                } @else {
           <ul class="participants__list">
             @for (duo of currentRace.duos; track duo.id) {
-              <li class="participants__list-item">
-                <span>{{ duoLabel(duo) }}</span>
+              <li class="participants__list-item participants__list-item--duo">
+                <div class="participants__duo-stack">
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="duo.player1.gameName"
+                    [tagLine]="duo.player1.tagLine"
+                    [riotId]="duo.player1.riotId"
+                    [profileIconId]="duo.player1.profileIconId"
+                    [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                  />
+                  <app-player-identity
+                    [compact]="true"
+                    [gameName]="duo.player2.gameName"
+                    [tagLine]="duo.player2.tagLine"
+                    [riotId]="duo.player2.riotId"
+                    [profileIconId]="duo.player2.profileIconId"
+                    [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                  />
+                </div>
                 @if (currentRace.isOwner) {
                   <button
                     type="button"
@@ -300,22 +365,38 @@
               </li>
             }
           </ul>
+                }
+            </div>
+          </div>
         }
 
         @if (currentRace.isOwner) {
           @if (currentRace.type === 'SOLOQ') {
             <form class="participants__form" (ngSubmit)="addParticipant()">
-              <label for="riotId">{{ 'race.addPlayer' | t }}</label>
-              <div class="participants__form-row">
-                <input
-                  id="riotId"
-                  name="riotId"
-                  type="text"
-                  [(ngModel)]="riotIdInput"
-                  placeholder="Tanor#7154"
-                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                  autocomplete="off"
-                />
+              <span class="participants__form-title">{{ 'race.addPlayer' | t }}</span>
+              <div class="participants__form-row participants__form-row--split">
+                <label>
+                  {{ 'race.gameName' | t }}
+                  <input
+                    name="gameName"
+                    type="text"
+                    [(ngModel)]="gameNameInput"
+                    [placeholder]="'race.gameNamePlaceholder' | t"
+                    [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                    autocomplete="off"
+                  />
+                </label>
+                <label>
+                  {{ 'race.tagLine' | t }}
+                  <input
+                    name="tagLine"
+                    type="text"
+                    [(ngModel)]="tagLineInput"
+                    [placeholder]="'race.tagLinePlaceholder' | t"
+                    [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                    autocomplete="off"
+                  />
+                </label>
                 <button
                   type="submit"
                   [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
@@ -326,24 +407,62 @@
             </form>
           } @else {
             <form class="participants__form" (ngSubmit)="addDuo()">
-              <label>{{ 'race.addDuo' | t }}</label>
-              <div class="participants__form-row">
-                <input
-                  name="duoPlayer1"
-                  type="text"
-                  [(ngModel)]="duoPlayer1Input"
-                  [placeholder]="'race.duoPlayer1' | t"
-                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                  autocomplete="off"
-                />
-                <input
-                  name="duoPlayer2"
-                  type="text"
-                  [(ngModel)]="duoPlayer2Input"
-                  [placeholder]="'race.duoPlayer2' | t"
-                  [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
-                  autocomplete="off"
-                />
+              <span class="participants__form-title">{{ 'race.addDuo' | t }}</span>
+              <div class="participants__duo-fields">
+                <div class="participants__duo-player">
+                  <span class="participants__duo-player-title">{{ 'race.duoPlayer1Title' | t }}</span>
+                  <div class="participants__form-row participants__form-row--split">
+                    <label>
+                      {{ 'race.gameName' | t }}
+                      <input
+                        name="duoPlayer1GameName"
+                        type="text"
+                        [(ngModel)]="duoPlayer1GameName"
+                        [placeholder]="'race.gameNamePlaceholder' | t"
+                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <label>
+                      {{ 'race.tagLine' | t }}
+                      <input
+                        name="duoPlayer1TagLine"
+                        type="text"
+                        [(ngModel)]="duoPlayer1TagLine"
+                        [placeholder]="'race.tagLinePlaceholder' | t"
+                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                        autocomplete="off"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div class="participants__duo-player">
+                  <span class="participants__duo-player-title">{{ 'race.duoPlayer2Title' | t }}</span>
+                  <div class="participants__form-row participants__form-row--split">
+                    <label>
+                      {{ 'race.gameName' | t }}
+                      <input
+                        name="duoPlayer2GameName"
+                        type="text"
+                        [(ngModel)]="duoPlayer2GameName"
+                        [placeholder]="'race.gameNamePlaceholder' | t"
+                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <label>
+                      {{ 'race.tagLine' | t }}
+                      <input
+                        name="duoPlayer2TagLine"
+                        type="text"
+                        [(ngModel)]="duoPlayer2TagLine"
+                        [placeholder]="'race.tagLinePlaceholder' | t"
+                        [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"
+                        autocomplete="off"
+                      />
+                    </label>
+                  </div>
+                </div>
                 <button
                   type="submit"
                   [disabled]="addingParticipant() || entryCount(currentRace) >= entryLimit(currentRace)"

@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { profileIconInitial, profileIconUrl } from '../../../core/utils/profile-icon';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -7,6 +7,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   selector: 'app-player-avatar',
   imports: [RankEmblemComponent],
   templateUrl: './player-avatar.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './player-avatar.component.scss',
 })
 export class PlayerAvatarComponent {

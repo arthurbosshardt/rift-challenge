@@ -1,12 +1,15 @@
 package com.riftrace.race;
 
 import com.riftrace.account.AppUserRepository;
+import com.riftrace.account.UserRiotAccountService;
 import com.riftrace.race.dto.CreateRaceRequest;
 import com.riftrace.race.dto.DuoProgressResponse;
 import com.riftrace.race.dto.ParticipantProgressResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
 import com.riftrace.race.dto.UpdateRaceEndRequest;
+import com.riftrace.race.dto.UpdateRaceScheduleRequest;
+import com.riftrace.race.dto.UpdateRaceStartRequest;
 import com.riftrace.synchronization.RaceSyncService;
 import java.time.Clock;
 import java.time.Instant;
@@ -28,6 +31,7 @@ public class RaceService {
     private final ParticipantProfileService participantProfileService;
     private final RaceRefreshRepository raceRefreshRepository;
     private final RaceSyncService raceSyncService;
+    private final UserRiotAccountService userRiotAccountService;
     private final Clock clock;
 
     public RaceService(
@@ -39,6 +43,7 @@ public class RaceService {
             ParticipantProfileService participantProfileService,
             RaceRefreshRepository raceRefreshRepository,
             RaceSyncService raceSyncService,
+            UserRiotAccountService userRiotAccountService,
             Clock clock
     ) {
         this.raceRepository = raceRepository;
@@ -49,6 +54,7 @@ public class RaceService {
         this.participantProfileService = participantProfileService;
         this.raceRefreshRepository = raceRefreshRepository;
         this.raceSyncService = raceSyncService;
+        this.userRiotAccountService = userRiotAccountService;
         this.clock = clock;
     }
 
@@ -61,9 +67,27 @@ public class RaceService {
     }
 
     @Transactional(readOnly = true)
-    public List<RaceSummaryResponse> listMyRaces(UUID ownerId) {
+    public List<RaceSummaryResponse> listOwnedRaces(UUID ownerId) {
         Instant now = clock.instant();
         return raceRepository.findByOwnerIdOrderByStartAtDesc(ownerId).stream()
+                .map(race -> RaceSummaryResponse.from(race, now))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RaceSummaryResponse> listParticipatingRaces(UUID userId) {
+        List<String> linkedPuids = userRiotAccountService.listLinkedPuids(userId);
+        if (linkedPuids.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> raceIds = participantRepository.findDistinctRaceIdsByRiotPuuidIn(linkedPuids);
+        if (raceIds.isEmpty()) {
+            return List.of();
+        }
+
+        Instant now = clock.instant();
+        return raceRepository.findByIdInOrderByStartAtDesc(raceIds).stream()
                 .map(race -> RaceSummaryResponse.from(race, now))
                 .toList();
     }
@@ -102,16 +126,56 @@ public class RaceService {
     }
 
     @Transactional
+    public RaceDetailResponse updateSchedule(UUID raceId, UUID ownerId, UpdateRaceScheduleRequest request) {
+        Race race = requireOwnedRace(raceId, ownerId);
+        return saveSchedule(race, request.startAt(), request.endAt(), ownerId);
+    }
+
+    @Transactional
+    public RaceDetailResponse updateStartAt(UUID raceId, UUID ownerId, UpdateRaceStartRequest request) {
+        Race race = requireOwnedRace(raceId, ownerId);
+        if (race.getEndAt() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date is required");
+        }
+        return saveSchedule(race, request.startAt(), race.getEndAt(), ownerId);
+    }
+
+    @Transactional
     public RaceDetailResponse updateEndAt(UUID raceId, UUID ownerId, UpdateRaceEndRequest request) {
+        Race race = requireOwnedRace(raceId, ownerId);
+        return saveSchedule(race, race.getStartAt(), request.endAt(), ownerId);
+    }
+
+    private RaceDetailResponse saveSchedule(Race race, Instant startAt, Instant endAt, UUID ownerId) {
+        requireEndAfterStart(startAt, endAt);
+        race.updateStartAt(startAt);
+        race.updateEndAt(endAt);
+        raceRepository.save(race);
+        maybeAutoRefreshAfterScheduleChange(race.getId(), startAt);
+        return getById(race.getId(), ownerId);
+    }
+
+    private Race requireOwnedRace(UUID raceId, UUID ownerId) {
         Race race = raceRepository.findById(raceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Race not found"));
         if (!race.getOwnerId().equals(ownerId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the race owner can update the end date");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the race owner can update the race schedule");
         }
+        return race;
+    }
 
-        requireEndAfterStart(race.getStartAt(), request.endAt());
-        race.updateEndAt(request.endAt());
-        return toDetailResponse(raceRepository.save(race), ownerId);
+    private void maybeAutoRefreshAfterScheduleChange(UUID raceId, Instant startAt) {
+        Instant now = clock.instant();
+        RefreshTiming refreshTiming = resolveRefreshTiming(raceId, now);
+        if (refreshTiming.refreshAvailable() && !now.isBefore(startAt)) {
+            try {
+                raceSyncService.refreshRace(raceId);
+            } catch (ResponseStatusException exception) {
+                if (exception.getStatusCode() != HttpStatus.TOO_MANY_REQUESTS) {
+                    throw exception;
+                }
+            }
+        }
     }
 
     @Transactional

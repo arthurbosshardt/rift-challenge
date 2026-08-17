@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RaceApiService } from '../../core/services/race-api.service';
@@ -12,6 +12,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
   selector: 'app-create-race-page',
   imports: [FormsModule, RouterLink, PageShellComponent, TranslatePipe],
   templateUrl: './create-race-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './create-race-page.component.scss',
 })
 export class CreateRacePageComponent {

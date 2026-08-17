@@ -67,6 +67,15 @@ export interface UpdateRaceEndRequest {
   endAt: string;
 }
 
+export interface UpdateRaceStartRequest {
+  startAt: string;
+}
+
+export interface UpdateRaceScheduleRequest {
+  startAt: string;
+  endAt: string;
+}
+
 export interface AddParticipantRequest {
   riotId: string;
 }
@@ -76,7 +85,28 @@ export interface AddDuoRequest {
   player2RiotId: string;
 }
 
+export interface LinkedRiotAccount {
+  id: string;
+  gameName: string;
+  tagLine: string;
+  riotId: string;
+  profileIconId: number | null;
+}
+
 export interface AuthMeResponse {
   userId: string;
   username: string;
+  linkedRiotAccount: LinkedRiotAccount | null;
+}
+
+export interface UserRiotAccount {
+  id: string;
+  gameName: string;
+  tagLine: string;
+  riotId: string;
+  profileIconId: number | null;
+}
+
+export interface LinkRiotAccountRequest {
+  riotId: string;
 }

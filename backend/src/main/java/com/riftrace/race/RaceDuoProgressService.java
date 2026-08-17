@@ -66,6 +66,9 @@ public class RaceDuoProgressService {
                 player1,
                 eligibility.togetherMatchIds()
         );
+        if (stats.wins() + stats.losses() == 0) {
+            stats = resolveDuoMatchStatsFallback(eligibility, progress1, progress2);
+        }
 
         int combinedRankScore = progress1.rankScore() + progress2.rankScore();
         int combinedLpGained = progress1.lpGained() + progress2.lpGained();
@@ -89,6 +92,24 @@ public class RaceDuoProgressService {
         return participants.stream()
                 .filter(participant -> participant.getDuoId() != null)
                 .collect(Collectors.groupingBy(RaceParticipant::getDuoId));
+    }
+
+    private static DuoEligibilityService.DuoMatchStats resolveDuoMatchStatsFallback(
+            DuoEligibilityService.DuoEligibility eligibility,
+            ParticipantProgressResponse progress1,
+            ParticipantProgressResponse progress2
+    ) {
+        if (!eligibility.eligible()) {
+            return new DuoEligibilityService.DuoMatchStats(0, 0);
+        }
+
+        if (progress1.wins() + progress1.losses() > 0) {
+            return new DuoEligibilityService.DuoMatchStats(progress1.wins(), progress1.losses());
+        }
+        if (progress2.wins() + progress2.losses() > 0) {
+            return new DuoEligibilityService.DuoMatchStats(progress2.wins(), progress2.losses());
+        }
+        return new DuoEligibilityService.DuoMatchStats(0, 0);
     }
 
     private static double winRate(int wins, int losses) {

@@ -21,7 +21,7 @@ public final class MatchLpEstimator {
         return wins * winLp - losses * lossLp;
     }
 
-    private static int averageWinLp(String tier) {
+    public static int averageWinLp(String tier) {
         String normalized = tier == null ? "" : tier.toUpperCase(Locale.ROOT);
         return switch (normalized) {
             case "CHALLENGER", "GRANDMASTER", "MASTER" -> 12;
@@ -31,7 +31,7 @@ public final class MatchLpEstimator {
         };
     }
 
-    private static int averageLossLp(String tier) {
+    public static int averageLossLp(String tier) {
         String normalized = tier == null ? "" : tier.toUpperCase(Locale.ROOT);
         return switch (normalized) {
             case "CHALLENGER", "GRANDMASTER", "MASTER" -> 12;

@@ -23,8 +23,64 @@ public class RiotMatchClient {
     }
 
     public List<String> getRankedSoloMatchIdsSince(String puuid, long startTimeEpochSeconds) {
-        String url = "https://%s.api.riotgames.com/lol/match/v5/matches/by-puuid/%s/ids?startTime=%d&queue=%d&count=100"
-                .formatted(properties.regionalRouting(), puuid, startTimeEpochSeconds, RANKED_SOLO_QUEUE_ID);
+        return getAllRankedSoloMatchIdsInWindow(puuid, startTimeEpochSeconds, null, 100);
+    }
+
+    public List<String> getAllRankedSoloMatchIdsInWindow(
+            String puuid,
+            long startTimeEpochSeconds,
+            Long endTimeEpochSeconds,
+            int maxTotal
+    ) {
+        List<String> allMatchIds = new java.util.ArrayList<>();
+        int startIndex = 0;
+
+        while (allMatchIds.size() < maxTotal) {
+            int pageSize = Math.min(100, maxTotal - allMatchIds.size());
+            List<String> page = getRankedSoloMatchIdsPage(
+                    puuid,
+                    startTimeEpochSeconds,
+                    endTimeEpochSeconds,
+                    startIndex,
+                    pageSize
+            );
+
+            if (page.isEmpty()) {
+                break;
+            }
+
+            allMatchIds.addAll(page);
+
+            if (page.size() < pageSize) {
+                break;
+            }
+
+            startIndex += page.size();
+        }
+
+        return allMatchIds;
+    }
+
+    public List<String> getRankedSoloMatchIdsPage(
+            String puuid,
+            long startTimeEpochSeconds,
+            Long endTimeEpochSeconds,
+            int startIndex,
+            int count
+    ) {
+        String url = "https://%s.api.riotgames.com/lol/match/v5/matches/by-puuid/%s/ids?startTime=%d&queue=%d&start=%d&count=%d"
+                .formatted(
+                        properties.regionalRouting(),
+                        puuid,
+                        startTimeEpochSeconds,
+                        RANKED_SOLO_QUEUE_ID,
+                        startIndex,
+                        count
+                );
+
+        if (endTimeEpochSeconds != null) {
+            url = url + "&endTime=" + endTimeEpochSeconds;
+        }
 
         try {
             String[] matchIds = riotRestClient.get()

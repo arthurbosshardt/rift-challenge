@@ -3,6 +3,7 @@ import {
   sortDirectionArrow,
   sortDuos,
   sortParticipants,
+  isLeaderboardLeader,
 } from './leaderboard-sort';
 import { DuoProgress, ParticipantProgress } from '../models/race.models';
 
@@ -39,6 +40,50 @@ describe('leaderboard-sort', () => {
     );
     expect(sorted.map((item) => item.id)).toEqual(['high', 'low']);
     expect(sorted[0].position).toBe(1);
+    expect(sorted[1].position).toBe(2);
+  });
+
+  it('sorts participants by LP gained ascending', () => {
+    const sorted = sortParticipants(
+      [
+        participant({ id: 'low', lpGained: 10 }),
+        participant({ id: 'high', lpGained: 80 }),
+      ],
+      'LP_GAIN',
+      'asc',
+    );
+    expect(sorted.map((item) => item.id)).toEqual(['low', 'high']);
+    expect(sorted.map((item) => item.position)).toEqual([1, 2]);
+  });
+
+  it('reassigns rank numbers when direction changes', () => {
+    const participants = [
+      participant({ id: 'a', lpGained: 30 }),
+      participant({ id: 'b', lpGained: 60 }),
+      participant({ id: 'c', lpGained: 10 }),
+    ];
+
+    const descending = sortParticipants(participants, 'LP_GAIN', 'desc');
+    const ascending = sortParticipants(participants, 'LP_GAIN', 'asc');
+
+    expect(descending.map((item) => item.id)).toEqual(['b', 'a', 'c']);
+    expect(ascending.map((item) => item.id)).toEqual(['c', 'a', 'b']);
+    expect(descending.map((item) => item.position)).toEqual([1, 2, 3]);
+    expect(ascending.map((item) => item.position)).toEqual([1, 2, 3]);
+  });
+
+  it('reverses tied participants when direction changes', () => {
+    const participants = [
+      participant({ id: 'a', riotId: 'Alpha#EUW', lpGained: 0 }),
+      participant({ id: 'b', riotId: 'Bravo#EUW', lpGained: 0 }),
+      participant({ id: 'c', riotId: 'Charlie#EUW', lpGained: 0 }),
+    ];
+
+    const descending = sortParticipants(participants, 'LP_GAIN', 'desc');
+    const ascending = sortParticipants(participants, 'LP_GAIN', 'asc');
+
+    expect(descending.map((item) => item.riotId)).toEqual(['Alpha#EUW', 'Bravo#EUW', 'Charlie#EUW']);
+    expect(ascending.map((item) => item.riotId)).toEqual(['Charlie#EUW', 'Bravo#EUW', 'Alpha#EUW']);
   });
 
   it('keeps ineligible duos after eligible ones', () => {
@@ -70,5 +115,11 @@ describe('leaderboard-sort', () => {
   it('returns a direction arrow', () => {
     expect(sortDirectionArrow('desc')).toBe('↓');
     expect(sortDirectionArrow('asc')).toBe('↑');
+  });
+
+  it('highlights only the first row in descending order', () => {
+    expect(isLeaderboardLeader(0, 'desc')).toBe(true);
+    expect(isLeaderboardLeader(1, 'desc')).toBe(false);
+    expect(isLeaderboardLeader(0, 'asc')).toBe(false);
   });
 });

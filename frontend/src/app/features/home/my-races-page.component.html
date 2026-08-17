@@ -1,14 +1,17 @@
 <app-page-shell [title]="'home.myRacesTitle' | t" [subtitle]="'home.myRacesSubtitle' | t">
-  <div class="toolbar">
-    <a routerLink="/races/new" class="create-link">{{ 'home.createLink' | t }}</a>
-  </div>
-
-  @if (loading()) {
+  @if (auth.isProfileLoading()) {
+    <app-loader [label]="'home.loading' | t" />
+  } @else if (!auth.linkedAccount()) {
+    <p class="state">
+      {{ 'home.linkAccountFirst' | t }}
+      <a routerLink="/settings">{{ 'home.openSettings' | t }}</a>
+    </p>
+  } @else if (loading()) {
     <app-loader [label]="'home.loading' | t" />
   } @else if (error()) {
     <p class="state state--error">{{ error() }}</p>
   } @else if (races().length === 0) {
-    <p class="state">{{ 'home.emptyMine' | t }}</p>
+    <p class="state">{{ 'home.emptyParticipating' | t }}</p>
   } @else {
     <div class="race-grid">
       @for (race of races(); track race.id) {

@@ -36,7 +36,7 @@ public record RaceDetailResponse(
     ) {
         boolean isOwner = callerId != null && callerId.equals(race.getOwnerId());
         String status = RaceSummaryResponse.resolveStatus(race.getStartAt(), race.getEndAt(), now);
-        boolean raceActive = "ACTIVE".equals(status);
+        boolean refreshAllowed = !"NOT_STARTED".equals(status);
 
         return new RaceDetailResponse(
                 race.getId(),
@@ -51,7 +51,7 @@ public record RaceDetailResponse(
                 isOwner,
                 lastRefreshedAt,
                 nextRefreshAvailableAt,
-                raceActive && refreshAvailable,
+                refreshAllowed && refreshAvailable,
                 participants,
                 duos
         );

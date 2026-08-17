@@ -61,6 +61,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/races/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/races/share/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/races/*/refresh").permitAll()

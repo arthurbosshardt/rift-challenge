@@ -52,4 +52,35 @@ public final class RankScoreConverter {
         int currentScore = toScore(currentTier, currentRank, currentLp);
         return currentScore - baselineScore;
     }
+
+    public record RankComponents(String tier, String rankDivision, int leaguePoints) {
+    }
+
+    public static RankComponents fromScore(int score) {
+        int normalizedScore = Math.max(score, 0);
+
+        String resolvedTier = "IRON";
+        int tierBase = TIER_BASE.get("IRON");
+        for (Map.Entry<String, Integer> entry : TIER_BASE.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .toList()) {
+            if (normalizedScore >= entry.getValue()) {
+                resolvedTier = entry.getKey();
+                tierBase = entry.getValue();
+                break;
+            }
+        }
+
+        if (resolvedTier.equals("MASTER")
+                || resolvedTier.equals("GRANDMASTER")
+                || resolvedTier.equals("CHALLENGER")) {
+            return new RankComponents(resolvedTier, null, normalizedScore - tierBase);
+        }
+
+        int remainder = normalizedScore - tierBase;
+        int divisionIndex = Math.min(remainder / 100, 3);
+        int leaguePoints = remainder % 100;
+        String[] divisions = {"IV", "III", "II", "I"};
+        return new RankComponents(resolvedTier, divisions[divisionIndex], leaguePoints);
+    }
 }

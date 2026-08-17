@@ -83,6 +83,10 @@ public class RankSnapshot {
         return snapshotType;
     }
 
+    public Instant getCapturedAt() {
+        return capturedAt;
+    }
+
     public String getTier() {
         return tier;
     }

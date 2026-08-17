@@ -1,25 +1,14 @@
-.toolbar {
-  margin-bottom: 1rem;
-}
-
-.create-link {
-  display: inline-flex;
-  padding: 0.5rem 0.875rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--gold);
-  text-decoration: none;
-}
-
-.race-grid {
-  display: grid;
-  gap: 1rem;
-}
+@import './public-races-page.component.scss';
 
 .state {
+  margin: 0;
   color: var(--text-muted);
 }
 
 .state--error {
   color: var(--danger);
+}
+
+.state a {
+  color: var(--gold);
 }

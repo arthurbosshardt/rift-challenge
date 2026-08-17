@@ -1,0 +1,66 @@
+<app-page-shell [title]="'settings.title' | t" [subtitle]="'settings.subtitle' | t">
+  <section class="settings-section">
+    <div class="settings-section__header">
+      <h2>{{ 'accounts.title' | t }}</h2>
+      <p class="settings-section__hint">{{ 'accounts.hint' | t }}</p>
+    </div>
+
+    @if (auth.isProfileLoading()) {
+      <app-loader [label]="'home.loading' | t" />
+    } @else if (linkedAccount(); as account) {
+      <div class="linked-account">
+        <app-player-avatar
+          [profileIconId]="account.profileIconId"
+          [gameName]="account.gameName"
+          size="md"
+        />
+        <div class="linked-account__identity">
+          <strong>{{ account.gameName }}</strong>
+          <span>{{ account.riotId }}</span>
+        </div>
+        <button type="button" class="linked-account__remove" (click)="unlinkAccount()" [disabled]="unlinking()">
+          {{ unlinking() ? ('accounts.unlinking' | t) : ('accounts.remove' | t) }}
+        </button>
+      </div>
+    } @else {
+      <p class="settings-section__empty">{{ 'accounts.empty' | t }}</p>
+
+      <form class="settings-form" (ngSubmit)="linkAccount()">
+        <div class="settings-form__row">
+          <label>
+            {{ 'race.gameName' | t }}
+            <input
+              name="accountGameName"
+              type="text"
+              [(ngModel)]="gameNameInput"
+              [placeholder]="'race.gameNamePlaceholder' | t"
+              [disabled]="linking()"
+              autocomplete="off"
+            />
+          </label>
+          <label>
+            {{ 'race.tagLine' | t }}
+            <input
+              name="accountTagLine"
+              type="text"
+              [(ngModel)]="tagLineInput"
+              [placeholder]="'race.tagLinePlaceholder' | t"
+              [disabled]="linking()"
+              autocomplete="off"
+            />
+          </label>
+          <button type="submit" [disabled]="linking()">
+            {{ linking() ? ('accounts.linking' | t) : ('accounts.link' | t) }}
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (accountError()) {
+      <p class="settings-section__error">{{ accountError() }}</p>
+    }
+    @if (accountSuccess()) {
+      <p class="settings-section__success">{{ 'accounts.linkedSuccess' | t }}</p>
+    }
+  </section>
+</app-page-shell>

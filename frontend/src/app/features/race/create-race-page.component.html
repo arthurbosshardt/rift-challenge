@@ -90,7 +90,7 @@
       <button type="submit" [disabled]="loading()">
         {{ loading() ? ('create.creating' | t) : ('create.submit' | t) }}
       </button>
-      <a routerLink="/my-races">{{ 'create.cancel' | t }}</a>
+      <a routerLink="/created-races">{{ 'create.cancel' | t }}</a>
     </div>
   </form>
 </app-page-shell>

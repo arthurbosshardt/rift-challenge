@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RaceApiService } from '../../core/services/race-api.service';
 import { RaceSummary } from '../../core/models/race.models';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
@@ -11,6 +11,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
   selector: 'app-public-races-page',
   imports: [PageShellComponent, RaceCardComponent, LoaderComponent, TranslatePipe],
   templateUrl: './public-races-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './public-races-page.component.scss',
 })
 export class PublicRacesPageComponent implements OnInit {

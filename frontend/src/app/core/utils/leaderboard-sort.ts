@@ -9,7 +9,7 @@ export function sortParticipants(
   direction: SortDirection = 'desc',
 ): ParticipantProgress[] {
   const sorted = [...participants];
-  sorted.sort((left, right) => applyDirection(compareParticipants(left, right, sort), direction));
+  sorted.sort((left, right) => compareParticipants(left, right, sort, direction));
   return sorted.map((participant, index) => ({ ...participant, position: index + 1 }));
 }
 
@@ -19,31 +19,44 @@ export function sortDuos(
   direction: SortDirection = 'desc',
 ): DuoProgress[] {
   const sorted = [...duos];
-  sorted.sort((left, right) => applyDirection(compareDuos(left, right, sort), direction));
+  sorted.sort((left, right) => compareDuos(left, right, sort, direction));
   return sorted.map((duo, index) => ({ ...duo, position: index + 1 }));
-}
-
-function applyDirection(value: number, direction: SortDirection): number {
-  return direction === 'desc' ? value : -value;
 }
 
 function compareParticipants(
   left: ParticipantProgress,
   right: ParticipantProgress,
   sort: LeaderboardSort,
+  direction: SortDirection,
 ): number {
+  let result = 0;
+
   switch (sort) {
     case 'LP_GAIN':
-      return right.lpGained - left.lpGained;
+      result = compareNumbers(left.lpGained, right.lpGained, direction);
+      break;
     case 'WIN_RATE':
-      return compareWinRate(left.winRate, left.wins, right.winRate, right.wins);
+      result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
+      break;
     case 'RANK':
     default:
-      return right.rankScore - left.rankScore;
+      result = compareNumbers(left.rankScore, right.rankScore, direction);
+      break;
   }
+
+  if (result !== 0) {
+    return result;
+  }
+
+  return compareStrings(left.riotId, right.riotId, direction);
 }
 
-function compareDuos(left: DuoProgress, right: DuoProgress, sort: LeaderboardSort): number {
+function compareDuos(
+  left: DuoProgress,
+  right: DuoProgress,
+  sort: LeaderboardSort,
+  direction: SortDirection,
+): number {
   if (!left.eligible && right.eligible) {
     return 1;
   }
@@ -51,15 +64,35 @@ function compareDuos(left: DuoProgress, right: DuoProgress, sort: LeaderboardSor
     return -1;
   }
 
+  let result = 0;
+
   switch (sort) {
     case 'LP_GAIN':
-      return right.combinedLpGained - left.combinedLpGained;
+      result = compareNumbers(left.combinedLpGained, right.combinedLpGained, direction);
+      break;
     case 'WIN_RATE':
-      return compareWinRate(left.winRate, left.wins, right.winRate, right.wins);
+      result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
+      break;
     case 'RANK':
     default:
-      return right.combinedRankScore - left.combinedRankScore;
+      result = compareNumbers(left.combinedRankScore, right.combinedRankScore, direction);
+      break;
   }
+
+  if (result !== 0) {
+    return result;
+  }
+
+  return compareStrings(left.id, right.id, direction);
+}
+
+function compareNumbers(left: number, right: number, direction: SortDirection): number {
+  return direction === 'desc' ? right - left : left - right;
+}
+
+function compareStrings(left: string, right: string, direction: SortDirection): number {
+  const result = left.localeCompare(right, undefined, { sensitivity: 'base' });
+  return direction === 'desc' ? result : -result;
 }
 
 function compareWinRate(
@@ -67,11 +100,12 @@ function compareWinRate(
   leftWins: number,
   rightRate: number,
   rightWins: number,
+  direction: SortDirection,
 ): number {
-  if (rightRate !== leftRate) {
-    return rightRate - leftRate;
+  if (leftRate !== rightRate) {
+    return compareNumbers(leftRate, rightRate, direction);
   }
-  return rightWins - leftWins;
+  return compareNumbers(leftWins, rightWins, direction);
 }
 
 export function winRateLabel(winRate: number, wins: number, losses: number): string {
@@ -83,4 +117,8 @@ export function winRateLabel(winRate: number, wins: number, losses: number): str
 
 export function sortDirectionArrow(direction: SortDirection): string {
   return direction === 'desc' ? '↓' : '↑';
+}
+
+export function isLeaderboardLeader(index: number, direction: SortDirection, eligible = true): boolean {
+  return eligible && direction === 'desc' && index === 0;
 }

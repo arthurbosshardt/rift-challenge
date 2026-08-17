@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RaceApiService } from '../../core/services/race-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -11,8 +11,9 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-my-races-page',
-  imports: [PageShellComponent, RaceCardComponent, RouterLink, LoaderComponent, TranslatePipe],
+  imports: [PageShellComponent, RaceCardComponent, LoaderComponent, TranslatePipe, RouterLink],
   templateUrl: './my-races-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './my-races-page.component.scss',
 })
 export class MyRacesPageComponent implements OnInit {
@@ -25,10 +26,10 @@ export class MyRacesPageComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    void this.loadRaces();
+    void this.loadPage();
   }
 
-  private async loadRaces(): Promise<void> {
+  private async loadPage(): Promise<void> {
     await this.auth.waitUntilReady();
 
     if (!(await this.auth.resolveAccessToken())) {
@@ -37,7 +38,21 @@ export class MyRacesPageComponent implements OnInit {
       return;
     }
 
-    this.raceApi.listMyRaces().subscribe({
+    if (!this.auth.linkedAccount()) {
+      await this.auth.refreshProfile();
+    }
+
+    if (!this.auth.linkedAccount()) {
+      this.loading.set(false);
+      return;
+    }
+
+    void this.loadRaces();
+  }
+
+  private async loadRaces(): Promise<void> {
+    this.loading.set(true);
+    this.raceApi.listParticipatingRaces().subscribe({
       next: (races) => {
         this.races.set(races);
         this.loading.set(false);
@@ -46,7 +61,7 @@ export class MyRacesPageComponent implements OnInit {
         if (err.status === 401) {
           this.error.set(this.i18n.t('home.sessionExpired'));
         } else {
-          this.error.set(this.i18n.t('home.loadMineError'));
+          this.error.set(this.i18n.t('home.loadParticipatingError'));
         }
         this.loading.set(false);
       },

@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
-import { AuthMeResponse } from '../models/race.models';
+import { AuthMeResponse, LinkedRiotAccount } from '../models/race.models';
 import { apiUrl } from '../utils/api-url';
 import {
   SESSION_LAST_SEEN_KEY,
@@ -27,6 +27,7 @@ export class AuthService {
 
   private readonly session = signal<Session | null>(null);
   private readonly profileUsername = signal<string | null>(null);
+  private readonly linkedRiotAccount = signal<LinkedRiotAccount | null>(null);
   private readonly profileLoading = signal(false);
   private readyResolve: (() => void) | null = null;
   private readonly ready = new Promise<void>((resolve) => {
@@ -36,6 +37,21 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => this.session() !== null);
   readonly displayName = computed(() => this.profileUsername());
+  readonly linkedAccount = computed(() => this.linkedRiotAccount());
+  readonly headerIdentity = computed(() => {
+    const linked = this.linkedRiotAccount();
+    if (linked) {
+      return {
+        label: linked.riotId,
+        gameName: linked.gameName,
+        profileIconId: linked.profileIconId,
+      };
+    }
+    const username = this.profileUsername();
+    return username
+      ? { label: username, gameName: username, profileIconId: null as number | null }
+      : null;
+  });
   readonly isProfileLoading = computed(() => this.profileLoading());
 
   constructor() {
@@ -55,7 +71,7 @@ export class AuthService {
       this.session.set(validSession);
       if (validSession) {
         this.touchLastSeen();
-        void this.loadProfile(validSession.access_token);
+        void this.loadProfile();
       }
       this.bindActivityTracking();
 
@@ -67,9 +83,10 @@ export class AuthService {
         this.session.set(session);
         if (session) {
           this.touchLastSeen();
-          void this.loadProfile(session.access_token);
+          void this.loadProfile();
         } else {
           this.profileUsername.set(null);
+          this.linkedRiotAccount.set(null);
           this.profileLoading.set(false);
           this.clearLastSeen();
         }
@@ -99,7 +116,7 @@ export class AuthService {
       this.session.set(data.session);
       this.touchLastSeen();
       if (data.session) {
-        void this.loadProfile(data.session.access_token);
+        void this.loadProfile();
       }
       return null;
     }
@@ -116,19 +133,41 @@ export class AuthService {
     }
 
     const { data } = await this.supabase.auth.getSession();
-    if (data.session?.access_token) {
-      if (!this.sessionWithinTtl(data.session)) {
+    const session = data.session;
+
+    if (!session?.access_token) {
+      const refreshed = await this.supabase.auth.refreshSession();
+      if (refreshed.error || !refreshed.data.session?.access_token) {
+        this.session.set(null);
+        return null;
+      }
+      if (!this.sessionWithinTtl(refreshed.data.session)) {
         await this.logout();
         return null;
       }
-      this.session.set(data.session);
+      this.session.set(refreshed.data.session);
       this.touchLastSeen();
-      return data.session.access_token;
+      return refreshed.data.session.access_token;
+    }
+
+    if (!this.sessionWithinTtl(session)) {
+      await this.logout();
+      return null;
+    }
+
+    if (!this.isAccessTokenExpired(session.access_token)) {
+      this.session.set(session);
+      this.touchLastSeen();
+      return session.access_token;
     }
 
     const refreshed = await this.supabase.auth.refreshSession();
     if (refreshed.error || !refreshed.data.session?.access_token) {
-      this.session.set(null);
+      await this.logout();
+      return null;
+    }
+    if (!this.sessionWithinTtl(refreshed.data.session)) {
+      await this.logout();
       return null;
     }
 
@@ -143,7 +182,7 @@ export class AuthService {
       this.session.set(data.session);
       this.touchLastSeen();
       if (data.session) {
-        void this.loadProfile(data.session.access_token);
+        void this.loadProfile();
       }
     }
     return error?.message ?? null;
@@ -183,10 +222,15 @@ export class AuthService {
     return null;
   }
 
+  async refreshProfile(): Promise<void> {
+    await this.loadProfile();
+  }
+
   async logout(): Promise<void> {
     await this.supabase.auth.signOut();
     this.session.set(null);
     this.profileUsername.set(null);
+    this.linkedRiotAccount.set(null);
     this.profileLoading.set(false);
     this.clearLastSeen();
   }
@@ -202,22 +246,48 @@ export class AuthService {
     return !isSessionExpired(lastSeen, Date.now(), SESSION_TTL_MS);
   }
 
-  private async loadProfile(accessToken: string): Promise<void> {
+  private async loadProfile(): Promise<void> {
     this.profileLoading.set(true);
     try {
+      const accessToken = await this.resolveAccessToken();
+      if (!accessToken) {
+        this.profileUsername.set(null);
+        this.linkedRiotAccount.set(null);
+        return;
+      }
+
       const response = await fetch(apiUrl('/api/auth/me'), {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      if (response.status === 401 || response.status === 403) {
+        await this.logout();
+        return;
+      }
       if (!response.ok) {
         this.profileUsername.set(null);
+        this.linkedRiotAccount.set(null);
         return;
       }
       const me = (await response.json()) as AuthMeResponse;
       this.profileUsername.set(me.username?.trim() || null);
+      this.linkedRiotAccount.set(me.linkedRiotAccount ?? null);
     } catch {
       this.profileUsername.set(null);
+      this.linkedRiotAccount.set(null);
     } finally {
       this.profileLoading.set(false);
+    }
+  }
+
+  private isAccessTokenExpired(accessToken: string, skewSeconds = 30): boolean {
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1])) as { exp?: number };
+      if (typeof payload.exp !== 'number') {
+        return true;
+      }
+      return Date.now() / 1000 >= payload.exp - skewSeconds;
+    } catch {
+      return true;
     }
   }
 

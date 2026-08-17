@@ -82,7 +82,9 @@ public class RaceParticipantService {
 
         RaceParticipant participant = RaceParticipant.create(raceId, account);
         RaceParticipant saved = participantRepository.save(participant);
-        captureBaselineIfRanked(saved);
+        if (clock.instant().isBefore(race.getStartAt())) {
+            captureBaselineIfRanked(saved);
+        }
         participantProfileService.ensureProfileIcon(saved.getId());
         return ParticipantResponse.from(saved);
     }
@@ -103,8 +105,12 @@ public class RaceParticipantService {
     }
 
     private void captureBaselineIfRanked(RaceParticipant participant) {
-        riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
-                .ifPresent(entry -> rankSnapshotRepository.save(toBaselineSnapshot(participant.getId(), entry)));
+        try {
+            riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
+                    .ifPresent(entry -> rankSnapshotRepository.save(toBaselineSnapshot(participant.getId(), entry)));
+        } catch (ResponseStatusException ignored) {
+            // Baseline can be captured on the first refresh if Riot is temporarily unavailable.
+        }
     }
 
     private RankSnapshot toBaselineSnapshot(UUID participantId, RiotLeagueEntryDto entry) {

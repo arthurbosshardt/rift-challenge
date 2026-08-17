@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -149,6 +150,32 @@ class RaceParticipantServiceTest {
         assertThat(response.riotId()).isEqualTo("Tanor#7154");
         assertThat(response.gameName()).isEqualTo("Tanor");
         assertThat(response.tagLine()).isEqualTo("7154");
+        verify(participantRepository).save(org.mockito.ArgumentMatchers.any(RaceParticipant.class));
+    }
+
+    @Test
+    void addParticipant_whenBaselineLookupFails_stillPersistsParticipant() {
+        UUID raceId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
+
+        Race race = Race.create(ownerId, "Test", RaceType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
+        when(participantRepository.countByRaceId(raceId)).thenReturn(0L);
+        when(riotAccountClient.getAccountByRiotId(eq("Tanor"), eq("7154"))).thenReturn(account);
+        when(participantRepository.existsByRaceIdAndRiotPuuid(raceId, "puuid-1")).thenReturn(false);
+        when(participantRepository.save(org.mockito.ArgumentMatchers.any(RaceParticipant.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(riotLeagueClient.findRankedSoloEntry("puuid-1"))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed"));
+
+        ParticipantResponse response = participantService.addParticipant(
+                raceId,
+                ownerId,
+                new AddParticipantRequest("Tanor#7154")
+        );
+
+        assertThat(response.riotId()).isEqualTo("Tanor#7154");
         verify(participantRepository).save(org.mockito.ArgumentMatchers.any(RaceParticipant.class));
     }
 

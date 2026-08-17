@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -12,6 +12,7 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
       <app-loader [label]="'auth.callback' | t" />
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       .callback {

@@ -8,7 +8,24 @@ import org.springframework.data.repository.query.Param;
 
 public interface RaceParticipantMatchRepository extends JpaRepository<RaceParticipantMatch, UUID> {
 
+    boolean existsByParticipantId(UUID participantId);
+
+    long countByParticipantId(UUID participantId);
+
     boolean existsByParticipantIdAndRiotMatchId(UUID participantId, String riotMatchId);
+
+    @Query("""
+            SELECT rpm.riotMatchId AS matchId, rpm.win AS win
+            FROM RaceParticipantMatch rpm
+            WHERE rpm.participantId = :participantId
+            """)
+    List<ParticipantMatchOutcome> findOutcomesByParticipantId(@Param("participantId") UUID participantId);
+
+    interface ParticipantMatchOutcome {
+        String getMatchId();
+
+        boolean isWin();
+    }
 
     @Query("""
             SELECT COUNT(rpm)

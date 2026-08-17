@@ -8,6 +8,8 @@ import com.riftrace.race.dto.ParticipantResponse;
 import com.riftrace.race.dto.RaceDetailResponse;
 import com.riftrace.race.dto.RaceSummaryResponse;
 import com.riftrace.race.dto.UpdateRaceEndRequest;
+import com.riftrace.race.dto.UpdateRaceScheduleRequest;
+import com.riftrace.race.dto.UpdateRaceStartRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -46,10 +48,22 @@ public class RaceController {
         return raceService.listPublicRaces();
     }
 
+    @GetMapping("/owned")
+    public List<RaceSummaryResponse> listOwnedRaces(Authentication authentication) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.listOwnedRaces(ownerId);
+    }
+
+    @GetMapping("/participating")
+    public List<RaceSummaryResponse> listParticipatingRaces(Authentication authentication) {
+        UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.listParticipatingRaces(userId);
+    }
+
     @GetMapping("/mine")
     public List<RaceSummaryResponse> listMyRaces(Authentication authentication) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
-        return raceService.listMyRaces(ownerId);
+        return raceService.listOwnedRaces(ownerId);
     }
 
     @GetMapping("/share/{shareSlug}")
@@ -69,6 +83,26 @@ public class RaceController {
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         return raceService.createRace(ownerId, request);
+    }
+
+    @PatchMapping("/{raceId}/schedule")
+    public RaceDetailResponse updateSchedule(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @Valid @RequestBody UpdateRaceScheduleRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.updateSchedule(raceId, ownerId, request);
+    }
+
+    @PatchMapping("/{raceId}/start")
+    public RaceDetailResponse updateStartAt(
+            Authentication authentication,
+            @PathVariable UUID raceId,
+            @Valid @RequestBody UpdateRaceStartRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return raceService.updateStartAt(raceId, ownerId, request);
     }
 
     @PatchMapping("/{raceId}/end")

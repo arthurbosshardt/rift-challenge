@@ -1,0 +1,72 @@
+.player-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.player-identity--compact {
+  gap: 0.625rem;
+}
+
+.player-identity__rank {
+  flex-shrink: 0;
+  width: 48px;
+  display: grid;
+  place-items: center;
+}
+
+.player-identity--compact .player-identity__rank {
+  width: 36px;
+}
+
+.player-identity__rank-placeholder {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 1.125rem;
+}
+
+.player-identity--compact .player-identity__rank-placeholder {
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+}
+
+.player-identity__text {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.player-identity__name {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-identity--compact .player-identity__name {
+  font-size: 0.9375rem;
+}
+
+.player-identity__riot-id {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-identity__rank-label {
+  color: var(--gold);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}

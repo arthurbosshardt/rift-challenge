@@ -1,10 +1,11 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { rankEmblemUrl, tierLabel } from '../../../core/utils/rank-display';
 import { I18nService } from '../../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-rank-emblem',
   templateUrl: './rank-emblem.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './rank-emblem.component.scss',
 })
 export class RankEmblemComponent {
