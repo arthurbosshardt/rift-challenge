@@ -1,4 +1,5 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy, inject } from '@angular/core';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-loader',
@@ -7,7 +8,7 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
     '[class.loader-host--centered]': 'centered() && !compact()',
   },
   template: `
-    <div class="loader" [class.loader--compact]="compact()" role="status" [attr.aria-label]="label() || 'Loading'">
+    <div class="loader" [class.loader--compact]="compact()" role="status" [attr.aria-label]="label() || i18n.t('common.loading')">
       <span class="loader__spinner" aria-hidden="true"></span>
       @if (label()) {
         <span class="loader__label">{{ label() }}</span>
@@ -71,6 +72,7 @@ import { Component, input, ChangeDetectionStrategy } from '@angular/core';
   `,
 })
 export class LoaderComponent {
+  readonly i18n = inject(I18nService);
   readonly label = input<string>('');
   readonly compact = input(false);
   readonly centered = input(true);

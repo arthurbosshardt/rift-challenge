@@ -1,7 +1,7 @@
-const COMMUNITY_DRAGON_CHAMPION_ICON_BASE =
-  'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons';
-const COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE =
-  'https://cdn.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons';
+import {
+  COMMUNITY_DRAGON_CHAMPION_ICON_BASE,
+  COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE,
+} from '../constants/champion-icons';
 
 export function championIconUrls(championId: number | null | undefined): string[] {
   if (championId == null || championId <= 0) {
