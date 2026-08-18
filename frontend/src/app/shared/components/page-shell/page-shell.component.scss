@@ -17,7 +17,7 @@
   position: relative;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .user-menu--mobile-only {
     display: none;
   }
@@ -496,7 +496,7 @@ button.linkish:focus-visible .nav-icon {
   text-align: center;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .shell {
     padding: 1rem;
   }

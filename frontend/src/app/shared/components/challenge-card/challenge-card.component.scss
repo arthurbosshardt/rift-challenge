@@ -36,7 +36,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .challenge-card__layout {
     gap: 1.5rem;
   }
@@ -107,7 +107,7 @@
   margin: 0;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .challenge-card__meta {
     display: flex;
     flex-wrap: wrap;
@@ -550,7 +550,7 @@
   font-style: italic;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .challenge-card__layout {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -574,7 +574,7 @@
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .challenge-card {
     padding: 1rem;
   }

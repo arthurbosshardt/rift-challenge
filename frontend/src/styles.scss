@@ -422,7 +422,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .detail__title {
     font-size: clamp(
       1.125rem,
@@ -680,7 +680,7 @@ textarea:focus {
   stroke: currentColor;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .modal-overlay {
     padding: 0.5rem;
     align-items: center;
@@ -738,7 +738,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .tooltip--viewport-clamped {
     z-index: var(--z-tooltip);
     width: max-content;
