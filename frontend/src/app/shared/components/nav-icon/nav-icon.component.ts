@@ -8,7 +8,8 @@ export type NavIconName =
   | 'settings'
   | 'login'
   | 'signup'
-  | 'logout';
+  | 'logout'
+  | 'dashboard';
 
 @Component({
   selector: 'app-nav-icon',
@@ -106,6 +107,34 @@ export type NavIconName =
             stroke="currentColor"
             stroke-width="1.75"
             stroke-linecap="round"
+          />
+        </svg>
+      }
+      @case ('dashboard') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M3 3L12 6L21 3V21H3V3Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M12 6V21"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M3 9H21"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           />
         </svg>
       }

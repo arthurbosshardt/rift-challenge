@@ -19,7 +19,7 @@
         </a>
         @if (auth.isAuthenticated() && auth.linkedAccount()) {
           <a routerLink="/dashboard" routerLinkActive="active" (click)="closeUserMenu()">
-            <app-nav-icon name="my-challenges" />
+            <app-nav-icon name="dashboard" />
             <span>{{ 'nav.dashboard' | t }}</span>
           </a>
           <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
@@ -108,7 +108,7 @@
                   class="user-menu__item user-menu__item--mobile-nav"
                   (click)="closeUserMenu()"
                 >
-                  <app-nav-icon name="my-challenges" />
+                  <app-nav-icon name="dashboard" />
                   <span>{{ 'nav.dashboard' | t }}</span>
                 </a>
                 <a
