@@ -7,6 +7,7 @@ import {
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { UserRiotAccountApiService } from '../../core/services/user-riot-account-api.service';
@@ -22,12 +23,22 @@ import { SettingsAccountsSkeletonComponent } from '../../shared/components/setti
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ThemeService } from '../../core/theme/theme.service';
+import { Observable, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 
 const MAX_LINKED_ACCOUNTS = 5;
 
 @Component({
   selector: 'app-settings-modal',
-  imports: [PlayerAvatarComponent, SettingsAccountsSkeletonComponent, TranslatePipe, FormsModule, SummonerTypeaheadComponent, NavIconComponent],
+  imports: [
+    CommonModule,
+    PlayerAvatarComponent,
+    SettingsAccountsSkeletonComponent,
+    TranslatePipe,
+    FormsModule,
+    SummonerTypeaheadComponent,
+    NavIconComponent,
+  ],
   templateUrl: './settings-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings-modal.component.scss',
@@ -70,7 +81,7 @@ export class SettingsModalComponent {
       if (this.settingsModal.isOpen()) {
         document.body.style.overflow = 'hidden';
         void this.auth.waitUntilReady().then(() => {
-          this.loadAccounts(true);
+          this.loadAccounts(true).subscribe();
         });
         return;
       }
@@ -91,22 +102,23 @@ export class SettingsModalComponent {
     this.settingsModal.close();
   }
 
-  protected loadAccounts(showSectionLoader = false): void {
+  protected loadAccounts(showSectionLoader = false): Observable<UserRiotAccount[]> {
     if (showSectionLoader || this.accounts().length === 0) {
       this.accountsLoading.set(true);
     }
 
-    this.accountApi.listAccounts().subscribe({
-      next: (accounts) => {
+    return this.accountApi.listAccounts().pipe(
+      tap((accounts) => {
         this.accounts.set(accounts);
         this.accountsLoading.set(false);
-      },
-      error: () => {
+      }),
+      catchError(() => {
         this.accounts.set([]);
         this.accountsLoading.set(false);
         this.accountError.set(this.i18n.t('accounts.loadError'));
-      },
-    });
+        return of([]);
+      }),
+    );
   }
 
   protected linkPrimaryAccount(): void {
@@ -157,19 +169,20 @@ export class SettingsModalComponent {
       next: async () => {
         this.unlinkingAccountId.set(null);
         await this.auth.refreshProfile();
-        this.loadAccounts();
         
-        // If there's a pending primary account change, link the new account
+        // If there's a pending primary account change, load accounts and then link the new one
         const pending = this.pendingPrimaryAccountChange();
         if (pending) {
           this.pendingPrimaryAccountChange.set(null);
-          // Wait a bit for the load to complete, then link
-          setTimeout(() => {
+          // Wait for accounts to load before linking the new account
+          this.loadAccounts().subscribe(() => {
             this.linkAccount(pending.gameName, pending.tagLine, false, this.linkingPrimary, () => {
               this.primaryGameNameInput = '';
               this.primaryTagLineInput = '';
             });
-          }, 500);
+          });
+        } else {
+          this.loadAccounts().subscribe();
         }
       },
       error: () => {
@@ -228,7 +241,7 @@ export class SettingsModalComponent {
         linkingSignal.set(false);
         this.accountSuccess.set(true);
         await this.auth.refreshProfile();
-        this.loadAccounts();
+        this.loadAccounts().subscribe();
         window.setTimeout(() => this.accountSuccess.set(false), 2500);
       },
       error: (err: HttpErrorResponse) => {
