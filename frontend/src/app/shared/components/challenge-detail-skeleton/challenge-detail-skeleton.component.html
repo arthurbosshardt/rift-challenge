@@ -1,35 +1,6 @@
 <div class="challenge-detail-skeleton" role="status" [attr.aria-label]="ariaLabel()" aria-live="polite">
-  <header class="challenge-detail-skeleton__heading">
-    <div class="challenge-detail-skeleton__title-row">
-      <div class="challenge-detail-skeleton__title">
-        <app-skeleton class="challenge-detail-skeleton__type-badge" width="2rem" height="2rem" radius="999px" />
-        <app-skeleton class="challenge-detail-skeleton__title-name" height="2rem" />
-      </div>
-      <div class="challenge-detail-skeleton__actions">
-        <app-skeleton width="2rem" height="2rem" radius="999px" />
-        <app-skeleton width="2rem" height="2rem" radius="999px" />
-      </div>
-    </div>
-    <div class="challenge-detail-skeleton__info-bar">
-      <app-skeleton width="2.25rem" height="2.25rem" radius="999px" />
-      <app-skeleton height="1rem" maxWidth="5rem" />
-      <dl class="challenge-detail-skeleton__meta">
-        <div class="challenge-detail-skeleton__meta-item">
-          <app-skeleton height="0.875rem" maxWidth="3rem" />
-          <app-skeleton height="1rem" maxWidth="5rem" />
-        </div>
-        <div class="challenge-detail-skeleton__meta-item">
-          <app-skeleton height="0.875rem" maxWidth="2.5rem" />
-          <app-skeleton height="1rem" maxWidth="5rem" />
-        </div>
-      </dl>
-    </div>
-  </header>
-
-  <section class="challenge-detail-skeleton__detail">
-    <section class="challenge-detail-skeleton__participants">
-      <app-skeleton height="0.875rem" maxWidth="10rem" />
-      <app-leaderboard-skeleton />
-    </section>
+  <section class="challenge-detail-skeleton__participants">
+    <app-leaderboard-sort-controls [disabled]="true" />
+    <app-leaderboard-skeleton [rowCount]="rowCount()" />
   </section>
 </div>

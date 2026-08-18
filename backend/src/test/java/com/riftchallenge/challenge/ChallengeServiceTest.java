@@ -287,6 +287,41 @@ class ChallengeServiceTest {
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
         when(progressService.buildProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
+
+        var response = challengeService.updateSchedule(
+                challengeId,
+                ownerId,
+                new UpdateChallengeScheduleRequest(newStart, newEnd)
+        );
+
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
+        assertThat(response.startAt()).isEqualTo(newStart);
+        assertThat(response.endAt()).isEqualTo(newEnd);
+    }
+
+    @Test
+    void updateSchedule_whenOwnerWithParticipants_refreshesAfterScheduleChange() {
+        UUID ownerId = UUID.randomUUID();
+        Instant newStart = NOW.minusSeconds(7200);
+        Instant newEnd = NOW.plusSeconds(86_400);
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Test",
+                ChallengeType.SOLOQ,
+                NOW.minusSeconds(3600),
+                NOW.plusSeconds(3600),
+                false
+        );
+        UUID challengeId = challenge.getId();
+        ChallengeParticipant participant = ChallengeParticipant.create(
+                challengeId,
+                new com.riftchallenge.riot.dto.RiotAccountDto("puuid-1", "PlayerOne", "EUW")
+        );
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(challengeRepository.save(challenge)).thenReturn(challenge);
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(participant));
+        when(progressService.buildProgress(any())).thenReturn(List.of());
+        when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
         when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
         var response = challengeService.updateSchedule(
@@ -373,7 +408,6 @@ class ChallengeServiceTest {
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
         when(progressService.buildProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
-        when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
         var response = challengeService.updateChallenge(
                 challengeId,
@@ -386,7 +420,7 @@ class ChallengeServiceTest {
         assertThat(response.endAt()).isEqualTo(newEnd);
         assertThat(response.isPublic()).isTrue();
         verify(challengeRepository).save(challenge);
-        verify(challengeSyncService).refreshChallenge(challengeId);
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
     }
 
     @Test
@@ -477,7 +511,7 @@ class ChallengeServiceTest {
     }
 
     @Test
-    void updateStartAt_whenChallengeAlreadyStarted_updatesAndRefreshes() {
+    void updateStartAt_whenChallengeAlreadyStarted_skipsRefreshWithoutParticipants() {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(7200);
         Challenge challenge = Challenge.create(
@@ -494,11 +528,10 @@ class ChallengeServiceTest {
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
         when(progressService.buildProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
-        when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
 
-        verify(challengeSyncService).refreshChallenge(challengeId);
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
         assertThat(response.startAt()).isEqualTo(newStart);
         assertThat(response.status()).isEqualTo("ACTIVE");
     }
@@ -530,7 +563,7 @@ class ChallengeServiceTest {
     }
 
     @Test
-    void updateStartAt_whenMovedToPast_autoRefreshesIfAvailable() {
+    void updateStartAt_whenMovedToPast_skipsRefreshWithoutParticipants() {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(60);
         Challenge challenge = Challenge.create(
@@ -547,11 +580,10 @@ class ChallengeServiceTest {
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
         when(progressService.buildProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
-        when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
 
-        verify(challengeSyncService).refreshChallenge(challengeId);
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
         assertThat(response.startAt()).isEqualTo(newStart);
         assertThat(response.status()).isEqualTo("ACTIVE");
     }
@@ -597,11 +629,10 @@ class ChallengeServiceTest {
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
         when(progressService.buildProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
-        when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
         var response = challengeService.updateEndAt(challengeId, ownerId, new UpdateChallengeEndRequest(newEnd));
 
-        verify(challengeSyncService).refreshChallenge(challengeId);
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
         assertThat(response.endAt()).isEqualTo(newEnd);
         assertThat(response.isOwner()).isTrue();
     }

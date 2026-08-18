@@ -108,6 +108,33 @@ class ChallengeSyncServiceTest {
     }
 
     @Test
+    void refreshChallenge_withoutParticipants_skipsSyncAndCooldown() {
+        UUID challengeId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+        Instant now = Instant.parse("2026-08-16T10:00:00Z");
+        Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        challengeSyncService = new ChallengeSyncService(
+                challengeRepository,
+                participantRepository,
+                challengeRefreshRepository,
+                participantSyncService,
+                refreshRecordService,
+                riotMatchLookupService,
+                clock
+        );
+
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"), false);
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
+
+        challengeSyncService.refreshChallenge(challengeId);
+
+        verify(participantSyncService, never()).syncParticipant(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        verify(refreshRecordService, never()).recordRefresh(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        verify(riotMatchLookupService, never()).beginRefreshScope();
+    }
+
+    @Test
     void refreshChallenge_rateLimitOnOneParticipant_continuesWithOthers() {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();

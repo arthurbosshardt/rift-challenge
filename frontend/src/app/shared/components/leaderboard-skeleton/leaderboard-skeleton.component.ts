@@ -10,8 +10,12 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
 })
 export class LeaderboardSkeletonComponent {
   readonly rowCount = input(6);
+  readonly showSort = input(false);
+  readonly duoMode = input(false);
 
   protected readonly rows = computed(() =>
     Array.from({ length: this.rowCount() }, (_, index) => index),
   );
+
+  protected readonly duoSlots = [0, 1];
 }

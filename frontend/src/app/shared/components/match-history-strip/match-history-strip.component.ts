@@ -97,16 +97,6 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
     this.showRightFade.set(trackElement.scrollWidth > viewportElement.clientWidth + 1);
   }
 
-  protected lpLabel(lpDelta: number): string {
-    if (lpDelta > 0) {
-      return `+${lpDelta}`;
-    }
-    if (lpDelta < 0) {
-      return `${lpDelta}`;
-    }
-    return '0';
-  }
-
   protected dayLabel(dayKey: string): string {
     this.i18n.locale();
     return formatMatchHistoryDayLabel(dayKey, this.i18n.locale());

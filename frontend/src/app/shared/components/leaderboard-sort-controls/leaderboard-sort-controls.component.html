@@ -1,0 +1,80 @@
+<div class="sort-controls" role="toolbar" [attr.aria-label]="'challenge.sortAria' | t">
+  <div class="sort-controls__criteria" role="tablist" [attr.aria-label]="'challenge.sortAria' | t">
+    @for (option of sortOptions(); track option[0]) {
+      <button
+        type="button"
+        role="tab"
+        class="sort-controls__tab"
+        [class.sort-controls__tab--active]="sortCriterion() === option[0]"
+        [attr.aria-selected]="sortCriterion() === option[0]"
+        [attr.aria-label]="option[1]"
+        (click)="setSortCriterion(option[0])"
+        [disabled]="disabled()"
+      >
+        @switch (option[0]) {
+          @case ('RANK') {
+            <svg class="sort-controls__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2l2.4 4.8 5.4.8-3.9 3.8.9 5.3L12 14.3 7.2 16.7l.9-5.3-3.9-3.8 5.4-.8L12 2z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linejoin="round"
+              />
+            </svg>
+          }
+          @case ('LP_GAIN') {
+            <svg class="sort-controls__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 17l5-5 4 4 7-8M14 7h6v6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          }
+          @case ('WIN_RATE') {
+            <svg class="sort-controls__tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 19V5M4 19h16M8 16V9M12 16V7M16 16v-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          }
+        }
+        <span class="sort-controls__tab-label">{{ option[1] }}</span>
+      </button>
+    }
+  </div>
+  <button
+    type="button"
+    class="sort-controls__direction"
+    (click)="toggleSortDirection()"
+    [disabled]="disabled()"
+    [attr.aria-label]="sortDirectionAriaLabel()"
+  >
+    <span class="sort-controls__direction-icon" aria-hidden="true">{{ sortDirectionIcon() }}</span>
+  </button>
+  @if (showFinishedHelp()) {
+    <button
+      type="button"
+      class="sort-controls__ranking-help"
+      [disabled]="disabled()"
+      [attr.aria-label]="'challenge.finishedRankingHelpAria' | t"
+    >
+      <span class="sort-controls__ranking-help-label">
+        {{ 'challenge.finishedRankingHelpQuestion' | t }}
+      </span>
+      <span class="sort-controls__ranking-help-icon" aria-hidden="true">i</span>
+      <span class="sort-controls__ranking-help-tooltip" role="tooltip">
+        {{ 'challenge.finishedRankingHelpAnswer' | t }}
+      </span>
+    </button>
+  }
+</div>

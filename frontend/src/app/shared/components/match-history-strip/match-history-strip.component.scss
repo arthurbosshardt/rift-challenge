@@ -4,7 +4,7 @@
 }
 
 .match-history--duo {
-  --duo-player-row-height: 3.5rem;
+  --duo-player-row-height: 4rem;
   --duo-player-row-gap: 0.625rem;
   min-height: var(
     --duo-row-min-height,
@@ -24,8 +24,8 @@
 }
 
 .match-history--fade-right .match-history__viewport {
-  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 2.75rem), transparent 100%);
-  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 2.75rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 3.25rem), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 3.25rem), transparent 100%);
 }
 
 .match-history__track {
@@ -101,8 +101,8 @@
 
 .match-history__bubble {
   display: block;
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   border: 2px solid transparent;
   background: var(--surface-tint-strong);
@@ -114,6 +114,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scale(1.12);
 }
 
 .match-history__fallback {
@@ -136,43 +137,14 @@
   box-shadow: 0 0 0 1px rgba(224, 90, 90, 0.18);
 }
 
-.match-history__lp {
-  position: absolute;
-  right: -0.0625rem;
-  bottom: -0.0625rem;
-  z-index: 1;
-  min-width: 1.375rem;
-  padding: 0.0625rem 0.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  background: rgba(8, 12, 18, 0.92);
-  font-size: 0.625rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-  color: var(--text-muted);
-}
-
-.match-history__entry--win .match-history__lp {
-  color: #7ddf8a;
-  border-color: rgba(107, 201, 122, 0.35);
-}
-
-.match-history__entry--loss .match-history__lp {
-  color: var(--danger);
-  border-color: rgba(224, 90, 90, 0.35);
-}
-
 @media (max-width: 899px) {
   .match-history--duo {
-    --duo-player-row-height: 3rem;
+    --duo-player-row-height: 3.5rem;
   }
 
   .match-history__bubble {
-    width: 3rem;
-    height: 3rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 }
 

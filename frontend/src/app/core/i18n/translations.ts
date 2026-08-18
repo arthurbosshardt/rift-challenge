@@ -261,6 +261,9 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'challenge.finishedRankingHelpAnswer':
       'Pour les challenges passés, le gain de LP ainsi que le classement est estimé en se basant sur le classement de fin de saison et en décomposant le nombre de games. L’API de Riot ne permet pas d’avoir un classement à une date précise donnée, la donnée la plus fiable à ce stade est donc le nombre de victoires et de défaites ! N’hésitez pas à me contacter si vous avez des idées pour contourner ce problème autrement.',
     'challenge.finishedRankingHelpAria': 'Règles de calcul du classement',
+    'challenge.lpGainedEstimatedHint':
+      'Ce gain de LP total est une estimation, calculée à partir du classement et des parties jouées.',
+    'challenge.lpGainedEstimatedAria': 'Gain de LP estimé',
     'challenge.refreshUnavailable': 'Actualiser (indisponible)',
     'challenge.participants': 'Participants',
     'challenge.participantCountLabel': 'Nombre de participants :',
@@ -588,6 +591,9 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'challenge.finishedRankingHelpAnswer':
       'For past challenges, LP gain and rankings are estimated from end-of-season rank and by breaking down the number of games played. The Riot API does not provide rank at a specific date, so the most reliable data right now is wins and losses! Feel free to contact me if you have ideas to work around this differently.',
     'challenge.finishedRankingHelpAria': 'Ranking calculation rules',
+    'challenge.lpGainedEstimatedHint':
+      'This total LP gain is an estimate calculated from rank and games played.',
+    'challenge.lpGainedEstimatedAria': 'Estimated LP gain',
     'challenge.refreshUnavailable': 'Refresh (unavailable)',
     'challenge.participants': 'Participants',
     'challenge.participantCountLabel': 'Number of participants:',

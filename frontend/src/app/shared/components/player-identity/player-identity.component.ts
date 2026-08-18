@@ -25,10 +25,6 @@ export class PlayerIdentityComponent {
   protected readonly copiedField = signal<'name' | 'riotId' | null>(null);
 
   protected copyField(field: 'name' | 'riotId', value: string, event: Event): void {
-    if (!window.matchMedia('(max-width: 899px)').matches) {
-      return;
-    }
-
     event.preventDefault();
     event.stopPropagation();
     void this.performCopy(field, value);

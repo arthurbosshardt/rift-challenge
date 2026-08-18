@@ -59,6 +59,10 @@ public class ChallengeSyncService {
         enforceCooldown(challengeId, now);
 
         List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
+        if (participants.isEmpty()) {
+            return now;
+        }
+
         boolean rateLimited = false;
 
         riotMatchLookupService.beginRefreshScope();

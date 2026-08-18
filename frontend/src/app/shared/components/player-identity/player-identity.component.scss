@@ -49,6 +49,21 @@
   line-height: 1.2;
 }
 
+.player-identity__copy-target {
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 0.125rem;
+  transition: color 0.15s ease;
+}
+
+.player-identity__copy-target:hover {
+  color: var(--gold);
+}
+
+.player-identity__copy-target--copied {
+  color: var(--success);
+}
+
 @media (max-width: 899px) {
   .player-identity {
     width: 100%;
@@ -74,12 +89,5 @@
     user-select: text;
     -webkit-user-select: text;
     -webkit-touch-callout: default;
-    cursor: pointer;
-    touch-action: manipulation;
-    border-radius: 0.125rem;
-  }
-
-  .player-identity__copy-target--copied {
-    color: var(--success);
   }
 }

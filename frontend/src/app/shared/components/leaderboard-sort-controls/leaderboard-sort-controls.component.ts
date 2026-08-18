@@ -1,0 +1,55 @@
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { LeaderboardSort, SortDirection, sortDirectionArrow } from '../../../core/utils/leaderboard-sort';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/t.pipe';
+
+@Component({
+  selector: 'app-leaderboard-sort-controls',
+  imports: [TranslatePipe],
+  templateUrl: './leaderboard-sort-controls.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './leaderboard-sort-controls.component.scss',
+})
+export class LeaderboardSortControlsComponent {
+  private readonly i18n = inject(I18nService);
+
+  readonly sortCriterion = input<LeaderboardSort>('RANK');
+  readonly sortDirection = input<SortDirection>('desc');
+  readonly disabled = input(false);
+  readonly showFinishedHelp = input(false);
+
+  readonly sortCriterionChange = output<LeaderboardSort>();
+  readonly sortDirectionToggle = output<void>();
+
+  protected readonly sortOptions = computed(() => {
+    this.i18n.locale();
+    return [
+      ['RANK', this.i18n.t('sort.rank')],
+      ['LP_GAIN', this.i18n.t('sort.lp')],
+      ['WIN_RATE', this.i18n.t('sort.winRate')],
+    ] as [LeaderboardSort, string][];
+  });
+
+  protected setSortCriterion(criterion: LeaderboardSort): void {
+    if (this.disabled()) {
+      return;
+    }
+    this.sortCriterionChange.emit(criterion);
+  }
+
+  protected toggleSortDirection(): void {
+    if (this.disabled()) {
+      return;
+    }
+    this.sortDirectionToggle.emit();
+  }
+
+  protected sortDirectionAriaLabel(): string {
+    const direction = this.sortDirection() === 'desc' ? this.i18n.t('sort.desc') : this.i18n.t('sort.asc');
+    return `${this.i18n.t('sort.directionAria')}: ${direction}`;
+  }
+
+  protected sortDirectionIcon(): string {
+    return sortDirectionArrow(this.sortDirection());
+  }
+}

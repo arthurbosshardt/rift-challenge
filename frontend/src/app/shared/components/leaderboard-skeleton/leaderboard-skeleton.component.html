@@ -1,24 +1,40 @@
 <div class="leaderboard-skeleton">
-  <div class="leaderboard-skeleton__sort">
-    <div class="leaderboard-skeleton__criteria">
-      <app-skeleton width="5.5rem" height="2rem" radius="999px" />
-      <app-skeleton width="4.5rem" height="2rem" radius="999px" />
-      <app-skeleton width="5rem" height="2rem" radius="999px" />
+  @if (showSort()) {
+    <div class="leaderboard-skeleton__sort">
+      <div class="leaderboard-skeleton__criteria">
+        <app-skeleton width="5.5rem" height="2rem" radius="999px" />
+        <app-skeleton width="4.5rem" height="2rem" radius="999px" />
+        <app-skeleton width="5rem" height="2rem" radius="999px" />
+      </div>
+      <app-skeleton class="leaderboard-skeleton__direction" width="2.375rem" height="2.375rem" radius="999px" />
     </div>
-    <app-skeleton class="leaderboard-skeleton__direction" width="2.375rem" height="2.375rem" radius="999px" />
-  </div>
+  }
 
-  <ol class="leaderboard-skeleton__list">
+  <ol class="leaderboard-skeleton__list" [class.leaderboard-skeleton__list--duo]="duoMode()">
     @for (row of rows(); track row) {
-      <li class="leaderboard-skeleton__item">
+      <li class="leaderboard-skeleton__item" [class.leaderboard-skeleton__item--duo]="duoMode()">
         <app-skeleton class="leaderboard-skeleton__rank" width="2rem" height="1.125rem" />
-        <div class="leaderboard-skeleton__identity">
-          <app-skeleton [circle]="true" width="32px" height="32px" />
-          <div class="leaderboard-skeleton__identity-copy">
-            <app-skeleton height="0.9375rem" maxWidth="8rem" />
-            <app-skeleton height="0.75rem" maxWidth="5rem" />
+        @if (duoMode()) {
+          <div class="leaderboard-skeleton__identity leaderboard-skeleton__identity--duo">
+            @for (slot of duoSlots; track slot) {
+              <div class="leaderboard-skeleton__duo-slot">
+                <app-skeleton [circle]="true" width="32px" height="32px" />
+                <div class="leaderboard-skeleton__identity-copy">
+                  <app-skeleton height="0.9375rem" maxWidth="8rem" />
+                  <app-skeleton height="0.75rem" maxWidth="5rem" />
+                </div>
+              </div>
+            }
           </div>
-        </div>
+        } @else {
+          <div class="leaderboard-skeleton__identity">
+            <app-skeleton [circle]="true" width="32px" height="32px" />
+            <div class="leaderboard-skeleton__identity-copy">
+              <app-skeleton height="0.9375rem" maxWidth="8rem" />
+              <app-skeleton height="0.75rem" maxWidth="5rem" />
+            </div>
+          </div>
+        }
         <div class="leaderboard-skeleton__history">
           @for (_ of [0, 1, 2, 3, 4]; track _) {
             <app-skeleton [circle]="true" width="1.75rem" height="1.75rem" />

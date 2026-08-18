@@ -184,7 +184,9 @@ export class CreateChallengeModalComponent {
       .subscribe({
         next: async (challenge) => {
           this.createChallengeModal.close();
-          await this.router.navigate(['/challenges', challenge.shareSlug]);
+        await this.router.navigate(['/challenges', challenge.shareSlug], {
+          queryParams: { edit: '1' },
+        });
         },
         error: (err: HttpErrorResponse) => {
           if (isChallengeNameTakenError(err)) {

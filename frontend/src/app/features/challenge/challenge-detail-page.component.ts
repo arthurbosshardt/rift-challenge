@@ -10,7 +10,6 @@ import {
   LeaderboardSort,
   SortDirection,
   podiumTier,
-  sortDirectionArrow,
   sortDuos,
   sortParticipants,
 } from '../../core/utils/leaderboard-sort';
@@ -24,6 +23,7 @@ import { PlayerIdentityComponent } from '../../shared/components/player-identity
 import { ChallengeDatePipe } from '../../shared/pipes/challenge-date.pipe';
 import { ChallengeDetailSkeletonComponent } from '../../shared/components/challenge-detail-skeleton/challenge-detail-skeleton.component';
 import { LeaderboardSkeletonComponent } from '../../shared/components/leaderboard-skeleton/leaderboard-skeleton.component';
+import { LeaderboardSortControlsComponent } from '../../shared/components/leaderboard-sort-controls/leaderboard-sort-controls.component';
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
 import {
   ChallengeBadgeComponent,
@@ -34,7 +34,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-challenge-detail-page',
-  imports: [PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent],
+  imports: [PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent],
   templateUrl: './challenge-detail-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './challenge-detail-page.component.scss',
@@ -65,15 +65,6 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   protected readonly endCountdown = signal<string | null>(null);
   protected readonly sortCriterion = signal<LeaderboardSort>('RANK');
   protected readonly sortDirection = signal<SortDirection>('desc');
-
-  protected readonly sortOptions = computed(() => {
-    this.i18n.locale();
-    return [
-      ['RANK', this.i18n.t('sort.rank')],
-      ['LP_GAIN', this.i18n.t('sort.lp')],
-      ['WIN_RATE', this.i18n.t('sort.winRate')],
-    ] as [LeaderboardSort, string][];
-  });
 
   protected readonly sortedParticipants = computed(() => {
     const currentChallenge = this.challenge();
@@ -119,6 +110,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
         this.challenge.set(normalized);
         this.loading.set(false);
         this.startTimersIfNeeded();
+        this.openEditIfRequested(normalized);
       },
       error: () => {
         this.error.set(this.i18n.t('challenge.notFound'));
@@ -148,6 +140,21 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
     this.editChallengeModal.open(challenge, () => {
       void this.loadChallenge();
     });
+  }
+
+  private openEditIfRequested(challenge: ChallengeDetail): void {
+    if (this.route.snapshot.queryParamMap.get('edit') !== '1' || !challenge.isOwner) {
+      return;
+    }
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { edit: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+
+    this.openEditModal(challenge);
   }
 
   protected requestDeleteChallenge(challenge: ChallengeDetail): void {
@@ -189,15 +196,6 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
     this.sortDirection.update((direction) => (direction === 'desc' ? 'asc' : 'desc'));
   }
 
-  protected sortDirectionAriaLabel(): string {
-    const direction = this.sortDirection() === 'desc' ? this.i18n.t('sort.desc') : this.i18n.t('sort.asc');
-    return `${this.i18n.t('sort.directionAria')}: ${direction}`;
-  }
-
-  protected sortDirectionIcon(): string {
-    return sortDirectionArrow(this.sortDirection());
-  }
-
   protected podiumTierForParticipant(position: number): string | null {
     const tier = podiumTier(position, this.sortedParticipants().length);
     return tier ? `leaderboard__item--podium-${tier}` : null;
@@ -224,6 +222,14 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
 
   protected entryLimit(challenge: ChallengeDetail): number {
     return challenge.type === 'DUOQ' ? 8 : 16;
+  }
+
+  protected statsPanelSkeletonRowCount(challenge: ChallengeDetail): number {
+    const count = this.entryCount(challenge);
+    if (count === 0) {
+      return 4;
+    }
+    return count;
   }
 
   protected hasLeaderboard(challenge: ChallengeDetail): boolean {

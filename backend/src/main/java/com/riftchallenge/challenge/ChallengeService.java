@@ -333,10 +333,19 @@ public class ChallengeService {
 
     private void maybeAutoRefreshAfterScheduleChange(UUID challengeId, Instant startAt) {
         Instant now = clock.instant();
+        if (now.isBefore(startAt)) {
+            return;
+        }
+
+        List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId);
+        if (participants.isEmpty()) {
+            return;
+        }
+
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
         RefreshTiming refreshTiming = resolveRefreshTiming(challenge, now);
-        if (refreshTiming.refreshAvailable() && !now.isBefore(startAt)) {
+        if (refreshTiming.refreshAvailable()) {
             try {
                 challengeSyncService.refreshChallenge(challengeId);
             } catch (ResponseStatusException exception) {

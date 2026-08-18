@@ -133,8 +133,15 @@
                           </div>
                           @if (showLeaderboardPreview()) {
                             <div class="challenge-card__stats">
-                              <span class="challenge-card__lp" [class]="lpClass(duo.combinedLpGained)">
+                              <span
+                                class="challenge-card__lp challenge-card__lp--hint"
+                                [class]="lpClass(duo.combinedLpGained)"
+                                [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
+                              >
                                 {{ lpLabel(duo.combinedLpGained) }}
+                                <span class="challenge-card__lp-tooltip" role="tooltip">
+                                  {{ 'challenge.lpGainedEstimatedHint' | t }}
+                                </span>
                               </span>
                               <span class="challenge-card__wl">
                                 <span [class]="'challenge-card__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
@@ -201,8 +208,15 @@
                           </div>
                           @if (showLeaderboardPreview()) {
                             <div class="challenge-card__stats">
-                              <span class="challenge-card__lp" [class]="lpClass(participant.lpGained)">
+                              <span
+                                class="challenge-card__lp challenge-card__lp--hint"
+                                [class]="lpClass(participant.lpGained)"
+                                [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
+                              >
                                 {{ lpLabel(participant.lpGained) }}
+                                <span class="challenge-card__lp-tooltip" role="tooltip">
+                                  {{ 'challenge.lpGainedEstimatedHint' | t }}
+                                </span>
                               </span>
                               <span class="challenge-card__wl">
                                 <span
