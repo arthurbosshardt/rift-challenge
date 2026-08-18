@@ -1,42 +1,40 @@
 <div class="game-detail-modal">
-  <div class="game-detail-modal__content">
-    <div class="game-detail__header">
-      <h2 class="game-detail__title">{{ game().win ? 'V' : 'L' }}</h2>
-      <button
-        type="button"
-        class="game-detail__close"
-        aria-label="Close modal"
-        (click)="$event.stopPropagation()"
-      >
-        ✕
-      </button>
+  <div class="game-detail__header">
+    <h2 class="game-detail__title">{{ game().win ? 'V' : 'L' }}</h2>
+    <button
+      type="button"
+      class="game-detail__close"
+      aria-label="Close modal"
+      (click)="modalService.close()"
+    >
+      ✕
+    </button>
+  </div>
+
+  <div class="game-detail__body">
+    <div class="game-detail__champion">
+      <app-champion-icon [championId]="game().championId" [iconUrl]="game().championIconUrl" />
     </div>
 
-    <div class="game-detail__body">
-      <div class="game-detail__champion">
-        <app-champion-icon [championId]="game().championId" [iconUrl]="game().championIconUrl" />
+    <div class="game-detail__info">
+      <div class="game-detail__player">
+        <span class="game-detail__label">{{ 'game.player' | t }}</span>
+        <span class="game-detail__value">{{ game().gameName }}#{{ game().tagLine }}</span>
       </div>
 
-      <div class="game-detail__info">
-        <div class="game-detail__player">
-          <span class="game-detail__label">{{ 'game.player' | t }}</span>
-          <span class="game-detail__value">{{ game().gameName }}#{{ game().tagLine }}</span>
-        </div>
+      <div class="game-detail__result" [class.game-detail__result--win]="game().win">
+        <span class="game-detail__label">{{ 'game.result' | t }}</span>
+        <span class="game-detail__value">{{ (game().win ? 'game.victory' : 'game.defeat') | t }}</span>
+      </div>
 
-        <div class="game-detail__result" [class.game-detail__result--win]="game().win">
-          <span class="game-detail__label">{{ 'game.result' | t }}</span>
-          <span class="game-detail__value">{{ (game().win ? 'game.victory' : 'game.defeat') | t }}</span>
-        </div>
-
-        <div class="game-detail__timestamp">
-          <span class="game-detail__label">{{ 'game.played' | t }}</span>
-          <span class="game-detail__value">
-            {{ formatPlayedAtRelative(game().playedAt) }}
-          </span>
-          <span class="game-detail__secondary">
-            {{ formatPlayedAt(game().playedAt) }}
-          </span>
-        </div>
+      <div class="game-detail__timestamp">
+        <span class="game-detail__label">{{ 'game.played' | t }}</span>
+        <span class="game-detail__value">
+          {{ formatPlayedAtRelative(game().playedAt) }}
+        </span>
+        <span class="game-detail__secondary">
+          {{ formatPlayedAt(game().playedAt) }}
+        </span>
       </div>
     </div>
   </div>

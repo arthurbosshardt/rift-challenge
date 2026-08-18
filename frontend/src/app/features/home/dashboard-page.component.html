@@ -19,7 +19,7 @@
           type="button"
           class="game-item"
           (click)="openGameDetail(game)"
-          [attr.aria-label]="(game.win ? 'Victory' : 'Defeat') + ' with ' + game.gameName"
+          [attr.aria-label]="getGameAriaLabel(game)"
         >
           <app-champion-icon [championId]="game.championId" [iconUrl]="game.championIconUrl" />
           <span class="game-result" [class.game-result--win]="game.win" [class.game-result--loss]="!game.win">

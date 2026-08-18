@@ -6,20 +6,10 @@ import { PageShellComponent } from '../../shared/components/page-shell/page-shel
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { ParticipantMatchHistory, DuoMatchHistory } from '../../core/models/challenge.models';
+import { ParticipantMatchHistory, DuoMatchHistory, RecentGameResponse } from '../../core/models/challenge.models';
 import { CommonModule } from '@angular/common';
 import { ChampionIconComponent } from '../../shared/components/champion-icon/champion-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
-
-export interface RecentGameResponse {
-  id: string;
-  gameName: string;
-  tagLine: string;
-  championId: number | null;
-  championIconUrl: string | null;
-  win: boolean;
-  playedAt: string;
-}
 
 @Component({
   selector: 'app-dashboard-page',
@@ -31,7 +21,7 @@ export interface RecentGameResponse {
     ChampionIconComponent,
   ],
   templateUrl: './dashboard-page.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.Default,
   styleUrl: './dashboard-page.component.scss',
 })
 export class DashboardPageComponent implements OnInit {
@@ -51,6 +41,12 @@ export class DashboardPageComponent implements OnInit {
 
   protected openGameDetail(game: RecentGameResponse): void {
     this.modalService.open(game);
+  }
+
+  protected getGameAriaLabel(game: RecentGameResponse): string {
+    const resultKey = game.win ? 'game.victory' : 'game.defeat';
+    const result = this.i18n.t(resultKey);
+    return `${result} with ${game.gameName}`;
   }
 
   private async loadPage(): Promise<void> {
