@@ -4,6 +4,7 @@ import { authErrorToKey, translateAuthError } from './auth-errors';
 
 describe('auth-errors', () => {
   const i18n = new I18nService();
+  i18n.setLocale('fr');
 
   it('maps invalid login credentials to French message', () => {
     const key = authErrorToKey({ code: 'invalid_credentials', message: 'Invalid login credentials' });

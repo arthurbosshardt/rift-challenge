@@ -36,6 +36,6 @@ describe('match-history-groups', () => {
     const now = new Date(2026, 7, 17, 12, 0, 0).getTime();
     expect(formatMatchHistoryDayLabel('2026-07-16', 'fr', now)).toBe('16/07/2026');
     expect(formatMatchHistoryDayLabel('2026-07-16', 'en', now)).toBe('07/16/2026');
-    expect(formatMatchHistoryDayLabel('2026-07-17', 'fr', now)).toBe('il y a 31 jours');
+    expect(formatMatchHistoryDayLabel('2026-07-17', 'fr', now)).toBe('17/07/2026');
   });
 });

@@ -284,8 +284,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateSchedule(
@@ -313,14 +311,8 @@ class ChallengeServiceTest {
                 false
         );
         UUID challengeId = challenge.getId();
-        ChallengeParticipant participant = ChallengeParticipant.create(
-                challengeId,
-                new com.riftchallenge.riot.dto.RiotAccountDto("puuid-1", "PlayerOne", "EUW")
-        );
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(participant));
-        when(progressService.buildPreviewProgress(any())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateSchedule(
@@ -348,8 +340,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateVisibility(
@@ -377,8 +367,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateName(challengeId, ownerId, new UpdateChallengeNameRequest("New name"));
@@ -404,8 +392,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateChallenge(
@@ -524,8 +510,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
@@ -550,8 +534,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
@@ -576,8 +558,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
@@ -625,8 +605,6 @@ class ChallengeServiceTest {
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateEndAt(challengeId, ownerId, new UpdateChallengeEndRequest(newEnd));
@@ -653,8 +631,6 @@ class ChallengeServiceTest {
 
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(challengeId)).thenReturn(Optional.of(recentRefresh));
 
         var response = challengeService.updateEndAt(challengeId, ownerId, new UpdateChallengeEndRequest(newEnd));
