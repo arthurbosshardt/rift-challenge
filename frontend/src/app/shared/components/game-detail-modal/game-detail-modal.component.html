@@ -6,7 +6,7 @@
       </h2>
       <div class="game-detail__match-info">
         <span class="game-detail__mode">
-          {{ game().queueType || 'Ranked Solo' }}
+          {{ game().queueType || ('game.rankedSolo' | t) }}
         </span>
         @if (game().duration; as duration) {
           <span class="game-detail__duration">
@@ -78,7 +78,7 @@
         <!-- Blue Team -->
         <div class="team team--blue">
           <div class="team__header">
-            <div class="team__title">Blue Team</div>
+            <div class="team__title">{{ 'game.blueTeam' | t }}</div>
             <div class="team__score">
               <span class="team__kills">{{ game().blueTeam!.kills }} Kills</span>
               <span class="team__separator">•</span>
@@ -163,7 +163,7 @@
         <!-- Red Team -->
         <div class="team team--red">
           <div class="team__header">
-            <div class="team__title">Red Team</div>
+            <div class="team__title">{{ 'game.redTeam' | t }}</div>
             <div class="team__score">
               <span class="team__kills">{{ game().redTeam!.kills }} Kills</span>
               <span class="team__separator">•</span>

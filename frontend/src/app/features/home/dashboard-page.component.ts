@@ -72,7 +72,22 @@ export class DashboardPageComponent implements OnInit {
           games: [],
         });
       }
-      accountMap.get(accountId)!.games.push(game);
+      const group = accountMap.get(accountId)!;
+      group.games.push(game);
+      // Update account stats from the most recent (first) game, since games are sorted by date descending
+      if (game.currentTier !== undefined && game.currentTier !== null) {
+        group.currentTier = game.currentTier;
+        group.currentRank = game.currentRank;
+        group.currentLp = game.currentLp;
+      }
+      if (game.wins !== undefined && game.losses !== undefined) {
+        group.wins = game.wins;
+        group.losses = game.losses;
+        group.winRate = game.winRate;
+      }
+      if (game.profileIconId) {
+        group.profileIconId = game.profileIconId;
+      }
     });
 
     return Array.from(accountMap.values());
