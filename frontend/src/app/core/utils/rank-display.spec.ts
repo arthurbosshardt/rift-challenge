@@ -20,6 +20,11 @@ describe('rank-display', () => {
     expect(formatRankLabel('CHALLENGER', null, 1234)).toBe('Challenger · 1234 LP');
   });
 
+  it('omits LP when includeLp is false', () => {
+    expect(formatRankLabel('DIAMOND', 'IV', 0, 'fr', false)).toBe('Diamant IV');
+    expect(formatRankLabel('CHALLENGER', null, 1234, 'en', false)).toBe('Challenger');
+  });
+
   it('formats duration countdown with days', () => {
     const now = Date.parse('2026-08-16T10:00:00.000Z');
     const target = '2026-08-18T10:30:00.000Z';

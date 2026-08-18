@@ -17,7 +17,7 @@ describe('i18n translations', () => {
   });
 
   it('interpolates named placeholders', () => {
-    expect(interpolate('{name} played SoloQ', { name: 'Tanor#7154' })).toBe('Tanor#7154 played SoloQ');
+    expect(interpolate('{name} played SoloQ', { name: 'JohnDoe#EUW' })).toBe('JohnDoe#EUW played SoloQ');
   });
 
   it('keeps French and English keys in sync', () => {

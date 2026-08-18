@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { LeaderboardSkeletonComponent } from '../leaderboard-skeleton/leaderboard-skeleton.component';
-import { LeaderboardSortControlsComponent } from '../leaderboard-sort-controls/leaderboard-sort-controls.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 @Component({
   selector: 'app-challenge-detail-skeleton',
-  imports: [LeaderboardSkeletonComponent, LeaderboardSortControlsComponent],
+  imports: [LeaderboardSkeletonComponent, SkeletonComponent],
   templateUrl: './challenge-detail-skeleton.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './challenge-detail-skeleton.component.scss',

@@ -53,6 +53,7 @@ export function formatRankLabel(
   rank: string | null | undefined,
   lp: number,
   locale: 'fr' | 'en' = 'fr',
+  includeLp = true,
 ): string {
   if (!tier) {
     return locale === 'en' ? 'Unranked' : 'Non classé';
@@ -60,11 +61,12 @@ export function formatRankLabel(
 
   const labeledTier = tierLabel(tier, locale);
   if (HIGH_TIERS.has(tier.toUpperCase())) {
-    return `${labeledTier} · ${lp} LP`;
+    return includeLp ? `${labeledTier} · ${lp} LP` : labeledTier;
   }
 
   const division = rank ? ` ${rank}` : '';
-  return `${labeledTier}${division} · ${lp} LP`;
+  const rankLabel = `${labeledTier}${division}`;
+  return includeLp ? `${rankLabel} · ${lp} LP` : rankLabel;
 }
 
 export function formatDurationCountdown(

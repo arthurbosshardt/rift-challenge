@@ -39,7 +39,8 @@
           </button>
         } @else {
           <button type="button" class="linkish shell__login-desktop" (click)="authModal.open()">
-            {{ 'nav.login' | t }}
+            <app-nav-icon name="login" />
+            <span>{{ 'nav.login' | t }}</span>
           </button>
         }
 
@@ -135,6 +136,7 @@
                 </button>
               } @else {
                 <button type="button" role="menuitem" class="user-menu__item user-menu__item--mobile-nav" (click)="openLoginFromMenu()">
+                  <app-nav-icon name="login" />
                   <span>{{ 'nav.login' | t }}</span>
                 </button>
               }

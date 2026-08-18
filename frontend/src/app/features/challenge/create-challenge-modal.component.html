@@ -7,6 +7,11 @@
     (click)="close()"
   >
     <section class="modal-panel modal-panel--create create-challenge-modal" (click)="$event.stopPropagation()">
+      @if (loading()) {
+        <div class="modal-saving-overlay" aria-live="polite" aria-busy="true">
+          <app-loader [label]="'create.creating' | t" [centered]="false" />
+        </div>
+      }
       <button
         type="button"
         class="create-challenge-modal__close"
@@ -34,137 +39,88 @@
         </h2>
       </header>
 
-      <form class="challenge-form" (ngSubmit)="submit()">
-        <label [class.challenge-form__field--invalid]="isInvalid('name')">
-          <span class="field-label">
-            {{ 'create.name' | t }}
-            <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-          </span>
-          <input
-            name="name"
-            [(ngModel)]="name"
-            required
-            maxlength="120"
-            [placeholder]="'create.namePlaceholder' | t"
-            [class.challenge-form__control--invalid]="isInvalid('name')"
-            [attr.aria-invalid]="isInvalid('name')"
-            (ngModelChange)="clearInvalid('name')"
-          />
-          @if (fieldError('name'); as message) {
-            <span class="field-error" role="alert">{{ message }}</span>
-          }
-        </label>
-
-        <label>
-          <span class="field-label">
-            {{ 'create.type' | t }}
-            <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-          </span>
-          <select name="type" [(ngModel)]="type" required>
-            <option value="SOLOQ">{{ 'create.soloq' | t }}</option>
-            <option value="DUOQ">{{ 'create.duoq' | t }}</option>
-          </select>
-        </label>
-
-        <div class="challenge-form__schedule">
+      <form class="create-challenge-modal__main-form" (ngSubmit)="submit()">
+        <section class="create-challenge-modal__meta">
           <section
             class="challenge-form__schedule-block"
-            [class.challenge-form__schedule-block--invalid]="isInvalid('startDate')"
-            aria-labelledby="create-challenge-start-title"
+            [class.challenge-form__schedule-block--invalid]="isNameInvalid('name')"
+            aria-labelledby="create-challenge-name-title"
           >
-            <h3 id="create-challenge-start-title" class="challenge-form__schedule-title">
-              {{ 'create.startLegend' | t }}
+            <h3 id="create-challenge-name-title" class="challenge-form__schedule-title">
+              {{ 'create.name' | t }}
               <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
             </h3>
-            <div class="challenge-form__datetime-row">
-              <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isInvalid('startDate')">
-                {{ 'create.date' | t }}
-                <input
-                  name="startDate"
-                  type="date"
-                  [(ngModel)]="startDate"
-                  required
-                  [class.challenge-form__control--invalid]="isInvalid('startDate')"
-                  [attr.aria-invalid]="isInvalid('startDate')"
-                  (ngModelChange)="clearInvalid('startDate')"
-                />
-              </label>
-              <label class="challenge-form__datetime-field">
-                {{ 'create.hour' | t }}
-                <select name="startHour" [(ngModel)]="startHour" required>
-                  @for (hour of hourOptions; track hour) {
-                    <option [ngValue]="hour">{{ hour }}h</option>
-                  }
-                </select>
-              </label>
-            </div>
-            @if (fieldError('startDate'); as message) {
-              <span class="field-error" role="alert">{{ message }}</span>
-            }
-          </section>
-
-          <section
-            class="challenge-form__schedule-block"
-            [class.challenge-form__schedule-block--invalid]="isInvalid('endDate')"
-            aria-labelledby="create-challenge-end-title"
-          >
-            <h3 id="create-challenge-end-title" class="challenge-form__schedule-title">
-              {{ 'create.endLegend' | t }}
-              <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-            </h3>
-
-            <div class="end-mode" role="radiogroup" [attr.aria-label]="'create.endMode' | t">
-              <label class="end-mode__option">
-                <input name="endMode" type="radio" value="duration" [(ngModel)]="endMode" (ngModelChange)="clearInvalid('endDate')" />
-                <span>{{ 'create.endByDuration' | t }}</span>
-              </label>
-              <label class="end-mode__option">
-                <input name="endMode" type="radio" value="date" [(ngModel)]="endMode" (ngModelChange)="clearInvalid('endDate')" />
-                <span>{{ 'create.endByDate' | t }}</span>
-              </label>
-            </div>
-
-            @if (endMode === 'duration') {
-              <label class="challenge-form__schedule-field">
-                {{ 'create.duration' | t }}
-                <select name="durationDays" [(ngModel)]="durationDays" required>
-                  @for (option of durationOptions; track option.days) {
-                    <option [ngValue]="option.days">{{ option.labelKey | t }}</option>
-                  }
-                </select>
-              </label>
-            } @else {
-              <div class="challenge-form__datetime-row">
-                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isInvalid('endDate')">
-                  {{ 'create.date' | t }}
-                  <input
-                    name="endDate"
-                    type="date"
-                    [(ngModel)]="endDate"
-                    required
-                    [class.challenge-form__control--invalid]="isInvalid('endDate')"
-                    [attr.aria-invalid]="isInvalid('endDate')"
-                    (ngModelChange)="clearInvalid('endDate')"
-                  />
-                </label>
-                <label class="challenge-form__datetime-field">
-                  {{ 'create.hour' | t }}
-                  <select name="endHour" [(ngModel)]="endHour" required>
-                    @for (hour of hourOptions; track hour) {
-                      <option [ngValue]="hour">{{ hour }}h</option>
-                    }
-                  </select>
-                </label>
-              </div>
-              @if (fieldError('endDate'); as message) {
+            <label
+              class="challenge-form__schedule-field"
+              [class.challenge-form__field--invalid]="isNameInvalid('name')"
+            >
+              <input
+                name="challengeName"
+                type="text"
+                [(ngModel)]="nameInput"
+                maxlength="120"
+                [placeholder]="'create.namePlaceholder' | t"
+                [class.challenge-form__control--invalid]="isNameInvalid('name')"
+                [attr.aria-invalid]="isNameInvalid('name')"
+                (ngModelChange)="clearNameInvalid('name')"
+                [disabled]="loading()"
+              />
+              @if (nameFieldError('name'); as message) {
                 <span class="field-error" role="alert">{{ message }}</span>
               }
-            }
+            </label>
           </section>
-        </div>
 
-        <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
-            <div class="visibility-switch__label" [class.visibility-switch__label--active]="!isPublic">
+          <div class="type-switch" role="group" [attr.aria-label]="'create.type' | t">
+            <div class="type-switch__label" [class.type-switch__label--active]="type === 'SOLOQ'">
+              <svg class="type-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{{ 'create.soloq' | t }}</span>
+            </div>
+
+            <button
+              type="button"
+              class="type-switch__toggle"
+              role="switch"
+              [attr.aria-checked]="type === 'DUOQ'"
+              [class.type-switch__toggle--duoq]="type === 'DUOQ'"
+              [disabled]="loading()"
+              (click)="toggleType()"
+            >
+              @if (type === 'SOLOQ') {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    fill="currentColor"
+                  />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                    fill="currentColor"
+                  />
+                </svg>
+              }
+            </button>
+
+            <div class="type-switch__label" [class.type-switch__label--active]="type === 'DUOQ'">
+              <svg class="type-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{{ 'create.duoq' | t }}</span>
+            </div>
+          </div>
+
+          <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
+            <div class="visibility-switch__label" [class.visibility-switch__label--active]="!isPublicInput">
               <svg class="visibility-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
@@ -172,43 +128,44 @@
                 />
               </svg>
               <span>{{ 'create.private' | t }}</span>
+              <button
+                type="button"
+                class="visibility-switch__info"
+                [attr.aria-label]="'create.privateInfoAria' | t"
+                (click)="$event.stopPropagation()"
+              >
+                i
+                <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.privateHint' | t }}</span>
+              </button>
+            </div>
+
             <button
               type="button"
-              class="visibility-switch__info"
-              [attr.aria-label]="'create.privateInfoAria' | t"
-              (click)="$event.stopPropagation()"
+              class="visibility-switch__toggle"
+              role="switch"
+              [attr.aria-checked]="isPublicInput"
+              [class.visibility-switch__toggle--public]="isPublicInput"
+              [disabled]="loading()"
+              (click)="toggleVisibility()"
             >
-              i
-              <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.privateHint' | t }}</span>
+              @if (isPublicInput) {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
+                    fill="currentColor"
+                  />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
+                    fill="currentColor"
+                  />
+                </svg>
+              }
             </button>
-          </div>
 
-          <button
-            type="button"
-            class="visibility-switch__toggle"
-            role="switch"
-            [attr.aria-checked]="isPublic"
-            [class.visibility-switch__toggle--public]="isPublic"
-            (click)="isPublic = !isPublic"
-          >
-            @if (isPublic) {
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
-                  fill="currentColor"
-                />
-              </svg>
-            } @else {
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
-                  fill="currentColor"
-                />
-              </svg>
-            }
-          </button>
-
-            <div class="visibility-switch__label" [class.visibility-switch__label--active]="isPublic">
+            <div class="visibility-switch__label" [class.visibility-switch__label--active]="isPublicInput">
               <svg class="visibility-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
@@ -216,30 +173,314 @@
                 />
               </svg>
               <span>{{ 'create.publicLabel' | t }}</span>
-            <button
-              type="button"
-              class="visibility-switch__info visibility-switch__info--end"
-              [attr.aria-label]="'create.publicInfoAria' | t"
-              (click)="$event.stopPropagation()"
-            >
-              i
-              <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.publicHint' | t }}</span>
-            </button>
+              <button
+                type="button"
+                class="visibility-switch__info visibility-switch__info--end"
+                [attr.aria-label]="'create.publicInfoAria' | t"
+                (click)="$event.stopPropagation()"
+              >
+                i
+                <span class="visibility-switch__tooltip" role="tooltip">{{ 'create.publicHint' | t }}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </section>
 
-        @if (error()) {
-          <p class="form-error" role="alert">{{ error() }}</p>
-        }
+        <section class="create-challenge-modal__section create-challenge-modal__section--schedule">
+          <div class="challenge-form__schedule challenge-form__schedule--columns">
+            <section
+              class="challenge-form__schedule-block"
+              [class.challenge-form__schedule-block--invalid]="isScheduleInvalid('startDate')"
+              aria-labelledby="create-challenge-start-title"
+            >
+              <h3 id="create-challenge-start-title" class="challenge-form__schedule-title">
+                {{ 'create.startLegend' | t }}
+                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+              </h3>
+              <div class="challenge-form__datetime-row">
+                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isScheduleInvalid('startDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="startDateInput"
+                    type="date"
+                    [(ngModel)]="startDateInput"
+                    required
+                    [disabled]="loading()"
+                    [class.challenge-form__control--invalid]="isScheduleInvalid('startDate')"
+                    [attr.aria-invalid]="isScheduleInvalid('startDate')"
+                    (ngModelChange)="clearScheduleInvalid('startDate')"
+                  />
+                </label>
+                <label class="challenge-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="startHourInput" [(ngModel)]="startHourInput" required [disabled]="loading()">
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (scheduleFieldError('startDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </section>
 
-        <div class="actions">
-          <button type="submit" [disabled]="loading()">
-            {{ loading() ? ('create.creating' | t) : ('create.submit' | t) }}
-          </button>
-          <button type="button" class="actions__cancel" [disabled]="loading()" (click)="close()">
-            {{ 'create.cancel' | t }}
-          </button>
-        </div>
+            <section
+              class="challenge-form__schedule-block"
+              [class.challenge-form__schedule-block--invalid]="isScheduleInvalid('endDate')"
+              aria-labelledby="create-challenge-end-title"
+            >
+              <h3 id="create-challenge-end-title" class="challenge-form__schedule-title">
+                {{ 'create.endLegend' | t }}
+                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+              </h3>
+              <div class="challenge-form__datetime-row">
+                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isScheduleInvalid('endDate')">
+                  {{ 'create.date' | t }}
+                  <input
+                    name="endDateInput"
+                    type="date"
+                    [(ngModel)]="endDateInput"
+                    required
+                    [disabled]="loading()"
+                    [class.challenge-form__control--invalid]="isScheduleInvalid('endDate')"
+                    [attr.aria-invalid]="isScheduleInvalid('endDate')"
+                    (ngModelChange)="clearScheduleInvalid('endDate')"
+                  />
+                </label>
+                <label class="challenge-form__datetime-field">
+                  {{ 'create.hour' | t }}
+                  <select name="endHourInput" [(ngModel)]="endHourInput" required [disabled]="loading()">
+                    @for (hour of hourOptions; track hour) {
+                      <option [ngValue]="hour">{{ hour }}h</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              @if (scheduleFieldError('endDate'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </section>
+          </div>
+        </section>
+
+        <section class="create-challenge-modal__section create-challenge-modal__section--participants">
+          <div class="create-challenge-modal__section-header">
+            <span class="create-challenge-modal__count">{{ entryCount() }} / {{ entryLimit() }}</span>
+            <h3>{{ type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</h3>
+          </div>
+
+          <div
+            class="create-challenge-modal__participants-scroll"
+            [class.challenge-form__participants-scroll--duo]="type === 'DUOQ'"
+          >
+            @if (entryCount() === 0) {
+              <p class="create-challenge-modal__empty">
+                {{ type === 'DUOQ' ? ('challenge.noDuos' | t) : ('challenge.noParticipants' | t) }}
+              </p>
+            } @else if (type === 'SOLOQ') {
+              <ul [class]="participantListClass()">
+                @for (participant of draftParticipants(); track participant.id) {
+                  <li class="create-challenge-modal__list-item">
+                    <app-player-identity
+                      [compact]="true"
+                      [gameName]="participant.gameName"
+                      [tagLine]="participant.tagLine"
+                      [riotId]="participant.riotId"
+                      [profileIconId]="participant.profileIconId"
+                      [tier]="participant.hasRankData ? participant.currentTier : null"
+                    />
+                    <button
+                      type="button"
+                      class="create-challenge-modal__action create-challenge-modal__action--remove"
+                      (click)="removeParticipant(participant)"
+                      [disabled]="loading()"
+                      [attr.aria-label]="'challenge.removeAria' | t:{ name: participant.riotId }"
+                      [attr.title]="'challenge.remove' | t"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                      </svg>
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <ul [class]="participantListClass()">
+                @for (duo of draftDuos(); track duo.id) {
+                  <li class="create-challenge-modal__list-item challenge-form__duo-list-item">
+                    <div class="challenge-form__duo-players">
+                      <div class="challenge-form__duo-player-block">
+                        <app-player-identity
+                          [compact]="true"
+                          [gameName]="duo.player1.gameName"
+                          [tagLine]="duo.player1.tagLine"
+                          [riotId]="duo.player1.riotId"
+                          [profileIconId]="duo.player1.profileIconId"
+                          [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                        />
+                      </div>
+                      <div class="challenge-form__duo-player-block">
+                        <app-player-identity
+                          [compact]="true"
+                          [gameName]="duo.player2.gameName"
+                          [tagLine]="duo.player2.tagLine"
+                          [riotId]="duo.player2.riotId"
+                          [profileIconId]="duo.player2.profileIconId"
+                          [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="create-challenge-modal__action create-challenge-modal__action--remove challenge-form__duo-list-action"
+                      (click)="removeDuo(duo)"
+                      [disabled]="loading()"
+                      [attr.aria-label]="'challenge.removeDuoAria' | t:{ name: duoLabel(duo) }"
+                      [attr.title]="'challenge.remove' | t"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                      </svg>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          @if (type === 'SOLOQ') {
+            <div
+              class="challenge-form create-challenge-modal__form challenge-form__schedule-block"
+              [class.challenge-form__schedule-block--invalid]="isParticipantInvalid('riotId')"
+              aria-labelledby="create-challenge-add-player-title"
+            >
+              <h3 id="create-challenge-add-player-title" class="challenge-form__schedule-title">
+                {{ 'challenge.addPlayer' | t }}
+              </h3>
+              <div class="create-challenge-modal__form-row create-challenge-modal__form-row--riot-id">
+                <label [class.challenge-form__field--invalid]="isParticipantInvalid('riotId')">
+                  <span class="field-label">
+                    {{ 'challenge.riotId' | t }}
+                    <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                  </span>
+                  <app-summoner-typeahead
+                    name="riotId"
+                    [value]="riotIdInput"
+                    (valueChange)="riotIdInput = $event; clearParticipantInvalid('riotId')"
+                    (selected)="applySummoner('solo', $event)"
+                    [placeholder]="'challenge.riotIdPlaceholder' | t"
+                    [disabled]="loading() || entryCount() >= entryLimit()"
+                    [invalid]="isParticipantInvalid('riotId')"
+                    [ariaInvalid]="isParticipantInvalid('riotId')"
+                  />
+                  @if (participantFieldError('riotId'); as message) {
+                    <span class="field-error" role="alert">{{ message }}</span>
+                  }
+                </label>
+                <button
+                  type="button"
+                  class="create-challenge-modal__action create-challenge-modal__action--add"
+                  [disabled]="loading() || entryCount() >= entryLimit()"
+                  [attr.aria-label]="'challenge.add' | t"
+                  [attr.title]="'challenge.add' | t"
+                  (click)="addParticipant()"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </div>
+              @if (participantFormError()) {
+                <p class="form-error" role="alert">{{ participantFormError() }}</p>
+              }
+            </div>
+          } @else {
+            <div
+              class="challenge-form create-challenge-modal__form challenge-form__schedule-block"
+              [class.challenge-form__schedule-block--invalid]="isParticipantInvalid('duoPlayer1RiotId') || isParticipantInvalid('duoPlayer2RiotId')"
+              aria-labelledby="create-challenge-add-duo-title"
+            >
+              <h3 id="create-challenge-add-duo-title" class="challenge-form__schedule-title">
+                {{ 'challenge.addDuo' | t }}
+              </h3>
+              <div class="create-challenge-modal__form-row create-challenge-modal__form-row--duo">
+                <div class="create-challenge-modal__duo-player">
+                  <h4 class="challenge-form__schedule-title">{{ 'challenge.duoPlayer1Title' | t }}</h4>
+                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1RiotId')">
+                    <span class="field-label">
+                      {{ 'challenge.riotId' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <app-summoner-typeahead
+                      name="duoPlayer1RiotId"
+                      [value]="duoPlayer1RiotIdInput"
+                      (valueChange)="duoPlayer1RiotIdInput = $event; clearParticipantInvalid('duoPlayer1RiotId')"
+                      (selected)="applySummoner('duo1', $event)"
+                      [placeholder]="'challenge.riotIdPlaceholder' | t"
+                      [disabled]="loading() || entryCount() >= entryLimit()"
+                      [invalid]="isParticipantInvalid('duoPlayer1RiotId')"
+                      [ariaInvalid]="isParticipantInvalid('duoPlayer1RiotId')"
+                    />
+                    @if (participantFieldError('duoPlayer1RiotId'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                </div>
+                <div class="create-challenge-modal__duo-player">
+                  <h4 class="challenge-form__schedule-title">{{ 'challenge.duoPlayer2Title' | t }}</h4>
+                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2RiotId')">
+                    <span class="field-label">
+                      {{ 'challenge.riotId' | t }}
+                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                    </span>
+                    <app-summoner-typeahead
+                      name="duoPlayer2RiotId"
+                      [value]="duoPlayer2RiotIdInput"
+                      (valueChange)="duoPlayer2RiotIdInput = $event; clearParticipantInvalid('duoPlayer2RiotId')"
+                      (selected)="applySummoner('duo2', $event)"
+                      [placeholder]="'challenge.riotIdPlaceholder' | t"
+                      [disabled]="loading() || entryCount() >= entryLimit()"
+                      [invalid]="isParticipantInvalid('duoPlayer2RiotId')"
+                      [ariaInvalid]="isParticipantInvalid('duoPlayer2RiotId')"
+                    />
+                    @if (participantFieldError('duoPlayer2RiotId'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  class="create-challenge-modal__action create-challenge-modal__action--add"
+                  [disabled]="loading() || entryCount() >= entryLimit()"
+                  [attr.aria-label]="'challenge.addDuoButton' | t"
+                  [attr.title]="'challenge.addDuoButton' | t"
+                  (click)="addDuo()"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </div>
+              @if (participantFormError()) {
+                <p class="form-error" role="alert">{{ participantFormError() }}</p>
+              }
+            </div>
+          }
+
+          @if (formError()) {
+            <p class="form-error" role="alert">{{ formError() }}</p>
+          }
+
+          <footer class="create-challenge-modal__footer">
+            <button type="button" class="create-challenge-modal__cancel" [disabled]="loading()" (click)="close()">
+              {{ 'create.cancel' | t }}
+            </button>
+            <button type="submit" [disabled]="loading()">
+              {{ loading() ? ('create.creating' | t) : ('create.submit' | t) }}
+            </button>
+          </footer>
+        </section>
       </form>
     </section>
   </div>

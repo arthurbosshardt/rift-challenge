@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.landing-guest-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.landing-btn {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.9375rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.landing-btn--primary {
+  background: var(--gold-a18);
+  border-color: var(--gold-a35);
+  color: var(--gold-bright);
+}
+
+.landing-btn--primary .nav-icon {
+  color: var(--gold-bright);
+}
+
+.landing-btn--primary:hover {
+  background: var(--gold-a20);
+}
+
+.landing-btn--secondary {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.landing-btn--secondary:hover {
+  background: var(--surface-hover);
+}
+
+.landing-btn--disabled,
+.landing-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+@media (min-width: 900px) {
+  .landing-guest-actions__buttons {
+    flex-wrap: wrap;
+  }
+
+  .landing-btn {
+    flex: 0 1 auto;
+  }
+}

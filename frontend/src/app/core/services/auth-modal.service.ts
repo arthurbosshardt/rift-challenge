@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-export type AuthModalMode = 'login' | 'signup';
+export type AuthModalMode = 'login' | 'signup' | 'forgot-password';
 
 export interface AuthModalOpenOptions {
   returnUrl?: string;

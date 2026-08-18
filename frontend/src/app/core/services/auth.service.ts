@@ -11,6 +11,7 @@ import {
   isSessionExpired,
   parseLastSeen,
 } from '../auth/session-ttl';
+import { authErrorToKey } from '../utils/auth-errors';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -135,7 +136,7 @@ export class AuthService {
       const { data, error } = await this.supabase.auth.exchangeCodeForSession(callbackUrl);
       if (error) {
         this.session.set(null);
-        return error.message;
+        return authErrorToKey(error) ?? error.message;
       }
       this.touchLastSeen();
       this.session.set(data.session);
@@ -209,7 +210,7 @@ export class AuthService {
         await this.loadProfile();
       }
     }
-    return error?.message ?? null;
+    return authErrorToKey(error) ?? error?.message ?? null;
   }
 
   async signUpWithEmail(email: string, password: string, username: string): Promise<string | null> {
@@ -221,7 +222,50 @@ export class AuthService {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    return error?.message ?? null;
+    return authErrorToKey(error) ?? error?.message ?? null;
+  }
+
+  async requestPasswordReset(email: string): Promise<string | null> {
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    return authErrorToKey(error) ?? error?.message ?? null;
+  }
+
+  async completePasswordRecoveryCallback(): Promise<string | null> {
+    await this.waitUntilReady();
+
+    const callbackUrl = window.location.href;
+    const hasRecoveryCode =
+      new URL(callbackUrl).searchParams.has('code') || callbackUrl.includes('access_token=');
+
+    if (hasRecoveryCode) {
+      const { data, error } = await this.supabase.auth.exchangeCodeForSession(callbackUrl);
+      if (error) {
+        this.session.set(null);
+        return authErrorToKey(error) ?? error.message;
+      }
+      this.touchLastSeen();
+      this.session.set(data.session);
+      window.history.replaceState({}, '', `${window.location.origin}/auth/reset-password`);
+      return null;
+    }
+
+    const { data } = await this.supabase.auth.getSession();
+    if (data.session) {
+      this.session.set(data.session);
+      return null;
+    }
+
+    return 'auth.resetLinkInvalid';
+  }
+
+  async updatePassword(newPassword: string): Promise<string | null> {
+    const { error } = await this.supabase.auth.updateUser({ password: newPassword });
+    if (!error) {
+      await this.loadProfile();
+    }
+    return authErrorToKey(error) ?? error?.message ?? null;
   }
 
   async signInWithGoogle(): Promise<string | null> {
@@ -234,7 +278,7 @@ export class AuthService {
       },
     });
     if (error) {
-      return error.message;
+      return authErrorToKey(error) ?? error.message;
     }
     if (!data.url) {
       return 'auth.googleStartError';

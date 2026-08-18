@@ -1,6 +1,68 @@
 @if (loading()) {
   <app-page-shell [title]="''">
-    <app-challenge-detail-skeleton [ariaLabel]="'home.loading' | t" />
+    @if (loadingPreview(); as preview) {
+      <header class="detail__heading">
+        <div class="detail__title-row">
+          <h1 class="detail__title" [style.--title-chars]="preview.name.length">
+            <app-challenge-badge
+              class="detail__type-badge"
+              size="title"
+              [kind]="challengeTypeBadgeKind(preview.type)"
+              [label]="typeLabel(preview.type)"
+            />
+            <span class="detail__title-text">{{ preview.name }}</span>
+          </h1>
+          <div class="detail__title-actions">
+            @if (preview.isPublic) {
+              <app-challenge-badge kind="public" [label]="'challenge.public' | t" />
+            } @else {
+              <app-challenge-badge kind="private" [label]="'challenge.private' | t" />
+            }
+          </div>
+        </div>
+
+        <dl class="detail__meta">
+          <div>
+            <dt>{{ 'challenge.start' | t }}</dt>
+            <dd>{{ preview.startAt | challengeDate:'compact' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'challenge.end' | t }}</dt>
+            <dd>
+              @if (preview.endAt) {
+                {{ preview.endAt | challengeDate:'compact' }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+        </dl>
+      </header>
+
+      <section class="detail">
+        <section class="participants">
+          <div class="participants__header">
+            <span class="participants__count">
+              {{ 'challenge.participantCountLabel' | t }}
+              {{ preview.entryCount }} / {{ previewEntryLimit(preview.type) }}
+            </span>
+          </div>
+
+          <div class="stats-panel">
+            <div class="stats-panel__content">
+              <div role="status" [attr.aria-label]="'home.loading' | t" aria-live="polite">
+                <app-leaderboard-skeleton
+                  [rowCount]="previewSkeletonRowCount(preview)"
+                  [duoMode]="preview.type === 'DUOQ'"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    } @else {
+      <app-challenge-detail-skeleton [ariaLabel]="'home.loading' | t" />
+    }
   </app-page-shell>
 } @else if (error()) {
   <app-page-shell [title]="''">
@@ -43,26 +105,28 @@
               </svg>
             </button>
           }
-          <button
-            type="button"
-            class="icon-button"
-            [class.icon-button--copied]="copied()"
-            (click)="copyShareLink()"
-            [attr.aria-label]="copied() ? ('challenge.copied' | t) : ('challenge.copy' | t)"
-            [attr.title]="copied() ? ('challenge.copied' | t) : ('challenge.copy' | t)"
-          >
-            @if (copied()) {
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-              </svg>
-            } @else {
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
-                />
-              </svg>
-            }
-          </button>
+          @if (currentChallenge.isPublic) {
+            <button
+              type="button"
+              class="icon-button"
+              [class.icon-button--copied]="copied()"
+              (click)="copyShareLink()"
+              [attr.aria-label]="copied() ? ('challenge.copied' | t) : ('challenge.copy' | t)"
+              [attr.title]="copied() ? ('challenge.copied' | t) : ('challenge.copy' | t)"
+            >
+              @if (copied()) {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+                  />
+                </svg>
+              }
+            </button>
+          }
           @if (currentChallenge.isOwner) {
             <button
               type="button"

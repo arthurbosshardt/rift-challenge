@@ -13,6 +13,7 @@ import { PageShellComponent } from '../../shared/components/page-shell/page-shel
 import { ChallengeCardComponent } from '../../shared/components/challenge-card/challenge-card.component';
 
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
+import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 
@@ -34,7 +35,7 @@ import {
 
   selector: 'app-public-challenges-page',
 
-  imports: [PageShellComponent, ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe],
+  imports: [PageShellComponent, ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe, NavIconComponent],
 
   templateUrl: './public-challenges-page.component.html',
 

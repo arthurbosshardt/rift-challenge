@@ -147,18 +147,27 @@ h4.challenge-form__schedule-title {
   color: var(--text-muted);
   font-size: 0.875rem;
   font-weight: 500;
-  transition: color 0.15s ease;
+  transition:
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    font-weight 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .visibility-switch__label-icon {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .visibility-switch__label--active {
   color: var(--gold);
   font-weight: 600;
+  transform: scale(1.02);
+}
+
+.visibility-switch__label--active .visibility-switch__label-icon {
+  transform: scale(1.08);
 }
 
 .visibility-switch__info {
@@ -246,9 +255,10 @@ h4.challenge-form__schedule-title {
   color: var(--text-muted);
   flex-shrink: 0;
   transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+    background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
 }
 
 .visibility-switch__toggle--public {
@@ -260,6 +270,11 @@ h4.challenge-form__schedule-title {
 .visibility-switch__toggle svg {
   width: 1.125rem;
   height: 1.125rem;
+  animation: switch-icon-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.visibility-switch__toggle:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .visibility-switch__toggle:hover:not(:disabled) {
@@ -271,9 +286,224 @@ h4.challenge-form__schedule-title {
   cursor: not-allowed;
 }
 
+.type-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.type-switch__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    font-weight 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.type-switch__label-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.type-switch__label:first-child.type-switch__label--active {
+  color: var(--gold);
+  font-weight: 600;
+  transform: scale(1.02);
+}
+
+.type-switch__label:first-child.type-switch__label--active .type-switch__label-icon {
+  transform: scale(1.08);
+}
+
+.type-switch__label:last-child.type-switch__label--active {
+  color: #9b7bd4;
+  font-weight: 600;
+  transform: scale(1.02);
+}
+
+.type-switch__label:last-child.type-switch__label--active .type-switch__label-icon {
+  transform: scale(1.08);
+}
+
+.type-switch__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  color: var(--gold);
+  flex-shrink: 0;
+  transition:
+    background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
+}
+
+.type-switch__toggle--duoq {
+  color: #9b7bd4;
+  background: color-mix(in srgb, #9b7bd4 12%, transparent);
+  border-color: color-mix(in srgb, #9b7bd4 35%, transparent);
+}
+
+.type-switch__toggle svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  animation: switch-icon-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.type-switch__toggle:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.type-switch__toggle:hover:not(:disabled) {
+  border-color: var(--gold);
+}
+
+.type-switch__toggle--duoq:hover:not(:disabled) {
+  border-color: #9b7bd4;
+}
+
+.type-switch__toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.challenge-form__participants-scroll--duo {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: min(11rem, 32dvh);
+  -webkit-overflow-scrolling: touch;
+}
+
+.challenge-form__duo-list {
+  display: grid;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.challenge-form__duo-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.challenge-form__duo-players {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: stretch;
+  gap: 0.375rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.challenge-form__duo-player-block {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.challenge-form__duo-player-block .player-identity {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.challenge-form__duo-player-block .player-identity:has(.player-avatar__rank-badge) app-player-avatar,
+.challenge-form__duo-player-block .player-identity--compact:has(.player-avatar__rank-badge) app-player-avatar {
+  margin-right: 0;
+}
+
+.challenge-form__duo-player-block .player-identity__text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.challenge-form__duo-player-block .player-identity__name,
+.challenge-form__duo-player-block .player-identity__riot-id,
+.challenge-form__duo-player-block .player-identity__rank-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-form__duo-player-block .player-identity__name {
+  font-size: 0.8125rem;
+}
+
+.challenge-form__duo-player-block .player-identity__riot-id,
+.challenge-form__duo-player-block .player-identity__rank-label {
+  font-size: 0.75rem;
+}
+
+.challenge-form__duo-list-action {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+}
+
 @media (max-width: 899px) {
   .visibility-switch {
     flex-wrap: wrap;
     gap: 0.625rem;
+  }
+
+  .type-switch {
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+}
+
+@keyframes switch-icon-pop {
+  from {
+    transform: scale(0.55) rotate(-10deg);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .type-switch__label,
+  .type-switch__label-icon,
+  .type-switch__toggle,
+  .visibility-switch__label,
+  .visibility-switch__label-icon,
+  .visibility-switch__toggle {
+    transition: none;
+  }
+
+  .type-switch__toggle svg,
+  .visibility-switch__toggle svg {
+    animation: none;
   }
 }

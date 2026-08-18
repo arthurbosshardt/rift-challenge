@@ -6,9 +6,9 @@ export class EditChallengeModalService {
   readonly isOpen = signal(false);
   readonly challenge = signal<ChallengeDetail | null>(null);
 
-  private onUpdated: (() => void) | null = null;
+  private onUpdated: ((challenge: ChallengeDetail) => void) | null = null;
 
-  open(challenge: ChallengeDetail, onUpdated: () => void): void {
+  open(challenge: ChallengeDetail, onUpdated: (challenge: ChallengeDetail) => void): void {
     this.challenge.set(challenge);
     this.onUpdated = onUpdated;
     this.isOpen.set(true);
@@ -20,7 +20,7 @@ export class EditChallengeModalService {
     this.onUpdated = null;
   }
 
-  notifyUpdated(): void {
-    this.onUpdated?.();
+  notifyUpdated(challenge: ChallengeDetail): void {
+    this.onUpdated?.(challenge);
   }
 }

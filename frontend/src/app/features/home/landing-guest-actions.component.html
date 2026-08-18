@@ -1,0 +1,22 @@
+<div class="landing-guest-actions__buttons">
+  <a
+    class="landing-btn landing-btn--primary"
+    [class.landing-btn--disabled]="!backend.ready()"
+    [routerLink]="backend.ready() ? '/public-challenges' : null"
+    [attr.aria-disabled]="!backend.ready()"
+    [attr.tabindex]="backend.ready() ? 0 : -1"
+    (click)="backend.ready() || $event.preventDefault()"
+  >
+    <app-nav-icon name="public-challenges" />
+    <span>{{ 'landing.browsePublic' | t }}</span>
+  </a>
+  <button
+    type="button"
+    class="landing-btn landing-btn--secondary"
+    [disabled]="!backend.ready()"
+    (click)="authModal.open()"
+  >
+    <app-nav-icon name="login" />
+    <span>{{ 'landing.getStarted' | t }}</span>
+  </button>
+</div>

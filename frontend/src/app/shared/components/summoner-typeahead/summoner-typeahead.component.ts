@@ -63,7 +63,9 @@ export class SummonerTypeaheadComponent {
 
   protected onInput(value: string): void {
     this.valueChange.emit(value);
-    this.queries.next(value);
+    const hashIndex = value.indexOf('#');
+    const query = hashIndex > 0 ? value.slice(0, hashIndex).trim() : value;
+    this.queries.next(query);
   }
 
   protected pick(suggestion: SummonerSuggestion): void {

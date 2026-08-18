@@ -13,7 +13,7 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { EditChallengeModalService } from '../../core/services/edit-challenge-modal.service';
 import { DuoProgress, ParticipantProgress, ChallengeDetail } from '../../core/models/challenge.models';
 import { buildLocalStartAtIso, splitLocalDateHour } from '../../core/utils/challenge-date';
-import { normalizeChallengeDetail } from '../../core/utils/challenge-detail';
+import { normalizeChallengeDetail, mergeChallengeMetadataUpdate } from '../../core/utils/challenge-detail';
 import { mapParticipantError } from '../../core/utils/challenge-participant-errors';
 import { isChallengeNameTakenError, mapChallengeNameError } from '../../core/utils/challenge-name-errors';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -25,18 +25,13 @@ import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
-import { buildRiotId, normalizeGameName, normalizeTagLine } from '../../core/utils/riot-id';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
+import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
 
 type ScheduleInvalidField = 'startDate' | 'endDate';
 type NameInvalidField = 'name';
 
-type ParticipantInvalidField =
-  | 'gameName'
-  | 'tagLine'
-  | 'duoPlayer1GameName'
-  | 'duoPlayer1TagLine'
-  | 'duoPlayer2GameName'
-  | 'duoPlayer2TagLine';
+type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId';
 
 type ScheduleValidationResult =
   | {
@@ -53,7 +48,7 @@ type ScheduleValidationResult =
 
 @Component({
   selector: 'app-edit-challenge-modal',
-  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent],
+  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent, LoaderComponent],
   templateUrl: './edit-challenge-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './edit-challenge-modal.component.scss',
@@ -71,12 +66,9 @@ export class EditChallengeModalComponent {
   protected nameInput = '';
   protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
 
-  protected gameNameInput = '';
-  protected tagLineInput = '';
-  protected duoPlayer1GameName = '';
-  protected duoPlayer1TagLine = '';
-  protected duoPlayer2GameName = '';
-  protected duoPlayer2TagLine = '';
+  protected riotIdInput = '';
+  protected duoPlayer1RiotIdInput = '';
+  protected duoPlayer2RiotIdInput = '';
   protected isPublicInput = false;
 
   protected readonly saving = signal(false);
@@ -159,6 +151,10 @@ export class EditChallengeModalComponent {
   }
 
   protected participantListClass(challenge: ChallengeDetail): string {
+    if (challenge.type === 'DUOQ') {
+      return 'edit-challenge-modal__list challenge-form__duo-list';
+    }
+
     const columns = this.participantListColumns(challenge);
     return columns === 1
       ? 'edit-challenge-modal__list'
@@ -315,14 +311,17 @@ export class EditChallengeModalComponent {
       if (rosterChanged) {
         updated = await firstValueFrom(this.challengeApi.getChallengeByShareSlug(updated.shareSlug, true));
       }
-      const normalized = normalizeChallengeDetail(updated);
+      const previous = normalizeChallengeDetail(challenge);
+      const normalized = rosterChanged
+        ? normalizeChallengeDetail(updated)
+        : mergeChallengeMetadataUpdate(previous, normalizeChallengeDetail(updated));
       this.editChallengeModal.challenge.set(normalized);
       this.hydrateDrafts(normalized);
       this.syncScheduleInputs(normalized);
       this.nameInput = normalized.name;
       this.isPublicInput = normalized.isPublic;
       this.resetParticipantInputs();
-      this.editChallengeModal.notifyUpdated();
+      this.editChallengeModal.notifyUpdated(normalized);
       this.close();
     } catch (err) {
       if (err instanceof HttpErrorResponse && isChallengeNameTakenError(err)) {
@@ -376,19 +375,25 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    this.gameNameInput = normalizeGameName(this.gameNameInput);
-    this.tagLineInput = normalizeTagLine(this.tagLineInput);
+    this.riotIdInput = this.riotIdInput.trim();
 
     if (!this.validateSoloParticipantFields()) {
       return;
     }
 
-    const riotId = buildRiotId(this.gameNameInput, this.tagLineInput);
+    const parsed = parseRiotId(this.riotIdInput);
+    if (!parsed) {
+      this.participantInvalidFields.set(new Set(['riotId']));
+      this.participantFieldErrors.set({ riotId: this.i18n.t('errors.riotIdFormat') });
+      this.participantFormError.set(this.i18n.t('errors.riotIdFormat'));
+      return;
+    }
+
+    const riotId = buildRiotId(parsed.gameName, parsed.tagLine);
     if (!riotId) {
-      this.participantInvalidFields.set(new Set(['gameName', 'tagLine']));
+      this.participantInvalidFields.set(new Set(['riotId']));
       this.participantFieldErrors.set({
-        gameName: this.i18n.t('create.fieldRequired'),
-        tagLine: this.i18n.t('create.fieldRequired'),
+        riotId: this.i18n.t('errors.riotIdRequired'),
       });
       this.participantFormError.set(this.i18n.t('errors.riotIdRequired'));
       return;
@@ -399,7 +404,7 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    this.draftParticipants.update((list) => [...list, this.toPendingParticipant(this.gameNameInput, this.tagLineInput)]);
+    this.draftParticipants.update((list) => [...list, this.toPendingParticipant(parsed.gameName, parsed.tagLine)]);
     this.resetParticipantInputs();
     this.clearParticipantValidation();
   }
@@ -410,17 +415,35 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    this.duoPlayer1GameName = normalizeGameName(this.duoPlayer1GameName);
-    this.duoPlayer1TagLine = normalizeTagLine(this.duoPlayer1TagLine);
-    this.duoPlayer2GameName = normalizeGameName(this.duoPlayer2GameName);
-    this.duoPlayer2TagLine = normalizeTagLine(this.duoPlayer2TagLine);
+    this.duoPlayer1RiotIdInput = this.duoPlayer1RiotIdInput.trim();
+    this.duoPlayer2RiotIdInput = this.duoPlayer2RiotIdInput.trim();
 
     if (!this.validateDuoParticipantFields()) {
       return;
     }
 
-    const player1RiotId = buildRiotId(this.duoPlayer1GameName, this.duoPlayer1TagLine);
-    const player2RiotId = buildRiotId(this.duoPlayer2GameName, this.duoPlayer2TagLine);
+    const player1 = parseRiotId(this.duoPlayer1RiotIdInput);
+    const player2 = parseRiotId(this.duoPlayer2RiotIdInput);
+    if (!player1 || !player2) {
+      const invalidFields = new Set<ParticipantInvalidField>();
+      const fieldErrors: Partial<Record<ParticipantInvalidField, string>> = {};
+      const formatError = this.i18n.t('errors.riotIdFormat');
+      if (!player1) {
+        invalidFields.add('duoPlayer1RiotId');
+        fieldErrors.duoPlayer1RiotId = formatError;
+      }
+      if (!player2) {
+        invalidFields.add('duoPlayer2RiotId');
+        fieldErrors.duoPlayer2RiotId = formatError;
+      }
+      this.participantInvalidFields.set(invalidFields);
+      this.participantFieldErrors.set(fieldErrors);
+      this.participantFormError.set(formatError);
+      return;
+    }
+
+    const player1RiotId = buildRiotId(player1.gameName, player1.tagLine);
+    const player2RiotId = buildRiotId(player2.gameName, player2.tagLine);
     if (!player1RiotId || !player2RiotId) {
       this.participantFormError.set(this.i18n.t('errors.riotIdRequired'));
       return;
@@ -436,12 +459,7 @@ export class EditChallengeModalComponent {
 
     this.draftDuos.update((list) => [
       ...list,
-      this.toPendingDuo(
-        this.duoPlayer1GameName,
-        this.duoPlayer1TagLine,
-        this.duoPlayer2GameName,
-        this.duoPlayer2TagLine,
-      ),
+      this.toPendingDuo(player1.gameName, player1.tagLine, player2.gameName, player2.tagLine),
     ]);
     this.resetParticipantInputs();
     this.clearParticipantValidation();
@@ -498,12 +516,9 @@ export class EditChallengeModalComponent {
   }
 
   private resetParticipantInputs(): void {
-    this.gameNameInput = '';
-    this.tagLineInput = '';
-    this.duoPlayer1GameName = '';
-    this.duoPlayer1TagLine = '';
-    this.duoPlayer2GameName = '';
-    this.duoPlayer2TagLine = '';
+    this.riotIdInput = '';
+    this.duoPlayer1RiotIdInput = '';
+    this.duoPlayer2RiotIdInput = '';
   }
 
   private hydrateDrafts(challenge: ChallengeDetail): void {
@@ -515,30 +530,28 @@ export class EditChallengeModalComponent {
 
   protected applySummoner(target: 'solo' | 'duo1' | 'duo2', suggestion: SummonerSuggestion): void {
     if (target === 'solo') {
-      this.gameNameInput = suggestion.gameName;
-      this.tagLineInput = suggestion.tagLine;
-      this.clearParticipantInvalid('gameName');
-      this.clearParticipantInvalid('tagLine');
+      this.riotIdInput = suggestion.riotId;
+      this.clearParticipantInvalid('riotId');
       return;
     }
     if (target === 'duo1') {
-      this.duoPlayer1GameName = suggestion.gameName;
-      this.duoPlayer1TagLine = suggestion.tagLine;
-      this.clearParticipantInvalid('duoPlayer1GameName');
-      this.clearParticipantInvalid('duoPlayer1TagLine');
+      this.duoPlayer1RiotIdInput = suggestion.riotId;
+      this.clearParticipantInvalid('duoPlayer1RiotId');
       return;
     }
-    this.duoPlayer2GameName = suggestion.gameName;
-    this.duoPlayer2TagLine = suggestion.tagLine;
-    this.clearParticipantInvalid('duoPlayer2GameName');
-    this.clearParticipantInvalid('duoPlayer2TagLine');
+    this.duoPlayer2RiotIdInput = suggestion.riotId;
+    this.clearParticipantInvalid('duoPlayer2RiotId');
   }
 
   private flushCurrentInputsToDraft(challenge: ChallengeDetail): void {
-    if (challenge.type === 'SOLOQ' && this.gameNameInput.trim() && this.tagLineInput.trim()) {
+    if (challenge.type === 'SOLOQ' && this.riotIdInput.trim()) {
       this.addParticipant();
     }
-    if (challenge.type === 'DUOQ' && this.duoPlayer1GameName.trim() && this.duoPlayer2GameName.trim()) {
+    if (
+      challenge.type === 'DUOQ'
+      && this.duoPlayer1RiotIdInput.trim()
+      && this.duoPlayer2RiotIdInput.trim()
+    ) {
       this.addDuo();
     }
   }
@@ -554,12 +567,10 @@ export class EditChallengeModalComponent {
           await firstValueFrom(this.summonerSearch.resolve(participant.riotId));
         } catch (err) {
           this.draftParticipants.update((list) => list.filter((item) => item.id !== participant.id));
-          this.gameNameInput = participant.gameName;
-          this.tagLineInput = participant.tagLine;
-          this.participantInvalidFields.set(new Set(['gameName', 'tagLine']));
+          this.riotIdInput = participant.riotId;
+          this.participantInvalidFields.set(new Set(['riotId']));
           this.participantFieldErrors.set({
-            gameName: this.i18n.t('errors.riotNotFound'),
-            tagLine: this.i18n.t('errors.riotNotFound'),
+            riotId: this.i18n.t('errors.riotNotFound'),
           });
           throw err;
         }
@@ -572,14 +583,11 @@ export class EditChallengeModalComponent {
         await firstValueFrom(this.summonerSearch.resolve(duo.player1.riotId));
       } catch (err) {
         this.draftDuos.update((list) => list.filter((item) => item.id !== duo.id));
-        this.duoPlayer1GameName = duo.player1.gameName;
-        this.duoPlayer1TagLine = duo.player1.tagLine;
-        this.duoPlayer2GameName = duo.player2.gameName;
-        this.duoPlayer2TagLine = duo.player2.tagLine;
-        this.participantInvalidFields.set(new Set(['duoPlayer1GameName', 'duoPlayer1TagLine']));
+        this.duoPlayer1RiotIdInput = duo.player1.riotId;
+        this.duoPlayer2RiotIdInput = duo.player2.riotId;
+        this.participantInvalidFields.set(new Set(['duoPlayer1RiotId']));
         this.participantFieldErrors.set({
-          duoPlayer1GameName: this.i18n.t('errors.riotNotFound'),
-          duoPlayer1TagLine: this.i18n.t('errors.riotNotFound'),
+          duoPlayer1RiotId: this.i18n.t('errors.riotNotFound'),
         });
         throw err;
       }
@@ -587,14 +595,11 @@ export class EditChallengeModalComponent {
         await firstValueFrom(this.summonerSearch.resolve(duo.player2.riotId));
       } catch (err) {
         this.draftDuos.update((list) => list.filter((item) => item.id !== duo.id));
-        this.duoPlayer1GameName = duo.player1.gameName;
-        this.duoPlayer1TagLine = duo.player1.tagLine;
-        this.duoPlayer2GameName = duo.player2.gameName;
-        this.duoPlayer2TagLine = duo.player2.tagLine;
-        this.participantInvalidFields.set(new Set(['duoPlayer2GameName', 'duoPlayer2TagLine']));
+        this.duoPlayer1RiotIdInput = duo.player1.riotId;
+        this.duoPlayer2RiotIdInput = duo.player2.riotId;
+        this.participantInvalidFields.set(new Set(['duoPlayer2RiotId']));
         this.participantFieldErrors.set({
-          duoPlayer2GameName: this.i18n.t('errors.riotNotFound'),
-          duoPlayer2TagLine: this.i18n.t('errors.riotNotFound'),
+          duoPlayer2RiotId: this.i18n.t('errors.riotNotFound'),
         });
         throw err;
       }
@@ -608,26 +613,23 @@ export class EditChallengeModalComponent {
     }
 
     if (challenge.type === 'DUOQ' && message.includes('player 2')) {
-      this.participantInvalidFields.set(new Set(['duoPlayer2GameName', 'duoPlayer2TagLine']));
+      this.participantInvalidFields.set(new Set(['duoPlayer2RiotId']));
       this.participantFieldErrors.set({
-        duoPlayer2GameName: this.i18n.t('errors.riotNotFound'),
-        duoPlayer2TagLine: this.i18n.t('errors.riotNotFound'),
+        duoPlayer2RiotId: this.i18n.t('errors.riotNotFound'),
       });
       return true;
     }
     if (challenge.type === 'DUOQ' && message.includes('player 1')) {
-      this.participantInvalidFields.set(new Set(['duoPlayer1GameName', 'duoPlayer1TagLine']));
+      this.participantInvalidFields.set(new Set(['duoPlayer1RiotId']));
       this.participantFieldErrors.set({
-        duoPlayer1GameName: this.i18n.t('errors.riotNotFound'),
-        duoPlayer1TagLine: this.i18n.t('errors.riotNotFound'),
+        duoPlayer1RiotId: this.i18n.t('errors.riotNotFound'),
       });
       return true;
     }
 
-    this.participantInvalidFields.set(new Set(['gameName', 'tagLine']));
+    this.participantInvalidFields.set(new Set(['riotId']));
     this.participantFieldErrors.set({
-      gameName: this.i18n.t('errors.riotNotFound'),
-      tagLine: this.i18n.t('errors.riotNotFound'),
+      riotId: this.i18n.t('errors.riotNotFound'),
     });
     return true;
   }
@@ -753,22 +755,9 @@ export class EditChallengeModalComponent {
   private validateSoloParticipantFields(): boolean {
     this.clearParticipantValidation();
 
-    const invalidFields = new Set<ParticipantInvalidField>();
-    const fieldErrors: Partial<Record<ParticipantInvalidField, string>> = {};
-    const requiredMessage = this.i18n.t('create.fieldRequired');
-
-    if (!this.gameNameInput.trim()) {
-      invalidFields.add('gameName');
-      fieldErrors.gameName = requiredMessage;
-    }
-    if (!this.tagLineInput.trim()) {
-      invalidFields.add('tagLine');
-      fieldErrors.tagLine = requiredMessage;
-    }
-
-    if (invalidFields.size > 0) {
-      this.participantInvalidFields.set(invalidFields);
-      this.participantFieldErrors.set(fieldErrors);
+    if (!this.riotIdInput.trim()) {
+      this.participantInvalidFields.set(new Set(['riotId']));
+      this.participantFieldErrors.set({ riotId: this.i18n.t('create.fieldRequired') });
       this.participantFormError.set(this.i18n.t('create.formIncomplete'));
       return false;
     }
@@ -784,10 +773,8 @@ export class EditChallengeModalComponent {
     const requiredMessage = this.i18n.t('create.fieldRequired');
 
     const checks: [ParticipantInvalidField, string][] = [
-      ['duoPlayer1GameName', this.duoPlayer1GameName],
-      ['duoPlayer1TagLine', this.duoPlayer1TagLine],
-      ['duoPlayer2GameName', this.duoPlayer2GameName],
-      ['duoPlayer2TagLine', this.duoPlayer2TagLine],
+      ['duoPlayer1RiotId', this.duoPlayer1RiotIdInput],
+      ['duoPlayer2RiotId', this.duoPlayer2RiotIdInput],
     ];
 
     for (const [field, value] of checks) {

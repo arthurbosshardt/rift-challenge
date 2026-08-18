@@ -31,3 +31,19 @@ export function normalizeChallengeDetail(challenge: ChallengeDetail): ChallengeD
     refreshAvailable: challenge.refreshAvailable ?? false,
   };
 }
+
+/** Conserve le classement affiché quand seules les métadonnées du challenge changent. */
+export function mergeChallengeMetadataUpdate(
+  previous: ChallengeDetail,
+  updated: ChallengeDetail,
+): ChallengeDetail {
+  return normalizeChallengeDetail({
+    ...updated,
+    entryCount: previous.entryCount,
+    participantGameNames: previous.participantGameNames,
+    previewParticipants: previous.previewParticipants,
+    previewDuos: previous.previewDuos,
+    participants: previous.participants,
+    duos: previous.duos,
+  });
+}

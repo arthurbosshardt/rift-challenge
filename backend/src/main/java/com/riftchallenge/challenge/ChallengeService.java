@@ -202,14 +202,19 @@ public class ChallengeService {
     public ChallengeDetailResponse getByShareSlug(String shareSlug, UUID callerId) {
         Challenge challenge = challengeRepository.findByShareSlug(shareSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
+        requireShareAccess(challenge, callerId);
         return toDetailResponse(challenge, callerId);
     }
 
     @Transactional(readOnly = true)
     public ChallengeDetailResponse getById(UUID challengeId, UUID callerId) {
+        return getById(challengeId, callerId, true);
+    }
+
+    private ChallengeDetailResponse getById(UUID challengeId, UUID callerId, boolean includeMatchHistory) {
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
-        return toDetailResponse(challenge, callerId);
+        return toDetailResponse(challenge, callerId, includeMatchHistory);
     }
 
     @Transactional
@@ -231,7 +236,7 @@ public class ChallengeService {
                 request.endAt(),
                 request.isPublic()
         );
-        return toDetailResponse(challengeRepository.save(challenge), ownerId);
+        return toDetailResponse(challengeRepository.save(challenge), ownerId, false);
     }
 
     @Transactional
@@ -260,7 +265,7 @@ public class ChallengeService {
         Challenge challenge = requireOwnedChallenge(challengeId, ownerId);
         challenge.updateVisibility(request.isPublic());
         challengeRepository.save(challenge);
-        return getById(challenge.getId(), ownerId);
+        return getById(challenge.getId(), ownerId, false);
     }
 
     @Transactional
@@ -270,7 +275,7 @@ public class ChallengeService {
         requireUniqueChallengeName(name, challenge.getId());
         challenge.updateName(name);
         challengeRepository.save(challenge);
-        return getById(challenge.getId(), ownerId);
+        return getById(challenge.getId(), ownerId, false);
     }
 
     @Transactional
@@ -304,7 +309,7 @@ public class ChallengeService {
         if (scheduleChanged) {
             maybeAutoRefreshAfterScheduleChange(challenge.getId(), startAt);
         }
-        return getById(challenge.getId(), ownerId);
+        return getById(challenge.getId(), ownerId, false);
     }
 
     @Transactional
@@ -319,7 +324,7 @@ public class ChallengeService {
         challenge.updateEndAt(endAt);
         challengeRepository.save(challenge);
         maybeAutoRefreshAfterScheduleChange(challenge.getId(), startAt);
-        return getById(challenge.getId(), ownerId);
+        return getById(challenge.getId(), ownerId, false);
     }
 
     private Challenge requireOwnedChallenge(UUID challengeId, UUID ownerId) {
@@ -376,22 +381,45 @@ public class ChallengeService {
         }
     }
 
+    private void requireShareAccess(Challenge challenge, UUID callerId) {
+        if (challenge.isPublic()) {
+            return;
+        }
+        if (callerId == null || !callerId.equals(challenge.getOwnerId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found");
+        }
+    }
+
     private ChallengeDetailResponse toDetailResponse(Challenge challenge, UUID callerId) {
+        return toDetailResponse(challenge, callerId, true);
+    }
+
+    private ChallengeDetailResponse toDetailResponse(
+            Challenge challenge,
+            UUID callerId,
+            boolean includeMatchHistory
+    ) {
         Instant now = clock.instant();
         List<ChallengeParticipant> challengeParticipants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
-        challengeParticipants.stream()
-                .filter(participant -> participant.getProfileIconId() == null)
-                .forEach(participant -> participantProfileService.ensureProfileIcon(participant.getId()));
-        challengeParticipants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
+        if (includeMatchHistory) {
+            challengeParticipants.stream()
+                    .filter(participant -> participant.getProfileIconId() == null)
+                    .forEach(participant -> participantProfileService.ensureProfileIcon(participant.getId()));
+            challengeParticipants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
+        }
 
         List<ParticipantProgressResponse> participants;
         List<DuoProgressResponse> duos;
 
         if (challenge.getType() == ChallengeType.DUOQ) {
             participants = List.of();
-            duos = duoProgressService.buildProgress(challenge.getId());
+            duos = includeMatchHistory
+                    ? duoProgressService.buildProgress(challenge.getId())
+                    : duoProgressService.buildPreview(challenge.getId());
         } else {
-            participants = progressService.buildProgress(challengeParticipants);
+            participants = includeMatchHistory
+                    ? progressService.buildProgress(challengeParticipants)
+                    : progressService.buildPreviewProgress(challengeParticipants);
             duos = List.of();
         }
 

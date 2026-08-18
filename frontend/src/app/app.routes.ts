@@ -38,6 +38,11 @@ export const routes: Routes = [
     component: AuthCallbackPageComponent,
   },
   {
+    path: 'auth/reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password-page.component').then((m) => m.ResetPasswordPageComponent),
+  },
+  {
     path: 'my-challenges',
     component: MyChallengesPageComponent,
     canActivate: [linkedAccountGuard],

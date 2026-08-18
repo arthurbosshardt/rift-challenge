@@ -136,6 +136,9 @@
 }
 
 .linkish {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.5rem 0.875rem;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
@@ -155,6 +158,11 @@ button.linkish:hover:not(:disabled),
 button.linkish:focus-visible {
   border-color: transparent;
   background: var(--gold-a12);
+  color: var(--gold);
+}
+
+button.linkish:hover:not(:disabled) .nav-icon,
+button.linkish:focus-visible .nav-icon {
   color: var(--gold);
 }
 

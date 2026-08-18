@@ -22,9 +22,9 @@ describe('challenge-summary utils', () => {
       previewParticipants: [
         {
           id: 'p1',
-          gameName: 'Tanor',
-          tagLine: '7154',
-          riotId: 'Tanor#7154',
+          gameName: 'JohnDoe',
+          tagLine: 'EUW',
+          riotId: 'JohnDoe#EUW',
           profileIconId: null,
           currentTier: null,
           currentRank: null,
@@ -38,7 +38,7 @@ describe('challenge-summary utils', () => {
       ],
     });
 
-    expect(summary.participantGameNames).toEqual(['Tanor']);
+    expect(summary.participantGameNames).toEqual(['JohnDoe']);
   });
 
   it('summaryChallengeNeedsEnrichment detects incomplete names and preview', () => {

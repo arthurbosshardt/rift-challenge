@@ -7,6 +7,11 @@
     (click)="close()"
   >
     <section class="modal-panel modal-panel--edit edit-challenge-modal" (click)="$event.stopPropagation()">
+      @if (saving()) {
+        <div class="modal-saving-overlay" aria-live="polite" aria-busy="true">
+          <app-loader [label]="'challenge.savingChanges' | t" [centered]="false" />
+        </div>
+      }
       <button
         type="button"
         class="edit-challenge-modal__close"
@@ -38,6 +43,7 @@
             />
           </svg>
           <span>{{ 'challenge.editTitle' | t }}</span>
+          <app-challenge-badge [kind]="challengeTypeBadgeKind(challenge.type)" [label]="typeLabel(challenge.type)" />
         </h2>
       </header>
 
@@ -72,7 +78,6 @@
               }
             </label>
           </section>
-          <app-challenge-badge [kind]="challengeTypeBadgeKind(challenge.type)" [label]="typeLabel(challenge.type)" />
 
           <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
             <div class="visibility-switch__label" [class.visibility-switch__label--active]="!isPublicInput">
@@ -225,7 +230,10 @@
           <h3>{{ challenge.type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</h3>
         </div>
 
-        <div class="edit-challenge-modal__participants-scroll">
+        <div
+          class="edit-challenge-modal__participants-scroll"
+          [class.challenge-form__participants-scroll--duo]="challenge.type === 'DUOQ'"
+        >
           @if (entryCount(challenge) === 0) {
             <p class="edit-challenge-modal__empty">
               {{ challenge.type === 'DUOQ' ? ('challenge.noDuos' | t) : ('challenge.noParticipants' | t) }}
@@ -260,28 +268,32 @@
           } @else {
             <ul [class]="participantListClass(challenge)">
               @for (duo of draftDuos(); track duo.id) {
-                <li class="edit-challenge-modal__list-item edit-challenge-modal__list-item--duo">
-                  <div class="edit-challenge-modal__duo-stack">
-                    <app-player-identity
-                      [compact]="true"
-                      [gameName]="duo.player1.gameName"
-                      [tagLine]="duo.player1.tagLine"
-                      [riotId]="duo.player1.riotId"
-                      [profileIconId]="duo.player1.profileIconId"
-                      [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
-                    />
-                    <app-player-identity
-                      [compact]="true"
-                      [gameName]="duo.player2.gameName"
-                      [tagLine]="duo.player2.tagLine"
-                      [riotId]="duo.player2.riotId"
-                      [profileIconId]="duo.player2.profileIconId"
-                      [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
-                    />
+                <li class="edit-challenge-modal__list-item challenge-form__duo-list-item">
+                  <div class="challenge-form__duo-players">
+                    <div class="challenge-form__duo-player-block">
+                      <app-player-identity
+                        [compact]="true"
+                        [gameName]="duo.player1.gameName"
+                        [tagLine]="duo.player1.tagLine"
+                        [riotId]="duo.player1.riotId"
+                        [profileIconId]="duo.player1.profileIconId"
+                        [tier]="duo.player1.hasRankData ? duo.player1.currentTier : null"
+                      />
+                    </div>
+                    <div class="challenge-form__duo-player-block">
+                      <app-player-identity
+                        [compact]="true"
+                        [gameName]="duo.player2.gameName"
+                        [tagLine]="duo.player2.tagLine"
+                        [riotId]="duo.player2.riotId"
+                        [profileIconId]="duo.player2.profileIconId"
+                        [tier]="duo.player2.hasRankData ? duo.player2.currentTier : null"
+                      />
+                    </div>
                   </div>
                   <button
                     type="button"
-                    class="edit-challenge-modal__action edit-challenge-modal__action--remove"
+                    class="edit-challenge-modal__action edit-challenge-modal__action--remove challenge-form__duo-list-action"
                     (click)="removeDuo(duo)"
                     [disabled]="saving()"
                     [attr.aria-label]="'challenge.removeDuoAria' | t:{ name: duoLabel(duo) }"
@@ -300,49 +312,29 @@
         @if (challenge.type === 'SOLOQ') {
           <div
             class="challenge-form edit-challenge-modal__form challenge-form__schedule-block"
-            [class.challenge-form__schedule-block--invalid]="isParticipantInvalid('gameName') || isParticipantInvalid('tagLine')"
+            [class.challenge-form__schedule-block--invalid]="isParticipantInvalid('riotId')"
             aria-labelledby="edit-challenge-add-player-title"
           >
             <h3 id="edit-challenge-add-player-title" class="challenge-form__schedule-title">
               {{ 'challenge.addPlayer' | t }}
             </h3>
-            <div class="edit-challenge-modal__form-row">
-              <label [class.challenge-form__field--invalid]="isParticipantInvalid('gameName')">
+            <div class="edit-challenge-modal__form-row edit-challenge-modal__form-row--riot-id">
+              <label [class.challenge-form__field--invalid]="isParticipantInvalid('riotId')">
                 <span class="field-label">
-                  {{ 'challenge.gameName' | t }}
+                  {{ 'challenge.riotId' | t }}
                   <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
                 </span>
                 <app-summoner-typeahead
-                  name="gameName"
-                  [value]="gameNameInput"
-                  (valueChange)="gameNameInput = $event; clearParticipantInvalid('gameName')"
+                  name="riotId"
+                  [value]="riotIdInput"
+                  (valueChange)="riotIdInput = $event; clearParticipantInvalid('riotId')"
                   (selected)="applySummoner('solo', $event)"
-                  [placeholder]="'challenge.gameNamePlaceholder' | t"
+                  [placeholder]="'challenge.riotIdPlaceholder' | t"
                   [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
-                  [invalid]="isParticipantInvalid('gameName')"
-                  [ariaInvalid]="isParticipantInvalid('gameName')"
+                  [invalid]="isParticipantInvalid('riotId')"
+                  [ariaInvalid]="isParticipantInvalid('riotId')"
                 />
-                @if (participantFieldError('gameName'); as message) {
-                  <span class="field-error" role="alert">{{ message }}</span>
-                }
-              </label>
-              <label [class.challenge-form__field--invalid]="isParticipantInvalid('tagLine')">
-                <span class="field-label">
-                  {{ 'challenge.tagLine' | t }}
-                  <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-                </span>
-                <input
-                  name="tagLine"
-                  type="text"
-                  [(ngModel)]="tagLineInput"
-                  [placeholder]="'challenge.tagLinePlaceholder' | t"
-                  [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
-                  [class.challenge-form__control--invalid]="isParticipantInvalid('tagLine')"
-                  [attr.aria-invalid]="isParticipantInvalid('tagLine')"
-                  (ngModelChange)="clearParticipantInvalid('tagLine')"
-                  autocomplete="off"
-                />
-                @if (participantFieldError('tagLine'); as message) {
+                @if (participantFieldError('riotId'); as message) {
                   <span class="field-error" role="alert">{{ message }}</span>
                 }
               </label>
@@ -366,112 +358,57 @@
         } @else {
           <div
             class="challenge-form edit-challenge-modal__form challenge-form__schedule-block"
+            [class.challenge-form__schedule-block--invalid]="isParticipantInvalid('duoPlayer1RiotId') || isParticipantInvalid('duoPlayer2RiotId')"
             aria-labelledby="edit-challenge-add-duo-title"
           >
             <h3 id="edit-challenge-add-duo-title" class="challenge-form__schedule-title">
               {{ 'challenge.addDuo' | t }}
             </h3>
-            <div class="edit-challenge-modal__duo-fields">
-              <div
-                class="edit-challenge-modal__duo-player challenge-form__schedule-block"
-                [class.challenge-form__schedule-block--invalid]="
-                  isParticipantInvalid('duoPlayer1GameName') || isParticipantInvalid('duoPlayer1TagLine')
-                "
-              >
+            <div class="edit-challenge-modal__form-row edit-challenge-modal__form-row--duo">
+              <div class="edit-challenge-modal__duo-player">
                 <h4 class="challenge-form__schedule-title">{{ 'challenge.duoPlayer1Title' | t }}</h4>
-                <div class="edit-challenge-modal__form-row">
-                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1GameName')">
-                    <span class="field-label">
-                      {{ 'challenge.gameName' | t }}
-                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-                    </span>
-                    <app-summoner-typeahead
-                      name="duoPlayer1GameName"
-                      [value]="duoPlayer1GameName"
-                      (valueChange)="duoPlayer1GameName = $event; clearParticipantInvalid('duoPlayer1GameName')"
-                      (selected)="applySummoner('duo1', $event)"
-                      [placeholder]="'challenge.gameNamePlaceholder' | t"
-                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
-                      [invalid]="isParticipantInvalid('duoPlayer1GameName')"
-                      [ariaInvalid]="isParticipantInvalid('duoPlayer1GameName')"
-                    />
-                    @if (participantFieldError('duoPlayer1GameName'); as message) {
-                      <span class="field-error" role="alert">{{ message }}</span>
-                    }
-                  </label>
-                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1TagLine')">
-                    <span class="field-label">
-                      {{ 'challenge.tagLine' | t }}
-                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-                    </span>
-                    <input
-                      name="duoPlayer1TagLine"
-                      type="text"
-                      [(ngModel)]="duoPlayer1TagLine"
-                      [placeholder]="'challenge.tagLinePlaceholder' | t"
-                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
-                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer1TagLine')"
-                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer1TagLine')"
-                      (ngModelChange)="clearParticipantInvalid('duoPlayer1TagLine')"
-                      autocomplete="off"
-                    />
-                    @if (participantFieldError('duoPlayer1TagLine'); as message) {
-                      <span class="field-error" role="alert">{{ message }}</span>
-                    }
-                  </label>
-                </div>
+                <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1RiotId')">
+                  <span class="field-label">
+                    {{ 'challenge.riotId' | t }}
+                    <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                  </span>
+                  <app-summoner-typeahead
+                    name="duoPlayer1RiotId"
+                    [value]="duoPlayer1RiotIdInput"
+                    (valueChange)="duoPlayer1RiotIdInput = $event; clearParticipantInvalid('duoPlayer1RiotId')"
+                    (selected)="applySummoner('duo1', $event)"
+                    [placeholder]="'challenge.riotIdPlaceholder' | t"
+                    [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
+                    [invalid]="isParticipantInvalid('duoPlayer1RiotId')"
+                    [ariaInvalid]="isParticipantInvalid('duoPlayer1RiotId')"
+                  />
+                  @if (participantFieldError('duoPlayer1RiotId'); as message) {
+                    <span class="field-error" role="alert">{{ message }}</span>
+                  }
+                </label>
               </div>
-              <div
-                class="edit-challenge-modal__duo-player challenge-form__schedule-block"
-                [class.challenge-form__schedule-block--invalid]="
-                  isParticipantInvalid('duoPlayer2GameName') || isParticipantInvalid('duoPlayer2TagLine')
-                "
-              >
+              <div class="edit-challenge-modal__duo-player">
                 <h4 class="challenge-form__schedule-title">{{ 'challenge.duoPlayer2Title' | t }}</h4>
-                <div class="edit-challenge-modal__form-row">
-                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2GameName')">
-                    <span class="field-label">
-                      {{ 'challenge.gameName' | t }}
-                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-                    </span>
-                    <app-summoner-typeahead
-                      name="duoPlayer2GameName"
-                      [value]="duoPlayer2GameName"
-                      (valueChange)="duoPlayer2GameName = $event; clearParticipantInvalid('duoPlayer2GameName')"
-                      (selected)="applySummoner('duo2', $event)"
-                      [placeholder]="'challenge.gameNamePlaceholder' | t"
-                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
-                      [invalid]="isParticipantInvalid('duoPlayer2GameName')"
-                      [ariaInvalid]="isParticipantInvalid('duoPlayer2GameName')"
-                    />
-                    @if (participantFieldError('duoPlayer2GameName'); as message) {
-                      <span class="field-error" role="alert">{{ message }}</span>
-                    }
-                  </label>
-                  <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2TagLine')">
-                    <span class="field-label">
-                      {{ 'challenge.tagLine' | t }}
-                      <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-                    </span>
-                    <input
-                      name="duoPlayer2TagLine"
-                      type="text"
-                      [(ngModel)]="duoPlayer2TagLine"
-                      [placeholder]="'challenge.tagLinePlaceholder' | t"
-                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
-                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer2TagLine')"
-                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer2TagLine')"
-                      (ngModelChange)="clearParticipantInvalid('duoPlayer2TagLine')"
-                      autocomplete="off"
-                    />
-                    @if (participantFieldError('duoPlayer2TagLine'); as message) {
-                      <span class="field-error" role="alert">{{ message }}</span>
-                    }
-                  </label>
-                </div>
+                <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2RiotId')">
+                  <span class="field-label">
+                    {{ 'challenge.riotId' | t }}
+                    <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                  </span>
+                  <app-summoner-typeahead
+                    name="duoPlayer2RiotId"
+                    [value]="duoPlayer2RiotIdInput"
+                    (valueChange)="duoPlayer2RiotIdInput = $event; clearParticipantInvalid('duoPlayer2RiotId')"
+                    (selected)="applySummoner('duo2', $event)"
+                    [placeholder]="'challenge.riotIdPlaceholder' | t"
+                    [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
+                    [invalid]="isParticipantInvalid('duoPlayer2RiotId')"
+                    [ariaInvalid]="isParticipantInvalid('duoPlayer2RiotId')"
+                  />
+                  @if (participantFieldError('duoPlayer2RiotId'); as message) {
+                    <span class="field-error" role="alert">{{ message }}</span>
+                  }
+                </label>
               </div>
-            </div>
-            <div class="edit-challenge-modal__form-actions">
               <button
                 type="button"
                 class="edit-challenge-modal__action edit-challenge-modal__action--add"

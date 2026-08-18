@@ -28,6 +28,9 @@
 }
 
 .link-banner__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   color: var(--gold);
   font-weight: 600;
   text-decoration: none;
@@ -167,8 +170,14 @@
   white-space: nowrap;
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
+}
+
+.challenge-search__type-btn:active {
+  transform: scale(0.94);
 }
 
 .challenge-search__type-tooltip {
@@ -222,6 +231,7 @@
   width: 1.25rem;
   height: 1.25rem;
   fill: currentColor;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .challenge-search__type-btn:hover {
@@ -233,18 +243,29 @@
   color: var(--text);
   background: var(--surface-hover);
   box-shadow: inset 0 0 0 1px var(--border-strong);
+  animation: switch-segment-select 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 
 .challenge-search__type-btn--active-soloq {
   color: var(--gold);
   background: color-mix(in srgb, var(--gold) 18%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent);
+  animation: switch-segment-select 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.challenge-search__type-btn--active-soloq .challenge-search__type-icon {
+  transform: scale(1.08);
 }
 
 .challenge-search__type-btn--active-duoq {
   color: #9b7bd4;
   background: color-mix(in srgb, #9b7bd4 18%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #9b7bd4 35%, transparent);
+  animation: switch-segment-select 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.challenge-search__type-btn--active-duoq .challenge-search__type-icon {
+  transform: scale(1.08);
 }
 
 .challenge-search__reset {
@@ -315,5 +336,31 @@
 
   .link-banner {
     width: 100%;
+  }
+}
+
+@keyframes switch-segment-select {
+  from {
+    transform: scale(0.92);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .challenge-search__type-btn {
+    transition: none;
+  }
+
+  .challenge-search__type-btn--active,
+  .challenge-search__type-btn--active-soloq,
+  .challenge-search__type-btn--active-duoq {
+    animation: none;
+  }
+
+  .challenge-search__type-icon {
+    transition: none;
   }
 }

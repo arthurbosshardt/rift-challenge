@@ -22,6 +22,22 @@ export function normalizeRiotId(riotId: string): string {
   return `${gameName}#${tagLine}`;
 }
 
+export function parseRiotId(riotId: string): { gameName: string; tagLine: string } | null {
+  const normalized = normalizeRiotId(riotId);
+  const hashIndex = normalized.indexOf('#');
+  if (hashIndex <= 0 || hashIndex >= normalized.length - 1) {
+    return null;
+  }
+
+  const gameName = normalized.slice(0, hashIndex);
+  const tagLine = normalized.slice(hashIndex + 1);
+  if (!gameName || !tagLine) {
+    return null;
+  }
+
+  return { gameName, tagLine };
+}
+
 export function buildRiotId(gameName: string, tagLine: string): string | null {
   const name = normalizeGameName(gameName);
   const tag = normalizeTagLine(tagLine);

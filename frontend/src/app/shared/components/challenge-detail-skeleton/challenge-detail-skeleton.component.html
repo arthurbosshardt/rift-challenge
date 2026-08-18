@@ -1,6 +1,14 @@
 <div class="challenge-detail-skeleton" role="status" [attr.aria-label]="ariaLabel()" aria-live="polite">
+  <header class="challenge-detail-skeleton__header">
+    <app-skeleton class="challenge-detail-skeleton__title" height="2rem" maxWidth="20rem" />
+    <div class="challenge-detail-skeleton__meta">
+      <app-skeleton height="0.875rem" width="6rem" />
+      <app-skeleton height="0.875rem" width="6rem" />
+    </div>
+  </header>
+
   <section class="challenge-detail-skeleton__participants">
-    <app-leaderboard-sort-controls [disabled]="true" />
+    <app-skeleton class="challenge-detail-skeleton__count" height="0.875rem" width="8rem" />
     <app-leaderboard-skeleton [rowCount]="rowCount()" />
   </section>
 </div>

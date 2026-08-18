@@ -6,6 +6,8 @@ export type NavIconName =
   | 'create-challenge'
   | 'created-challenges'
   | 'settings'
+  | 'login'
+  | 'signup'
   | 'logout';
 
 @Component({
@@ -65,6 +67,45 @@ export type NavIconName =
             stroke-width="1.75"
             stroke-linecap="round"
             stroke-linejoin="round"
+          />
+        </svg>
+      }
+      @case ('login') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      }
+      @case ('signup') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle
+            cx="9"
+            cy="7"
+            r="4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+          />
+          <path
+            d="M19 8v6M22 11h-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
           />
         </svg>
       }

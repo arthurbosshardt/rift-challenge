@@ -12,10 +12,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { AuthModalMode, AuthModalService } from '../../core/services/auth-modal.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { translateAuthError } from '../../core/utils/auth-errors';
+import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
+import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
 
 @Component({
   selector: 'app-login-modal',
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, NavIconComponent, BrandLogoComponent],
   templateUrl: './login-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login-modal.component.scss',
@@ -33,6 +36,7 @@ export class LoginModalComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
   protected readonly googleLoading = signal(false);
+  protected readonly passwordResetSent = signal(false);
 
   constructor() {
     effect(() => {
@@ -43,7 +47,8 @@ export class LoginModalComponent {
         this.username = '';
         this.loading.set(false);
         this.googleLoading.set(false);
-        this.error.set(this.authModal.initialError());
+        this.passwordResetSent.set(false);
+        this.error.set(translateAuthError(this.i18n, this.authModal.initialError()));
         document.body.style.overflow = 'hidden';
         return;
       }
@@ -67,6 +72,22 @@ export class LoginModalComponent {
   protected setMode(mode: AuthModalMode): void {
     this.mode = mode;
     this.error.set(null);
+    this.passwordResetSent.set(false);
+  }
+
+  protected async submitForgotPassword(): Promise<void> {
+    this.error.set(null);
+    this.loading.set(true);
+
+    const message = await this.auth.requestPasswordReset(this.email.trim());
+    this.loading.set(false);
+
+    if (message) {
+      this.error.set(translateAuthError(this.i18n, message));
+      return;
+    }
+
+    this.passwordResetSent.set(true);
   }
 
   protected async submit(): Promise<void> {
@@ -81,7 +102,7 @@ export class LoginModalComponent {
     this.loading.set(false);
 
     if (message) {
-      this.error.set(message);
+      this.error.set(translateAuthError(this.i18n, message));
       return;
     }
 
@@ -98,12 +119,8 @@ export class LoginModalComponent {
     this.googleLoading.set(true);
     const message = await this.auth.signInWithGoogle();
     this.googleLoading.set(false);
-    if (message === 'auth.googleStartError') {
-      this.error.set(this.i18n.t('auth.googleStartError'));
-      return;
-    }
     if (message) {
-      this.error.set(message);
+      this.error.set(translateAuthError(this.i18n, message));
     }
   }
 
@@ -130,5 +147,6 @@ export class LoginModalComponent {
     this.error.set(null);
     this.loading.set(false);
     this.googleLoading.set(false);
+    this.passwordResetSent.set(false);
   }
 }

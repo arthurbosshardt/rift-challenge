@@ -95,8 +95,14 @@
   font-weight: 600;
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
+}
+
+.theme-switch__button:active {
+  transform: scale(0.94);
 }
 
 .theme-switch__button:hover {
@@ -108,6 +114,27 @@
   color: var(--text);
   background: var(--gold-a18);
   box-shadow: inset 0 0 0 1px var(--gold-a35);
+  animation: switch-segment-select 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+@keyframes switch-segment-select {
+  from {
+    transform: scale(0.92);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch__button {
+    transition: none;
+  }
+
+  .theme-switch__button--active {
+    animation: none;
+  }
 }
 
 .settings-section__header {

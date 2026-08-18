@@ -285,7 +285,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateSchedule(
@@ -320,7 +320,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(participant));
-        when(progressService.buildProgress(any())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(any())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
         when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
@@ -350,7 +350,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateVisibility(
@@ -379,7 +379,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateName(challengeId, ownerId, new UpdateChallengeNameRequest("New name"));
@@ -406,7 +406,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateChallenge(
@@ -526,7 +526,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
@@ -552,7 +552,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
@@ -578,7 +578,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateStartAt(challengeId, ownerId, new UpdateChallengeStartRequest(newStart));
@@ -627,7 +627,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
 
         var response = challengeService.updateEndAt(challengeId, ownerId, new UpdateChallengeEndRequest(newEnd));
@@ -655,7 +655,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(challengeId)).thenReturn(Optional.of(recentRefresh));
 
         var response = challengeService.updateEndAt(challengeId, ownerId, new UpdateChallengeEndRequest(newEnd));
@@ -719,5 +719,62 @@ class ChallengeServiceTest {
         assertThat(challenges).hasSize(1);
         assertThat(challenges.getFirst().entryCount()).isEqualTo(2);
         assertThat(challenges.getFirst().participantGameNames()).containsExactly("Tanor", "Kaori");
+    }
+
+    @Test
+    void getByShareSlug_whenPrivateAndAnonymous_throwsNotFound() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Private race",
+                ChallengeType.SOLOQ,
+                NOW.plusSeconds(3600),
+                false
+        );
+        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+
+        assertThatThrownBy(() -> challengeService.getByShareSlug("Private race", null))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getByShareSlug_whenPrivateAndNotOwner_throwsNotFound() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Private race",
+                ChallengeType.SOLOQ,
+                NOW.plusSeconds(3600),
+                false
+        );
+        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+
+        assertThatThrownBy(() -> challengeService.getByShareSlug("Private race", UUID.randomUUID()))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getByShareSlug_whenPrivateAndOwner_returnsDetail() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Private race",
+                ChallengeType.SOLOQ,
+                NOW.plusSeconds(3600),
+                false
+        );
+        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(challengeRefreshRepository.findByChallengeId(challenge.getId())).thenReturn(Optional.empty());
+
+        var response = challengeService.getByShareSlug("Private race", ownerId);
+
+        assertThat(response.name()).isEqualTo("Private race");
+        assertThat(response.isOwner()).isTrue();
     }
 }

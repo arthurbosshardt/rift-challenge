@@ -239,11 +239,13 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     if (!participant.currentTier) {
       return null;
     }
+    const includeLp = this.challenge().status !== 'FINISHED';
     return formatRankLabel(
       participant.currentTier,
       participant.currentRank,
       participant.currentLp,
       this.i18n.locale(),
+      includeLp,
     );
   }
 

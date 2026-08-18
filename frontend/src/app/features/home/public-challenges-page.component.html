@@ -12,7 +12,8 @@
         <button type="button" class="link-banner__action" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
       } @else {
         <button type="button" class="link-banner__action" (click)="authModal.open()">
-          {{ 'nav.login' | t }}
+          <app-nav-icon name="login" />
+          <span>{{ 'nav.login' | t }}</span>
         </button>
       }
     </aside>

@@ -5,7 +5,7 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { EditChallengeModalService } from '../../core/services/edit-challenge-modal.service';
 import { DeleteChallengeConfirmService } from '../../core/services/delete-challenge-confirm.service';
-import { DuoProgress, ParticipantProgress, ChallengeDetail } from '../../core/models/challenge.models';
+import { DuoProgress, ParticipantProgress, ChallengeDetail, ChallengeSummary } from '../../core/models/challenge.models';
 import {
   LeaderboardSort,
   SortDirection,
@@ -52,6 +52,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   private countdownTimer: number | null = null;
 
   protected readonly challenge = signal<ChallengeDetail | null>(null);
+  protected readonly loadingPreview = signal<ChallengeSummary | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly copied = signal(false);
@@ -94,11 +95,21 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.loadingPreview.set(this.readNavigationPreview());
     void this.loadChallenge();
   }
 
   ngOnDestroy(): void {
     this.clearCountdown();
+  }
+
+  private readNavigationPreview(): ChallengeSummary | null {
+    const state = history.state as { challengeSummary?: ChallengeSummary } | null;
+    const summary = state?.challengeSummary;
+    if (!summary || summary.shareSlug !== this.shareSlug) {
+      return null;
+    }
+    return summary;
   }
 
   private async loadChallenge(): Promise<void> {
@@ -137,9 +148,23 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.editChallengeModal.open(challenge, () => {
-      void this.loadChallenge();
+    this.editChallengeModal.open(challenge, (updated) => {
+      this.applyChallengeUpdate(updated);
     });
+  }
+
+  private applyChallengeUpdate(updated: ChallengeDetail): void {
+    const normalized = normalizeChallengeDetail(updated);
+    const slugChanged = updated.shareSlug !== this.shareSlug;
+
+    this.challenge.set(normalized);
+    this.shareSlug = updated.shareSlug;
+    this.startTimersIfNeeded();
+
+    if (slugChanged) {
+      const path = updated.sharePath || `/challenges/${encodeURIComponent(updated.shareSlug)}`;
+      void this.router.navigateByUrl(path, { replaceUrl: true });
+    }
   }
 
   private openEditIfRequested(challenge: ChallengeDetail): void {
@@ -216,6 +241,14 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
     return type === 'SOLOQ' ? this.i18n.t('challenge.typeSoloq') : this.i18n.t('challenge.typeDuoq');
   }
 
+  protected previewEntryLimit(type: ChallengeSummary['type']): number {
+    return type === 'DUOQ' ? 8 : 16;
+  }
+
+  protected previewSkeletonRowCount(preview: ChallengeSummary): number {
+    return preview.entryCount > 0 ? preview.entryCount : 4;
+  }
+
   protected entryCount(challenge: ChallengeDetail): number {
     return challenge.type === 'DUOQ' ? challenge.duos.length : challenge.participants.length;
   }
@@ -285,11 +318,13 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       return null;
     }
 
+    const includeLp = this.challenge()?.status !== 'FINISHED';
     return formatRankLabel(
       participant.currentTier,
       participant.currentRank,
       participant.currentLp,
       this.i18n.locale(),
+      includeLp,
     );
   }
 

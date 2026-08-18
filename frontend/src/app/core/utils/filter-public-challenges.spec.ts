@@ -10,20 +10,20 @@ function challenge(overrides: Partial<ChallengeSummary> = {}): ChallengeSummary 
   return {
     id: 'challenge-1',
     shareSlug: 'slug-1',
-    name: 'Les petits soldats',
+    name: 'Rush de rentrée 2025',
     type: 'SOLOQ',
     startAt: '2026-01-01T00:00:00Z',
     endAt: '2026-02-01T00:00:00Z',
     isPublic: true,
     status: 'ACTIVE',
     entryCount: 2,
-    participantGameNames: ['Kaori', 'Tanor'],
+    participantGameNames: ['JaneDoe', 'JohnDoe'],
     previewParticipants: [
       {
         id: 'p1',
-        gameName: 'Kaori',
+        gameName: 'JaneDoe',
         tagLine: 'EUW',
-        riotId: 'Kaori#EUW',
+        riotId: 'JaneDoe#EUW',
         profileIconId: null,
         currentTier: 'GOLD',
         currentRank: 'II',
@@ -42,7 +42,7 @@ function challenge(overrides: Partial<ChallengeSummary> = {}): ChallengeSummary 
 
 describe('filter-public-challenges', () => {
   it('normalizeSummonerSearch strips tag and spaces', () => {
-    expect(normalizeSummonerSearch('Tanor#7154')).toBe('tanor');
+    expect(normalizeSummonerSearch('JohnDoe#EUW')).toBe('johndoe');
     expect(normalizeSummonerSearch('Hide on bush')).toBe('hideonbush');
   });
 
@@ -52,8 +52,8 @@ describe('filter-public-challenges', () => {
       challenge({ id: 'challenge-2', shareSlug: 'slug-2', name: 'Autre course' }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: 'sold', summoner: '', type: 'ALL' })).toHaveLength(1);
-    expect(filterPublicChallenges(challenges, { challengeName: 'so', summoner: '', type: 'ALL' })).toHaveLength(2);
+    expect(filterPublicChallenges(challenges, { challengeName: 'rush', summoner: '', type: 'ALL' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: 'ru', summoner: '', type: 'ALL' })).toHaveLength(2);
   });
 
   it('filters by summoner using participantGameNames', () => {
@@ -62,12 +62,12 @@ describe('filter-public-challenges', () => {
       challenge({
         id: 'challenge-2',
         shareSlug: 'slug-2',
-        name: 'Sans Tanor',
-        participantGameNames: ['Kaori'],
+        name: 'Sans JohnDoe',
+        participantGameNames: ['JaneDoe'],
       }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'tanor', type: 'ALL' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'johndoe', type: 'ALL' })).toHaveLength(1);
   });
 
   it('falls back to preview names when participantGameNames is empty', () => {
@@ -77,9 +77,9 @@ describe('filter-public-challenges', () => {
         previewParticipants: [
           {
             id: 'p1',
-            gameName: 'Tanor',
-            tagLine: '7154',
-            riotId: 'Tanor#7154',
+            gameName: 'JohnDoe',
+            tagLine: 'EUW',
+            riotId: 'JohnDoe#EUW',
             profileIconId: null,
             currentTier: null,
             currentRank: null,
@@ -94,7 +94,7 @@ describe('filter-public-challenges', () => {
       }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'tanor', type: 'ALL' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'johndoe', type: 'ALL' })).toHaveLength(1);
   });
 
   it('filters by challenge type', () => {
@@ -110,7 +110,7 @@ describe('filter-public-challenges', () => {
   it('hasActivePublicChallengeFilters detects active filters', () => {
     expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL' })).toBe(false);
     expect(hasActivePublicChallengeFilters({ challengeName: 'abc', summoner: '', type: 'ALL' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: 'tan', type: 'ALL' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: 'jan', type: 'ALL' })).toBe(true);
     expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'SOLOQ' })).toBe(true);
   });
 });
