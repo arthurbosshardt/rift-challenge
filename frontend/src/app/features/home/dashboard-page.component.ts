@@ -6,7 +6,7 @@ import { PageShellComponent } from '../../shared/components/page-shell/page-shel
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { ParticipantMatchHistory, DuoMatchHistory, RecentGameResponse } from '../../core/models/challenge.models';
+import { RecentGameResponse } from '../../core/models/challenge.models';
 import { CommonModule } from '@angular/common';
 import { ChampionIconComponent } from '../../shared/components/champion-icon/champion-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';

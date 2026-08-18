@@ -1,5 +1,5 @@
 import { Injectable, signal, Signal } from '@angular/core';
-import type { GameDetail } from '../components/game-detail-modal/game-detail-modal.component';
+import type { GameDetail } from '../../core/models/challenge.models';
 
 @Injectable({
   providedIn: 'root',

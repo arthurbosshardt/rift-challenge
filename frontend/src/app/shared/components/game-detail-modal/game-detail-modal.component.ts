@@ -1,10 +1,10 @@
 import { Component, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { ChampionIconComponent } from '../champion-icon/champion-icon.component';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
-import { GameDetail } from '../../core/models/challenge.models';
+import { GameDetail } from '../../../core/models/challenge.models';
 
 @Component({
   selector: 'app-game-detail-modal',
