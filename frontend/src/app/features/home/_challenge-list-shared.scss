@@ -285,7 +285,7 @@
   border: none;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .challenge-search__field--text {
     flex: 1 1 100%;
     width: 100%;
@@ -302,7 +302,7 @@
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .challenge-search__filters {
     row-gap: 0.625rem;
   }

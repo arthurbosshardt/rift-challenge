@@ -7,7 +7,7 @@ import {
   OnInit,
 } from '@angular/core';
 
-const MOBILE_QUERY = '(max-width: 899px)';
+const MOBILE_QUERY = '(max-width: 1023px)';
 const VIEWPORT_MARGIN = 12;
 const GAP = 8;
 
