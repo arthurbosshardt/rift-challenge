@@ -72,7 +72,7 @@ public class Challenge {
         challenge.startAt = startAt;
         challenge.endAt = endAt;
         challenge.isPublic = isPublic;
-        challenge.shareSlug = name.trim();
+        challenge.shareSlug = challenge.id.toString();
         return challenge;
     }
 
@@ -150,6 +150,5 @@ public class Challenge {
 
     public void updateName(String name) {
         this.name = name;
-        this.shareSlug = name;
     }
 }
