@@ -191,7 +191,14 @@ export interface RecentGameResponse {
   championIconUrl: string | null;
   win: boolean;
   playedAt: string;
+  // Account stats (to be populated by backend when available)
+  profileIconId?: number | null;
+  currentTier?: string | null;
+  currentRank?: string | null;
+  currentLp?: number;
+  wins?: number;
+  losses?: number;
+  winRate?: number;
 }
-
 
 export type GameDetail = RecentGameResponse;

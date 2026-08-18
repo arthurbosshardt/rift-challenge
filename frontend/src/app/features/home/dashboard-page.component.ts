@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
@@ -10,6 +10,21 @@ import { RecentGameResponse } from '../../core/models/challenge.models';
 import { CommonModule } from '@angular/common';
 import { ChampionIconComponent } from '../../shared/components/champion-icon/champion-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
+import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
+
+interface AccountGameGroup {
+  accountId: string;
+  gameName: string;
+  tagLine: string;
+  profileIconId?: number | null;
+  currentTier?: string | null;
+  currentRank?: string | null;
+  currentLp?: number;
+  wins?: number;
+  losses?: number;
+  winRate?: number;
+  games: RecentGameResponse[];
+}
 
 @Component({
   selector: 'app-dashboard-page',
@@ -19,6 +34,7 @@ import { GameDetailModalService } from '../../shared/services/game-detail-modal.
     ChallengeListSkeletonComponent,
     TranslatePipe,
     ChampionIconComponent,
+    PlayerAvatarComponent,
   ],
   templateUrl: './dashboard-page.component.html',
   changeDetection: ChangeDetectionStrategy.Default,
@@ -34,6 +50,35 @@ export class DashboardPageComponent implements OnInit {
   protected readonly games = signal<RecentGameResponse[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+
+  // Computed signal to group games by account
+  protected readonly gamesByAccount = computed(() => {
+    const allGames = this.games();
+    const accountMap = new Map<string, AccountGameGroup>();
+
+    // Group games by account
+    allGames.forEach((game) => {
+      const accountId = `${game.gameName}#${game.tagLine}`;
+      if (!accountMap.has(accountId)) {
+        accountMap.set(accountId, {
+          accountId,
+          gameName: game.gameName,
+          tagLine: game.tagLine,
+          profileIconId: game.profileIconId,
+          currentTier: game.currentTier,
+          currentRank: game.currentRank,
+          currentLp: game.currentLp,
+          wins: game.wins,
+          losses: game.losses,
+          winRate: game.winRate,
+          games: [],
+        });
+      }
+      accountMap.get(accountId)!.games.push(game);
+    });
+
+    return Array.from(accountMap.values());
+  });
 
   ngOnInit(): void {
     void this.loadPage();
