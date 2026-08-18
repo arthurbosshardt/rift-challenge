@@ -18,6 +18,10 @@
           <span>{{ 'nav.publicChallenges' | t }}</span>
         </a>
         @if (auth.isAuthenticated() && auth.linkedAccount()) {
+          <a routerLink="/dashboard" routerLinkActive="active" (click)="closeUserMenu()">
+            <app-nav-icon name="my-challenges" />
+            <span>{{ 'nav.dashboard' | t }}</span>
+          </a>
           <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
             <app-nav-icon name="my-challenges" />
             <span>{{ 'nav.myChallenges' | t }}</span>
@@ -97,6 +101,16 @@
                 <span>{{ 'nav.publicChallenges' | t }}</span>
               </a>
               @if (auth.isAuthenticated() && auth.linkedAccount()) {
+                <a
+                  routerLink="/dashboard"
+                  routerLinkActive="active"
+                  role="menuitem"
+                  class="user-menu__item user-menu__item--mobile-nav"
+                  (click)="closeUserMenu()"
+                >
+                  <app-nav-icon name="my-challenges" />
+                  <span>{{ 'nav.dashboard' | t }}</span>
+                </a>
                 <a
                   routerLink="/my-challenges"
                   routerLinkActive="active"

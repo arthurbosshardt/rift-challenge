@@ -15,6 +15,7 @@ import {
   UpdateChallengeVisibilityRequest,
   UpdateChallengeNameRequest,
   UpdateChallengeRequest,
+  RecentGameResponse,
 } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import { normalizeRiotId } from '../utils/riot-id';
@@ -115,5 +116,9 @@ export class ChallengeApiService {
 
   getCurrentUser(): Observable<AuthMeResponse> {
     return this.http.get<AuthMeResponse>(apiUrl('/api/auth/me'));
+  }
+
+  listRecentGames(): Observable<RecentGameResponse[]> {
+    return this.http.get<RecentGameResponse[]>(apiUrl('/api/challenges/recent'));
   }
 }

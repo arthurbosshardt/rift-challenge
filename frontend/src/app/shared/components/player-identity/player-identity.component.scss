@@ -78,11 +78,18 @@
   }
 
   .player-identity__name,
-  .player-identity__riot-id,
+  .player-identity__riot-id {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .player-identity__rank-label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 100%;
+    font-size: 0.75rem;
   }
 
   .player-identity__copy-target {

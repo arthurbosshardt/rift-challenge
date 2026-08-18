@@ -181,3 +181,17 @@ export interface LinkRiotAccountRequest {
   riotId: string;
   smurf?: boolean;
 }
+
+
+export interface RecentGameResponse {
+  id: string;
+  gameName: string;
+  tagLine: string;
+  championId: number | null;
+  championIconUrl: string | null;
+  win: boolean;
+  playedAt: string;
+}
+
+
+export type GameDetail = RecentGameResponse;
