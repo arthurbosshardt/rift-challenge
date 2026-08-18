@@ -1,47 +1,124 @@
 import { describe, expect, it } from 'vitest';
-import { buildRiotId, normalizeGameName, normalizeRiotId, normalizeTagLine, parseRiotId } from './riot-id';
+import {
+  normalizeGameName,
+  normalizeTagLine,
+  normalizeRiotId,
+  parseRiotId,
+  buildRiotId,
+} from './riot-id';
 
-describe('riot-id utils', () => {
-  it('buildRiotId combines name and tag', () => {
-    expect(buildRiotId('JohnDoe', 'EUW')).toBe('JohnDoe#EUW');
+describe('Riot ID Utilities', () => {
+  describe('normalizeGameName', () => {
+    it('removes all whitespace', () => {
+      expect(normalizeGameName('Game Name')).toBe('GameName');
+      expect(normalizeGameName('Game  Name')).toBe('GameName');
+      expect(normalizeGameName(' GameName ')).toBe('GameName');
+    });
+
+    it('preserves non-whitespace characters', () => {
+      expect(normalizeGameName('JohnDoe123')).toBe('JohnDoe123');
+    });
   });
 
-  it('buildRiotId removes all spaces from game name and trims tag', () => {
-    expect(buildRiotId('  JohnDoe  ', ' EUW ')).toBe('JohnDoe#EUW');
-    expect(buildRiotId('Hide on bush', 'EUW1')).toBe('Hideonbush#EUW1');
-    expect(buildRiotId('\u00A0JohnDoe\u00A0', 'EUW')).toBe('JohnDoe#EUW');
+  describe('normalizeTagLine', () => {
+    it('removes leading hash symbols', () => {
+      expect(normalizeTagLine('##NA1')).toBe('NA1');
+      expect(normalizeTagLine('#NA1')).toBe('NA1');
+    });
+
+    it('handles non-breaking spaces', () => {
+      expect(normalizeTagLine('\u00A0NA1')).toBe('NA1');
+    });
+
+    it('trims regular spaces', () => {
+      expect(normalizeTagLine(' NA1 ')).toBe('NA1');
+    });
+
+    it('combines all normalizations', () => {
+      expect(normalizeTagLine('\u00A0 ##NA1 ')).toBe('NA1');
+    });
   });
 
-  it('normalizeRiotId strips spaces from game name', () => {
-    expect(normalizeRiotId('  JohnDoe # EUW ')).toBe('JohnDoe#EUW');
-    expect(normalizeRiotId('Hide on bush#EUW1')).toBe('Hideonbush#EUW1');
+  describe('normalizeRiotId', () => {
+    it('normalizes valid riot IDs', () => {
+      expect(normalizeRiotId('JohnDoe#NA1')).toBe('JohnDoe#NA1');
+    });
+
+    it('removes spaces from game name', () => {
+      expect(normalizeRiotId('John Doe#NA1')).toBe('JohnDoe#NA1');
+    });
+
+    it('normalizes tag line', () => {
+      expect(normalizeRiotId('JohnDoe##NA1')).toBe('JohnDoe#NA1');
+    });
+
+    it('returns original if hash is missing', () => {
+      const input = 'JohnDoeNA1';
+      expect(normalizeRiotId(input)).toBe(input);
+    });
+
+    it('returns original if hash is at start', () => {
+      const input = '#NA1';
+      expect(normalizeRiotId(input)).toBe(input);
+    });
+
+    it('returns original if hash is at end', () => {
+      const input = 'JohnDoe#';
+      expect(normalizeRiotId(input)).toBe(input);
+    });
   });
 
-  it('normalizeGameName removes all whitespace', () => {
-    expect(normalizeGameName('  Hide on bush  ')).toBe('Hideonbush');
+  describe('parseRiotId', () => {
+    it('parses valid riot ID', () => {
+      const result = parseRiotId('JohnDoe#NA1');
+      expect(result).toEqual({ gameName: 'JohnDoe', tagLine: 'NA1' });
+    });
+
+    it('parses with spaces (normalizes first)', () => {
+      const result = parseRiotId('John Doe#NA1');
+      expect(result).toEqual({ gameName: 'JohnDoe', tagLine: 'NA1' });
+    });
+
+    it('returns null for missing hash', () => {
+      expect(parseRiotId('JohnDoeNA1')).toBeNull();
+    });
+
+    it('returns null for hash at start', () => {
+      expect(parseRiotId('#NA1')).toBeNull();
+    });
+
+    it('returns null for hash at end', () => {
+      expect(parseRiotId('JohnDoe#')).toBeNull();
+    });
+
+    it('returns null for empty gameName after normalization', () => {
+      expect(parseRiotId('#')).toBeNull();
+    });
   });
 
-  it('buildRiotId strips leading hash from tag', () => {
-    expect(buildRiotId('JohnDoe', '#EUW')).toBe('JohnDoe#EUW');
-  });
+  describe('buildRiotId', () => {
+    it('builds valid riot ID', () => {
+      expect(buildRiotId('JohnDoe', 'NA1')).toBe('JohnDoe#NA1');
+    });
 
-  it('buildRiotId returns null when incomplete', () => {
-    expect(buildRiotId('', 'EUW')).toBeNull();
-    expect(buildRiotId('JohnDoe', '')).toBeNull();
-  });
+    it('normalizes game name', () => {
+      expect(buildRiotId('John Doe', 'NA1')).toBe('JohnDoe#NA1');
+    });
 
-  it('normalizeTagLine removes hash prefix', () => {
-    expect(normalizeTagLine('  #EUW1  ')).toBe('EUW1');
-  });
+    it('normalizes tag line', () => {
+      expect(buildRiotId('JohnDoe', '#NA1')).toBe('JohnDoe#NA1');
+    });
 
-  it('parseRiotId splits a normalized riot id', () => {
-    expect(parseRiotId('  JohnDoe # EUW ')).toEqual({ gameName: 'JohnDoe', tagLine: 'EUW' });
-    expect(parseRiotId('Hide on bush#EUW1')).toEqual({ gameName: 'Hideonbush', tagLine: 'EUW1' });
-  });
+    it('returns null if game name is empty after normalization', () => {
+      expect(buildRiotId('', 'NA1')).toBeNull();
+    });
 
-  it('parseRiotId returns null when format is invalid', () => {
-    expect(parseRiotId('JohnDoe')).toBeNull();
-    expect(parseRiotId('#EUW')).toBeNull();
-    expect(parseRiotId('JohnDoe#')).toBeNull();
+    it('returns null if tag line is empty after normalization', () => {
+      expect(buildRiotId('JohnDoe', '')).toBeNull();
+    });
+
+    it('returns null if both are empty', () => {
+      expect(buildRiotId('', '')).toBeNull();
+    });
   });
 });
