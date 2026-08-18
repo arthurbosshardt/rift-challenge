@@ -67,7 +67,7 @@ export class GameDetailModalComponent {
   }
 
   protected formatDamage(damage?: number): string {
-    if (!damage) return '-';
+    if (damage === undefined || damage === null) return '-';
     return this.formatLargeNumber(damage);
   }
 
