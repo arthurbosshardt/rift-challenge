@@ -69,6 +69,12 @@
 }
 
 @media (max-width: 899px) {
+  .created-challenges-modal {
+    width: 100%;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+
   .created-challenges-modal__grid {
     grid-template-columns: minmax(0, 1fr);
   }

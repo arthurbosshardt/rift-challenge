@@ -393,7 +393,8 @@
   .modal-panel--edit,
   .edit-challenge-modal {
     width: 100%;
-    max-width: 100%;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
   }
 
   .edit-challenge-modal__meta,

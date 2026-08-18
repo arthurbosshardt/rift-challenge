@@ -165,12 +165,20 @@
                     class="linked-account__remove"
                     (click)="unlinkAccount(account)"
                     [disabled]="unlinkingAccountId() === account.id"
-                  >
-                    {{
+                    [attr.aria-label]="
                       unlinkingAccountId() === account.id
                         ? ('accounts.unlinking' | t)
-                        : ('accounts.remove' | t)
-                    }}
+                        : ('challenge.removeAria' | t:{ name: account.riotId })
+                    "
+                    [attr.title]="'accounts.remove' | t"
+                  >
+                    @if (unlinkingAccountId() === account.id) {
+                      <span class="linked-account__remove-loading" aria-hidden="true">…</span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                      </svg>
+                    }
                   </button>
                 </div>
               } @else {
@@ -243,12 +251,20 @@
                           class="linked-account__remove"
                           (click)="unlinkAccount(account)"
                           [disabled]="unlinkingAccountId() === account.id"
-                        >
-                          {{
+                          [attr.aria-label]="
                             unlinkingAccountId() === account.id
                               ? ('accounts.unlinking' | t)
-                              : ('accounts.remove' | t)
-                          }}
+                              : ('challenge.removeAria' | t:{ name: account.riotId })
+                          "
+                          [attr.title]="'accounts.remove' | t"
+                        >
+                          @if (unlinkingAccountId() === account.id) {
+                            <span class="linked-account__remove-loading" aria-hidden="true">…</span>
+                          } @else {
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                            </svg>
+                          }
                         </button>
                       </div>
                     }

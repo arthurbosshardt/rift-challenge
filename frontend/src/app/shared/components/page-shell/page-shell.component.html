@@ -3,33 +3,43 @@
   [class.shell--centered]="centered()"
   [class.shell--floating-nav]="floatingNav()"
 >
-  @if (mobileNavOpen()) {
-    <button
-      type="button"
-      class="shell-nav-backdrop"
-      [attr.aria-label]="'nav.closeMenu' | t"
-      (click)="closeMobileNav()"
-    ></button>
-  }
-  <header
-    class="shell__header"
-    [class.shell__header--floating]="floatingNav()"
-    [class.shell__header--nav-open]="mobileNavOpen()"
-    #mobileNavRoot
-  >
+  <header class="shell__header" [class.shell__header--floating]="floatingNav()">
     <div class="shell__header-bar">
       <div class="shell__header-start">
-        <a routerLink="/home" class="brand" (click)="closeMobileNav()">
+        <a routerLink="/home" class="brand" (click)="closeUserMenu()">
           <app-brand-logo [size]="floatingNav() ? 'lg' : 'md'" />
           <span class="brand__name">{{ 'landing.introBrand' | t }}</span>
         </a>
       </div>
 
+      <nav class="shell__nav shell__nav--primary shell__nav--desktop" aria-label="Main">
+        <a routerLink="/public-challenges" routerLinkActive="active" (click)="closeUserMenu()">
+          <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>{{ 'nav.publicChallenges' | t }}</span>
+        </a>
+        @if (auth.isAuthenticated() && auth.linkedAccount()) {
+          <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
+            <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                fill="currentColor"
+              />
+            </svg>
+            <span>{{ 'nav.myChallenges' | t }}</span>
+          </a>
+        }
+      </nav>
+
       <div class="shell__actions">
         @if (auth.isAuthenticated()) {
           <button
             type="button"
-            class="shell__nav-create"
+            class="shell__nav-create shell__nav-create-desktop"
             [attr.aria-label]="'nav.createChallenge' | t"
             [attr.title]="'nav.createChallenge' | t"
             (click)="createChallengeModal.open()"
@@ -42,31 +52,96 @@
             </span>
             <span class="shell__nav-create-tooltip">{{ 'nav.createChallenge' | t }}</span>
           </button>
+        } @else {
+          <button type="button" class="linkish shell__login-desktop" (click)="authModal.open()">
+            {{ 'nav.login' | t }}
+          </button>
+        }
 
-          <div class="user-menu" #userMenu>
-            @if (auth.isProfileLoading()) {
-              <app-skeleton [circle]="true" width="2rem" height="2rem" />
-            } @else if (auth.headerIdentity(); as identity) {
-              <button
-                type="button"
-                class="user-menu__trigger"
-                (click)="toggleUserMenu($event)"
-                [attr.aria-expanded]="userMenuOpen()"
-                aria-haspopup="menu"
-              >
+        <div class="user-menu" #userMenu>
+          <button
+            type="button"
+            class="user-menu__trigger"
+            [class.user-menu__trigger--guest]="!auth.isAuthenticated() || auth.isProfileLoading()"
+            (click)="toggleUserMenu($event)"
+            [attr.aria-expanded]="userMenuOpen()"
+            aria-haspopup="menu"
+            [attr.aria-label]="userMenuOpen() ? ('nav.closeMenu' | t) : ('nav.openMenu' | t)"
+          >
+            @if (auth.isAuthenticated()) {
+              @if (auth.isProfileLoading()) {
+                <app-skeleton [circle]="true" width="2rem" height="2rem" />
+              } @else if (auth.headerIdentity(); as identity) {
                 @if (auth.linkedAccount()) {
                   <app-player-avatar
                     [profileIconId]="identity.profileIconId"
                     [gameName]="identity.gameName"
                     size="xs"
                   />
+                } @else {
+                  <svg class="user-menu__guest-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                      fill="currentColor"
+                    />
+                  </svg>
                 }
                 <span class="user-menu__label">{{ identity.label }}</span>
-              </button>
+              }
+            } @else {
+              <svg class="user-menu__guest-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
             }
+          </button>
 
-            @if (userMenuOpen()) {
-              <div class="user-menu__dropdown" role="menu">
+          @if (userMenuOpen()) {
+            <div class="user-menu__dropdown" role="menu">
+              <a
+                routerLink="/public-challenges"
+                routerLinkActive="active"
+                role="menuitem"
+                class="user-menu__item user-menu__item--mobile-nav"
+                (click)="closeUserMenu()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
+                  <path
+                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <span>{{ 'nav.publicChallenges' | t }}</span>
+              </a>
+              @if (auth.isAuthenticated() && auth.linkedAccount()) {
+                <a
+                  routerLink="/my-challenges"
+                  routerLinkActive="active"
+                  role="menuitem"
+                  class="user-menu__item user-menu__item--mobile-nav"
+                  (click)="closeUserMenu()"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
+                    <path
+                      d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  <span>{{ 'nav.myChallenges' | t }}</span>
+                </a>
+              }
+              @if (auth.isAuthenticated()) {
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="user-menu__item user-menu__item--mobile-nav"
+                  (click)="openCreateFromMenu()"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
+                    <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                    <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                  </svg>
+                  <span>{{ 'nav.createChallenge' | t }}</span>
+                </button>
                 <button type="button" role="menuitem" class="user-menu__item" (click)="openCreatedChallenges()">
                   <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
                     <path
@@ -99,13 +174,37 @@
                   </svg>
                   <span>{{ 'nav.settings' | t }}</span>
                 </button>
-              </div>
-            }
-          </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="user-menu__item user-menu__item--mobile-nav user-menu__item--danger"
+                  (click)="openLogoutConfirm()"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
+                    <path
+                      d="M12 2v10M18.36 6.64a9 9 0 1 1-12.72 0"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span>{{ 'nav.logout' | t }}</span>
+                </button>
+              } @else {
+                <button type="button" role="menuitem" class="user-menu__item user-menu__item--mobile-nav" (click)="openLoginFromMenu()">
+                  <span>{{ 'nav.login' | t }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
 
+        @if (auth.isAuthenticated()) {
           <button
             type="button"
-            class="shell__logout"
+            class="shell__logout shell__logout-desktop"
             [attr.aria-label]="'nav.logout' | t"
             [attr.title]="'nav.logout' | t"
             (click)="openLogoutConfirm()"
@@ -121,60 +220,7 @@
               />
             </svg>
           </button>
-        } @else {
-          <button type="button" class="linkish shell__login-desktop" (click)="authModal.open()">
-            {{ 'nav.login' | t }}
-          </button>
         }
-      </div>
-
-      <div class="shell__mobile-menu" #mobileNavAnchor>
-        <button
-          type="button"
-          class="shell__menu-toggle"
-          (click)="toggleMobileNav($event)"
-          [attr.aria-expanded]="mobileNavOpen()"
-          [attr.aria-label]="mobileNavOpen() ? ('nav.closeMenu' | t) : ('nav.openMenu' | t)"
-        >
-          <svg class="shell__menu-toggle-icon shell__menu-toggle-icon--open" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>
-          <svg class="shell__menu-toggle-icon shell__menu-toggle-icon--close" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>
-        </button>
-
-        <nav
-          class="shell__nav shell__nav--primary shell__nav--mobile-panel"
-          [class.shell__nav--mobile-panel-open]="mobileNavOpen()"
-          aria-label="Main"
-        >
-          <a routerLink="/public-challenges" routerLinkActive="active" (click)="closeMobileNav()">
-            <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-                fill="currentColor"
-              />
-            </svg>
-            <span>{{ 'nav.publicChallenges' | t }}</span>
-          </a>
-          @if (auth.isAuthenticated() && auth.linkedAccount()) {
-            <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeMobileNav()">
-              <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span>{{ 'nav.myChallenges' | t }}</span>
-            </a>
-          }
-          @if (!auth.isAuthenticated()) {
-            <button type="button" class="shell__nav-mobile-login linkish" (click)="openLoginFromMobileNav()">
-              {{ 'nav.login' | t }}
-            </button>
-          }
-        </nav>
       </div>
     </div>
   </header>

@@ -42,38 +42,28 @@ export class PageShellComponent {
   protected readonly settingsModal = inject(SettingsModalService);
   protected readonly logoutConfirm = inject(LogoutConfirmService);
   protected readonly userMenuOpen = signal(false);
-  protected readonly mobileNavOpen = signal(false);
   private readonly userMenuRef = viewChild<ElementRef<HTMLElement>>('userMenu');
-  private readonly mobileNavRootRef = viewChild<ElementRef<HTMLElement>>('mobileNavRoot');
 
   @HostListener('document:click', ['$event'])
   protected closeMenusOnClickOutside(event: MouseEvent): void {
-    const target = event.target as Node;
-
-    if (this.userMenuOpen()) {
-      const menu = this.userMenuRef()?.nativeElement;
-      if (menu && !menu.contains(target)) {
-        this.closeUserMenu();
-      }
+    if (!this.userMenuOpen()) {
+      return;
     }
 
-    if (this.mobileNavOpen()) {
-      const header = this.mobileNavRootRef()?.nativeElement;
-      if (header && !header.contains(target)) {
-        this.closeMobileNav();
-      }
+    const menu = this.userMenuRef()?.nativeElement;
+    const target = event.target as Node;
+    if (menu && !menu.contains(target)) {
+      this.closeUserMenu();
     }
   }
 
   @HostListener('document:keydown.escape')
   protected closeMenusOnEscape(): void {
     this.userMenuOpen.set(false);
-    this.mobileNavOpen.set(false);
   }
 
   protected toggleUserMenu(event: MouseEvent): void {
     event.stopPropagation();
-    this.closeMobileNav();
     this.userMenuOpen.update((open) => !open);
   }
 
@@ -81,19 +71,14 @@ export class PageShellComponent {
     this.userMenuOpen.set(false);
   }
 
-  protected toggleMobileNav(event: MouseEvent): void {
-    event.stopPropagation();
+  protected openLoginFromMenu(): void {
     this.closeUserMenu();
-    this.mobileNavOpen.update((open) => !open);
-  }
-
-  protected closeMobileNav(): void {
-    this.mobileNavOpen.set(false);
-  }
-
-  protected openLoginFromMobileNav(): void {
-    this.closeMobileNav();
     this.authModal.open();
+  }
+
+  protected openCreateFromMenu(): void {
+    this.closeUserMenu();
+    this.createChallengeModal.open();
   }
 
   protected openSettings(): void {

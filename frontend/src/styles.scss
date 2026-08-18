@@ -527,14 +527,32 @@ textarea:focus {
 
 @media (max-width: 899px) {
   .modal-overlay {
-    padding: 0.75rem;
+    padding: 0.5rem;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
   }
 
   .modal-panel {
-    max-height: calc(100dvh - 1.5rem);
+    width: 100%;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    overflow: auto;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
     padding: 1.25rem;
+  }
+
+  .modal-panel--wide,
+  .modal-panel--settings {
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .modal-panel--edit {
+    width: 100%;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
   }
 
   .refresh-action-btn {
