@@ -141,25 +141,12 @@
                 >
                   <div class="settings-form__row settings-form__row--inline">
                     <label>
-                      {{ 'challenge.gameName' | t }}
-                      <app-summoner-typeahead
-                        name="primaryGameName"
-                        [value]="primaryGameNameInput"
-                        (valueChange)="primaryGameNameInput = $event; riotInvalidForm.set(null)"
-                        (selected)="applyPrimarySummoner($event)"
-                        [placeholder]="'challenge.gameNamePlaceholder' | t"
-                        [disabled]="linkingPrimary()"
-                        [invalid]="riotInvalidForm() === 'primary'"
-                        [ariaInvalid]="riotInvalidForm() === 'primary'"
-                      />
-                    </label>
-                    <label>
-                      {{ 'challenge.tagLine' | t }}
+                      {{ 'challenge.riotId' | t }}
                       <input
-                        name="primaryTagLine"
+                        name="primaryRiotId"
                         type="text"
-                        [(ngModel)]="primaryTagLineInput"
-                        [placeholder]="'challenge.tagLinePlaceholder' | t"
+                        [(ngModel)]="primaryRiotIdInput"
+                        [placeholder]="'challenge.riotIdPlaceholder' | t"
                         [disabled]="linkingPrimary()"
                         [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
                         autocomplete="off"
@@ -270,26 +257,12 @@
                   >
                     <div class="settings-form__row settings-form__row--inline">
                       <label>
-                        {{ 'challenge.gameName' | t }}
-                        <app-summoner-typeahead
-                          name="smurfGameName"
-                          [value]="smurfGameNameInput"
-                          (valueChange)="smurfGameNameInput = $event; riotInvalidForm.set(null)"
-                          (selected)="applySmurfSummoner($event)"
-                          [placeholder]="'challenge.gameNamePlaceholder' | t"
-                          [disabled]="linkingSmurf()"
-                          [invalid]="riotInvalidForm() === 'smurf'"
-                          [ariaInvalid]="riotInvalidForm() === 'smurf'"
-                        />
-                      </label>
-                      <label>
-                        {{ 'challenge.tagLine' | t }}
+                        {{ 'challenge.riotId' | t }}
                         <input
-                          name="smurfTagLine"
+                          name="smurfRiotId"
                           type="text"
-                          [(ngModel)]="smurfTagLineInput"
-                          [placeholder]="'challenge.tagLinePlaceholder' | t"
-                          [attr.aria-label]="'challenge.tagLine' | t"
+                          [(ngModel)]="smurfRiotIdInput"
+                          [placeholder]="'challenge.riotIdPlaceholder' | t"
                           [disabled]="linkingSmurf()"
                           [class.challenge-form__control--invalid]="riotInvalidForm() === 'smurf'"
                           autocomplete="off"

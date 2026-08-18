@@ -14,11 +14,9 @@ import { UserRiotAccountApiService } from '../../core/services/user-riot-account
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { UserRiotAccount } from '../../core/models/challenge.models';
-import { buildRiotId, normalizeGameName, normalizeTagLine } from '../../core/utils/riot-id';
+import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
-import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
-import { SummonerSuggestion } from '../../core/services/summoner-search.service';
 import { SettingsAccountsSkeletonComponent } from '../../shared/components/settings-accounts-skeleton/settings-accounts-skeleton.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -36,7 +34,6 @@ const MAX_LINKED_ACCOUNTS = 5;
     SettingsAccountsSkeletonComponent,
     TranslatePipe,
     FormsModule,
-    SummonerTypeaheadComponent,
     NavIconComponent,
   ],
   templateUrl: './settings-modal.component.html',
@@ -58,10 +55,7 @@ export class SettingsModalComponent {
   protected readonly accountError = signal<string | null>(null);
   protected readonly accountSuccess = signal(false);
   protected readonly riotInvalidForm = signal<'primary' | 'smurf' | null>(null);
-  private readonly pendingPrimaryAccountChange = signal<{
-    gameName: string;
-    tagLine: string;
-  } | null>(null);
+  private readonly pendingPrimaryAccountChange = signal<string | null>(null);
 
   protected readonly primaryAccount = computed(
     () => this.accounts().find((account) => account.primary) ?? null,
@@ -71,10 +65,8 @@ export class SettingsModalComponent {
   );
   protected readonly canAddSmurf = computed(() => this.accounts().length < MAX_LINKED_ACCOUNTS);
 
-  protected primaryGameNameInput = '';
-  protected primaryTagLineInput = '';
-  protected smurfGameNameInput = '';
-  protected smurfTagLineInput = '';
+  protected primaryRiotIdInput = '';
+  protected smurfRiotIdInput = '';
 
   constructor() {
     effect(() => {
@@ -126,34 +118,19 @@ export class SettingsModalComponent {
     
     // If primary account exists, unlink it first, then link the new one
     if (primaryAccount) {
-      this.pendingPrimaryAccountChange.set({
-        gameName: this.primaryGameNameInput,
-        tagLine: this.primaryTagLineInput,
-      });
+      this.pendingPrimaryAccountChange.set(this.primaryRiotIdInput);
       this.unlinkAccount(primaryAccount);
     } else {
-      this.linkAccount(this.primaryGameNameInput, this.primaryTagLineInput, false, this.linkingPrimary, () => {
-        this.primaryGameNameInput = '';
-        this.primaryTagLineInput = '';
+      this.linkAccount(this.primaryRiotIdInput, false, this.linkingPrimary, () => {
+        this.primaryRiotIdInput = '';
       });
     }
   }
 
   protected linkSmurfAccount(): void {
-    this.linkAccount(this.smurfGameNameInput, this.smurfTagLineInput, true, this.linkingSmurf, () => {
-      this.smurfGameNameInput = '';
-      this.smurfTagLineInput = '';
+    this.linkAccount(this.smurfRiotIdInput, true, this.linkingSmurf, () => {
+      this.smurfRiotIdInput = '';
     });
-  }
-
-  protected applyPrimarySummoner(suggestion: SummonerSuggestion): void {
-    this.primaryGameNameInput = suggestion.gameName;
-    this.primaryTagLineInput = suggestion.tagLine;
-  }
-
-  protected applySmurfSummoner(suggestion: SummonerSuggestion): void {
-    this.smurfGameNameInput = suggestion.gameName;
-    this.smurfTagLineInput = suggestion.tagLine;
   }
 
   protected unlinkAccount(account: UserRiotAccount): void {
@@ -176,9 +153,8 @@ export class SettingsModalComponent {
           this.pendingPrimaryAccountChange.set(null);
           // Wait for accounts to load before linking the new account
           this.loadAccounts().subscribe(() => {
-            this.linkAccount(pending.gameName, pending.tagLine, false, this.linkingPrimary, () => {
-              this.primaryGameNameInput = '';
-              this.primaryTagLineInput = '';
+            this.linkAccount(pending, false, this.linkingPrimary, () => {
+              this.primaryRiotIdInput = '';
             });
           });
         } else {
@@ -194,8 +170,7 @@ export class SettingsModalComponent {
   }
 
   private linkAccount(
-    gameNameInput: string,
-    tagLineInput: string,
+    riotIdInput: string,
     smurf: boolean,
     linkingSignal: ReturnType<typeof signal<boolean>>,
     onSuccess: () => void,
@@ -204,8 +179,15 @@ export class SettingsModalComponent {
       return;
     }
 
-    const gameName = normalizeGameName(gameNameInput);
-    const tagLine = normalizeTagLine(tagLineInput);
+    const parsed = parseRiotId(riotIdInput);
+    
+    if (!parsed) {
+      this.accountError.set(this.i18n.t('errors.riotIdFormat'));
+      return;
+    }
+
+    const gameName = parsed.gameName;
+    const tagLine = parsed.tagLine;
     const riotId = buildRiotId(gameName, tagLine);
 
     if (!gameName) {
@@ -264,10 +246,8 @@ export class SettingsModalComponent {
     this.accountSuccess.set(false);
     this.riotInvalidForm.set(null);
     this.pendingPrimaryAccountChange.set(null);
-    this.primaryGameNameInput = '';
-    this.primaryTagLineInput = '';
-    this.smurfGameNameInput = '';
-    this.smurfTagLineInput = '';
+    this.primaryRiotIdInput = '';
+    this.smurfRiotIdInput = '';
   }
 
   private mapAccountError(err: HttpErrorResponse): string {
