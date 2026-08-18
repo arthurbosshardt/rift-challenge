@@ -118,7 +118,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'game.rankedSolo': 'Solo Classé',
     'game.blueTeam': 'Équipe Bleue',
     'game.redTeam': 'Équipe Rouge',
-    'game.kills': 'Eliminations',
+    'game.kills': 'Éliminations',
     'accounts.title': 'Comptes Riot',
     'accounts.hint': 'Liez votre compte principal et vos smurfs pour retrouver tous vos challenges dans Mes challenges.',
     'accounts.primaryTitle': 'Compte principal',
