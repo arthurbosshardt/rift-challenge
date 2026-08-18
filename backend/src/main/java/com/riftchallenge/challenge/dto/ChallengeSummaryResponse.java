@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public record ChallengeSummaryResponse(
         UUID id,
-        UUID shareSlug,
+        String shareSlug,
         String name,
         ChallengeType type,
         Instant startAt,

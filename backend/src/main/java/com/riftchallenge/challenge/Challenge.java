@@ -37,8 +37,8 @@ public class Challenge {
     @Column(name = "is_public", nullable = false)
     private boolean isPublic;
 
-    @Column(name = "share_slug", nullable = false, unique = true)
-    private UUID shareSlug;
+    @Column(name = "share_slug", nullable = false, unique = true, length = 120)
+    private String shareSlug;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -72,7 +72,7 @@ public class Challenge {
         challenge.startAt = startAt;
         challenge.endAt = endAt;
         challenge.isPublic = isPublic;
-        challenge.shareSlug = UUID.randomUUID();
+        challenge.shareSlug = name.trim();
         return challenge;
     }
 
@@ -116,7 +116,7 @@ public class Challenge {
         return isPublic;
     }
 
-    public UUID getShareSlug() {
+    public String getShareSlug() {
         return shareSlug;
     }
 
@@ -150,5 +150,6 @@ public class Challenge {
 
     public void updateName(String name) {
         this.name = name;
+        this.shareSlug = name;
     }
 }

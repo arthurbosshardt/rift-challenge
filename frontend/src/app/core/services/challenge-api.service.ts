@@ -52,7 +52,8 @@ export class ChallengeApiService {
 
   getChallengeByShareSlug(shareSlug: string, bustCache = false): Observable<ChallengeDetail> {
     const suffix = bustCache ? `?_=${Date.now()}` : '';
-    return this.http.get<ChallengeDetail>(`${this.baseUrl}/share/${shareSlug}${suffix}`);
+    const encodedSlug = encodeURIComponent(shareSlug);
+    return this.http.get<ChallengeDetail>(`${this.baseUrl}/share/${encodedSlug}${suffix}`);
   }
 
   createChallenge(request: CreateChallengeRequest): Observable<ChallengeDetail> {

@@ -80,7 +80,7 @@ public class ChallengeController {
 
     @GetMapping("/share/{shareSlug}")
     public ChallengeDetailResponse getByShareSlug(
-            @PathVariable UUID shareSlug,
+            @PathVariable String shareSlug,
             Authentication authentication
     ) {
         UUID callerId = AuthenticatedUserIds.optionalOwnerId(authentication);

@@ -32,6 +32,8 @@ management:
 riftchallenge:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:https://rift-challenge.com}
   supabase:
     url: ${SUPABASE_URL}
     publishable-key: ${SUPABASE_PUBLISHABLE_KEY}

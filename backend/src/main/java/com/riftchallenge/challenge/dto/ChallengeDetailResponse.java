@@ -1,6 +1,7 @@
 package com.riftchallenge.challenge.dto;
 
 import com.riftchallenge.challenge.Challenge;
+import com.riftchallenge.challenge.ChallengeSharePaths;
 import com.riftchallenge.challenge.ChallengeType;
 import java.time.Instant;
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.UUID;
 
 public record ChallengeDetailResponse(
         UUID id,
-        UUID shareSlug,
+        String shareSlug,
         String name,
         ChallengeType type,
         Instant startAt,
@@ -47,7 +48,7 @@ public record ChallengeDetailResponse(
                 challenge.getEndAt(),
                 challenge.isPublic(),
                 status,
-                "/challenges/" + challenge.getShareSlug(),
+                ChallengeSharePaths.buildSharePath(challenge.getShareSlug()),
                 isOwner,
                 lastRefreshedAt,
                 nextRefreshAvailableAt,

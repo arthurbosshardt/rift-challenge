@@ -199,7 +199,7 @@ public class ChallengeService {
     }
 
     @Transactional(readOnly = true)
-    public ChallengeDetailResponse getByShareSlug(UUID shareSlug, UUID callerId) {
+    public ChallengeDetailResponse getByShareSlug(String shareSlug, UUID callerId) {
         Challenge challenge = challengeRepository.findByShareSlug(shareSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
         return toDetailResponse(challenge, callerId);

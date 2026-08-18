@@ -15,7 +15,7 @@ public interface ChallengeRepository extends JpaRepository<Challenge, UUID> {
 
     List<Challenge> findByIdInOrderByStartAtDesc(Collection<UUID> ids);
 
-    Optional<Challenge> findByShareSlug(UUID shareSlug);
+    Optional<Challenge> findByShareSlug(String shareSlug);
 
     boolean existsByNameIgnoreCase(String name);
 

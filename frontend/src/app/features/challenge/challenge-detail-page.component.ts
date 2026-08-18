@@ -125,7 +125,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const path = challenge.sharePath || `/challenges/${challenge.shareSlug}`;
+    const path = challenge.sharePath || `/challenges/${encodeURIComponent(challenge.shareSlug)}`;
     const url = `${window.location.origin}${path}`;
     await navigator.clipboard.writeText(url);
     this.copied.set(true);
