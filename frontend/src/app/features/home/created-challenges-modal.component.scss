@@ -16,9 +16,19 @@
 }
 
 .created-challenges-modal__header h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
   margin: 0;
   font-size: 1.375rem;
   font-weight: 700;
+}
+
+.created-challenges-modal__title-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: 0 0 auto;
+  color: var(--gold);
 }
 
 .created-challenges-modal__close {

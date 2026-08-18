@@ -26,7 +26,19 @@
       </button>
 
       <header class="edit-challenge-modal__header">
-        <h2>{{ 'challenge.editTitle' | t }}</h2>
+        <h2>
+          <svg class="edit-challenge-modal__title-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>{{ 'challenge.editTitle' | t }}</span>
+        </h2>
       </header>
 
       <form class="edit-challenge-modal__main-form" (ngSubmit)="saveChallenge()">
