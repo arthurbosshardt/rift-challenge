@@ -148,6 +148,7 @@
                         [(ngModel)]="primaryRiotIdInput"
                         (ngModelChange)="riotInvalidForm.set(null)"
                         [placeholder]="'challenge.riotIdPlaceholder' | t"
+                        [attr.aria-label]="'challenge.riotId' | t"
                         [disabled]="linkingPrimary()"
                         [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
                         autocomplete="off"
