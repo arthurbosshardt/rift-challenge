@@ -15,13 +15,18 @@
   } @else {
     <div class="games-list">
       @for (game of games(); track game.id) {
-        <div class="game-item">
+        <button
+          type="button"
+          class="game-item"
+          (click)="openGameDetail(game)"
+          [attr.aria-label]="(game.win ? 'Victory' : 'Defeat') + ' with ' + game.gameName"
+        >
           <app-champion-icon [championId]="game.championId" [iconUrl]="game.championIconUrl" />
           <span class="game-result" [class.game-result--win]="game.win" [class.game-result--loss]="!game.win">
             {{ game.win ? 'V' : 'L' }}
           </span>
           <span class="game-date">{{ formatPlayedAt(game.playedAt) }}</span>
-        </div>
+        </button>
       }
     </div>
   }

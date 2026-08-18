@@ -9,6 +9,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { ParticipantMatchHistory, DuoMatchHistory } from '../../core/models/challenge.models';
 import { CommonModule } from '@angular/common';
 import { ChampionIconComponent } from '../../shared/components/champion-icon/champion-icon.component';
+import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
 
 export interface RecentGameResponse {
   id: string;
@@ -38,6 +39,7 @@ export class DashboardPageComponent implements OnInit {
   protected readonly auth = inject(AuthService);
   protected readonly settingsModal = inject(SettingsModalService);
   private readonly i18n = inject(I18nService);
+  protected readonly modalService = inject(GameDetailModalService);
 
   protected readonly games = signal<RecentGameResponse[]>([]);
   protected readonly loading = signal(true);
@@ -45,6 +47,10 @@ export class DashboardPageComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadPage();
+  }
+
+  protected openGameDetail(game: RecentGameResponse): void {
+    this.modalService.open(game);
   }
 
   private async loadPage(): Promise<void> {
