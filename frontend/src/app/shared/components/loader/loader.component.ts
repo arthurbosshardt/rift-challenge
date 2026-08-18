@@ -72,7 +72,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   `,
 })
 export class LoaderComponent {
-  readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   readonly label = input<string>('');
   readonly compact = input(false);
   readonly centered = input(true);
