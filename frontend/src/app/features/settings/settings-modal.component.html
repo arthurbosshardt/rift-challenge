@@ -133,6 +133,45 @@
               <h4 class="accounts-block__title">{{ 'accounts.primaryTitle' | t }}</h4>
               <p class="accounts-block__hint">{{ 'accounts.primaryHint' | t }}</p>
 
+              <ng-template #primaryAccountForm>
+                <form
+                  class="settings-form"
+                  [class.settings-form--invalid]="riotInvalidForm() === 'primary'"
+                  (ngSubmit)="linkPrimaryAccount()"
+                >
+                  <div class="settings-form__row settings-form__row--inline">
+                    <label>
+                      {{ 'challenge.gameName' | t }}
+                      <app-summoner-typeahead
+                        name="primaryGameName"
+                        [value]="primaryGameNameInput"
+                        (valueChange)="primaryGameNameInput = $event; riotInvalidForm.set(null)"
+                        (selected)="applyPrimarySummoner($event)"
+                        [placeholder]="'challenge.gameNamePlaceholder' | t"
+                        [disabled]="linkingPrimary()"
+                        [invalid]="riotInvalidForm() === 'primary'"
+                        [ariaInvalid]="riotInvalidForm() === 'primary'"
+                      />
+                    </label>
+                    <label>
+                      {{ 'challenge.tagLine' | t }}
+                      <input
+                        name="primaryTagLine"
+                        type="text"
+                        [(ngModel)]="primaryTagLineInput"
+                        [placeholder]="'challenge.tagLinePlaceholder' | t"
+                        [disabled]="linkingPrimary()"
+                        [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <button type="submit" [disabled]="linkingPrimary()">
+                      {{ linkingPrimary() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
+                    </button>
+                  </div>
+                </form>
+              </ng-template>
+
               @if (primaryAccount(); as account) {
                 <div class="linked-account linked-account--primary">
                   <app-player-avatar
@@ -166,45 +205,12 @@
                     }
                   </button>
                 </div>
+
+                <ng-container *ngTemplateOutlet="primaryAccountForm" />
               } @else {
                 <p class="settings-section__empty">{{ 'accounts.primaryEmpty' | t }}</p>
 
-                <form
-                  class="settings-form"
-                  [class.settings-form--invalid]="riotInvalidForm() === 'primary'"
-                  (ngSubmit)="linkPrimaryAccount()"
-                >
-                  <div class="settings-form__row">
-                    <label>
-                      {{ 'challenge.gameName' | t }}
-                      <app-summoner-typeahead
-                        name="primaryGameName"
-                        [value]="primaryGameNameInput"
-                        (valueChange)="primaryGameNameInput = $event; riotInvalidForm.set(null)"
-                        (selected)="applyPrimarySummoner($event)"
-                        [placeholder]="'challenge.gameNamePlaceholder' | t"
-                        [disabled]="linkingPrimary()"
-                        [invalid]="riotInvalidForm() === 'primary'"
-                        [ariaInvalid]="riotInvalidForm() === 'primary'"
-                      />
-                    </label>
-                    <label>
-                      {{ 'challenge.tagLine' | t }}
-                      <input
-                        name="primaryTagLine"
-                        type="text"
-                        [(ngModel)]="primaryTagLineInput"
-                        [placeholder]="'challenge.tagLinePlaceholder' | t"
-                        [disabled]="linkingPrimary()"
-                        [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
-                        autocomplete="off"
-                      />
-                    </label>
-                    <button type="submit" [disabled]="linkingPrimary()">
-                      {{ linkingPrimary() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
-                    </button>
-                  </div>
-                </form>
+                <ng-container *ngTemplateOutlet="primaryAccountForm" />
               }
             </div>
 
