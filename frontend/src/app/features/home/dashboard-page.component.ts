@@ -58,6 +58,7 @@ export class DashboardPageComponent implements OnInit {
     allGames.forEach((game) => {
       const accountId = `${game.gameName}#${game.tagLine}`;
       if (!accountMap.has(accountId)) {
+        // Create a new account group with stats from the first game (most recent, since sorted by date descending)
         accountMap.set(accountId, {
           accountId,
           gameName: game.gameName,
@@ -74,20 +75,6 @@ export class DashboardPageComponent implements OnInit {
       }
       const group = accountMap.get(accountId)!;
       group.games.push(game);
-      // Update account stats from the most recent (first) game, since games are sorted by date descending
-      if (game.currentTier !== undefined && game.currentTier !== null) {
-        group.currentTier = game.currentTier;
-        group.currentRank = game.currentRank;
-        group.currentLp = game.currentLp;
-      }
-      if (game.wins !== undefined && game.losses !== undefined) {
-        group.wins = game.wins;
-        group.losses = game.losses;
-        group.winRate = game.winRate;
-      }
-      if (game.profileIconId) {
-        group.profileIconId = game.profileIconId;
-      }
     });
 
     return Array.from(accountMap.values());

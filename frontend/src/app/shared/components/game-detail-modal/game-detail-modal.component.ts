@@ -63,23 +63,21 @@ export class GameDetailModalComponent {
   }
 
   protected formatGold(gold: number): string {
-    if (gold >= 1000000) {
-      return `${(gold / 1000000).toFixed(1)}M`;
-    }
-    if (gold >= 1000) {
-      return `${(gold / 1000).toFixed(1)}K`;
-    }
-    return gold.toString();
+    return this.formatLargeNumber(gold);
   }
 
   protected formatDamage(damage?: number): string {
     if (!damage) return '-';
-    if (damage >= 1000000) {
-      return `${(damage / 1000000).toFixed(1)}M`;
+    return this.formatLargeNumber(damage);
+  }
+
+  private formatLargeNumber(value: number): string {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
     }
-    if (damage >= 1000) {
-      return `${(damage / 1000).toFixed(1)}K`;
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}K`;
     }
-    return damage.toString();
+    return value.toString();
   }
 }
