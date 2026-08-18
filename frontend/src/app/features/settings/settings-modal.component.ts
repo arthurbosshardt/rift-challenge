@@ -190,19 +190,6 @@ export class SettingsModalComponent {
     const tagLine = parsed.tagLine;
     const riotId = buildRiotId(gameName, tagLine);
 
-    if (!gameName) {
-      this.accountError.set(this.i18n.t('errors.gameNameRequired'));
-      return;
-    }
-    if (!tagLine) {
-      this.accountError.set(this.i18n.t('errors.tagLineRequired'));
-      return;
-    }
-    if (!riotId) {
-      this.accountError.set(this.i18n.t('errors.riotIdRequired'));
-      return;
-    }
-
     // Check if account is already linked
     const accountExists = this.accounts().some(
       (account) => account.riotId.toLowerCase() === riotId.toLowerCase(),
