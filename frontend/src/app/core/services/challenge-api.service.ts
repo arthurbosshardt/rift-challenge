@@ -116,4 +116,8 @@ export class ChallengeApiService {
   getCurrentUser(): Observable<AuthMeResponse> {
     return this.http.get<AuthMeResponse>(apiUrl('/api/auth/me'));
   }
+
+  listRecentGames(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/recent`);
+  }
 }

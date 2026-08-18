@@ -276,4 +276,36 @@ public interface ChallengeParticipantMatchRepository extends JpaRepository<Chall
             @Param("participantId") UUID participantId,
             @Param("matchIds") List<String> matchIds
     );
+
+    @Query("""
+            SELECT rpm.riotMatchId AS matchId,
+                   rpm.win AS win,
+                   rpm.championId AS championId,
+                   rm.gameStart AS gameStart,
+                   cp.riotGameName AS gameName,
+                   cp.riotTagLine AS tagLine
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, ChallengeParticipant cp
+            WHERE cp.riotPuuid IN :puuids
+              AND rpm.participantId = cp.id
+              AND rm.riotMatchId = rpm.riotMatchId
+            ORDER BY rm.gameStart DESC
+            """)
+    List<RecentGameRow> findRecentGamesByPuuids(
+            @Param("puuids") java.util.List<String> puuids,
+            org.springframework.data.domain.Pageable pageable
+    );
+
+    interface RecentGameRow {
+        String getMatchId();
+
+        boolean isWin();
+
+        Integer getChampionId();
+
+        java.time.Instant getGameStart();
+
+        String getGameName();
+
+        String getTagLine();
+    }
 }

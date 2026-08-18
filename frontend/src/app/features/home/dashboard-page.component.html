@@ -1,0 +1,28 @@
+<app-page-shell [title]="'dashboard.title' | t">
+  @if (auth.isProfileLoading()) {
+    <app-challenge-list-skeleton [count]="3" [ariaLabel]="'dashboard.loading' | t" />
+  } @else if (!auth.linkedAccount()) {
+    <p class="state">
+      {{ 'dashboard.linkAccountFirst' | t }}
+      <button type="button" class="state-link" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
+    </p>
+  } @else if (loading()) {
+    <app-challenge-list-skeleton [count]="3" [ariaLabel]="'dashboard.loading' | t" />
+  } @else if (error()) {
+    <p class="state state--error">{{ error() }}</p>
+  } @else if (games().length === 0) {
+    <p class="state">{{ 'dashboard.empty' | t }}</p>
+  } @else {
+    <div class="games-list">
+      @for (game of games(); track game.id) {
+        <div class="game-item">
+          <app-champion-icon [championId]="game.championId" [iconUrl]="game.championIconUrl" />
+          <span class="game-result" [class.game-result--win]="game.win" [class.game-result--loss]="!game.win">
+            {{ game.win ? 'V' : 'L' }}
+          </span>
+          <span class="game-date">{{ formatPlayedAt(game.playedAt) }}</span>
+        </div>
+      }
+    </div>
+  }
+</app-page-shell>
