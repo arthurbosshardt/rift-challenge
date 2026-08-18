@@ -4,7 +4,7 @@ import {
   COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE,
   DDRAGON_API_BASE,
   DDRAGON_CDN_BASE,
-} from '../constants/champion-icons';
+} from '../constants/ddragon-constants';
 
 interface DdragonChampionEntry {
   key: string;

@@ -1,4 +1,4 @@
-import { DATA_DRAGON_VERSION, DDRAGON_CDN_BASE, COMMUNITY_DRAGON_PROFILE_ICON_BASE } from '../constants/champion-icons';
+import { DATA_DRAGON_VERSION, DDRAGON_CDN_BASE, COMMUNITY_DRAGON_PROFILE_ICON_BASE } from '../constants/ddragon-constants';
 
 export function profileIconUrls(profileIconId: number | null | undefined): string[] {
   if (profileIconId == null) {

@@ -1,7 +1,7 @@
 import {
   COMMUNITY_DRAGON_CHAMPION_ICON_BASE,
   COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE,
-} from '../constants/champion-icons';
+} from '../constants/ddragon-constants';
 
 export function championIconUrls(championId: number | null | undefined): string[] {
   if (championId == null || championId <= 0) {
