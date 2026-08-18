@@ -183,6 +183,39 @@ export interface LinkRiotAccountRequest {
 }
 
 
+export interface ItemData {
+  id: number;
+  iconUrl?: string | null;
+}
+
+export interface ParticipantData {
+  summonerName: string;
+  championId: number;
+  championIconUrl?: string | null;
+  summonerIconId?: number | null;
+  tier?: string | null;
+  rank?: string | null;
+  lp?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  cs?: number;
+  gold?: number;
+  goldPerMinute?: number;
+  damageDealt?: number;
+  damagePercentage?: number;
+  items?: ItemData[];
+}
+
+export interface TeamData {
+  participants: ParticipantData[];
+  kills: number;
+  gold: number;
+  towers: number;
+  dragons: number;
+  barons: number;
+}
+
 export interface RecentGameResponse {
   id: string;
   gameName: string;
@@ -199,6 +232,12 @@ export interface RecentGameResponse {
   wins?: number;
   losses?: number;
   winRate?: number;
+  // Match details (to be populated by backend when available)
+  duration?: number;
+  gameMode?: string;
+  queueType?: string;
+  blueTeam?: TeamData;
+  redTeam?: TeamData;
 }
 
 export type GameDetail = RecentGameResponse;
