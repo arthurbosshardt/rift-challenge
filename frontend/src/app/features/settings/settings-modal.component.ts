@@ -7,7 +7,7 @@ import {
   signal,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { UserRiotAccountApiService } from '../../core/services/user-riot-account-api.service';
@@ -31,7 +31,7 @@ const MAX_LINKED_ACCOUNTS = 5;
 @Component({
   selector: 'app-settings-modal',
   imports: [
-    CommonModule,
+    NgTemplateOutlet,
     PlayerAvatarComponent,
     SettingsAccountsSkeletonComponent,
     TranslatePipe,
