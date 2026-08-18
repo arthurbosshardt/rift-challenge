@@ -9,16 +9,7 @@
     <section class="modal-panel modal-panel--wide created-challenges-modal" (click)="$event.stopPropagation()">
       <header class="created-challenges-modal__header">
         <h2>
-          <svg class="created-challenges-modal__title-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M8 21h8M12 17v4M7 4h10l1 4H6l1-4zM9 8v5a3 3 0 0 0 6 0V8"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <app-nav-icon name="created-challenges" />
           <span>{{ 'home.createdChallengesTitle' | t }}</span>
         </h2>
         <button type="button" class="created-challenges-modal__close" [attr.aria-label]="'auth.close' | t" (click)="close()">

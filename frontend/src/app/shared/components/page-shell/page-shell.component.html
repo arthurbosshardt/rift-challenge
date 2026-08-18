@@ -14,22 +14,12 @@
 
       <nav class="shell__nav shell__nav--primary shell__nav--desktop" aria-label="Main">
         <a routerLink="/public-challenges" routerLinkActive="active" (click)="closeUserMenu()">
-          <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-              fill="currentColor"
-            />
-          </svg>
+          <app-nav-icon name="public-challenges" />
           <span>{{ 'nav.publicChallenges' | t }}</span>
         </a>
         @if (auth.isAuthenticated() && auth.linkedAccount()) {
           <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
-            <svg class="shell__nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                fill="currentColor"
-              />
-            </svg>
+            <app-nav-icon name="my-challenges" />
             <span>{{ 'nav.myChallenges' | t }}</span>
           </a>
         }
@@ -44,12 +34,7 @@
             [attr.title]="'nav.createChallenge' | t"
             (click)="createChallengeModal.open()"
           >
-            <span class="shell__nav-create-plus" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-              </svg>
-            </span>
+            <app-nav-icon name="create-challenge" />
             <span class="shell__nav-create-tooltip">{{ 'nav.createChallenge' | t }}</span>
           </button>
         } @else {
@@ -89,9 +74,7 @@
                 <span class="user-menu__label">{{ identity.label }}</span>
               }
             } @else {
-              <svg class="user-menu__guest-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
+              <app-brand-logo size="sm" />
             }
           </button>
 
@@ -104,12 +87,7 @@
                 class="user-menu__item user-menu__item--mobile-nav"
                 (click)="closeUserMenu()"
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
-                  <path
-                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-                    fill="currentColor"
-                  />
-                </svg>
+                <app-nav-icon name="public-challenges" />
                 <span>{{ 'nav.publicChallenges' | t }}</span>
               </a>
               @if (auth.isAuthenticated() && auth.linkedAccount()) {
@@ -120,12 +98,7 @@
                   class="user-menu__item user-menu__item--mobile-nav"
                   (click)="closeUserMenu()"
                 >
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
-                    <path
-                      d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                      fill="currentColor"
-                    />
-                  </svg>
+                  <app-nav-icon name="my-challenges" />
                   <span>{{ 'nav.myChallenges' | t }}</span>
                 </a>
               }
@@ -136,42 +109,15 @@
                   class="user-menu__item user-menu__item--mobile-nav"
                   (click)="openCreateFromMenu()"
                 >
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
-                    <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                    <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                  </svg>
+                  <app-nav-icon name="create-challenge" />
                   <span>{{ 'nav.createChallenge' | t }}</span>
                 </button>
                 <button type="button" role="menuitem" class="user-menu__item" (click)="openCreatedChallenges()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
-                    <path
-                      d="M8 21h8M12 17v4M7 4h10l1 4H6l1-4zM9 8v5a3 3 0 0 0 6 0V8"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
+                  <app-nav-icon name="created-challenges" />
                   <span>{{ 'nav.createdChallenges' | t }}</span>
                 </button>
                 <button type="button" role="menuitem" class="user-menu__item" (click)="openSettings()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
-                    <path
-                      d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                    />
-                    <path
-                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
+                  <app-nav-icon name="settings" />
                   <span>{{ 'nav.settings' | t }}</span>
                 </button>
                 <button
@@ -180,16 +126,7 @@
                   class="user-menu__item user-menu__item--mobile-nav user-menu__item--danger"
                   (click)="openLogoutConfirm()"
                 >
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="user-menu__icon">
-                    <path
-                      d="M12 2v10M18.36 6.64a9 9 0 1 1-12.72 0"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.75"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
+                  <app-nav-icon name="logout" />
                   <span>{{ 'nav.logout' | t }}</span>
                 </button>
               } @else {
@@ -209,16 +146,7 @@
             [attr.title]="'nav.logout' | t"
             (click)="openLogoutConfirm()"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 2v10M18.36 6.64a9 9 0 1 1-12.72 0"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <app-nav-icon name="logout" />
           </button>
         }
       </div>

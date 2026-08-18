@@ -77,8 +77,8 @@ class ChallengeProgressServiceTest {
                 participant.getId(),
                 RankSnapshot.SnapshotType.REFRESH
         )).thenReturn(Optional.of(refresh));
-        when(participantMatchRepository.countWinsByParticipantId(participant.getId())).thenReturn(0L);
-        when(participantMatchRepository.countLossesByParticipantId(participant.getId())).thenReturn(0L);
+        when(participantMatchRepository.countWinsInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
+        when(participantMatchRepository.countLossesInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
 
         ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
 
@@ -127,8 +127,8 @@ class ChallengeProgressServiceTest {
                 participant.getId(),
                 RankSnapshot.SnapshotType.REFRESH
         )).thenReturn(Optional.of(refresh));
-        when(participantMatchRepository.countWinsByParticipantId(participant.getId())).thenReturn(0L);
-        when(participantMatchRepository.countLossesByParticipantId(participant.getId())).thenReturn(0L);
+        when(participantMatchRepository.countWinsInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
+        when(participantMatchRepository.countLossesInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
 
         ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
 
@@ -175,8 +175,8 @@ class ChallengeProgressServiceTest {
                 participant.getId(),
                 RankSnapshot.SnapshotType.REFRESH
         )).thenReturn(Optional.of(refresh));
-        when(participantMatchRepository.countWinsByParticipantId(participant.getId())).thenReturn(0L);
-        when(participantMatchRepository.countLossesByParticipantId(participant.getId())).thenReturn(7L);
+        when(participantMatchRepository.countWinsInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
+        when(participantMatchRepository.countLossesInChallengeWindow(participant.getId(), challengeId)).thenReturn(7L);
 
         ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
 
@@ -212,8 +212,8 @@ class ChallengeProgressServiceTest {
                 participant.getId(),
                 RankSnapshot.SnapshotType.REFRESH
         )).thenReturn(Optional.empty());
-        when(participantMatchRepository.countWinsByParticipantId(participant.getId())).thenReturn(0L);
-        when(participantMatchRepository.countLossesByParticipantId(participant.getId())).thenReturn(0L);
+        when(participantMatchRepository.countWinsInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
+        when(participantMatchRepository.countLossesInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
 
         ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
 

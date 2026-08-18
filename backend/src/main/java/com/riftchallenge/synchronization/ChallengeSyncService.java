@@ -65,7 +65,7 @@ public class ChallengeSyncService {
             } catch (ResponseStatusException exception) {
                 if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
                     rateLimited = true;
-                    break;
+                    continue;
                 }
                 throw exception;
             }

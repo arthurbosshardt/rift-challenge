@@ -72,6 +72,7 @@ public class ChallengeProgressService {
             boolean includeMatchHistory
     ) {
         UUID participantId = participant.getId();
+        UUID challengeId = participant.getChallengeId();
 
         RankSnapshot baseline = rankSnapshotRepository
                 .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(participantId, SnapshotType.BASELINE)
@@ -80,8 +81,8 @@ public class ChallengeProgressService {
                 .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(participantId, SnapshotType.REFRESH)
                 .orElse(baseline);
 
-        long syncedWins = participantMatchRepository.countWinsByParticipantId(participantId);
-        long syncedLosses = participantMatchRepository.countLossesByParticipantId(participantId);
+        long syncedWins = participantMatchRepository.countWinsInChallengeWindow(participantId, challengeId);
+        long syncedLosses = participantMatchRepository.countLossesInChallengeWindow(participantId, challengeId);
 
         long wins;
         long losses;

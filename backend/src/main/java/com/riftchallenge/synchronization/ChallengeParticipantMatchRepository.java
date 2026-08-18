@@ -49,11 +49,83 @@ public interface ChallengeParticipantMatchRepository extends JpaRepository<Chall
             """)
     List<ParticipantMatchOutcome> findOutcomesByParticipantId(@Param("participantId") UUID participantId);
 
+    @Query("""
+            SELECT rpm.riotMatchId AS matchId,
+                   rpm.win AS win,
+                   rm.gameStart AS gameStart
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
+            WHERE rpm.participantId = :participantId
+              AND rpm.challengeId = :challengeId
+              AND c.id = :challengeId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= c.startAt
+              AND (c.endAt IS NULL OR rm.gameStart < c.endAt)
+            ORDER BY rm.gameStart DESC
+            """)
+    List<ParticipantMatchOutcomeInWindow> findOutcomesInChallengeWindow(
+            @Param("participantId") UUID participantId,
+            @Param("challengeId") UUID challengeId
+    );
+
+    @Query("""
+            SELECT rpm
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
+            WHERE rpm.participantId = :participantId
+              AND rpm.challengeId = :challengeId
+              AND c.id = :challengeId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND (rm.gameStart < c.startAt OR (c.endAt IS NOT NULL AND rm.gameStart >= c.endAt))
+            """)
+    List<ChallengeParticipantMatch> findOutsideChallengeWindow(
+            @Param("participantId") UUID participantId,
+            @Param("challengeId") UUID challengeId
+    );
+
     interface ParticipantMatchOutcome {
         String getMatchId();
 
         boolean isWin();
     }
+
+    interface ParticipantMatchOutcomeInWindow {
+        String getMatchId();
+
+        boolean isWin();
+
+        java.time.Instant getGameStart();
+    }
+
+    @Query("""
+            SELECT COUNT(rpm)
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
+            WHERE rpm.participantId = :participantId
+              AND rpm.challengeId = :challengeId
+              AND c.id = :challengeId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= c.startAt
+              AND (c.endAt IS NULL OR rm.gameStart < c.endAt)
+              AND rpm.win = true
+            """)
+    long countWinsInChallengeWindow(
+            @Param("participantId") UUID participantId,
+            @Param("challengeId") UUID challengeId
+    );
+
+    @Query("""
+            SELECT COUNT(rpm)
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
+            WHERE rpm.participantId = :participantId
+              AND rpm.challengeId = :challengeId
+              AND c.id = :challengeId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= c.startAt
+              AND (c.endAt IS NULL OR rm.gameStart < c.endAt)
+              AND rpm.win = false
+            """)
+    long countLossesInChallengeWindow(
+            @Param("participantId") UUID participantId,
+            @Param("challengeId") UUID challengeId
+    );
 
     @Query("""
             SELECT COUNT(rpm)

@@ -15,17 +15,23 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ChallengeParticipantSyncService {
 
     static final int MAX_NEW_MATCHES_PER_REFRESH = 10;
-    static final int MAX_CATCHUP_MATCHES_PER_REFRESH = 100;
-    static final int MAX_HISTORICAL_CATCHUP_MATCHES = 500;
-    static final int MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY = 50;
+    static final int MAX_CATCHUP_MATCHES_PER_REFRESH = 25;
+    static final int MAX_HISTORICAL_CATCHUP_MATCHES = 25;
+    static final int MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY = 500;
+
+    private static final Logger log = LoggerFactory.getLogger(ChallengeParticipantSyncService.class);
 
     private final RankSnapshotRepository rankSnapshotRepository;
     private final RiotMatchRepository riotMatchRepository;
@@ -73,13 +79,13 @@ public class ChallengeParticipantSyncService {
             return;
         }
 
-        RankState refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague.get());
-        if (refreshState == null) {
+        Optional<RankState> refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague.get());
+        if (refreshState.isEmpty()) {
             return;
         }
 
-        List<Boolean> challengeWindowWinsNewestFirst = findChallengeWindowWinOutcomesNewestFirst(participant.getId());
-        RankState baselineState = RankReplayService.replayBackward(refreshState, challengeWindowWinsNewestFirst);
+        List<Boolean> challengeWindowWinsNewestFirst = findChallengeWindowWinOutcomesNewestFirst(participant);
+        RankState baselineState = RankReplayService.replayBackward(refreshState.get(), challengeWindowWinsNewestFirst);
 
         Instant refreshAt = challenge.getEndAt() != null && now.isAfter(challenge.getEndAt()) ? challenge.getEndAt() : now;
         int challengeWindowWins = challengeWindowWinsNewestFirst.stream().mapToInt(win -> win ? 1 : 0).sum();
@@ -107,13 +113,13 @@ public class ChallengeParticipantSyncService {
                 participant.getId(),
                 refreshAt,
                 RankSnapshot.SnapshotType.REFRESH,
-                refreshState,
+                refreshState.get(),
                 challengeWindowWins,
                 challengeWindowLosses
         ));
     }
 
-    private RankState resolveRefreshRankState(
+    private Optional<RankState> resolveRefreshRankState(
             Challenge challenge,
             ChallengeParticipant participant,
             Instant now,
@@ -122,16 +128,27 @@ public class ChallengeParticipantSyncService {
         RankState currentState = RankReplayService.fromLeague(currentLeague);
 
         if (challenge.getEndAt() != null && now.isAfter(challenge.getEndAt())) {
-            List<Boolean> postChallengeWinsNewestFirst = fetchWinOutcomesBetween(
+            WinOutcomeFetchResult postChallengeOutcomes = fetchWinOutcomesBetween(
                     participant,
                     challenge.getEndAt(),
                     now,
                     MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY
             );
-            return RankReplayService.replayBackward(currentState, postChallengeWinsNewestFirst);
+            if (!postChallengeOutcomes.complete()) {
+                log.warn(
+                        "Skipping historical rank snapshot for participant {}: post-challenge replay incomplete ({} matches)",
+                        participant.getId(),
+                        postChallengeOutcomes.winsNewestFirst().size()
+                );
+                return Optional.empty();
+            }
+            return Optional.of(RankReplayService.replayBackward(
+                    currentState,
+                    postChallengeOutcomes.winsNewestFirst()
+            ));
         }
 
-        return currentState;
+        return Optional.of(currentState);
     }
 
     private void ensureBaselineSnapshot(ChallengeParticipant participant, Instant now) {
@@ -153,18 +170,20 @@ public class ChallengeParticipantSyncService {
     }
 
     private void syncChallengeWindowMatches(Challenge challenge, ChallengeParticipant participant) {
+        purgeMatchesOutsideChallengeWindow(participant);
         championBackfillService.backfillForParticipant(participant.getId());
 
         long startEpochSeconds = challenge.getStartAt().getEpochSecond();
         Long endEpochSeconds = challenge.getEndAt() != null ? challenge.getEndAt().getEpochSecond() : null;
         long existingMatches = participantMatchRepository.countByParticipantId(participant.getId());
         int importLimit = resolveImportLimit(challenge, existingMatches);
+        int matchIdFetchLimit = resolveMatchIdFetchLimit(existingMatches, importLimit);
 
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
                 participant.getRiotPuuid(),
                 startEpochSeconds,
                 endEpochSeconds,
-                importLimit
+                matchIdFetchLimit
         );
 
         int imported = 0;
@@ -177,48 +196,84 @@ public class ChallengeParticipantSyncService {
                 continue;
             }
 
-            RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
-            Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
-
-            if (gameStart.isBefore(challenge.getStartAt())) {
-                continue;
-            }
-            if (challenge.getEndAt() != null && !gameStart.isBefore(challenge.getEndAt())) {
-                continue;
-            }
-            if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
-                continue;
-            }
-
-            persistMatchIfNeeded(match, gameStart);
-
-            boolean win = false;
-            Integer championId = null;
-            for (RiotMatchDetailDto.Participant part : match.info().participants()) {
-                if (!participant.getRiotPuuid().equals(part.puuid())) {
+            try {
+                if (!importMatchDetail(challenge, participant, matchId)) {
                     continue;
                 }
-                participantProfileService.updateProfileIconIfMissing(
-                        participant.getId(),
-                        part.profileIcon()
-                );
-                win = part.win();
-                championId = part.championId();
-                break;
+                imported++;
+            } catch (ResponseStatusException exception) {
+                if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                    log.warn(
+                            "Riot API rate limit while importing matches for participant {} after {} new matches",
+                            participant.getId(),
+                            imported
+                    );
+                    break;
+                }
+                throw exception;
             }
-
-            if (championId == null) {
-                championId = ParticipantMatchChampionBackfillService.extractChampionId(
-                        match,
-                        participant.getRiotPuuid()
-                );
-            }
-
-            participantMatchRepository.save(
-                    ChallengeParticipantMatch.create(challenge.getId(), participant.getId(), matchId, win, championId)
-            );
-            imported++;
         }
+    }
+
+    private boolean importMatchDetail(Challenge challenge, ChallengeParticipant participant, String matchId) {
+        RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+        Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
+
+        if (gameStart.isBefore(challenge.getStartAt())) {
+            return false;
+        }
+        if (challenge.getEndAt() != null && !gameStart.isBefore(challenge.getEndAt())) {
+            return false;
+        }
+        if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
+            return false;
+        }
+
+        persistMatchIfNeeded(match, gameStart);
+
+        boolean win = false;
+        Integer championId = null;
+        for (RiotMatchDetailDto.Participant part : match.info().participants()) {
+            if (!participant.getRiotPuuid().equals(part.puuid())) {
+                continue;
+            }
+            participantProfileService.updateProfileIconIfMissing(
+                    participant.getId(),
+                    part.profileIcon()
+            );
+            win = part.win();
+            championId = part.championId();
+            break;
+        }
+
+        if (championId == null) {
+            championId = ParticipantMatchChampionBackfillService.extractChampionId(
+                    match,
+                    participant.getRiotPuuid()
+            );
+        }
+
+        participantMatchRepository.save(
+                ChallengeParticipantMatch.create(challenge.getId(), participant.getId(), matchId, win, championId)
+        );
+        return true;
+    }
+
+    private void purgeMatchesOutsideChallengeWindow(ChallengeParticipant participant) {
+        List<ChallengeParticipantMatch> staleMatches = participantMatchRepository.findOutsideChallengeWindow(
+                participant.getId(),
+                participant.getChallengeId()
+        );
+        if (staleMatches.isEmpty()) {
+            return;
+        }
+
+        participantMatchRepository.deleteAll(staleMatches);
+        log.info(
+                "Removed {} out-of-window matches for participant {}",
+                staleMatches.size(),
+                participant.getId()
+        );
     }
 
     private int resolveImportLimit(Challenge challenge, long existingMatches) {
@@ -231,23 +286,24 @@ public class ChallengeParticipantSyncService {
         return MAX_CATCHUP_MATCHES_PER_REFRESH;
     }
 
-    private List<Boolean> findChallengeWindowWinOutcomesNewestFirst(UUID participantId) {
-        List<ChallengeParticipantMatchRepository.ParticipantMatchOutcome> outcomes =
-                participantMatchRepository.findOutcomesByParticipantId(participantId);
+    private int resolveMatchIdFetchLimit(long existingMatches, int importLimit) {
+        if (existingMatches == 0) {
+            return importLimit;
+        }
 
-        return outcomes.stream()
-                .map(outcome -> {
-                    Instant gameStart = riotMatchRepository.findByRiotMatchId(outcome.getMatchId())
-                            .map(RiotMatch::getGameStart)
-                            .orElse(Instant.EPOCH);
-                    return new MatchOutcome(gameStart, outcome.isWin());
-                })
-                .sorted(Comparator.comparing(MatchOutcome::gameStart).reversed())
-                .map(MatchOutcome::win)
+        return (int) Math.min(100, existingMatches + importLimit);
+    }
+
+    private List<Boolean> findChallengeWindowWinOutcomesNewestFirst(ChallengeParticipant participant) {
+        return participantMatchRepository.findOutcomesInChallengeWindow(
+                        participant.getId(),
+                        participant.getChallengeId()
+                ).stream()
+                .map(ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::isWin)
                 .toList();
     }
 
-    private List<Boolean> fetchWinOutcomesBetween(
+    private WinOutcomeFetchResult fetchWinOutcomesBetween(
             ChallengeParticipant participant,
             Instant fromInclusive,
             Instant toExclusive,
@@ -256,6 +312,7 @@ public class ChallengeParticipantSyncService {
         List<MatchOutcome> outcomes = new ArrayList<>();
         long startEpochSeconds = fromInclusive.getEpochSecond();
         Long endEpochSeconds = toExclusive.getEpochSecond();
+        boolean rateLimited = false;
 
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
                 participant.getRiotPuuid(),
@@ -264,29 +321,48 @@ public class ChallengeParticipantSyncService {
                 maxMatches
         );
 
-        for (String matchId : matchIds) {
-            RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
-            Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
-
-            if (gameStart.isBefore(fromInclusive) || !gameStart.isBefore(toExclusive)) {
-                continue;
-            }
-            if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
-                continue;
-            }
-
-            boolean win = match.info().participants().stream()
-                    .filter(part -> participant.getRiotPuuid().equals(part.puuid()))
-                    .findFirst()
-                    .map(RiotMatchDetailDto.Participant::win)
-                    .orElse(false);
-            outcomes.add(new MatchOutcome(gameStart, win));
+        if (matchIds.size() >= maxMatches) {
+            log.warn(
+                    "Post-challenge replay capped at {} matches for participant {}",
+                    maxMatches,
+                    participant.getId()
+            );
+            return new WinOutcomeFetchResult(List.of(), false);
         }
 
-        return outcomes.stream()
+        for (String matchId : matchIds) {
+            try {
+                RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+                Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
+
+                if (gameStart.isBefore(fromInclusive) || !gameStart.isBefore(toExclusive)) {
+                    continue;
+                }
+                if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
+                    continue;
+                }
+
+                boolean win = match.info().participants().stream()
+                        .filter(part -> participant.getRiotPuuid().equals(part.puuid()))
+                        .findFirst()
+                        .map(RiotMatchDetailDto.Participant::win)
+                        .orElse(false);
+                outcomes.add(new MatchOutcome(gameStart, win));
+            } catch (ResponseStatusException exception) {
+                if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                    rateLimited = true;
+                    break;
+                }
+                throw exception;
+            }
+        }
+
+        List<Boolean> winsNewestFirst = outcomes.stream()
                 .sorted(Comparator.comparing(MatchOutcome::gameStart).reversed())
                 .map(MatchOutcome::win)
                 .toList();
+
+        return new WinOutcomeFetchResult(winsNewestFirst, !rateLimited);
     }
 
     private void persistMatchIfNeeded(RiotMatchDetailDto match, Instant gameStart) {
@@ -348,5 +424,8 @@ public class ChallengeParticipantSyncService {
     }
 
     private record MatchOutcome(Instant gameStart, boolean win) {
+    }
+
+    private record WinOutcomeFetchResult(List<Boolean> winsNewestFirst, boolean complete) {
     }
 }

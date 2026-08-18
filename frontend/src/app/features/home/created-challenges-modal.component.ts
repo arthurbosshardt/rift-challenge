@@ -10,6 +10,7 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CreatedChallengesModalService } from '../../core/services/created-challenges-modal.service';
 import { ChallengeSummary } from '../../core/models/challenge.models';
+import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { ChallengeCardComponent } from '../../shared/components/challenge-card/challenge-card.component';
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -17,7 +18,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-created-challenges-modal',
-  imports: [ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe],
+  imports: [ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe, NavIconComponent],
   templateUrl: './created-challenges-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './created-challenges-modal.component.scss',

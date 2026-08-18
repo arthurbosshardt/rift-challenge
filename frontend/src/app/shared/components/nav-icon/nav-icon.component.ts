@@ -1,0 +1,105 @@
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+
+export type NavIconName =
+  | 'public-challenges'
+  | 'my-challenges'
+  | 'create-challenge'
+  | 'created-challenges'
+  | 'settings'
+  | 'logout';
+
+@Component({
+  selector: 'app-nav-icon',
+  changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    class: 'nav-icon',
+  },
+  template: `
+    @switch (name()) {
+      @case ('public-challenges') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+            fill="currentColor"
+          />
+        </svg>
+      }
+      @case ('my-challenges') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+            fill="currentColor"
+          />
+        </svg>
+      }
+      @case ('create-challenge') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+      }
+      @case ('created-challenges') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M8 21h8M12 17v4M7 4h10l1 4H6l1-4zM9 8v5a3 3 0 0 0 6 0V8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      }
+      @case ('settings') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+          />
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      }
+      @case ('logout') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 2v10M18.36 6.64a9 9 0 1 1-12.72 0"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      }
+    }
+  `,
+  styles: `
+    :host {
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      width: 1.125rem;
+      height: 1.125rem;
+      color: inherit;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  `,
+})
+export class NavIconComponent {
+  readonly name = input.required<NavIconName>();
+}

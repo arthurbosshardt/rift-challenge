@@ -14,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { UserRiotAccount } from '../../core/models/challenge.models';
 import { buildRiotId, normalizeGameName, normalizeTagLine } from '../../core/utils/riot-id';
+import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
 import { SummonerSuggestion } from '../../core/services/summoner-search.service';
@@ -26,7 +27,7 @@ const MAX_LINKED_ACCOUNTS = 5;
 
 @Component({
   selector: 'app-settings-modal',
-  imports: [PlayerAvatarComponent, SettingsAccountsSkeletonComponent, TranslatePipe, FormsModule, SummonerTypeaheadComponent],
+  imports: [PlayerAvatarComponent, SettingsAccountsSkeletonComponent, TranslatePipe, FormsModule, SummonerTypeaheadComponent, NavIconComponent],
   templateUrl: './settings-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings-modal.component.scss',
