@@ -6,6 +6,7 @@ import com.riftchallenge.challenge.ChallengeParticipantRepository;
 import com.riftchallenge.challenge.ChallengeRefreshRecordService;
 import com.riftchallenge.challenge.ChallengeRefreshRepository;
 import com.riftchallenge.challenge.ChallengeRepository;
+import com.riftchallenge.riot.RiotMatchLookupService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,6 +26,7 @@ public class ChallengeSyncService {
     private final ChallengeRefreshRepository challengeRefreshRepository;
     private final ChallengeParticipantSyncService participantSyncService;
     private final ChallengeRefreshRecordService refreshRecordService;
+    private final RiotMatchLookupService riotMatchLookupService;
     private final Clock clock;
 
     public ChallengeSyncService(
@@ -33,6 +35,7 @@ public class ChallengeSyncService {
             ChallengeRefreshRepository challengeRefreshRepository,
             ChallengeParticipantSyncService participantSyncService,
             ChallengeRefreshRecordService refreshRecordService,
+            RiotMatchLookupService riotMatchLookupService,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
@@ -40,6 +43,7 @@ public class ChallengeSyncService {
         this.challengeRefreshRepository = challengeRefreshRepository;
         this.participantSyncService = participantSyncService;
         this.refreshRecordService = refreshRecordService;
+        this.riotMatchLookupService = riotMatchLookupService;
         this.clock = clock;
     }
 
@@ -57,16 +61,21 @@ public class ChallengeSyncService {
         List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
         boolean rateLimited = false;
 
-        for (ChallengeParticipant participant : participants) {
-            try {
-                participantSyncService.syncParticipant(challenge, participant, now);
-            } catch (ResponseStatusException exception) {
-                if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                    rateLimited = true;
-                    continue;
+        riotMatchLookupService.beginRefreshScope();
+        try {
+            for (ChallengeParticipant participant : participants) {
+                try {
+                    participantSyncService.syncParticipant(challenge, participant, now);
+                } catch (ResponseStatusException exception) {
+                    if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                        rateLimited = true;
+                        continue;
+                    }
+                    throw exception;
                 }
-                throw exception;
             }
+        } finally {
+            riotMatchLookupService.endRefreshScope();
         }
 
         refreshRecordService.recordRefresh(challengeId, now);

@@ -14,6 +14,7 @@ import com.riftchallenge.challenge.ChallengeRefreshRecordService;
 import com.riftchallenge.challenge.ChallengeRefreshRepository;
 import com.riftchallenge.challenge.ChallengeRepository;
 import com.riftchallenge.challenge.ChallengeType;
+import com.riftchallenge.riot.RiotMatchLookupService;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.time.Clock;
 import java.time.Instant;
@@ -47,6 +48,9 @@ class ChallengeSyncServiceTest {
     @Mock
     private ChallengeRefreshRecordService refreshRecordService;
 
+    @Mock
+    private RiotMatchLookupService riotMatchLookupService;
+
     @InjectMocks
     private ChallengeSyncService challengeSyncService;
 
@@ -62,6 +66,7 @@ class ChallengeSyncServiceTest {
                 challengeRefreshRepository,
                 participantSyncService,
                 refreshRecordService,
+                riotMatchLookupService,
                 clock
         );
 
@@ -90,6 +95,7 @@ class ChallengeSyncServiceTest {
                 challengeRefreshRepository,
                 participantSyncService,
                 refreshRecordService,
+                riotMatchLookupService,
                 clock
         );
 
@@ -113,6 +119,7 @@ class ChallengeSyncServiceTest {
                 challengeRefreshRepository,
                 participantSyncService,
                 refreshRecordService,
+                riotMatchLookupService,
                 clock
         );
 
@@ -139,5 +146,7 @@ class ChallengeSyncServiceTest {
         verify(participantSyncService).syncParticipant(challenge, first, now);
         verify(participantSyncService).syncParticipant(challenge, second, now);
         verify(refreshRecordService).recordRefresh(challengeId, now);
+        verify(riotMatchLookupService).beginRefreshScope();
+        verify(riotMatchLookupService).endRefreshScope();
     }
 }

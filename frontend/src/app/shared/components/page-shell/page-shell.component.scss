@@ -17,6 +17,12 @@
   position: relative;
 }
 
+@media (min-width: 900px) {
+  .user-menu--mobile-only {
+    display: none;
+  }
+}
+
 .user-menu__trigger {
   display: inline-flex;
   align-items: center;

@@ -10,9 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChallengeRefreshRecordService {
 
     private final ChallengeRefreshRepository challengeRefreshRepository;
+    private final ChallengeDataSyncService dataSyncService;
 
-    public ChallengeRefreshRecordService(ChallengeRefreshRepository challengeRefreshRepository) {
+    public ChallengeRefreshRecordService(
+            ChallengeRefreshRepository challengeRefreshRepository,
+            ChallengeDataSyncService dataSyncService
+    ) {
         this.challengeRefreshRepository = challengeRefreshRepository;
+        this.dataSyncService = dataSyncService;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -22,5 +27,6 @@ public class ChallengeRefreshRecordService {
 
         refresh.updateRefreshedAt(refreshedAt);
         challengeRefreshRepository.save(refresh);
+        dataSyncService.touchDataSyncedAt(challengeId, refreshedAt);
     }
 }

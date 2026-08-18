@@ -46,6 +46,9 @@ public class Challenge {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "data_synced_at")
+    private Instant dataSyncedAt;
+
     protected Challenge() {
     }
 
@@ -123,6 +126,14 @@ public class Challenge {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getDataSyncedAt() {
+        return dataSyncedAt;
+    }
+
+    public void updateDataSyncedAt(Instant dataSyncedAt) {
+        this.dataSyncedAt = dataSyncedAt;
     }
 
     public void updateVisibility(boolean isPublic) {

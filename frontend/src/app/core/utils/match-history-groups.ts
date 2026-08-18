@@ -11,6 +11,22 @@ export function localDayKey(playedAt: string): string {
   return `${year}-${month}-${day}`;
 }
 
+export function formatAbsoluteMatchHistoryDayLabel(dayKey: string, locale: 'fr' | 'en'): string {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  if (!year || !month || !day) {
+    return dayKey;
+  }
+
+  const dd = day.toString().padStart(2, '0');
+  const mm = month.toString().padStart(2, '0');
+
+  if (locale === 'fr') {
+    return `${dd}/${mm}/${year}`;
+  }
+
+  return `${mm}/${dd}/${year}`;
+}
+
 export function formatMatchHistoryDayLabel(
   dayKey: string,
   locale: 'fr' | 'en',
@@ -25,6 +41,10 @@ export function formatMatchHistoryDayLabel(
   const now = new Date(nowMs);
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const diffDays = Math.max(0, Math.round((todayStart - groupStart) / 86_400_000));
+
+  if (diffDays > 30) {
+    return formatAbsoluteMatchHistoryDayLabel(dayKey, locale);
+  }
 
   if (diffDays === 0) {
     return locale === 'fr' ? "aujourd'hui" : 'today';

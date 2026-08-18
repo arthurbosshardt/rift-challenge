@@ -47,6 +47,9 @@ public class RankSnapshot {
 
     private Integer losses;
 
+    @Column(nullable = false)
+    private boolean estimated;
+
     protected RankSnapshot() {
     }
 
@@ -61,6 +64,32 @@ public class RankSnapshot {
             Integer wins,
             Integer losses
     ) {
+        return create(
+                participantId,
+                capturedAt,
+                snapshotType,
+                queueType,
+                tier,
+                rankDivision,
+                leaguePoints,
+                wins,
+                losses,
+                false
+        );
+    }
+
+    public static RankSnapshot create(
+            UUID participantId,
+            Instant capturedAt,
+            SnapshotType snapshotType,
+            String queueType,
+            String tier,
+            String rankDivision,
+            int leaguePoints,
+            Integer wins,
+            Integer losses,
+            boolean estimated
+    ) {
         RankSnapshot snapshot = new RankSnapshot();
         snapshot.id = UUID.randomUUID();
         snapshot.participantId = participantId;
@@ -72,6 +101,7 @@ public class RankSnapshot {
         snapshot.leaguePoints = leaguePoints;
         snapshot.wins = wins;
         snapshot.losses = losses;
+        snapshot.estimated = estimated;
         return snapshot;
     }
 
@@ -105,5 +135,9 @@ public class RankSnapshot {
 
     public Integer getLosses() {
         return losses;
+    }
+
+    public boolean isEstimated() {
+        return estimated;
     }
 }

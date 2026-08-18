@@ -2,6 +2,9 @@ package com.riftchallenge.challenge;
 
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.riot.MatchLpEstimator;
+import com.riftchallenge.riot.RankReplayService;
+import com.riftchallenge.riot.RankReplayService.MatchBasedRankEstimate;
+import com.riftchallenge.riot.RankReplayService.RankState;
 import com.riftchallenge.riot.RankScoreConverter;
 import com.riftchallenge.synchronization.RankSnapshot;
 import com.riftchallenge.synchronization.RankSnapshot.SnapshotType;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,25 +107,65 @@ public class ChallengeProgressService {
             return includeMatchHistory ? attachMatchHistory(participant, progress) : progress;
         }
 
-        int lpGained = computeLpGained(baseline, current, (int) wins, (int) losses);
+        RankSnapshot effectiveBaseline = baseline;
+        RankSnapshot effectiveCurrent = current;
+        if (current.isEstimated() && wins + losses > 0) {
+            Optional<MatchBasedRankEstimate> liveEstimate = estimateRankFromSyncedMatches(participantId, challengeId);
+            if (liveEstimate.isPresent()) {
+                effectiveBaseline = toEstimatedSnapshot(participantId, RankSnapshot.SnapshotType.BASELINE, liveEstimate.get().baseline());
+                effectiveCurrent = toEstimatedSnapshot(participantId, RankSnapshot.SnapshotType.REFRESH, liveEstimate.get().refresh());
+            }
+        }
+
+        int lpGained = computeLpGained(effectiveBaseline, effectiveCurrent, (int) wins, (int) losses);
         int rankScore = RankScoreConverter.toScore(
-                current.getTier(),
-                current.getRankDivision(),
-                current.getLeaguePoints()
+                effectiveCurrent.getTier(),
+                effectiveCurrent.getRankDivision(),
+                effectiveCurrent.getLeaguePoints()
         );
 
         ParticipantProgressResponse progress = ParticipantProgressResponse.withRankData(
                 participant,
                 0,
-                current.getTier(),
-                current.getRankDivision(),
-                current.getLeaguePoints(),
+                effectiveCurrent.getTier(),
+                effectiveCurrent.getRankDivision(),
+                effectiveCurrent.getLeaguePoints(),
                 lpGained,
                 rankScore,
                 (int) wins,
-                (int) losses
+                (int) losses,
+                current.isEstimated()
         );
         return includeMatchHistory ? attachMatchHistory(participant, progress) : progress;
+    }
+
+    private Optional<MatchBasedRankEstimate> estimateRankFromSyncedMatches(UUID participantId, UUID challengeId) {
+        List<Boolean> winsOldestFirst = participantMatchRepository.findOutcomesInChallengeWindow(participantId, challengeId)
+                .stream()
+                .map(ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::isWin)
+                .toList()
+                .reversed();
+
+        return RankReplayService.estimateFromMatches(winsOldestFirst);
+    }
+
+    private static RankSnapshot toEstimatedSnapshot(
+            UUID participantId,
+            RankSnapshot.SnapshotType snapshotType,
+            RankState state
+    ) {
+        return RankSnapshot.create(
+                participantId,
+                java.time.Instant.EPOCH,
+                snapshotType,
+                "RANKED_SOLO_5x5",
+                state.tier(),
+                state.rankDivision(),
+                state.leaguePoints(),
+                0,
+                0,
+                true
+        );
     }
 
     private ParticipantProgressResponse attachMatchHistory(

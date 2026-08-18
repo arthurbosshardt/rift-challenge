@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -332,7 +333,9 @@ public class ChallengeService {
 
     private void maybeAutoRefreshAfterScheduleChange(UUID challengeId, Instant startAt) {
         Instant now = clock.instant();
-        RefreshTiming refreshTiming = resolveRefreshTiming(challengeId, now);
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
+        RefreshTiming refreshTiming = resolveRefreshTiming(challenge, now);
         if (refreshTiming.refreshAvailable() && !now.isBefore(startAt)) {
             try {
                 challengeSyncService.refreshChallenge(challengeId);
@@ -383,7 +386,7 @@ public class ChallengeService {
             duos = List.of();
         }
 
-        RefreshTiming refreshTiming = resolveRefreshTiming(challenge.getId(), now);
+        RefreshTiming refreshTiming = resolveRefreshTiming(challenge, now);
 
         return ChallengeDetailResponse.from(
                 challenge,
@@ -397,19 +400,26 @@ public class ChallengeService {
         );
     }
 
-    private RefreshTiming resolveRefreshTiming(UUID challengeId, Instant now) {
-        return challengeRefreshRepository.findByChallengeId(challengeId)
-                .map(refresh -> {
-                    Instant lastRefreshedAt = refresh.getRefreshedAt();
-                    Instant nextAllowed = lastRefreshedAt.plus(ChallengeSyncService.REFRESH_COOLDOWN);
-                    boolean available = !now.isBefore(nextAllowed);
-                    return new RefreshTiming(
-                            lastRefreshedAt,
-                            available,
-                            available ? null : nextAllowed
-                    );
-                })
-                .orElse(new RefreshTiming(null, true, null));
+    private RefreshTiming resolveRefreshTiming(Challenge challenge, Instant now) {
+        Instant lastDataUpdate = challenge.getDataSyncedAt();
+        Optional<ChallengeRefresh> refresh = challengeRefreshRepository.findByChallengeId(challenge.getId());
+        if (lastDataUpdate == null) {
+            lastDataUpdate = refresh.map(ChallengeRefresh::getRefreshedAt).orElse(null);
+        }
+
+        if (lastDataUpdate == null) {
+            return new RefreshTiming(null, true, null);
+        }
+
+        Instant nextAllowed = refresh
+                .map(existing -> existing.getRefreshedAt().plus(ChallengeSyncService.REFRESH_COOLDOWN))
+                .orElse(lastDataUpdate.plus(ChallengeSyncService.REFRESH_COOLDOWN));
+        boolean available = !now.isBefore(nextAllowed);
+        return new RefreshTiming(
+                lastDataUpdate,
+                available,
+                available ? null : nextAllowed
+        );
     }
 
     private record RefreshTiming(

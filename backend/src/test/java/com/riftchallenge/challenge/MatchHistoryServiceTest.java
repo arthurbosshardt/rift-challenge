@@ -57,7 +57,8 @@ class MatchHistoryServiceTest {
                 20,
                 1000,
                 2,
-                1
+                1,
+                false
         );
 
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));

@@ -4,6 +4,9 @@
   align-items: center;
   gap: 0.875rem;
   margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .detail__title-row {
@@ -12,6 +15,9 @@
   align-items: center;
   gap: 0.75rem;
   min-width: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
 }
 
 .detail__title-actions {
@@ -26,19 +32,24 @@
 }
 
 .detail__title {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.625rem;
   margin: 0;
   min-width: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
   font-size: clamp(1.75rem, 4vw, 2.25rem);
   font-weight: 400;
   line-height: 1.1;
 }
 
 .detail__title-text {
+  flex: 1 1 0;
   min-width: 0;
+  max-width: 100%;
   font-family: var(--font-brand);
   letter-spacing: 0.04em;
 }
@@ -244,6 +255,91 @@
   color: var(--gold);
   font-size: 1rem;
   line-height: 1;
+}
+
+.sort-controls__ranking-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: min(100%, 22rem);
+  padding: 0.4375rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  cursor: help;
+  font: inherit;
+  text-align: left;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.sort-controls__ranking-help:hover,
+.sort-controls__ranking-help:focus-visible {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--gold-a06);
+}
+
+.sort-controls__ranking-help:hover .sort-controls__ranking-help-tooltip,
+.sort-controls__ranking-help:focus-visible .sort-controls__ranking-help-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.sort-controls__ranking-help-label {
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.sort-controls__ranking-help-icon {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-subtle);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+}
+
+.sort-controls__ranking-help-tooltip {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  font-size: 0.8125rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+  pointer-events: none;
 }
 
 .refresh__panel {
@@ -763,11 +859,12 @@
   }
 
   .detail__title-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.625rem;
     width: 100%;
+    max-width: 100%;
     padding: 0.5rem 0 0.75rem;
   }
 
@@ -776,23 +873,34 @@
     flex-wrap: nowrap;
     align-items: center;
     gap: 0.5rem;
-    grid-column: 1;
     width: 100%;
+    max-width: 100%;
     min-width: 0;
     padding: 0.25rem 0;
-    font-size: inherit;
+    font-size: clamp(
+      1.125rem,
+      calc((100vw - 3rem) / max(var(--title-chars, 12), 1) * 1.72),
+      1.875rem
+    );
   }
 
   .detail__type-badge {
     flex-shrink: 0;
   }
 
+  .detail__title-text {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .detail__title-actions {
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: start;
     flex-wrap: wrap;
     justify-content: flex-start;
+    align-self: flex-start;
     max-width: 100%;
   }
 
@@ -927,5 +1035,27 @@
     flex-shrink: 0;
     width: 2.125rem;
     height: 2.125rem;
+  }
+
+  .sort-controls__ranking-help {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 2.125rem;
+    height: 2.125rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .sort-controls__ranking-help-label {
+    display: none;
+  }
+
+  .sort-controls__ranking-help-icon {
+    display: inline-flex;
+  }
+
+  .sort-controls__ranking-help-tooltip {
+    right: 0;
+    left: auto;
   }
 }

@@ -43,7 +43,11 @@
           </button>
         }
 
-        <div class="user-menu" #userMenu>
+        <div
+          class="user-menu"
+          [class.user-menu--mobile-only]="!auth.isAuthenticated()"
+          #userMenu
+        >
           <button
             type="button"
             class="user-menu__trigger"

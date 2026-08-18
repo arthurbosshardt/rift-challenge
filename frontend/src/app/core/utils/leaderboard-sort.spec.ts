@@ -26,6 +26,7 @@ function participant(overrides: Partial<ParticipantProgress>): ParticipantProgre
     winRate: 0,
     profileIconId: null,
     hasRankData: true,
+    rankEstimated: false,
     recentMatches: [],
     ...overrides,
   };

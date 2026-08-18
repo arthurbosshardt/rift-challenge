@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDaysToIso,
   buildLocalStartAtIso,
+  formatChallengeDateCompact,
   formatChallengeDateTime,
   splitLocalDateHour,
 } from './challenge-date';
@@ -15,6 +16,16 @@ describe('challenge-date', () => {
   it('formats English dates as MM/dd/yyyy at HHh', () => {
     const formatted = formatChallengeDateTime(new Date(2026, 7, 17, 14, 30, 0), 'en');
     expect(formatted).toBe('08/17/2026 at 14h');
+  });
+
+  it('formats compact French dates with à before hour', () => {
+    const formatted = formatChallengeDateCompact(new Date(2026, 1, 17, 1, 0, 0));
+    expect(formatted).toBe('17/02 à 1h');
+  });
+
+  it('formats compact English dates with at before hour', () => {
+    const formatted = formatChallengeDateCompact(new Date(2026, 1, 17, 1, 0, 0), 'en');
+    expect(formatted).toBe('02/17 at 1h');
   });
 
   it('builds ISO string from local date and hour', () => {

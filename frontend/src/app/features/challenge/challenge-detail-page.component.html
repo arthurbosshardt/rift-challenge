@@ -200,6 +200,19 @@
           </p>
         } @else if (refreshing()) {
           <div class="stats-panel" role="status" [attr.aria-label]="'challenge.refreshingStats' | t">
+            <div class="refresh-sync-callout">
+              <span class="refresh-sync-callout__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+                  />
+                </svg>
+              </span>
+              <div class="refresh-sync-callout__body">
+                <p class="refresh-sync-callout__title">{{ 'challenge.refreshingStats' | t }}</p>
+                <p class="refresh-sync-callout__hint">{{ 'challenge.refreshHistoricalHint' | t }}</p>
+              </div>
+            </div>
             <app-leaderboard-skeleton [rowCount]="4" />
           </div>
         } @else {
@@ -269,6 +282,21 @@
                   >
                     <span class="sort-controls__direction-icon" aria-hidden="true">{{ sortDirectionIcon() }}</span>
                   </button>
+                  @if (currentChallenge.status === 'FINISHED') {
+                    <button
+                      type="button"
+                      class="sort-controls__ranking-help"
+                      [attr.aria-label]="'challenge.finishedRankingHelpAria' | t"
+                    >
+                      <span class="sort-controls__ranking-help-label">
+                        {{ 'challenge.finishedRankingHelpQuestion' | t }}
+                      </span>
+                      <span class="sort-controls__ranking-help-icon" aria-hidden="true">i</span>
+                      <span class="sort-controls__ranking-help-tooltip" role="tooltip">
+                        {{ 'challenge.finishedRankingHelpAnswer' | t }}
+                      </span>
+                    </button>
+                  }
                 </div>
 
                 @if (currentChallenge.type === 'SOLOQ') {

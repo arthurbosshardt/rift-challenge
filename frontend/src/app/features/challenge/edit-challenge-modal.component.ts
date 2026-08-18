@@ -649,6 +649,7 @@ export class EditChallengeModalComponent {
       winRate: 0,
       profileIconId: null,
       hasRankData: false,
+    rankEstimated: false,
       recentMatches: [],
     };
   }

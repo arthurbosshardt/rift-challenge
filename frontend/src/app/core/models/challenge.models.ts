@@ -80,6 +80,7 @@ export interface ParticipantProgress {
   winRate: number;
   profileIconId: number | null;
   hasRankData: boolean;
+  rankEstimated: boolean;
   recentMatches: ParticipantMatchHistory[];
 }
 

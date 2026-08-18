@@ -3,10 +3,12 @@ package com.riftchallenge.synchronization;
 import com.riftchallenge.challenge.ParticipantProfileService;
 import com.riftchallenge.challenge.Challenge;
 import com.riftchallenge.challenge.ChallengeParticipant;
+import com.riftchallenge.challenge.ChallengeDataSyncService;
 import com.riftchallenge.riot.RankReplayService;
 import com.riftchallenge.riot.RankReplayService.RankState;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
+import com.riftchallenge.riot.RiotMatchLookupService;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.time.Instant;
@@ -29,7 +31,6 @@ public class ChallengeParticipantSyncService {
     static final int MAX_CATCHUP_MATCHES_PER_REFRESH = 25;
     static final int MAX_HISTORICAL_CATCHUP_MATCHES = 25;
     static final int MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY = 500;
-    static final RankState UNRANKED_MATCH_ONLY_BASELINE = new RankState("IRON", "IV", 0);
 
     private static final Logger log = LoggerFactory.getLogger(ChallengeParticipantSyncService.class);
 
@@ -38,9 +39,11 @@ public class ChallengeParticipantSyncService {
     private final ChallengeParticipantMatchRepository participantMatchRepository;
     private final RiotLeagueClient riotLeagueClient;
     private final RiotMatchClient riotMatchClient;
+    private final RiotMatchLookupService riotMatchLookupService;
     private final ParticipantProfileService participantProfileService;
     private final ParticipantMatchChampionBackfillService championBackfillService;
     private final HistoricalRankSnapshotService historicalRankSnapshotService;
+    private final ChallengeDataSyncService dataSyncService;
 
     public ChallengeParticipantSyncService(
             RankSnapshotRepository rankSnapshotRepository,
@@ -48,31 +51,63 @@ public class ChallengeParticipantSyncService {
             ChallengeParticipantMatchRepository participantMatchRepository,
             RiotLeagueClient riotLeagueClient,
             RiotMatchClient riotMatchClient,
+            RiotMatchLookupService riotMatchLookupService,
             ParticipantProfileService participantProfileService,
             ParticipantMatchChampionBackfillService championBackfillService,
-            HistoricalRankSnapshotService historicalRankSnapshotService
+            HistoricalRankSnapshotService historicalRankSnapshotService,
+            ChallengeDataSyncService dataSyncService
     ) {
         this.rankSnapshotRepository = rankSnapshotRepository;
         this.riotMatchRepository = riotMatchRepository;
         this.participantMatchRepository = participantMatchRepository;
         this.riotLeagueClient = riotLeagueClient;
         this.riotMatchClient = riotMatchClient;
+        this.riotMatchLookupService = riotMatchLookupService;
         this.participantProfileService = participantProfileService;
         this.championBackfillService = championBackfillService;
         this.historicalRankSnapshotService = historicalRankSnapshotService;
+        this.dataSyncService = dataSyncService;
     }
 
     public void syncParticipant(Challenge challenge, ChallengeParticipant participant, Instant now) {
-        syncChallengeWindowMatches(challenge, participant);
+        if (shouldSkipFinishedParticipantSync(challenge, participant, now)) {
+            log.info(
+                    "Skipping Riot sync for participant {} on finished challenge (data already complete)",
+                    participant.getId()
+            );
+            return;
+        }
+
+        boolean dataChanged = false;
+        boolean finished = isChallengeFinished(challenge, now);
+        boolean hasRankSnapshots = hasBaseline(participant.getId()) && hasRefreshSnapshot(participant.getId());
+        boolean skipChampionBackfill = finished
+                && participantMatchRepository.countMissingChampionIdByParticipantId(participant.getId()) == 0;
+
+        int importedMatches = syncChallengeWindowMatches(challenge, participant, skipChampionBackfill);
+        if (importedMatches > 0) {
+            dataChanged = true;
+        }
 
         if (challenge.getStartAt().isBefore(now)) {
-            ensureHistoricalSnapshots(challenge, participant, now);
+            if (needsHistoricalSnapshotRefresh(challenge, participant, now, hasRankSnapshots)) {
+                ensureHistoricalSnapshots(challenge, participant, now);
+                dataChanged = true;
+            }
         } else {
-            ensureBaselineSnapshot(participant, now);
-            captureRefreshSnapshot(participant, now);
+            if (ensureBaselineSnapshot(participant, now)) {
+                dataChanged = true;
+            }
+            if (captureRefreshSnapshot(participant, now)) {
+                dataChanged = true;
+            }
         }
 
         participantProfileService.ensureProfileIcon(participant.getId());
+
+        if (dataChanged) {
+            dataSyncService.touchDataSyncedAt(challenge.getId(), now);
+        }
     }
 
     private void ensureHistoricalSnapshots(Challenge challenge, ChallengeParticipant participant, Instant now) {
@@ -91,12 +126,22 @@ public class ChallengeParticipantSyncService {
             Instant now,
             RiotLeagueEntryDto currentLeague
     ) {
-        Optional<RankState> refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague);
-        if (refreshState.isEmpty()) {
+        List<Boolean> challengeWindowWinsNewestFirst = findChallengeWindowWinOutcomesNewestFirst(participant);
+        if (challengeWindowWinsNewestFirst.isEmpty()) {
             return;
         }
 
-        List<Boolean> challengeWindowWinsNewestFirst = findChallengeWindowWinOutcomesNewestFirst(participant);
+        Optional<RankState> refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague);
+        boolean estimated;
+
+        if (refreshState.isEmpty()) {
+            List<Boolean> winsOldestFirst = challengeWindowWinsNewestFirst.reversed();
+            refreshState = RankReplayService.estimateFromMatches(winsOldestFirst).map(RankReplayService.MatchBasedRankEstimate::refresh);
+            estimated = true;
+        } else {
+            estimated = isChallengeFinished(challenge, now);
+        }
+
         RankState baselineState = RankReplayService.replayBackward(refreshState.get(), challengeWindowWinsNewestFirst);
         int challengeWindowWins = challengeWindowWinsNewestFirst.stream().mapToInt(win -> win ? 1 : 0).sum();
         int challengeWindowLosses = challengeWindowWinsNewestFirst.size() - challengeWindowWins;
@@ -108,7 +153,8 @@ public class ChallengeParticipantSyncService {
                 baselineState,
                 refreshState.get(),
                 challengeWindowWins,
-                challengeWindowLosses
+                challengeWindowLosses,
+                estimated
         );
     }
 
@@ -126,15 +172,22 @@ public class ChallengeParticipantSyncService {
             return;
         }
 
-        RankState baselineState = UNRANKED_MATCH_ONLY_BASELINE;
-        RankState refreshState = RankReplayService.replayForward(baselineState, winsOldestFirst);
+        Optional<RankReplayService.MatchBasedRankEstimate> estimate = RankReplayService.estimateFromMatches(winsOldestFirst);
+        if (estimate.isEmpty()) {
+            return;
+        }
+
+        RankState baselineState = estimate.get().baseline();
+        RankState refreshState = estimate.get().refresh();
         int challengeWindowWins = (int) winsOldestFirst.stream().filter(Boolean::booleanValue).count();
         int challengeWindowLosses = winsOldestFirst.size() - challengeWindowWins;
 
         log.info(
-                "Estimated historical rank for unranked participant {} from {} challenge matches",
+                "Estimated historical rank for unranked participant {} from {} challenge matches (end anchor {} {})",
                 participant.getId(),
-                winsOldestFirst.size()
+                winsOldestFirst.size(),
+                refreshState.tier(),
+                refreshState.rankDivision()
         );
 
         saveHistoricalSnapshots(
@@ -144,7 +197,8 @@ public class ChallengeParticipantSyncService {
                 baselineState,
                 refreshState,
                 challengeWindowWins,
-                challengeWindowLosses
+                challengeWindowLosses,
+                true
         );
     }
 
@@ -155,7 +209,8 @@ public class ChallengeParticipantSyncService {
             RankState baselineState,
             RankState refreshState,
             int challengeWindowWins,
-            int challengeWindowLosses
+            int challengeWindowLosses,
+            boolean estimated
     ) {
         historicalRankSnapshotService.saveHistoricalSnapshots(
                 challenge,
@@ -164,7 +219,8 @@ public class ChallengeParticipantSyncService {
                 baselineState,
                 refreshState,
                 challengeWindowWins,
-                challengeWindowLosses
+                challengeWindowLosses,
+                estimated
         );
     }
 
@@ -185,11 +241,18 @@ public class ChallengeParticipantSyncService {
             );
             if (!postChallengeOutcomes.complete()) {
                 log.warn(
-                        "Skipping historical rank snapshot for participant {}: post-challenge replay incomplete ({} matches)",
+                        "Skipping league-anchored rank for participant {}: post-challenge replay incomplete ({} matches)",
                         participant.getId(),
                         postChallengeOutcomes.winsNewestFirst().size()
                 );
                 return Optional.empty();
+            }
+            if (postChallengeOutcomes.winsNewestFirst().isEmpty()) {
+                log.info(
+                        "Using current league rank for participant {} (no post-challenge SoloQ games)",
+                        participant.getId()
+                );
+                return Optional.of(currentState);
             }
             return Optional.of(RankReplayService.replayBackward(
                     currentState,
@@ -200,27 +263,41 @@ public class ChallengeParticipantSyncService {
         return Optional.of(currentState);
     }
 
-    private void ensureBaselineSnapshot(ChallengeParticipant participant, Instant now) {
+    private boolean ensureBaselineSnapshot(ChallengeParticipant participant, Instant now) {
         if (hasBaseline(participant.getId())) {
-            return;
+            return false;
         }
 
-        riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
-                .ifPresent(entry -> rankSnapshotRepository.save(
-                        toSnapshot(participant.getId(), now, RankSnapshot.SnapshotType.BASELINE, entry)
-                ));
+        return riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
+                .map(entry -> {
+                    rankSnapshotRepository.save(
+                            toSnapshot(participant.getId(), now, RankSnapshot.SnapshotType.BASELINE, entry)
+                    );
+                    return true;
+                })
+                .orElse(false);
     }
 
-    private void captureRefreshSnapshot(ChallengeParticipant participant, Instant now) {
-        riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
-                .ifPresent(entry -> rankSnapshotRepository.save(
-                        toSnapshot(participant.getId(), now, RankSnapshot.SnapshotType.REFRESH, entry)
-                ));
+    private boolean captureRefreshSnapshot(ChallengeParticipant participant, Instant now) {
+        return riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
+                .map(entry -> {
+                    rankSnapshotRepository.save(
+                            toSnapshot(participant.getId(), now, RankSnapshot.SnapshotType.REFRESH, entry)
+                    );
+                    return true;
+                })
+                .orElse(false);
     }
 
-    private void syncChallengeWindowMatches(Challenge challenge, ChallengeParticipant participant) {
+    private int syncChallengeWindowMatches(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            boolean skipChampionBackfill
+    ) {
         purgeMatchesOutsideChallengeWindow(participant);
-        championBackfillService.backfillForParticipant(participant.getId());
+        if (!skipChampionBackfill) {
+            championBackfillService.backfillForParticipant(participant.getId());
+        }
 
         long startEpochSeconds = challenge.getStartAt().getEpochSecond();
         Long endEpochSeconds = challenge.getEndAt() != null ? challenge.getEndAt().getEpochSecond() : null;
@@ -262,10 +339,12 @@ public class ChallengeParticipantSyncService {
                 throw exception;
             }
         }
+
+        return imported;
     }
 
     private boolean importMatchDetail(Challenge challenge, ChallengeParticipant participant, String matchId) {
-        RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+        RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
         Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
 
         if (gameStart.isBefore(challenge.getStartAt())) {
@@ -385,7 +464,7 @@ public class ChallengeParticipantSyncService {
 
         for (String matchId : matchIds) {
             try {
-                RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+                RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
                 Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
 
                 if (gameStart.isBefore(fromInclusive) || !gameStart.isBefore(toExclusive)) {
@@ -440,6 +519,91 @@ public class ChallengeParticipantSyncService {
                         RankSnapshot.SnapshotType.BASELINE
                 )
                 .isPresent();
+    }
+
+    private boolean hasRefreshSnapshot(UUID participantId) {
+        return rankSnapshotRepository
+                .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                        participantId,
+                        RankSnapshot.SnapshotType.REFRESH
+                )
+                .isPresent();
+    }
+
+    private boolean isRefreshSnapshotEstimated(UUID participantId) {
+        return rankSnapshotRepository
+                .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                        participantId,
+                        RankSnapshot.SnapshotType.REFRESH
+                )
+                .map(RankSnapshot::isEstimated)
+                .orElse(false);
+    }
+
+    private boolean needsHistoricalSnapshotRefresh(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            Instant now,
+            boolean hasRankSnapshots
+    ) {
+        if (!isChallengeFinished(challenge, now)) {
+            return !hasRankSnapshots;
+        }
+        if (!hasRankSnapshots) {
+            return true;
+        }
+        return isRefreshSnapshotEstimated(participant.getId());
+    }
+
+    private boolean isChallengeFinished(Challenge challenge, Instant now) {
+        return challenge.getEndAt() != null && now.isAfter(challenge.getEndAt());
+    }
+
+    private boolean shouldSkipFinishedParticipantSync(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            Instant now
+    ) {
+        if (!isChallengeFinished(challenge, now)) {
+            return false;
+        }
+        if (!hasBaseline(participant.getId()) || !hasRefreshSnapshot(participant.getId())) {
+            return false;
+        }
+        if (isRefreshSnapshotEstimated(participant.getId())) {
+            return false;
+        }
+        if (participantMatchRepository.countByParticipantId(participant.getId()) == 0) {
+            return false;
+        }
+        if (participantMatchRepository.countMissingChampionIdByParticipantId(participant.getId()) > 0) {
+            return false;
+        }
+        return !hasPendingMatchImports(challenge, participant);
+    }
+
+    private boolean hasPendingMatchImports(Challenge challenge, ChallengeParticipant participant) {
+        long existingMatches = participantMatchRepository.countByParticipantId(participant.getId());
+        int importLimit = resolveImportLimit(challenge, existingMatches);
+        int matchIdFetchLimit = resolveMatchIdFetchLimit(existingMatches, importLimit);
+
+        long startEpochSeconds = challenge.getStartAt().getEpochSecond();
+        Long endEpochSeconds = challenge.getEndAt() != null ? challenge.getEndAt().getEpochSecond() : null;
+
+        List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
+                participant.getRiotPuuid(),
+                startEpochSeconds,
+                endEpochSeconds,
+                matchIdFetchLimit
+        );
+
+        for (String matchId : matchIds) {
+            if (!participantMatchRepository.existsByParticipantIdAndRiotMatchId(participant.getId(), matchId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private RankSnapshot toSnapshot(

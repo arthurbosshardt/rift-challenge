@@ -1,4 +1,4 @@
-@use 'app/features/challenge/challenge-form-shared';
+@import 'app/features/challenge/challenge-form-shared';
 
 @font-face {
   font-family: 'LEMON MILK';
@@ -263,7 +263,8 @@ textarea:focus {
   max-width: 34rem;
 }
 
-.modal-panel--edit {
+.modal-panel--edit,
+.modal-panel--create {
   display: flex;
   flex-direction: column;
   width: fit-content;
@@ -318,23 +319,123 @@ textarea:focus {
   height: clamp(1rem, 2.4vw, 1.1875rem);
 }
 
+.refresh-sync-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, var(--gold-a12) 0%, transparent 55%),
+    var(--surface-elevated);
+  box-shadow: var(--shadow-card);
+  animation: refresh-sync-callout-pulse 2.4s ease-in-out infinite;
+}
+
+.refresh-sync-callout__icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--gold-a18);
+  color: var(--gold-bright);
+}
+
+.refresh-sync-callout__icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: currentColor;
+  animation: refresh-sync-callout-spin 1.4s linear infinite;
+}
+
+.refresh-sync-callout__body {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.refresh-sync-callout__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.refresh-sync-callout__hint {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+@keyframes refresh-sync-callout-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes refresh-sync-callout-pulse {
+  0%,
+  100% {
+    border-color: var(--border);
+    box-shadow: var(--shadow-card);
+  }
+
+  50% {
+    border-color: var(--border-strong);
+    box-shadow:
+      var(--shadow-card),
+      0 0 0 1px var(--gold-a12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh-sync-callout {
+    animation: none;
+  }
+
+  .refresh-sync-callout__icon svg {
+    animation: none;
+  }
+}
+
 @media (max-width: 899px) {
   .detail__title {
     font-size: clamp(
-      0.6875rem,
-      calc((100vw - 6.5rem) / max(var(--title-chars, 12), 1) * 1.72),
+      1.125rem,
+      calc((100vw - 3rem) / max(var(--title-chars, 12), 1) * 1.72),
       1.875rem
     );
   }
 
+  .detail__title .detail__type-badge {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-self: center;
+    font-size: inherit;
+    line-height: 1.1;
+  }
+
   .detail__title .detail__type-badge .badge--title {
     gap: 0;
-    width: 1em;
-    height: 1em;
-    min-width: 1em;
+    font-size: inherit;
+    line-height: 1;
+    width: 1.1em;
+    height: 1.1em;
+    min-width: 1.1em;
     padding: 0;
     border-radius: 0.28em;
     justify-content: center;
+    align-items: center;
   }
 
   .detail__title .detail__type-badge .badge--title > span {
@@ -347,10 +448,12 @@ textarea:focus {
   }
 
   .detail__title-text {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
     font-size: inherit;
     line-height: 1.1;
   }
@@ -587,7 +690,8 @@ textarea:focus {
     max-height: calc(100dvh - 1rem);
   }
 
-  .modal-panel--edit {
+  .modal-panel--edit,
+  .modal-panel--create {
     display: flex;
     flex-direction: column;
     width: 100%;

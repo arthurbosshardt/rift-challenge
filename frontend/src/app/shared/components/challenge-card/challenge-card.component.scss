@@ -537,11 +537,14 @@
     column-gap: 0.5rem;
   }
 
+  .challenge-card__preview-item:has(.challenge-card__stats):not(:has(.challenge-card__position)) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'visual names stats';
+  }
+
   .challenge-card__preview-item:has(.challenge-card__position) {
-    grid-template-columns: auto auto minmax(0, 1fr);
-    grid-template-areas:
-      'position visual names'
-      'stats stats stats';
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: 'position visual names stats';
   }
 
   .challenge-card__preview-item--duo {
@@ -549,11 +552,14 @@
     grid-template-areas: 'names';
   }
 
+  .challenge-card__preview-item--duo:has(.challenge-card__stats):not(:has(.challenge-card__position)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'names stats';
+  }
+
   .challenge-card__preview-item--duo:has(.challenge-card__position) {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas:
-      'position names'
-      'stats stats';
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'position names stats';
   }
 
   .challenge-card__position {
@@ -581,12 +587,15 @@
 
   .challenge-card__stats {
     grid-area: stats;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.375rem 0.625rem;
-    justify-content: flex-start;
+    display: grid;
+    justify-items: end;
+    align-self: center;
+    gap: 0.125rem;
     margin-left: 0;
+    min-width: 0;
+  }
+
+  .challenge-card__wl {
+    justify-content: flex-end;
   }
 }

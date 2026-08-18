@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeParticipantRepository;
-import com.riftchallenge.riot.RiotMatchClient;
+import com.riftchallenge.riot.RiotMatchLookupService;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +32,7 @@ class ParticipantMatchChampionBackfillServiceTest {
     private ChallengeParticipantMatchRepository participantMatchRepository;
 
     @Mock
-    private RiotMatchClient riotMatchClient;
+    private RiotMatchLookupService riotMatchLookupService;
 
     @InjectMocks
     private ParticipantMatchChampionBackfillService backfillService;
@@ -51,7 +51,7 @@ class ParticipantMatchChampionBackfillServiceTest {
                 .thenReturn(List.of());
         when(participantRepository.findById(participant1.getId())).thenReturn(Optional.of(participant1));
         when(participantRepository.findById(participant2.getId())).thenReturn(Optional.of(participant2));
-        when(riotMatchClient.getMatch("EUW1_1")).thenReturn(match(
+        when(riotMatchLookupService.getMatch("EUW1_1")).thenReturn(match(
                 matchParticipant("puuid-1", 103),
                 matchParticipant("puuid-2", 86)
         ));
@@ -59,7 +59,7 @@ class ParticipantMatchChampionBackfillServiceTest {
         int updated = backfillService.backfillAll();
 
         assertThat(updated).isEqualTo(2);
-        verify(riotMatchClient).getMatch("EUW1_1");
+        verify(riotMatchLookupService).getMatch("EUW1_1");
 
         ArgumentCaptor<ChallengeParticipantMatch> saved = ArgumentCaptor.forClass(ChallengeParticipantMatch.class);
         verify(participantMatchRepository, org.mockito.Mockito.times(2)).save(saved.capture());

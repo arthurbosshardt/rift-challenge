@@ -9,6 +9,7 @@ export function normalizeChallengeDetail(challenge: ChallengeDetail): ChallengeD
       rankScore: participant.rankScore ?? 0,
       winRate: participant.winRate ?? 0,
       profileIconId: participant.profileIconId ?? null,
+      rankEstimated: participant.rankEstimated ?? false,
       recentMatches: participant.recentMatches ?? [],
     })),
     duos: (challenge.duos ?? []).map((duo) => ({

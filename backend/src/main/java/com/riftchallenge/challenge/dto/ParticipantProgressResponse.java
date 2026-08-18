@@ -20,6 +20,7 @@ public record ParticipantProgressResponse(
         double winRate,
         Integer profileIconId,
         boolean hasRankData,
+        boolean rankEstimated,
         List<ParticipantMatchHistoryResponse> recentMatches
 ) {
 
@@ -40,6 +41,7 @@ public record ParticipantProgressResponse(
                 winRate(wins, losses),
                 participant.getProfileIconId(),
                 false,
+                false,
                 List.of()
         );
     }
@@ -53,7 +55,8 @@ public record ParticipantProgressResponse(
             int lpGained,
             int rankScore,
             int wins,
-            int losses
+            int losses,
+            boolean rankEstimated
     ) {
         return new ParticipantProgressResponse(
                 participant.getId(),
@@ -71,6 +74,7 @@ public record ParticipantProgressResponse(
                 winRate(wins, losses),
                 participant.getProfileIconId(),
                 true,
+                rankEstimated,
                 List.of()
         );
     }
@@ -92,6 +96,7 @@ public record ParticipantProgressResponse(
                 winRate,
                 profileIconId,
                 hasRankData,
+                rankEstimated,
                 recentMatches
         );
     }
@@ -113,6 +118,7 @@ public record ParticipantProgressResponse(
                 winRate,
                 profileIconId,
                 hasRankData,
+                rankEstimated,
                 recentMatches
         );
     }

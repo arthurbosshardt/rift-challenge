@@ -1,0 +1,2 @@
+ALTER TABLE rank_snapshot
+    ADD COLUMN estimated BOOLEAN NOT NULL DEFAULT FALSE;

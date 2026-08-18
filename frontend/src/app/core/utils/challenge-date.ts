@@ -40,9 +40,9 @@ export function formatChallengeDateCompact(
   const hour = date.getHours();
 
   if (locale === 'en') {
-    return `${month}/${day} ${hour}h`;
+    return `${month}/${day} at ${hour}h`;
   }
-  return `${day}/${month} ${hour}h`;
+  return `${day}/${month} à ${hour}h`;
 }
 
 export function buildLocalStartAtIso(dateValue: string, hour: number): string | null {

@@ -43,26 +43,35 @@
 
       <form class="edit-challenge-modal__main-form" (ngSubmit)="saveChallenge()">
         <section class="edit-challenge-modal__meta">
-          <label [class.challenge-form__field--invalid]="isNameInvalid('name')">
-            <span class="field-label">
+          <section
+            class="challenge-form__schedule-block"
+            [class.challenge-form__schedule-block--invalid]="isNameInvalid('name')"
+            aria-labelledby="edit-challenge-name-title"
+          >
+            <h3 id="edit-challenge-name-title" class="challenge-form__schedule-title">
               {{ 'create.name' | t }}
               <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-            </span>
-            <input
-              name="challengeName"
-              type="text"
-              [(ngModel)]="nameInput"
-              maxlength="120"
-              [placeholder]="'create.namePlaceholder' | t"
-              [class.challenge-form__control--invalid]="isNameInvalid('name')"
-              [attr.aria-invalid]="isNameInvalid('name')"
-              (ngModelChange)="clearNameInvalid('name')"
-              [disabled]="saving()"
-            />
-            @if (nameFieldError('name'); as message) {
-              <span class="field-error" role="alert">{{ message }}</span>
-            }
-          </label>
+            </h3>
+            <label
+              class="challenge-form__schedule-field"
+              [class.challenge-form__field--invalid]="isNameInvalid('name')"
+            >
+              <input
+                name="challengeName"
+                type="text"
+                [(ngModel)]="nameInput"
+                maxlength="120"
+                [placeholder]="'create.namePlaceholder' | t"
+                [class.challenge-form__control--invalid]="isNameInvalid('name')"
+                [attr.aria-invalid]="isNameInvalid('name')"
+                (ngModelChange)="clearNameInvalid('name')"
+                [disabled]="saving()"
+              />
+              @if (nameFieldError('name'); as message) {
+                <span class="field-error" role="alert">{{ message }}</span>
+              }
+            </label>
+          </section>
           <app-challenge-badge [kind]="challengeTypeBadgeKind(challenge.type)" [label]="typeLabel(challenge.type)" />
 
           <div class="visibility-switch" role="group" [attr.aria-label]="'create.visibility' | t">
@@ -290,10 +299,13 @@
 
         @if (challenge.type === 'SOLOQ') {
           <div
-            class="challenge-form edit-challenge-modal__form"
-            [class.edit-challenge-modal__form--invalid]="isParticipantInvalid('gameName') || isParticipantInvalid('tagLine')"
+            class="challenge-form edit-challenge-modal__form challenge-form__schedule-block"
+            [class.challenge-form__schedule-block--invalid]="isParticipantInvalid('gameName') || isParticipantInvalid('tagLine')"
+            aria-labelledby="edit-challenge-add-player-title"
           >
-            <span class="edit-challenge-modal__form-title">{{ 'challenge.addPlayer' | t }}</span>
+            <h3 id="edit-challenge-add-player-title" class="challenge-form__schedule-title">
+              {{ 'challenge.addPlayer' | t }}
+            </h3>
             <div class="edit-challenge-modal__form-row">
               <label [class.challenge-form__field--invalid]="isParticipantInvalid('gameName')">
                 <span class="field-label">
@@ -352,16 +364,21 @@
             }
           </div>
         } @else {
-          <div class="challenge-form edit-challenge-modal__form">
-            <span class="edit-challenge-modal__form-title">{{ 'challenge.addDuo' | t }}</span>
+          <div
+            class="challenge-form edit-challenge-modal__form challenge-form__schedule-block"
+            aria-labelledby="edit-challenge-add-duo-title"
+          >
+            <h3 id="edit-challenge-add-duo-title" class="challenge-form__schedule-title">
+              {{ 'challenge.addDuo' | t }}
+            </h3>
             <div class="edit-challenge-modal__duo-fields">
               <div
-                class="edit-challenge-modal__duo-player"
-                [class.edit-challenge-modal__duo-player--invalid]="
+                class="edit-challenge-modal__duo-player challenge-form__schedule-block"
+                [class.challenge-form__schedule-block--invalid]="
                   isParticipantInvalid('duoPlayer1GameName') || isParticipantInvalid('duoPlayer1TagLine')
                 "
               >
-                <span>{{ 'challenge.duoPlayer1Title' | t }}</span>
+                <h4 class="challenge-form__schedule-title">{{ 'challenge.duoPlayer1Title' | t }}</h4>
                 <div class="edit-challenge-modal__form-row">
                   <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1GameName')">
                     <span class="field-label">
@@ -405,12 +422,12 @@
                 </div>
               </div>
               <div
-                class="edit-challenge-modal__duo-player"
-                [class.edit-challenge-modal__duo-player--invalid]="
+                class="edit-challenge-modal__duo-player challenge-form__schedule-block"
+                [class.challenge-form__schedule-block--invalid]="
                   isParticipantInvalid('duoPlayer2GameName') || isParticipantInvalid('duoPlayer2TagLine')
                 "
               >
-                <span>{{ 'challenge.duoPlayer2Title' | t }}</span>
+                <h4 class="challenge-form__schedule-title">{{ 'challenge.duoPlayer2Title' | t }}</h4>
                 <div class="edit-challenge-modal__form-row">
                   <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2GameName')">
                     <span class="field-label">

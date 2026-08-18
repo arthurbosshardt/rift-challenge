@@ -270,7 +270,9 @@
     width: 100%;
   }
 
-  .challenge-search__field:not(.challenge-search__field--type):not(.challenge-search__field--text) {
+  .challenge-search__field:not(.challenge-search__field--type):not(.challenge-search__field--text):not(
+      .challenge-search__field--refresh
+    ) {
     flex: 1 1 100%;
   }
 
@@ -292,6 +294,11 @@
 
   .challenge-search__field--refresh {
     margin-left: auto;
+    justify-items: end;
+  }
+
+  .challenge-search__field--refresh .challenge-search__label--invisible {
+    display: none;
   }
 
   .challenge-search__type {
@@ -300,6 +307,7 @@
   }
 
   .challenge-search__field--refresh .refresh-action-btn {
+    --refresh-action-size: 2.75rem;
     width: auto;
     justify-content: center;
     padding-right: 0.875rem;

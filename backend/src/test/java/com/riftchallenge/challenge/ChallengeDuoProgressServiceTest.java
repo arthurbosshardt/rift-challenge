@@ -65,7 +65,8 @@ class ChallengeDuoProgressServiceTest {
                 18,
                 1_500,
                 5,
-                7
+                7,
+                false
         );
         ParticipantProgressResponse progress2 = ParticipantProgressResponse.withRankData(
                 player2,
@@ -76,7 +77,8 @@ class ChallengeDuoProgressServiceTest {
                 22,
                 1_500,
                 5,
-                7
+                7,
+                false
         );
 
         when(challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(duo));
@@ -114,10 +116,10 @@ class ChallengeDuoProgressServiceTest {
         );
 
         ParticipantProgressResponse progress1 = ParticipantProgressResponse.withRankData(
-                player1, 0, "GOLD", "III", 42, 18, 1_500, 5, 7
+                player1, 0, "GOLD", "III", 42, 18, 1_500, 5, 7, false
         );
         ParticipantProgressResponse progress2 = ParticipantProgressResponse.withRankData(
-                player2, 0, "GOLD", "III", 42, 22, 1_500, 3, 4
+                player2, 0, "GOLD", "III", 42, 22, 1_500, 3, 4, false
         );
 
         when(challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(duo));

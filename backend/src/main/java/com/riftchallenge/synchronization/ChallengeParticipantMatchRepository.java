@@ -43,6 +43,14 @@ public interface ChallengeParticipantMatchRepository extends JpaRepository<Chall
     long countByChampionIdIsNull();
 
     @Query("""
+            SELECT COUNT(rpm)
+            FROM ChallengeParticipantMatch rpm
+            WHERE rpm.participantId = :participantId
+              AND rpm.championId IS NULL
+            """)
+    long countMissingChampionIdByParticipantId(@Param("participantId") UUID participantId);
+
+    @Query("""
             SELECT rpm.riotMatchId AS matchId, rpm.win AS win
             FROM ChallengeParticipantMatch rpm
             WHERE rpm.participantId = :participantId

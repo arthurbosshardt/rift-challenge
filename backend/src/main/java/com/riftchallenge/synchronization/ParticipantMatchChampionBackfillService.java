@@ -2,7 +2,7 @@ package com.riftchallenge.synchronization;
 
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeParticipantRepository;
-import com.riftchallenge.riot.RiotMatchClient;
+import com.riftchallenge.riot.RiotMatchLookupService;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,16 +25,16 @@ public class ParticipantMatchChampionBackfillService {
 
     private final ChallengeParticipantRepository participantRepository;
     private final ChallengeParticipantMatchRepository participantMatchRepository;
-    private final RiotMatchClient riotMatchClient;
+    private final RiotMatchLookupService riotMatchLookupService;
 
     public ParticipantMatchChampionBackfillService(
             ChallengeParticipantRepository participantRepository,
             ChallengeParticipantMatchRepository participantMatchRepository,
-            RiotMatchClient riotMatchClient
+            RiotMatchLookupService riotMatchLookupService
     ) {
         this.participantRepository = participantRepository;
         this.participantMatchRepository = participantMatchRepository;
-        this.riotMatchClient = riotMatchClient;
+        this.riotMatchLookupService = riotMatchLookupService;
     }
 
     public int backfillAll() {
@@ -111,7 +111,7 @@ public class ParticipantMatchChampionBackfillService {
 
     private int backfillMatchLinks(String matchId, List<ChallengeParticipantMatch> links) {
         try {
-            RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+            RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
             int updated = 0;
 
             for (ChallengeParticipantMatch link : links) {
@@ -137,7 +137,7 @@ public class ParticipantMatchChampionBackfillService {
             List<ChallengeParticipantMatch> links
     ) {
         try {
-            RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+            RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
             int updated = 0;
 
             for (ChallengeParticipantMatch link : links) {

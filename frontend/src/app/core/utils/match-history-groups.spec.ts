@@ -31,4 +31,11 @@ describe('match-history-groups', () => {
     expect(formatMatchHistoryDayLabel('2026-08-14', 'fr', now)).toBe('il y a 3 jours');
     expect(formatMatchHistoryDayLabel('2026-08-16', 'en', now)).toBe('1 day ago');
   });
+
+  it('formats absolute dates when match history is older than 30 days', () => {
+    const now = new Date(2026, 7, 17, 12, 0, 0).getTime();
+    expect(formatMatchHistoryDayLabel('2026-07-16', 'fr', now)).toBe('16/07/2026');
+    expect(formatMatchHistoryDayLabel('2026-07-16', 'en', now)).toBe('07/16/2026');
+    expect(formatMatchHistoryDayLabel('2026-07-17', 'fr', now)).toBe('il y a 31 jours');
+  });
 });
