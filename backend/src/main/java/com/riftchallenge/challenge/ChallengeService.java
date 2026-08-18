@@ -344,7 +344,6 @@ public class ChallengeService {
         }
     }
 
-    @Transactional
     public ChallengeDetailResponse refreshChallenge(UUID challengeId, UUID callerId) {
         challengeSyncService.refreshChallenge(challengeId);
         return getById(challengeId, callerId);

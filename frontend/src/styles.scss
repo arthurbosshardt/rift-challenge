@@ -318,6 +318,44 @@ textarea:focus {
   height: clamp(1rem, 2.4vw, 1.1875rem);
 }
 
+@media (max-width: 899px) {
+  .detail__title {
+    font-size: clamp(
+      0.6875rem,
+      calc((100vw - 6.5rem) / max(var(--title-chars, 12), 1) * 1.72),
+      1.875rem
+    );
+  }
+
+  .detail__title .detail__type-badge .badge--title {
+    gap: 0;
+    width: 1em;
+    height: 1em;
+    min-width: 1em;
+    padding: 0;
+    border-radius: 0.28em;
+    justify-content: center;
+  }
+
+  .detail__title .detail__type-badge .badge--title > span {
+    display: none;
+  }
+
+  .detail__title .detail__type-badge .badge--title .badge__icon {
+    width: 0.58em;
+    height: 0.58em;
+  }
+
+  .detail__title-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: inherit;
+    line-height: 1.1;
+  }
+}
+
 .badge__icon {
   width: 0.875rem;
   height: 0.875rem;
@@ -550,9 +588,13 @@ textarea:focus {
   }
 
   .modal-panel--edit {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: calc(100vw - 1rem);
     max-height: calc(100dvh - 1rem);
+    margin-inline: auto;
+    overflow: hidden;
   }
 
   .refresh-action-btn {

@@ -96,8 +96,12 @@
 .edit-challenge-modal__footer {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.625rem;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 0.75rem 0.25rem;
+  box-sizing: border-box;
 }
 
 .edit-challenge-modal__cancel {
@@ -392,15 +396,70 @@
 @media (max-width: 899px) {
   .modal-panel--edit,
   .edit-challenge-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
     max-width: calc(100vw - 1rem);
     max-height: calc(100dvh - 1rem);
+    min-height: 0;
+    margin-inline: auto;
+    overflow: hidden;
+  }
+
+  .edit-challenge-modal__header {
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  .edit-challenge-modal__main-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .edit-challenge-modal__meta,
   .edit-challenge-modal__section,
   .edit-challenge-modal__section--schedule .challenge-form__schedule--columns {
     width: 100%;
+  }
+
+  .edit-challenge-modal__meta,
+  .edit-challenge-modal__section--schedule {
+    flex-shrink: 0;
+  }
+
+  .edit-challenge-modal__section--participants {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .edit-challenge-modal__participants-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .edit-challenge-modal__form,
+  .edit-challenge-modal__footer {
+    flex-shrink: 0;
+  }
+
+  .edit-challenge-modal__footer {
+    padding: 1rem 0.75rem 0.5rem;
+  }
+
+  .edit-challenge-modal__footer button {
+    min-width: 7.5rem;
   }
 
   .edit-challenge-modal__section--schedule .challenge-form__schedule--columns,

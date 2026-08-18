@@ -10,8 +10,12 @@
   <app-page-shell [title]="''">
     <header class="detail__heading">
       <div class="detail__title-row">
-        <h1 class="detail__title">
+        <h1
+          class="detail__title"
+          [style.--title-chars]="currentChallenge.name.length"
+        >
           <app-challenge-badge
+            class="detail__type-badge"
             size="title"
             [kind]="challengeTypeBadgeKind(currentChallenge.type)"
             [label]="typeLabel(currentChallenge.type)"
@@ -88,74 +92,93 @@
         </div>
       </div>
 
-      @if (currentChallenge.status === 'ACTIVE' || currentChallenge.status === 'FINISHED') {
-        <div class="detail__refresh">
-        <button
-          type="button"
-          class="refresh-action-btn"
-          (click)="refreshChallenge()"
-          [disabled]="!currentChallenge.refreshAvailable || refreshing()"
-          [attr.aria-label]="refreshing() ? ('challenge.refreshing' | t) : ('challenge.refreshData' | t)"
-        >
-          <svg
-            class="refresh-action-btn__icon"
-            [class.refresh-action-btn__icon--spinning]="refreshing()"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
-            />
-          </svg>
-          <span class="refresh-action-btn__label">
-            @if (refreshing()) {
-              {{ 'challenge.refreshing' | t }}
-            } @else {
-              {{ 'challenge.refreshData' | t }}
-            }
-          </span>
-        </button>
-
-        <div class="refresh__panel">
-          <div class="refresh__panel-row">
-          <div class="refresh__status">
-            <span class="refresh__status-label">{{ 'challenge.lastUpdateLabel' | t }}</span>
-            @if (currentChallenge.lastRefreshedAt) {
-              <span class="refresh__status-time">{{ lastUpdateRelative() }}</span>
-            } @else {
-              <span class="refresh__status-time refresh__status-time--muted">{{ 'challenge.noSync' | t }}</span>
-            }
+      <div class="detail__info-bar">
+        @if (currentChallenge.status === 'ACTIVE' || currentChallenge.status === 'FINISHED') {
+          <div class="detail__refresh">
             <button
               type="button"
-              class="refresh__info-btn"
-              [attr.aria-label]="'challenge.refreshHint' | t"
+              class="refresh-action-btn"
+              (click)="refreshChallenge()"
+              [disabled]="!currentChallenge.refreshAvailable || refreshing()"
+              [attr.aria-label]="refreshing() ? ('challenge.refreshing' | t) : ('challenge.refreshData' | t)"
             >
-              <span aria-hidden="true">i</span>
-              <span class="refresh__info-tooltip">{{ 'challenge.refreshHint' | t }}</span>
+              <svg
+                class="refresh-action-btn__icon"
+                [class.refresh-action-btn__icon--spinning]="refreshing()"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+                />
+              </svg>
+              <span class="refresh-action-btn__label">
+                @if (refreshing()) {
+                  {{ 'challenge.refreshing' | t }}
+                } @else {
+                  {{ 'challenge.refreshData' | t }}
+                }
+              </span>
             </button>
-          </div>
 
-          @if (!currentChallenge.refreshAvailable && refreshCountdown()) {
-            <div class="refresh__cooldown" role="status" aria-live="polite">
-              <span class="refresh__cooldown-label">{{ 'challenge.nextRefresh' | t }}</span>
-              <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
+            <div class="refresh__panel">
+              <div class="refresh__panel-row">
+                <div class="refresh__status">
+                  <span class="refresh__status-label">{{ 'challenge.lastUpdateLabel' | t }}</span>
+                  @if (currentChallenge.lastRefreshedAt) {
+                    <span class="refresh__status-time">{{ lastUpdateRelative() }}</span>
+                  } @else {
+                    <span class="refresh__status-time refresh__status-time--muted">{{ 'challenge.noSync' | t }}</span>
+                  }
+                  <button
+                    type="button"
+                    class="refresh__info-btn"
+                    [attr.aria-label]="'challenge.refreshHint' | t"
+                  >
+                    <span aria-hidden="true">i</span>
+                    <span class="refresh__info-tooltip">{{ 'challenge.refreshHint' | t }}</span>
+                  </button>
+                </div>
+
+                @if (!currentChallenge.refreshAvailable && refreshCountdown()) {
+                  <div class="refresh__cooldown" role="status" aria-live="polite">
+                    <span class="refresh__cooldown-label">{{ 'challenge.nextRefresh' | t }}</span>
+                    <span class="refresh__cooldown-timer">{{ refreshCountdown() }}</span>
+                  </div>
+                }
+
+                @if (currentChallenge.status === 'ACTIVE' && endCountdown()) {
+                  <div class="refresh__end" role="status" aria-live="polite">
+                    <span class="refresh__end-label">{{ 'challenge.endsIn' | t }}</span>
+                    <span class="refresh__end-timer">{{ endCountdown() }}</span>
+                  </div>
+                }
+              </div>
             </div>
-          }
-
-          @if (currentChallenge.status === 'ACTIVE' && endCountdown()) {
-            <div class="refresh__end" role="status" aria-live="polite">
-              <span class="refresh__end-label">{{ 'challenge.endsIn' | t }}</span>
-              <span class="refresh__end-timer">{{ endCountdown() }}</span>
-            </div>
-          }
           </div>
+        }
 
-          @if (refreshError()) {
-            <p class="refresh__error">{{ refreshError() }}</p>
-          }
-        </div>
-        </div>
-      }
+        <dl class="detail__meta">
+          <div>
+            <dt>{{ 'challenge.start' | t }}</dt>
+            <dd>{{ currentChallenge.startAt | challengeDate:'compact' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'challenge.end' | t }}</dt>
+            <dd>
+              @if (currentChallenge.endAt) {
+                {{ currentChallenge.endAt | challengeDate:'compact' }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+        </dl>
+
+        @if (refreshError()) {
+          <p class="refresh__error">{{ refreshError() }}</p>
+        }
+      </div>
     </header>
 
     @if (deleteError()) {
@@ -163,23 +186,6 @@
     }
 
     <section class="detail">
-      <dl class="detail__meta">
-        <div>
-          <dt>{{ 'challenge.start' | t }}</dt>
-          <dd>{{ currentChallenge.startAt | challengeDate }}</dd>
-        </div>
-        <div>
-          <dt>{{ 'challenge.end' | t }}</dt>
-          <dd>
-            @if (currentChallenge.endAt) {
-              {{ currentChallenge.endAt | challengeDate }}
-            } @else {
-              —
-            }
-          </dd>
-        </div>
-      </dl>
-
       <section class="participants">
         <div class="participants__header">
           <span class="participants__count">

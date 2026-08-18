@@ -23,6 +23,23 @@ public final class RankReplayService {
         return current;
     }
 
+    public static RankState replayForward(RankState state, List<Boolean> winsOldestFirst) {
+        RankState current = state;
+        for (boolean win : winsOldestFirst) {
+            current = applyForward(current, win);
+        }
+        return current;
+    }
+
+    public static RankState applyForward(RankState state, boolean win) {
+        int score = RankScoreConverter.toScore(state.tier(), state.rankDivision(), state.leaguePoints());
+        int delta = win
+                ? MatchLpEstimator.averageWinLp(state.tier())
+                : -MatchLpEstimator.averageLossLp(state.tier());
+        RankScoreConverter.RankComponents components = RankScoreConverter.fromScore(score + delta);
+        return new RankState(components.tier(), components.rankDivision(), components.leaguePoints());
+    }
+
     public static RankState applyBackward(RankState state, boolean win) {
         int score = RankScoreConverter.toScore(state.tier(), state.rankDivision(), state.leaguePoints());
         int delta = win

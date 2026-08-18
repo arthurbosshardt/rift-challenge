@@ -7,8 +7,38 @@
   />
 
   <div class="player-identity__text">
-    <span class="player-identity__name">{{ gameName() }}</span>
-    <span class="player-identity__riot-id">{{ riotId() }}</span>
+    <span
+      class="player-identity__name player-identity__copy-target"
+      [class.player-identity__copy-target--copied]="copiedField() === 'name'"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="copyNameAria()"
+      (click)="copyField('name', gameName(), $event)"
+      (keydown.enter)="copyField('name', gameName(), $event)"
+      (keydown.space)="copyField('name', gameName(), $event)"
+    >
+      @if (copiedField() === 'name') {
+        {{ 'player.copied' | t }}
+      } @else {
+        {{ gameName() }}
+      }
+    </span>
+    <span
+      class="player-identity__riot-id player-identity__copy-target"
+      [class.player-identity__copy-target--copied]="copiedField() === 'riotId'"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="copyRiotIdAria()"
+      (click)="copyField('riotId', riotId(), $event)"
+      (keydown.enter)="copyField('riotId', riotId(), $event)"
+      (keydown.space)="copyField('riotId', riotId(), $event)"
+    >
+      @if (copiedField() === 'riotId') {
+        {{ 'player.copied' | t }}
+      } @else {
+        {{ riotId() }}
+      }
+    </span>
     @if (rankLabel()) {
       <span class="player-identity__rank-label">{{ rankLabel() }}</span>
     }

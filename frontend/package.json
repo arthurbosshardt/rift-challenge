@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "ng": "ng",
     "start": "node scripts/write-local-env.mjs && ng serve --proxy-config proxy.conf.json",

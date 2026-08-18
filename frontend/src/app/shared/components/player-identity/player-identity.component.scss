@@ -69,4 +69,17 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .player-identity__copy-target {
+    user-select: text;
+    -webkit-user-select: text;
+    -webkit-touch-callout: default;
+    cursor: pointer;
+    touch-action: manipulation;
+    border-radius: 0.125rem;
+  }
+
+  .player-identity__copy-target--copied {
+    color: var(--success);
+  }
 }

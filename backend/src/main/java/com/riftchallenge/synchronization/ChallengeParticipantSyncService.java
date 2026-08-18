@@ -17,10 +17,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -30,6 +29,7 @@ public class ChallengeParticipantSyncService {
     static final int MAX_CATCHUP_MATCHES_PER_REFRESH = 25;
     static final int MAX_HISTORICAL_CATCHUP_MATCHES = 25;
     static final int MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY = 500;
+    static final RankState UNRANKED_MATCH_ONLY_BASELINE = new RankState("IRON", "IV", 0);
 
     private static final Logger log = LoggerFactory.getLogger(ChallengeParticipantSyncService.class);
 
@@ -40,6 +40,7 @@ public class ChallengeParticipantSyncService {
     private final RiotMatchClient riotMatchClient;
     private final ParticipantProfileService participantProfileService;
     private final ParticipantMatchChampionBackfillService championBackfillService;
+    private final HistoricalRankSnapshotService historicalRankSnapshotService;
 
     public ChallengeParticipantSyncService(
             RankSnapshotRepository rankSnapshotRepository,
@@ -48,7 +49,8 @@ public class ChallengeParticipantSyncService {
             RiotLeagueClient riotLeagueClient,
             RiotMatchClient riotMatchClient,
             ParticipantProfileService participantProfileService,
-            ParticipantMatchChampionBackfillService championBackfillService
+            ParticipantMatchChampionBackfillService championBackfillService,
+            HistoricalRankSnapshotService historicalRankSnapshotService
     ) {
         this.rankSnapshotRepository = rankSnapshotRepository;
         this.riotMatchRepository = riotMatchRepository;
@@ -57,9 +59,9 @@ public class ChallengeParticipantSyncService {
         this.riotMatchClient = riotMatchClient;
         this.participantProfileService = participantProfileService;
         this.championBackfillService = championBackfillService;
+        this.historicalRankSnapshotService = historicalRankSnapshotService;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void syncParticipant(Challenge challenge, ChallengeParticipant participant, Instant now) {
         syncChallengeWindowMatches(challenge, participant);
 
@@ -75,48 +77,95 @@ public class ChallengeParticipantSyncService {
 
     private void ensureHistoricalSnapshots(Challenge challenge, ChallengeParticipant participant, Instant now) {
         Optional<RiotLeagueEntryDto> currentLeague = riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid());
-        if (currentLeague.isEmpty()) {
+        if (currentLeague.isPresent()) {
+            ensureHistoricalSnapshotsFromLeague(challenge, participant, now, currentLeague.get());
             return;
         }
 
-        Optional<RankState> refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague.get());
+        ensureEstimatedSnapshotsForUnrankedParticipant(challenge, participant, now);
+    }
+
+    private void ensureHistoricalSnapshotsFromLeague(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            Instant now,
+            RiotLeagueEntryDto currentLeague
+    ) {
+        Optional<RankState> refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague);
         if (refreshState.isEmpty()) {
             return;
         }
 
         List<Boolean> challengeWindowWinsNewestFirst = findChallengeWindowWinOutcomesNewestFirst(participant);
         RankState baselineState = RankReplayService.replayBackward(refreshState.get(), challengeWindowWinsNewestFirst);
-
-        Instant refreshAt = challenge.getEndAt() != null && now.isAfter(challenge.getEndAt()) ? challenge.getEndAt() : now;
         int challengeWindowWins = challengeWindowWinsNewestFirst.stream().mapToInt(win -> win ? 1 : 0).sum();
         int challengeWindowLosses = challengeWindowWinsNewestFirst.size() - challengeWindowWins;
 
-        rankSnapshotRepository.deleteByParticipantIdAndSnapshotType(
-                participant.getId(),
-                RankSnapshot.SnapshotType.BASELINE
-        );
-        rankSnapshotRepository.deleteByParticipantIdAndSnapshotType(
-                participant.getId(),
-                RankSnapshot.SnapshotType.REFRESH
-        );
-
-        rankSnapshotRepository.save(toSnapshot(
-                participant.getId(),
-                challenge.getStartAt(),
-                RankSnapshot.SnapshotType.BASELINE,
+        saveHistoricalSnapshots(
+                challenge,
+                participant,
+                now,
                 baselineState,
-                0,
-                0
-        ));
-
-        rankSnapshotRepository.save(toSnapshot(
-                participant.getId(),
-                refreshAt,
-                RankSnapshot.SnapshotType.REFRESH,
                 refreshState.get(),
                 challengeWindowWins,
                 challengeWindowLosses
-        ));
+        );
+    }
+
+    private void ensureEstimatedSnapshotsForUnrankedParticipant(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            Instant now
+    ) {
+        if (challenge.getEndAt() == null || !now.isAfter(challenge.getEndAt())) {
+            return;
+        }
+
+        List<Boolean> winsOldestFirst = findChallengeWindowWinOutcomesOldestFirst(participant);
+        if (winsOldestFirst.isEmpty()) {
+            return;
+        }
+
+        RankState baselineState = UNRANKED_MATCH_ONLY_BASELINE;
+        RankState refreshState = RankReplayService.replayForward(baselineState, winsOldestFirst);
+        int challengeWindowWins = (int) winsOldestFirst.stream().filter(Boolean::booleanValue).count();
+        int challengeWindowLosses = winsOldestFirst.size() - challengeWindowWins;
+
+        log.info(
+                "Estimated historical rank for unranked participant {} from {} challenge matches",
+                participant.getId(),
+                winsOldestFirst.size()
+        );
+
+        saveHistoricalSnapshots(
+                challenge,
+                participant,
+                now,
+                baselineState,
+                refreshState,
+                challengeWindowWins,
+                challengeWindowLosses
+        );
+    }
+
+    private void saveHistoricalSnapshots(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            Instant now,
+            RankState baselineState,
+            RankState refreshState,
+            int challengeWindowWins,
+            int challengeWindowLosses
+    ) {
+        historicalRankSnapshotService.saveHistoricalSnapshots(
+                challenge,
+                participant,
+                now,
+                baselineState,
+                refreshState,
+                challengeWindowWins,
+                challengeWindowLosses
+        );
     }
 
     private Optional<RankState> resolveRefreshRankState(
@@ -303,6 +352,10 @@ public class ChallengeParticipantSyncService {
                 .toList();
     }
 
+    private List<Boolean> findChallengeWindowWinOutcomesOldestFirst(ChallengeParticipant participant) {
+        return findChallengeWindowWinOutcomesNewestFirst(participant).reversed();
+    }
+
     private WinOutcomeFetchResult fetchWinOutcomesBetween(
             ChallengeParticipant participant,
             Instant fromInclusive,
@@ -367,10 +420,16 @@ public class ChallengeParticipantSyncService {
 
     private void persistMatchIfNeeded(RiotMatchDetailDto match, Instant gameStart) {
         String matchId = match.metadata().matchId();
-        if (!riotMatchRepository.existsByRiotMatchId(matchId)) {
-            riotMatchRepository.save(
+        if (riotMatchRepository.existsByRiotMatchId(matchId)) {
+            return;
+        }
+
+        try {
+            riotMatchRepository.saveAndFlush(
                     RiotMatch.create(matchId, match.info().queueId(), gameStart)
             );
+        } catch (DataIntegrityViolationException exception) {
+            log.debug("Riot match {} already persisted by another participant", matchId);
         }
     }
 
@@ -399,27 +458,6 @@ public class ChallengeParticipantSyncService {
                 entry.leaguePoints(),
                 entry.wins(),
                 entry.losses()
-        );
-    }
-
-    private RankSnapshot toSnapshot(
-            UUID participantId,
-            Instant capturedAt,
-            RankSnapshot.SnapshotType snapshotType,
-            RankState state,
-            int wins,
-            int losses
-    ) {
-        return RankSnapshot.create(
-                participantId,
-                capturedAt,
-                snapshotType,
-                RiotLeagueClient.RANKED_SOLO_QUEUE,
-                state.tier(),
-                state.rankDivision(),
-                state.leaguePoints(),
-                wins,
-                losses
         );
     }
 

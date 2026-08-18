@@ -81,7 +81,6 @@ export class EditChallengeModalComponent {
 
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
-  protected readonly saveSuccess = signal(false);
   protected readonly nameInvalidFields = signal<ReadonlySet<NameInvalidField>>(new Set());
   protected readonly nameFieldErrors = signal<Partial<Record<NameInvalidField, string>>>({});
   protected readonly scheduleInvalidFields = signal<ReadonlySet<ScheduleInvalidField>>(new Set());
@@ -105,7 +104,6 @@ export class EditChallengeModalComponent {
           this.resetParticipantInputs();
           this.hydrateDrafts(challenge);
           this.clearValidation();
-          this.saveSuccess.set(false);
         }
         document.body.style.overflow = 'hidden';
         return;
@@ -232,7 +230,6 @@ export class EditChallengeModalComponent {
 
     this.isPublicInput = !this.isPublicInput;
     this.formError.set(null);
-    this.saveSuccess.set(false);
   }
 
   protected async saveChallenge(): Promise<void> {
@@ -242,7 +239,6 @@ export class EditChallengeModalComponent {
     }
 
     this.clearValidation();
-    this.saveSuccess.set(false);
 
     const trimmedName = this.nameInput.trim();
     if (!trimmedName) {
@@ -326,9 +322,8 @@ export class EditChallengeModalComponent {
       this.nameInput = normalized.name;
       this.isPublicInput = normalized.isPublic;
       this.resetParticipantInputs();
-      this.saveSuccess.set(true);
       this.editChallengeModal.notifyUpdated();
-      window.setTimeout(() => this.saveSuccess.set(false), 2500);
+      this.close();
     } catch (err) {
       if (err instanceof HttpErrorResponse && isChallengeNameTakenError(err)) {
         this.nameInvalidFields.set(new Set(['name']));

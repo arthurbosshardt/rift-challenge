@@ -477,9 +477,6 @@
         @if (formError()) {
           <p class="form-error" role="alert">{{ formError() }}</p>
         }
-        @if (saveSuccess()) {
-          <p class="edit-challenge-modal__success">{{ 'challenge.changesSaved' | t }}</p>
-        }
 
         <footer class="edit-challenge-modal__footer">
           <button type="button" class="edit-challenge-modal__cancel" [disabled]="saving()" (click)="close()">
