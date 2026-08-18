@@ -166,6 +166,43 @@
                     }
                   </button>
                 </div>
+
+                <form
+                  class="settings-form"
+                  [class.settings-form--invalid]="riotInvalidForm() === 'primary'"
+                  (ngSubmit)="linkPrimaryAccount()"
+                >
+                  <div class="settings-form__row settings-form__row--inline">
+                    <label>
+                      {{ 'challenge.gameName' | t }}
+                      <app-summoner-typeahead
+                        name="primaryGameName"
+                        [value]="primaryGameNameInput"
+                        (valueChange)="primaryGameNameInput = $event; riotInvalidForm.set(null)"
+                        (selected)="applyPrimarySummoner($event)"
+                        [placeholder]="'challenge.gameNamePlaceholder' | t"
+                        [disabled]="linkingPrimary()"
+                        [invalid]="riotInvalidForm() === 'primary'"
+                        [ariaInvalid]="riotInvalidForm() === 'primary'"
+                      />
+                    </label>
+                    <label>
+                      {{ 'challenge.tagLine' | t }}
+                      <input
+                        name="primaryTagLine"
+                        type="text"
+                        [(ngModel)]="primaryTagLineInput"
+                        [placeholder]="'challenge.tagLinePlaceholder' | t"
+                        [disabled]="linkingPrimary()"
+                        [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <button type="submit" [disabled]="linkingPrimary()">
+                      {{ linkingPrimary() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
+                    </button>
+                  </div>
+                </form>
               } @else {
                 <p class="settings-section__empty">{{ 'accounts.primaryEmpty' | t }}</p>
 
@@ -174,7 +211,7 @@
                   [class.settings-form--invalid]="riotInvalidForm() === 'primary'"
                   (ngSubmit)="linkPrimaryAccount()"
                 >
-                  <div class="settings-form__row">
+                  <div class="settings-form__row settings-form__row--inline">
                     <label>
                       {{ 'challenge.gameName' | t }}
                       <app-summoner-typeahead

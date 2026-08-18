@@ -47,6 +47,10 @@ export class SettingsModalComponent {
   protected readonly accountError = signal<string | null>(null);
   protected readonly accountSuccess = signal(false);
   protected readonly riotInvalidForm = signal<'primary' | 'smurf' | null>(null);
+  private readonly pendingPrimaryAccountChange = signal<{
+    gameName: string;
+    tagLine: string;
+  } | null>(null);
 
   protected readonly primaryAccount = computed(
     () => this.accounts().find((account) => account.primary) ?? null,
@@ -106,10 +110,21 @@ export class SettingsModalComponent {
   }
 
   protected linkPrimaryAccount(): void {
-    this.linkAccount(this.primaryGameNameInput, this.primaryTagLineInput, false, this.linkingPrimary, () => {
-      this.primaryGameNameInput = '';
-      this.primaryTagLineInput = '';
-    });
+    const primaryAccount = this.primaryAccount();
+    
+    // If primary account exists, unlink it first, then link the new one
+    if (primaryAccount) {
+      this.pendingPrimaryAccountChange.set({
+        gameName: this.primaryGameNameInput,
+        tagLine: this.primaryTagLineInput,
+      });
+      this.unlinkAccount(primaryAccount);
+    } else {
+      this.linkAccount(this.primaryGameNameInput, this.primaryTagLineInput, false, this.linkingPrimary, () => {
+        this.primaryGameNameInput = '';
+        this.primaryTagLineInput = '';
+      });
+    }
   }
 
   protected linkSmurfAccount(): void {
@@ -143,10 +158,24 @@ export class SettingsModalComponent {
         this.unlinkingAccountId.set(null);
         await this.auth.refreshProfile();
         this.loadAccounts();
+        
+        // If there's a pending primary account change, link the new account
+        const pending = this.pendingPrimaryAccountChange();
+        if (pending) {
+          this.pendingPrimaryAccountChange.set(null);
+          // Wait a bit for the load to complete, then link
+          setTimeout(() => {
+            this.linkAccount(pending.gameName, pending.tagLine, false, this.linkingPrimary, () => {
+              this.primaryGameNameInput = '';
+              this.primaryTagLineInput = '';
+            });
+          }, 500);
+        }
       },
       error: () => {
         this.accountError.set(this.i18n.t('accounts.unlinkError'));
         this.unlinkingAccountId.set(null);
+        this.pendingPrimaryAccountChange.set(null);
       },
     });
   }
@@ -176,6 +205,15 @@ export class SettingsModalComponent {
     }
     if (!riotId) {
       this.accountError.set(this.i18n.t('errors.riotIdRequired'));
+      return;
+    }
+
+    // Check if account is already linked
+    const accountExists = this.accounts().some(
+      (account) => account.riotId.toLowerCase() === riotId.toLowerCase(),
+    );
+    if (accountExists) {
+      this.accountError.set(this.i18n.t('accounts.alreadyLinked'));
       return;
     }
 
@@ -212,6 +250,7 @@ export class SettingsModalComponent {
     this.accountError.set(null);
     this.accountSuccess.set(false);
     this.riotInvalidForm.set(null);
+    this.pendingPrimaryAccountChange.set(null);
     this.primaryGameNameInput = '';
     this.primaryTagLineInput = '';
     this.smurfGameNameInput = '';
