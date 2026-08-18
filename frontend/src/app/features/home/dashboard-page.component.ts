@@ -8,7 +8,6 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { RecentGameResponse } from '../../core/models/challenge.models';
 import { CommonModule } from '@angular/common';
-import { ChampionIconComponent } from '../../shared/components/champion-icon/champion-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 
@@ -33,7 +32,6 @@ interface AccountGameGroup {
     PageShellComponent,
     ChallengeListSkeletonComponent,
     TranslatePipe,
-    ChampionIconComponent,
     PlayerAvatarComponent,
   ],
   templateUrl: './dashboard-page.component.html',

@@ -8,9 +8,11 @@
         <span class="game-detail__mode">
           {{ game().queueType || 'Ranked Solo' }}
         </span>
-        <span class="game-detail__duration" *ngIf="game().duration">
-          {{ formatDuration(game().duration!) }}
-        </span>
+        @if (game().duration; as duration) {
+          <span class="game-detail__duration">
+            {{ formatDuration(duration) }}
+          </span>
+        }
       </div>
     </div>
     <button
@@ -56,7 +58,7 @@
             @if (game().winRate !== undefined && game().winRate !== null) {
               <div class="stat">
                 <span class="stat__label">WR</span>
-                <span class="stat__value">{{ (game().winRate * 100 | number: '1.0-0') }}%</span>
+                <span class="stat__value">{{ ((game().winRate ?? 0) * 100 | number: '1.0-0') }}%</span>
               </div>
             }
           </div>
@@ -71,7 +73,7 @@
     }
 
     <!-- 5v5 Team View (for detailed match data) -->
-    @if (game().blueTeam && game().redTeam; as teams) {
+    @if (game().blueTeam && game().redTeam) {
       <div class="game-detail__teams">
         <!-- Blue Team -->
         <div class="team team--blue">
