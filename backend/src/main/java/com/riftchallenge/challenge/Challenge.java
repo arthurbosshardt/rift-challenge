@@ -72,7 +72,7 @@ public class Challenge {
         challenge.startAt = startAt;
         challenge.endAt = endAt;
         challenge.isPublic = isPublic;
-        challenge.shareSlug = challenge.id.toString();
+        challenge.shareSlug = name;
         return challenge;
     }
 

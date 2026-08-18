@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { DuoMatchHistory } from '../models/challenge.models';
 import { duoPlayer1MatchHistory, duoPlayer2MatchHistory } from './duo-match-history';
 
