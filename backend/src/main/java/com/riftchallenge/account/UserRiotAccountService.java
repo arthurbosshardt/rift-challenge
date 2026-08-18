@@ -18,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class UserRiotAccountService {
 
-    static final int MAX_ACCOUNTS_PER_USER = 5;
+    static final int MAX_ACCOUNTS_PER_USER = 10;
 
     private final UserRiotAccountRepository userRiotAccountRepository;
     private final RiotAccountClient riotAccountClient;
