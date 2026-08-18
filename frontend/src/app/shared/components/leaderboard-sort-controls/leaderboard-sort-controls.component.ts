@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { LeaderboardSort, SortDirection, sortDirectionArrow } from '../../../core/utils/leaderboard-sort';
+import { ClampTooltipDirective } from '../../directives/clamp-tooltip.directive';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 
 @Component({
   selector: 'app-leaderboard-sort-controls',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, ClampTooltipDirective],
   templateUrl: './leaderboard-sort-controls.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leaderboard-sort-controls.component.scss',

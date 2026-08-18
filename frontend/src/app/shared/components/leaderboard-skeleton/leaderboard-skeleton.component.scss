@@ -60,9 +60,13 @@
 }
 
 .leaderboard-skeleton__identity--duo {
-  display: grid;
-  gap: var(--duo-player-row-gap, 0.375rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   align-self: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .leaderboard-skeleton__duo-slot {
@@ -71,6 +75,13 @@
   gap: 0.625rem;
   min-height: var(--duo-player-row-height, 2rem);
   min-width: 0;
+  width: 100%;
+}
+
+.leaderboard-skeleton__duo-slot:not(:first-child) {
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
 }
 
 .leaderboard-skeleton__item--duo {
@@ -112,7 +123,52 @@
 
 @media (max-width: 899px) {
   .leaderboard-skeleton__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .leaderboard-skeleton__item {
+    grid-column: auto;
+    width: 100%;
     grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'rank identity stats';
+    align-items: start;
+  }
+
+  .leaderboard-skeleton__rank {
+    grid-area: rank;
+    padding-top: 0.375rem;
+  }
+
+  .leaderboard-skeleton__identity {
+    grid-area: identity;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .leaderboard-skeleton__stats {
+    grid-area: stats;
+    align-self: center;
+    padding-top: 0;
+  }
+
+  .leaderboard-skeleton__item--duo .leaderboard-skeleton__identity--duo {
+    grid-area: identity;
+    align-self: stretch;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .leaderboard-skeleton__item--duo .leaderboard-skeleton__duo-slot {
+    flex: 1 1 0;
+  }
+
+  .leaderboard-skeleton__item--duo .leaderboard-skeleton__stats {
+    grid-area: stats;
+    align-self: stretch;
+    justify-content: space-between;
+    padding-top: 0;
   }
 
   .leaderboard-skeleton__history {

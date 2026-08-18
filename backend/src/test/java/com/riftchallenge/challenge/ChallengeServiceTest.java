@@ -300,7 +300,7 @@ class ChallengeServiceTest {
     }
 
     @Test
-    void updateSchedule_whenOwnerWithParticipants_refreshesAfterScheduleChange() {
+    void updateSchedule_whenOwnerWithParticipants_doesNotAutoRefresh() {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(7200);
         Instant newEnd = NOW.plusSeconds(86_400);
@@ -322,7 +322,6 @@ class ChallengeServiceTest {
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(participant));
         when(progressService.buildPreviewProgress(any())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
-        when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
 
         var response = challengeService.updateSchedule(
                 challengeId,
@@ -330,7 +329,7 @@ class ChallengeServiceTest {
                 new UpdateChallengeScheduleRequest(newStart, newEnd)
         );
 
-        verify(challengeSyncService).refreshChallenge(challengeId);
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
         assertThat(response.startAt()).isEqualTo(newStart);
         assertThat(response.endAt()).isEqualTo(newEnd);
     }

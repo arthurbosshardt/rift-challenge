@@ -8,11 +8,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { EditChallengeModalService } from '../../core/services/edit-challenge-modal.service';
 import { DuoProgress, ParticipantProgress, ChallengeDetail } from '../../core/models/challenge.models';
-import { buildLocalStartAtIso, splitLocalDateHour } from '../../core/utils/challenge-date';
+import { buildLocalStartAtIso, challengeInstantsEqual, splitLocalDateHour } from '../../core/utils/challenge-date';
 import { normalizeChallengeDetail, mergeChallengeMetadataUpdate } from '../../core/utils/challenge-detail';
 import { mapParticipantError } from '../../core/utils/challenge-participant-errors';
 import { isChallengeNameTakenError, mapChallengeNameError } from '../../core/utils/challenge-name-errors';
@@ -20,12 +20,13 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { SummonerSearchService, SummonerSuggestion } from '../../core/services/summoner-search.service';
 import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
-import { LoaderComponent } from '../../shared/components/loader/loader.component';
+import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
 
 type ScheduleInvalidField = 'startDate' | 'endDate';
@@ -48,7 +49,7 @@ type ScheduleValidationResult =
 
 @Component({
   selector: 'app-edit-challenge-modal',
-  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent, LoaderComponent],
+  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent, LoaderComponent, ClampTooltipDirective],
   templateUrl: './edit-challenge-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './edit-challenge-modal.component.scss',
@@ -72,6 +73,7 @@ export class EditChallengeModalComponent {
   protected isPublicInput = false;
 
   protected readonly saving = signal(false);
+  protected readonly blockingSave = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly nameInvalidFields = signal<ReadonlySet<NameInvalidField>>(new Set());
   protected readonly nameFieldErrors = signal<Partial<Record<NameInvalidField, string>>>({});
@@ -84,24 +86,29 @@ export class EditChallengeModalComponent {
   protected readonly draftDuos = signal<DuoProgress[]>([]);
   private removedParticipantIds = new Set<string>();
   private removedDuoIds = new Set<string>();
+  private hydratedChallengeId: string | null = null;
 
   constructor() {
     effect(() => {
-      if (this.editChallengeModal.isOpen()) {
-        const challenge = this.editChallengeModal.challenge();
-        if (challenge) {
-          this.syncScheduleInputs(challenge);
-          this.nameInput = challenge.name;
-          this.isPublicInput = challenge.isPublic;
-          this.resetParticipantInputs();
-          this.hydrateDrafts(challenge);
-          this.clearValidation();
-        }
-        document.body.style.overflow = 'hidden';
+      const isOpen = this.editChallengeModal.isOpen();
+      if (!isOpen) {
+        this.hydratedChallengeId = null;
+        document.body.style.overflow = '';
         return;
       }
 
-      document.body.style.overflow = '';
+      const challenge = this.editChallengeModal.challenge();
+      if (challenge && challenge.id !== this.hydratedChallengeId) {
+        this.hydratedChallengeId = challenge.id;
+        this.syncScheduleInputs(challenge);
+        this.nameInput = challenge.name;
+        this.isPublicInput = challenge.isPublic;
+        this.resetParticipantInputs();
+        this.hydrateDrafts(challenge);
+        this.clearValidation();
+      }
+
+      document.body.style.overflow = 'hidden';
     });
   }
 
@@ -255,22 +262,47 @@ export class EditChallengeModalComponent {
     const nameChanged = trimmedName !== challenge.name;
     const visibilityChanged = this.isPublicInput !== challenge.isPublic;
     const scheduleChanged = this.hasScheduleChanges(challenge, scheduleValidation.startAt, scheduleValidation.endAt);
+    const metadataChanged = nameChanged || visibilityChanged || scheduleChanged;
+
+    const hasCommittedRosterChanges =
+      this.removedParticipantIds.size > 0 ||
+      this.removedDuoIds.size > 0 ||
+      this.draftParticipants().some((item) => item.id.startsWith('pending-')) ||
+      this.draftDuos().some((item) => item.id.startsWith('pending-'));
+
+    if (!metadataChanged && !hasCommittedRosterChanges) {
+      this.close();
+      return;
+    }
+
+    if (metadataChanged && !hasCommittedRosterChanges) {
+      await this.saveMetadataOnly(challenge, {
+        trimmedName,
+        nameChanged,
+        visibilityChanged,
+        scheduleChanged,
+        scheduleValidation,
+      });
+      return;
+    }
+
     this.flushCurrentInputsToDraft(challenge);
 
     const pendingParticipants = this.draftParticipants().filter((item) => item.id.startsWith('pending-'));
     const pendingDuos = this.draftDuos().filter((item) => item.id.startsWith('pending-'));
-    const rosterChanged =
+    const rosterMutation =
       this.removedParticipantIds.size > 0 ||
       this.removedDuoIds.size > 0 ||
       pendingParticipants.length > 0 ||
       pendingDuos.length > 0;
 
-    if (!nameChanged && !visibilityChanged && !scheduleChanged && !rosterChanged) {
+    if (!metadataChanged && !rosterMutation) {
       this.close();
       return;
     }
 
     this.saving.set(true);
+    this.blockingSave.set(true);
     this.formError.set(null);
 
     try {
@@ -278,7 +310,7 @@ export class EditChallengeModalComponent {
 
       let updated = challenge;
 
-      if (nameChanged || visibilityChanged || scheduleChanged) {
+      if (metadataChanged) {
         updated = await firstValueFrom(
           this.challengeApi.updateChallenge(updated.id, {
             ...(nameChanged ? { name: trimmedName } : {}),
@@ -308,37 +340,71 @@ export class EditChallengeModalComponent {
         );
       }
 
-      if (rosterChanged) {
-        updated = await firstValueFrom(this.challengeApi.getChallengeByShareSlug(updated.shareSlug, true));
-      }
       const previous = normalizeChallengeDetail(challenge);
-      const normalized = rosterChanged
-        ? normalizeChallengeDetail(updated)
-        : mergeChallengeMetadataUpdate(previous, normalizeChallengeDetail(updated));
-      this.editChallengeModal.challenge.set(normalized);
-      this.hydrateDrafts(normalized);
-      this.syncScheduleInputs(normalized);
-      this.nameInput = normalized.name;
-      this.isPublicInput = normalized.isPublic;
-      this.resetParticipantInputs();
-      this.editChallengeModal.notifyUpdated(normalized);
+      const normalized = mergeChallengeMetadataUpdate(previous, normalizeChallengeDetail(updated));
+      this.editChallengeModal.notifyUpdated(normalized, true);
       this.close();
     } catch (err) {
-      if (err instanceof HttpErrorResponse && isChallengeNameTakenError(err)) {
-        this.nameInvalidFields.set(new Set(['name']));
-        this.nameFieldErrors.set({ name: this.i18n.t('create.nameTaken') });
-        this.formError.set(this.i18n.t('create.nameTaken'));
-      } else if (err instanceof HttpErrorResponse && this.applyRiotNotFound(err, challenge)) {
-        this.formError.set(mapParticipantError(err, this.i18n));
-      } else if (err instanceof HttpErrorResponse && nameChanged) {
-        this.formError.set(mapChallengeNameError(err, this.i18n));
-      } else if (err instanceof HttpErrorResponse) {
-        this.formError.set(mapParticipantError(err, this.i18n));
-      } else {
-        this.formError.set(this.i18n.t('challenge.saveChangesError'));
-      }
+      this.handleSaveError(err, challenge, nameChanged);
     } finally {
       this.saving.set(false);
+      this.blockingSave.set(false);
+    }
+  }
+
+  private async saveMetadataOnly(
+    challenge: ChallengeDetail,
+    options: {
+      trimmedName: string;
+      nameChanged: boolean;
+      visibilityChanged: boolean;
+      scheduleChanged: boolean;
+      scheduleValidation: Extract<ScheduleValidationResult, { valid: true }>;
+    },
+  ): Promise<void> {
+    this.saving.set(true);
+    this.formError.set(null);
+
+    try {
+      const updated = await firstValueFrom(
+        this.challengeApi.updateChallenge(challenge.id, {
+          ...(options.nameChanged ? { name: options.trimmedName } : {}),
+          ...(options.scheduleChanged
+            ? {
+                startAt: options.scheduleValidation.startAt,
+                endAt: options.scheduleValidation.endAt,
+              }
+            : {}),
+          ...(options.visibilityChanged ? { isPublic: this.isPublicInput } : {}),
+        }).pipe(timeout(15_000)),
+      );
+
+      const normalized = mergeChallengeMetadataUpdate(
+        normalizeChallengeDetail(challenge),
+        normalizeChallengeDetail(updated),
+      );
+      this.editChallengeModal.notifyUpdated(normalized, true);
+      this.close();
+    } catch (err) {
+      this.handleSaveError(err, challenge, options.nameChanged);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  private handleSaveError(err: unknown, challenge: ChallengeDetail, nameChanged: boolean): void {
+    if (err instanceof HttpErrorResponse && isChallengeNameTakenError(err)) {
+      this.nameInvalidFields.set(new Set(['name']));
+      this.nameFieldErrors.set({ name: this.i18n.t('create.nameTaken') });
+      this.formError.set(this.i18n.t('create.nameTaken'));
+    } else if (err instanceof HttpErrorResponse && this.applyRiotNotFound(err, challenge)) {
+      this.formError.set(mapParticipantError(err, this.i18n));
+    } else if (err instanceof HttpErrorResponse && nameChanged) {
+      this.formError.set(mapChallengeNameError(err, this.i18n));
+    } else if (err instanceof HttpErrorResponse) {
+      this.formError.set(mapParticipantError(err, this.i18n));
+    } else {
+      this.formError.set(this.i18n.t('challenge.saveChangesError'));
     }
   }
 
@@ -749,7 +815,8 @@ export class EditChallengeModalComponent {
   }
 
   private hasScheduleChanges(challenge: ChallengeDetail, startAt: string, endAt: string): boolean {
-    return challenge.startAt !== startAt || challenge.endAt !== endAt;
+    return !challengeInstantsEqual(challenge.startAt, startAt)
+      || !challengeInstantsEqual(challenge.endAt, endAt);
   }
 
   private validateSoloParticipantFields(): boolean {

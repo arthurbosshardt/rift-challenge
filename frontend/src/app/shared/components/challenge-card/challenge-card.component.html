@@ -83,6 +83,7 @@
             <div
               class="challenge-card__preview-viewport"
               [class.challenge-card__preview-viewport--fade]="showPreviewFade()"
+              [style.--preview-slot-columns]="previewColumnCount()"
               #previewViewport
             >
               <div
@@ -109,28 +110,54 @@
                           }
                           <div class="challenge-card__preview-text challenge-card__preview-text--duo">
                             <div class="challenge-card__duo-player">
-                              <app-player-avatar
-                                [profileIconId]="duo.player1.profileIconId"
-                                [gameName]="duo.player1.gameName"
-                                size="xs"
-                              />
+                              <div class="challenge-card__preview-visual challenge-card__preview-visual--inline">
+                                <div class="challenge-card__preview-rank">
+                                  @if (duo.player1.currentTier) {
+                                    <app-rank-emblem [tier]="duo.player1.currentTier" size="sm" />
+                                  } @else {
+                                    <span class="challenge-card__rank-placeholder" aria-hidden="true">—</span>
+                                  }
+                                </div>
+                                <app-player-avatar
+                                  [profileIconId]="duo.player1.profileIconId"
+                                  [gameName]="duo.player1.gameName"
+                                  size="xs"
+                                />
+                              </div>
                               <div class="challenge-card__duo-player-copy">
                                 <span class="challenge-card__preview-names">{{ duo.player1.gameName }}</span>
                                 @if (rankLabel(duo.player1); as p1Rank) {
                                   <span class="challenge-card__preview-rank-label">{{ p1Rank }}</span>
+                                } @else {
+                                  <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
+                                    {{ duo.player1.riotId }}
+                                  </span>
                                 }
                               </div>
                             </div>
                             <div class="challenge-card__duo-player">
-                              <app-player-avatar
-                                [profileIconId]="duo.player2.profileIconId"
-                                [gameName]="duo.player2.gameName"
-                                size="xs"
-                              />
+                              <div class="challenge-card__preview-visual challenge-card__preview-visual--inline">
+                                <div class="challenge-card__preview-rank">
+                                  @if (duo.player2.currentTier) {
+                                    <app-rank-emblem [tier]="duo.player2.currentTier" size="sm" />
+                                  } @else {
+                                    <span class="challenge-card__rank-placeholder" aria-hidden="true">—</span>
+                                  }
+                                </div>
+                                <app-player-avatar
+                                  [profileIconId]="duo.player2.profileIconId"
+                                  [gameName]="duo.player2.gameName"
+                                  size="xs"
+                                />
+                              </div>
                               <div class="challenge-card__duo-player-copy">
                                 <span class="challenge-card__preview-names">{{ duo.player2.gameName }}</span>
                                 @if (rankLabel(duo.player2); as p2Rank) {
                                   <span class="challenge-card__preview-rank-label">{{ p2Rank }}</span>
+                                } @else {
+                                  <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
+                                    {{ duo.player2.riotId }}
+                                  </span>
                                 }
                               </div>
                             </div>
@@ -139,6 +166,8 @@
                             <div class="challenge-card__stats">
                               <span
                                 class="challenge-card__lp challenge-card__lp--hint"
+                                appClampTooltip
+                                tabindex="0"
                                 [class]="lpClass(duo.combinedLpGained)"
                                 [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
                               >
@@ -214,6 +243,8 @@
                             <div class="challenge-card__stats">
                               <span
                                 class="challenge-card__lp challenge-card__lp--hint"
+                                appClampTooltip
+                                tabindex="0"
                                 [class]="lpClass(participant.lpGained)"
                                 [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
                               >

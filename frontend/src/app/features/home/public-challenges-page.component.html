@@ -69,6 +69,7 @@
           <button
             type="button"
             class="challenge-search__type-btn"
+            appClampTooltip
             [class.challenge-search__type-btn--active]="typeFilter() === 'ALL'"
             (click)="setTypeFilter('ALL')"
             [attr.aria-label]="'home.searchTypeAllAria' | t"
@@ -79,6 +80,7 @@
           <button
             type="button"
             class="challenge-search__type-btn"
+            appClampTooltip
             [class.challenge-search__type-btn--active-soloq]="typeFilter() === 'SOLOQ'"
             (click)="setTypeFilter('SOLOQ')"
             [attr.aria-label]="'home.searchTypeSoloqAria' | t"
@@ -93,6 +95,7 @@
           <button
             type="button"
             class="challenge-search__type-btn challenge-search__type-btn--end"
+            appClampTooltip
             [class.challenge-search__type-btn--active-duoq]="typeFilter() === 'DUOQ'"
             (click)="setTypeFilter('DUOQ')"
             [attr.aria-label]="'home.searchTypeDuoqAria' | t"

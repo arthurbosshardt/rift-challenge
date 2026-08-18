@@ -30,12 +30,13 @@
           <button
             type="button"
             class="shell__nav-create shell__nav-create-desktop"
+            appClampTooltip
             [attr.aria-label]="'nav.createChallenge' | t"
             [attr.title]="'nav.createChallenge' | t"
             (click)="createChallengeModal.open()"
           >
             <app-nav-icon name="create-challenge" />
-            <span class="shell__nav-create-tooltip">{{ 'nav.createChallenge' | t }}</span>
+            <span class="shell__nav-create-tooltip" role="tooltip">{{ 'nav.createChallenge' | t }}</span>
           </button>
         } @else {
           <button type="button" class="linkish shell__login-desktop" (click)="authModal.open()">

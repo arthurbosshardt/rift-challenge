@@ -56,6 +56,7 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --z-tooltip: 2400;
 
   /* Typography */
   --font-family: 'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', system-ui, sans-serif;
@@ -734,5 +735,24 @@ textarea:focus {
 
   .refresh-action-btn:not(:disabled) .refresh-action-btn__label--short {
     max-width: 6rem;
+  }
+}
+
+@media (max-width: 899px) {
+  .tooltip--viewport-clamped {
+    z-index: var(--z-tooltip);
+    width: max-content;
+    white-space: normal;
+    pointer-events: none;
+  }
+
+  .leaderboard__lp--hint,
+  .refresh__info-btn,
+  .sort-controls__ranking-help,
+  .challenge-search__type-btn,
+  .visibility-switch__info,
+  .shell__nav-create,
+  .challenge-card__lp--hint {
+    overflow: visible;
   }
 }

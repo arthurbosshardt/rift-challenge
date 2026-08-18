@@ -22,18 +22,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ChallengeProgressService {
 
+    static final int MIN_MATCHES_FOR_RANK_ESTIMATE = RankReplayService.MIN_MATCHES_FOR_RANK_ESTIMATE;
+
     private final RankSnapshotRepository rankSnapshotRepository;
     private final ChallengeParticipantMatchRepository participantMatchRepository;
     private final MatchHistoryService matchHistoryService;
+    private final ChallengeRepository challengeRepository;
 
     public ChallengeProgressService(
             RankSnapshotRepository rankSnapshotRepository,
             ChallengeParticipantMatchRepository participantMatchRepository,
-            MatchHistoryService matchHistoryService
+            MatchHistoryService matchHistoryService,
+            ChallengeRepository challengeRepository
     ) {
         this.rankSnapshotRepository = rankSnapshotRepository;
         this.participantMatchRepository = participantMatchRepository;
         this.matchHistoryService = matchHistoryService;
+        this.challengeRepository = challengeRepository;
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +103,10 @@ public class ChallengeProgressService {
             losses = resolveSnapshotStat(baseline, current, false);
         }
 
-        if (current == null) {
+        boolean challengeFinished = isChallengeFinished(challengeId);
+        int totalGames = (int) (wins + losses);
+
+        if (current == null || (challengeFinished && totalGames < MIN_MATCHES_FOR_RANK_ESTIMATE)) {
             ParticipantProgressResponse progress = ParticipantProgressResponse.withoutRankData(
                     participant,
                     (int) wins,
@@ -109,11 +117,13 @@ public class ChallengeProgressService {
 
         RankSnapshot effectiveBaseline = baseline;
         RankSnapshot effectiveCurrent = current;
-        if (current.isEstimated() && wins + losses > 0) {
+        boolean rankEstimated = current.isEstimated();
+        if (totalGames > 0 && (current.isEstimated() || challengeFinished)) {
             Optional<MatchBasedRankEstimate> liveEstimate = estimateRankFromSyncedMatches(participantId, challengeId);
             if (liveEstimate.isPresent()) {
                 effectiveBaseline = toEstimatedSnapshot(participantId, RankSnapshot.SnapshotType.BASELINE, liveEstimate.get().baseline());
                 effectiveCurrent = toEstimatedSnapshot(participantId, RankSnapshot.SnapshotType.REFRESH, liveEstimate.get().refresh());
+                rankEstimated = true;
             }
         }
 
@@ -134,9 +144,15 @@ public class ChallengeProgressService {
                 rankScore,
                 (int) wins,
                 (int) losses,
-                current.isEstimated()
+                rankEstimated
         );
         return includeMatchHistory ? attachMatchHistory(participant, progress) : progress;
+    }
+
+    private boolean isChallengeFinished(UUID challengeId) {
+        return challengeRepository.findById(challengeId)
+                .map(challenge -> challenge.getEndAt() != null && java.time.Instant.now().isAfter(challenge.getEndAt()))
+                .orElse(false);
     }
 
     private Optional<MatchBasedRankEstimate> estimateRankFromSyncedMatches(UUID participantId, UUID challengeId) {

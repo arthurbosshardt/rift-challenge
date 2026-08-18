@@ -14,6 +14,8 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.language': 'Langue',
     'footer.legal':
       "Rift Challenge n'est pas un site officiel de Riot Games et n'est en aucun cas approuvé, sponsorisé ou endossé par Riot Games, Inc. League of Legends et Riot Games sont des marques déposées de Riot Games, Inc.",
+    'footer.copyDiscordAria': "Copier le pseudo Discord {{username}}",
+    'footer.copyEmailAria': "Copier l'email {{email}}",
     'landing.introBrand': 'Rift Challenge',
     'landing.introQuestion': "c'est quoi ?",
     'landing.heroTitle': 'Grimpez plus vite que vos amis',
@@ -372,6 +374,8 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'nav.language': 'Language',
     'footer.legal':
       'Rift Challenge is not an official Riot Games site and is not approved, sponsored, or endorsed by Riot Games, Inc. League of Legends and Riot Games are trademarks of Riot Games, Inc.',
+    'footer.copyDiscordAria': 'Copy Discord username {{username}}',
+    'footer.copyEmailAria': 'Copy email {{email}}',
     'landing.introBrand': 'Rift Challenge',
     'landing.introQuestion': 'what is it?',
     'landing.heroTitle': 'Climb faster than your friends',

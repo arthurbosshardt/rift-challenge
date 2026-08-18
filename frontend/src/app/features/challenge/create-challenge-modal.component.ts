@@ -23,6 +23,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
+import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 
 type ScheduleInvalidField = 'startDate' | 'endDate';
 type NameInvalidField = 'name';
@@ -49,6 +50,7 @@ type ScheduleValidationResult =
     PlayerIdentityComponent,
     SummonerTypeaheadComponent,
     LoaderComponent,
+    ClampTooltipDirective,
   ],
   templateUrl: './create-challenge-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

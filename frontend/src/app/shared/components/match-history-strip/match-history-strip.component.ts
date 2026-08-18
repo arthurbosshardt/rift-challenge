@@ -69,6 +69,8 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    viewportElement.addEventListener('scroll', this.onViewportScroll, { passive: true });
+
     if (typeof ResizeObserver === 'undefined') {
       this.updateRightFade();
       return;
@@ -83,8 +85,13 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.viewport()?.nativeElement.removeEventListener('scroll', this.onViewportScroll);
     this.resizeObserver?.disconnect();
   }
+
+  private readonly onViewportScroll = (): void => {
+    this.updateRightFade();
+  };
 
   private updateRightFade(): void {
     const viewportElement = this.viewport()?.nativeElement;
@@ -94,7 +101,10 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    this.showRightFade.set(trackElement.scrollWidth > viewportElement.clientWidth + 1);
+    const overflows = trackElement.scrollWidth > viewportElement.clientWidth + 1;
+    const scrolledToEnd =
+      viewportElement.scrollLeft + viewportElement.clientWidth >= trackElement.scrollWidth - 1;
+    this.showRightFade.set(overflows && !scrolledToEnd);
   }
 
   protected dayLabel(dayKey: string): string {

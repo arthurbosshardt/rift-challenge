@@ -101,6 +101,25 @@ class RankReplayServiceTest {
     }
 
     @Test
+    void estimateFromMatches_capsHighTierForSmallSample() {
+        java.util.List<Boolean> winsOldestFirst = java.util.List.of(
+                true, false, true, false, true, false, true, false
+        );
+
+        RankReplayService.MatchBasedRankEstimate estimate = RankReplayService.estimateFromMatches(winsOldestFirst).orElseThrow();
+
+        assertThat(tierOrderAtMost(estimate.refresh().tier(), "GOLD")).isTrue();
+        assertThat(tierOrderAtMost(estimate.baseline().tier(), "GOLD")).isTrue();
+    }
+
+    @Test
+    void maxTierForMatchCount_scalesWithVolume() {
+        assertThat(RankReplayService.maxTierForMatchCount(8)).isEqualTo("GOLD");
+        assertThat(RankReplayService.maxTierForMatchCount(21)).isEqualTo("PLATINUM");
+        assertThat(RankReplayService.maxTierForMatchCount(89)).isEqualTo("CHALLENGER");
+    }
+
+    @Test
     void estimateFromMatches_derivesBaselineFromChosenEndAnchor() {
         java.util.List<Boolean> winsOldestFirst = java.util.List.of(true, false, true, true, false);
         RankReplayService.MatchBasedRankEstimate estimate = RankReplayService.estimateFromMatches(winsOldestFirst).orElseThrow();

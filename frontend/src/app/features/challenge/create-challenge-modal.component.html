@@ -131,6 +131,7 @@
               <button
                 type="button"
                 class="visibility-switch__info"
+                appClampTooltip
                 [attr.aria-label]="'create.privateInfoAria' | t"
                 (click)="$event.stopPropagation()"
               >
@@ -176,6 +177,7 @@
               <button
                 type="button"
                 class="visibility-switch__info visibility-switch__info--end"
+                appClampTooltip
                 [attr.aria-label]="'create.publicInfoAria' | t"
                 (click)="$event.stopPropagation()"
               >

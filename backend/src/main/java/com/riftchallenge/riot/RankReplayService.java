@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public final class RankReplayService {
 
+    public static final int MIN_MATCHES_FOR_RANK_ESTIMATE = 3;
+
     public record RankState(String tier, String rankDivision, int leaguePoints) {
     }
 
@@ -71,7 +73,11 @@ public final class RankReplayService {
         double winRate = (double) wins / winsOldestFirst.size();
         List<Boolean> winsNewestFirst = winsOldestFirst.reversed();
 
+        String maxTier = maxTierForMatchCount(winsOldestFirst.size());
+        int maxTierOrder = tierOrder(maxTier);
+
         return END_ANCHOR_CANDIDATES.stream()
+                .filter(candidate -> tierOrder(candidate.tier()) <= maxTierOrder)
                 .min(Comparator.comparingInt(end -> scoreEndAnchor(
                         end,
                         winsOldestFirst,
@@ -82,6 +88,19 @@ public final class RankReplayService {
                         winRate
                 )))
                 .orElse(END_ANCHOR_CANDIDATES.getFirst());
+    }
+
+    static String maxTierForMatchCount(int matchCount) {
+        if (matchCount <= 10) {
+            return "GOLD";
+        }
+        if (matchCount <= 25) {
+            return "PLATINUM";
+        }
+        if (matchCount <= 40) {
+            return "EMERALD";
+        }
+        return "CHALLENGER";
     }
 
     public static RankState fromLeague(RiotLeagueEntryDto entry) {

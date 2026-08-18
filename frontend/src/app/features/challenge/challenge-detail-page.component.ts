@@ -14,11 +14,12 @@ import {
   sortParticipants,
 } from '../../core/utils/leaderboard-sort';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../core/utils/record-display';
-import { formatDurationCountdown, formatRankLabel } from '../../core/utils/rank-display';
+import { formatDurationCountdown, formatFinishedRankLabel, formatRankLabel } from '../../core/utils/rank-display';
 import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { formatTimeSince } from '../../core/utils/relative-time';
 import { normalizeChallengeDetail } from '../../core/utils/challenge-detail';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
+import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { ChallengeDatePipe } from '../../shared/pipes/challenge-date.pipe';
 import { ChallengeDetailSkeletonComponent } from '../../shared/components/challenge-detail-skeleton/challenge-detail-skeleton.component';
@@ -34,7 +35,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-challenge-detail-page',
-  imports: [PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent],
+  imports: [PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent, ClampTooltipDirective],
   templateUrl: './challenge-detail-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './challenge-detail-page.component.scss',
@@ -148,8 +149,33 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.editChallengeModal.open(challenge, (updated) => {
-      this.applyChallengeUpdate(updated);
+    this.editChallengeModal.open(challenge, (result) => {
+      this.applyChallengeUpdate(result.challenge);
+      if (result.reloadFull) {
+        this.reloadChallengeDetail(result.challenge.shareSlug);
+      }
+    });
+  }
+
+  private reloadChallengeDetail(shareSlug: string): void {
+    if (this.refreshing()) {
+      return;
+    }
+
+    this.refreshError.set(null);
+    this.refreshing.set(true);
+
+    this.challengeApi.getChallengeByShareSlug(shareSlug, true).subscribe({
+      next: (challenge) => {
+        const normalized = normalizeChallengeDetail(challenge);
+        this.challenge.set(normalized);
+        this.shareSlug = normalized.shareSlug;
+        this.refreshing.set(false);
+        this.startTimersIfNeeded();
+      },
+      error: () => {
+        this.refreshing.set(false);
+      },
     });
   }
 
@@ -318,13 +344,22 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    const includeLp = this.challenge()?.status !== 'FINISHED';
+    const locale = this.i18n.locale();
+    if (this.challenge()?.status === 'FINISHED') {
+      return formatFinishedRankLabel(
+        participant.currentTier,
+        participant.currentRank,
+        participant.currentLp,
+        locale,
+      );
+    }
+
     return formatRankLabel(
       participant.currentTier,
       participant.currentRank,
       participant.currentLp,
-      this.i18n.locale(),
-      includeLp,
+      locale,
+      true,
     );
   }
 

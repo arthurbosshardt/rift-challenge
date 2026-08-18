@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDurationCountdown, formatRankLabel, rankEmblemUrl, tierLabelFr } from './rank-display';
+import { formatDurationCountdown, formatFinishedRankLabel, formatRankLabel, rankEmblemUrl, tierLabelFr } from './rank-display';
 
 describe('rank-display', () => {
   it('maps tier to French label', () => {
@@ -23,6 +23,11 @@ describe('rank-display', () => {
   it('omits LP when includeLp is false', () => {
     expect(formatRankLabel('DIAMOND', 'IV', 0, 'fr', false)).toBe('Diamant IV');
     expect(formatRankLabel('CHALLENGER', null, 1234, 'en', false)).toBe('Challenger');
+  });
+
+  it('formats finished rank labels without LP', () => {
+    expect(formatFinishedRankLabel('DIAMOND', 'IV', 42, 'fr')).toBe('a terminé Diamant IV');
+    expect(formatFinishedRankLabel('DIAMOND', 'IV', 42, 'en')).toBe('finished at Diamond IV');
   });
 
   it('formats duration countdown with days', () => {

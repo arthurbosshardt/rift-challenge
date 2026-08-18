@@ -265,7 +265,7 @@ public class ChallengeService {
         Challenge challenge = requireOwnedChallenge(challengeId, ownerId);
         challenge.updateVisibility(request.isPublic());
         challengeRepository.save(challenge);
-        return getById(challenge.getId(), ownerId, false);
+        return toMetadataDetailResponse(challenge, ownerId);
     }
 
     @Transactional
@@ -275,13 +275,12 @@ public class ChallengeService {
         requireUniqueChallengeName(name, challenge.getId());
         challenge.updateName(name);
         challengeRepository.save(challenge);
-        return getById(challenge.getId(), ownerId, false);
+        return toMetadataDetailResponse(challenge, ownerId);
     }
 
     @Transactional
     public ChallengeDetailResponse updateChallenge(UUID challengeId, UUID ownerId, UpdateChallengeRequest request) {
         Challenge challenge = requireOwnedChallenge(challengeId, ownerId);
-        boolean scheduleChanged = false;
 
         if (request.name() != null) {
             String name = request.name().trim();
@@ -298,7 +297,6 @@ public class ChallengeService {
             requireEndAfterStart(startAt, endAt);
             challenge.updateStartAt(startAt);
             challenge.updateEndAt(endAt);
-            scheduleChanged = true;
         }
 
         if (request.isPublic() != null) {
@@ -306,10 +304,7 @@ public class ChallengeService {
         }
 
         challengeRepository.save(challenge);
-        if (scheduleChanged) {
-            maybeAutoRefreshAfterScheduleChange(challenge.getId(), startAt);
-        }
-        return getById(challenge.getId(), ownerId, false);
+        return toMetadataDetailResponse(challenge, ownerId);
     }
 
     @Transactional
@@ -323,8 +318,7 @@ public class ChallengeService {
         challenge.updateStartAt(startAt);
         challenge.updateEndAt(endAt);
         challengeRepository.save(challenge);
-        maybeAutoRefreshAfterScheduleChange(challenge.getId(), startAt);
-        return getById(challenge.getId(), ownerId, false);
+        return toMetadataDetailResponse(challenge, ownerId);
     }
 
     private Challenge requireOwnedChallenge(UUID challengeId, UUID ownerId) {
@@ -334,31 +328,6 @@ public class ChallengeService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the challenge owner can modify this challenge");
         }
         return challenge;
-    }
-
-    private void maybeAutoRefreshAfterScheduleChange(UUID challengeId, Instant startAt) {
-        Instant now = clock.instant();
-        if (now.isBefore(startAt)) {
-            return;
-        }
-
-        List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId);
-        if (participants.isEmpty()) {
-            return;
-        }
-
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
-        RefreshTiming refreshTiming = resolveRefreshTiming(challenge, now);
-        if (refreshTiming.refreshAvailable()) {
-            try {
-                challengeSyncService.refreshChallenge(challengeId);
-            } catch (ResponseStatusException exception) {
-                if (exception.getStatusCode() != HttpStatus.TOO_MANY_REQUESTS) {
-                    throw exception;
-                }
-            }
-        }
     }
 
     public ChallengeDetailResponse refreshChallenge(UUID challengeId, UUID callerId) {
@@ -392,6 +361,21 @@ public class ChallengeService {
 
     private ChallengeDetailResponse toDetailResponse(Challenge challenge, UUID callerId) {
         return toDetailResponse(challenge, callerId, true);
+    }
+
+    private ChallengeDetailResponse toMetadataDetailResponse(Challenge challenge, UUID callerId) {
+        Instant now = clock.instant();
+        RefreshTiming refreshTiming = resolveRefreshTiming(challenge, now);
+        return ChallengeDetailResponse.from(
+                challenge,
+                now,
+                List.of(),
+                List.of(),
+                callerId,
+                refreshTiming.lastRefreshedAt(),
+                refreshTiming.refreshAvailable(),
+                refreshTiming.nextRefreshAvailableAt()
+        );
     }
 
     private ChallengeDetailResponse toDetailResponse(

@@ -93,3 +93,23 @@ export function splitLocalDateHour(iso: string | null | undefined): { date: stri
   const day = date.getDate().toString().padStart(2, '0');
   return { date: `${year}-${month}-${day}`, hour: date.getHours() };
 }
+
+export function challengeInstantsEqual(
+  left: string | null | undefined,
+  right: string | null | undefined,
+): boolean {
+  if (left == null && right == null) {
+    return true;
+  }
+  if (left == null || right == null) {
+    return false;
+  }
+
+  const leftTime = new Date(left).getTime();
+  const rightTime = new Date(right).getTime();
+  if (Number.isNaN(leftTime) || Number.isNaN(rightTime)) {
+    return false;
+  }
+
+  return leftTime === rightTime;
+}

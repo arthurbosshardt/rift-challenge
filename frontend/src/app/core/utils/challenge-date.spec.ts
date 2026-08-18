@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDaysToIso,
   buildLocalStartAtIso,
+  challengeInstantsEqual,
   formatChallengeDateCompact,
   formatChallengeDateTime,
   splitLocalDateHour,
@@ -43,5 +44,11 @@ describe('challenge-date', () => {
   it('splits a local date and hour from ISO', () => {
     const parts = splitLocalDateHour(new Date(2026, 7, 17, 14, 0, 0).toISOString());
     expect(parts).toEqual({ date: '2026-08-17', hour: 14 });
+  });
+
+  it('compares challenge instants regardless of ISO formatting', () => {
+    expect(challengeInstantsEqual('2026-08-18T10:00:00Z', '2026-08-18T10:00:00.000Z')).toBe(true);
+    expect(challengeInstantsEqual('2026-08-18T10:00:00Z', '2026-08-18T11:00:00Z')).toBe(false);
+    expect(challengeInstantsEqual(null, null)).toBe(true);
   });
 });

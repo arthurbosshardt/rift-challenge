@@ -32,12 +32,16 @@ class ChallengeProgressServiceTest {
     @Mock
     private MatchHistoryService matchHistoryService;
 
+    @Mock
+    private ChallengeRepository challengeRepository;
+
     @InjectMocks
     private ChallengeProgressService challengeProgressService;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
         when(matchHistoryService.buildForParticipant(any(), any())).thenReturn(List.of());
+        when(challengeRepository.findById(any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -282,6 +286,108 @@ class ChallengeProgressServiceTest {
         assertThat(progress.currentTier()).isIn("EMERALD", "DIAMOND");
         assertThat(progress.rankEstimated()).isTrue();
         assertThat(progress.lpGained()).isGreaterThan(200);
+    }
+
+    @Test
+    void buildForParticipant_finishedChallengeWithTooFewMatches_ignoresStoredRank() {
+        UUID challengeId = UUID.randomUUID();
+        ChallengeParticipant participant = ChallengeParticipant.create(
+                challengeId,
+                new RiotAccountDto("puuid-rouky", "RoukyEnjoyer", "7154")
+        );
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(),
+                "Retro duo",
+                ChallengeType.DUOQ,
+                java.time.Instant.parse("2025-05-10T00:00:00Z"),
+                java.time.Instant.parse("2025-10-09T00:00:00Z"),
+                true
+        );
+
+        RankSnapshot refresh = RankSnapshot.create(
+                participant.getId(),
+                java.time.Instant.parse("2025-10-09T00:00:00Z"),
+                RankSnapshot.SnapshotType.REFRESH,
+                "RANKED_SOLO_5x5",
+                "DIAMOND",
+                "IV",
+                12,
+                1,
+                0
+        );
+
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(),
+                RankSnapshot.SnapshotType.BASELINE
+        )).thenReturn(Optional.empty());
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(),
+                RankSnapshot.SnapshotType.REFRESH
+        )).thenReturn(Optional.of(refresh));
+        when(participantMatchRepository.countWinsInChallengeWindow(participant.getId(), challengeId)).thenReturn(1L);
+        when(participantMatchRepository.countLossesInChallengeWindow(participant.getId(), challengeId)).thenReturn(0L);
+
+        ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
+
+        assertThat(progress.hasRankData()).isFalse();
+        assertThat(progress.rankEstimated()).isFalse();
+        assertThat(progress.wins()).isEqualTo(1);
+        assertThat(progress.losses()).isEqualTo(0);
+    }
+
+    @Test
+    void buildForParticipant_finishedChallenge_recomputesEvenWhenSnapshotNotMarkedEstimated() {
+        UUID challengeId = UUID.randomUUID();
+        ChallengeParticipant participant = ChallengeParticipant.create(
+                challengeId,
+                new RiotAccountDto("puuid-rouky", "RoukyEnjoyer", "7154")
+        );
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(),
+                "Retro duo",
+                ChallengeType.DUOQ,
+                java.time.Instant.parse("2025-05-10T00:00:00Z"),
+                java.time.Instant.parse("2025-10-09T00:00:00Z"),
+                true
+        );
+
+        RankSnapshot refresh = RankSnapshot.create(
+                participant.getId(),
+                java.time.Instant.parse("2025-10-09T00:00:00Z"),
+                RankSnapshot.SnapshotType.REFRESH,
+                "RANKED_SOLO_5x5",
+                "DIAMOND",
+                "IV",
+                12,
+                8,
+                8
+        );
+
+        List<ParticipantMatchOutcomeInWindow> outcomes = List.of(
+                outcome(true), outcome(false), outcome(true),
+                outcome(false), outcome(true), outcome(false),
+                outcome(true), outcome(false)
+        );
+
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(),
+                RankSnapshot.SnapshotType.BASELINE
+        )).thenReturn(Optional.empty());
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(),
+                RankSnapshot.SnapshotType.REFRESH
+        )).thenReturn(Optional.of(refresh));
+        when(participantMatchRepository.countWinsInChallengeWindow(participant.getId(), challengeId)).thenReturn(4L);
+        when(participantMatchRepository.countLossesInChallengeWindow(participant.getId(), challengeId)).thenReturn(4L);
+        when(participantMatchRepository.findOutcomesInChallengeWindow(participant.getId(), challengeId))
+                .thenReturn(outcomes);
+
+        ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
+
+        assertThat(progress.rankEstimated()).isTrue();
+        assertThat(progress.currentTier()).isNotEqualTo("DIAMOND");
     }
 
     private static ParticipantMatchOutcomeInWindow outcome(boolean win) {

@@ -71,6 +71,9 @@ public class ChallengeParticipantSyncService {
 
     public void syncParticipant(Challenge challenge, ChallengeParticipant participant, Instant now) {
         if (shouldSkipFinishedParticipantSync(challenge, participant, now)) {
+            if (isChallengeFinished(challenge, now)) {
+                ensureMatchBasedHistoricalSnapshots(challenge, participant, now);
+            }
             log.info(
                     "Skipping Riot sync for participant {} on finished challenge (data already complete)",
                     participant.getId()
@@ -111,13 +114,16 @@ public class ChallengeParticipantSyncService {
     }
 
     private void ensureHistoricalSnapshots(Challenge challenge, ChallengeParticipant participant, Instant now) {
+        if (isChallengeFinished(challenge, now)) {
+            ensureMatchBasedHistoricalSnapshots(challenge, participant, now);
+            return;
+        }
+
         Optional<RiotLeagueEntryDto> currentLeague = riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid());
         if (currentLeague.isPresent()) {
             ensureHistoricalSnapshotsFromLeague(challenge, participant, now, currentLeague.get());
             return;
         }
-
-        ensureEstimatedSnapshotsForUnrankedParticipant(challenge, participant, now);
     }
 
     private void ensureHistoricalSnapshotsFromLeague(
@@ -158,7 +164,11 @@ public class ChallengeParticipantSyncService {
         );
     }
 
-    private void ensureEstimatedSnapshotsForUnrankedParticipant(
+    /**
+     * Defis termines : rang deduit uniquement des matchs synchronises dans la fenetre.
+     * N'ancre jamais sur le classement Riot actuel (ex. Diamant en 2026 pour un defi 2025).
+     */
+    private void ensureMatchBasedHistoricalSnapshots(
             Challenge challenge,
             ChallengeParticipant participant,
             Instant now
@@ -169,6 +179,23 @@ public class ChallengeParticipantSyncService {
 
         List<Boolean> winsOldestFirst = findChallengeWindowWinOutcomesOldestFirst(participant);
         if (winsOldestFirst.isEmpty()) {
+            return;
+        }
+
+        if (winsOldestFirst.size() < RankReplayService.MIN_MATCHES_FOR_RANK_ESTIMATE) {
+            rankSnapshotRepository.deleteByParticipantIdAndSnapshotType(
+                    participant.getId(),
+                    RankSnapshot.SnapshotType.BASELINE
+            );
+            rankSnapshotRepository.deleteByParticipantIdAndSnapshotType(
+                    participant.getId(),
+                    RankSnapshot.SnapshotType.REFRESH
+            );
+            log.info(
+                    "Cleared rank snapshots for participant {} ({} matches, below minimum for estimation)",
+                    participant.getId(),
+                    winsOldestFirst.size()
+            );
             return;
         }
 
@@ -183,7 +210,7 @@ public class ChallengeParticipantSyncService {
         int challengeWindowLosses = winsOldestFirst.size() - challengeWindowWins;
 
         log.info(
-                "Estimated historical rank for unranked participant {} from {} challenge matches (end anchor {} {})",
+                "Estimated historical rank for participant {} from {} challenge matches (end anchor {} {})",
                 participant.getId(),
                 winsOldestFirst.size(),
                 refreshState.tier(),
@@ -249,10 +276,10 @@ public class ChallengeParticipantSyncService {
             }
             if (postChallengeOutcomes.winsNewestFirst().isEmpty()) {
                 log.info(
-                        "Using current league rank for participant {} (no post-challenge SoloQ games)",
+                        "Skipping current league rank for participant {} on finished challenge (no post-challenge SoloQ games)",
                         participant.getId()
                 );
-                return Optional.of(currentState);
+                return Optional.empty();
             }
             return Optional.of(RankReplayService.replayBackward(
                     currentState,
@@ -549,10 +576,7 @@ public class ChallengeParticipantSyncService {
         if (!isChallengeFinished(challenge, now)) {
             return !hasRankSnapshots;
         }
-        if (!hasRankSnapshots) {
-            return true;
-        }
-        return isRefreshSnapshotEstimated(participant.getId());
+        return true;
     }
 
     private boolean isChallengeFinished(Challenge challenge, Instant now) {

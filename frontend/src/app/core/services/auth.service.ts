@@ -39,6 +39,7 @@ export class AuthService {
     this.readyResolve = resolve;
   });
   private profileLoad: Promise<void> | null = null;
+  private accessTokenInFlight: Promise<string | null> | null = null;
   private activityBound = false;
 
   readonly isAuthenticated = computed(() => this.session() !== null);
@@ -157,6 +158,32 @@ export class AuthService {
       return null;
     }
 
+    const cached = this.session();
+    if (cached?.access_token && !this.isAccessTokenExpired(cached.access_token)) {
+      this.touchLastSeen();
+      return cached.access_token;
+    }
+
+    if (this.accessTokenInFlight) {
+      return this.accessTokenInFlight;
+    }
+
+    this.accessTokenInFlight = this.fetchAccessTokenFromSupabase().finally(() => {
+      this.accessTokenInFlight = null;
+    });
+    return this.accessTokenInFlight;
+  }
+
+  /** Token en mémoire sans appel réseau Supabase (fallback interceptor). */
+  peekAccessToken(): string | null {
+    const session = this.session();
+    if (!session?.access_token || !this.sessionWithinTtl(session)) {
+      return null;
+    }
+    return session.access_token;
+  }
+
+  private async fetchAccessTokenFromSupabase(): Promise<string | null> {
     const { data } = await this.supabase.auth.getSession();
     const session = data.session;
 

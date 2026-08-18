@@ -39,6 +39,9 @@ export function mergeChallengeMetadataUpdate(
 ): ChallengeDetail {
   return normalizeChallengeDetail({
     ...updated,
+    startAt: updated.startAt,
+    endAt: updated.endAt,
+    status: updated.status,
     entryCount: previous.entryCount,
     participantGameNames: previous.participantGameNames,
     previewParticipants: previous.previewParticipants,

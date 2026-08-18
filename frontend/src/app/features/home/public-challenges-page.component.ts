@@ -14,6 +14,7 @@ import { ChallengeCardComponent } from '../../shared/components/challenge-card/c
 
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
+import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 
@@ -35,7 +36,7 @@ import {
 
   selector: 'app-public-challenges-page',
 
-  imports: [PageShellComponent, ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe, NavIconComponent],
+  imports: [PageShellComponent, ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe, NavIconComponent, ClampTooltipDirective],
 
   templateUrl: './public-challenges-page.component.html',
 

@@ -41,13 +41,29 @@
   white-space: nowrap;
 }
 
-.site-footer__contact--link {
-  text-decoration: none;
-  transition: color 0.15s ease;
+.site-footer__contact--copy {
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.site-footer__contact--link:hover,
-.site-footer__contact--link:focus-visible {
+.site-footer__contact--copy:hover,
+.site-footer__contact--copy:focus-visible {
+  color: var(--gold);
+  background: var(--gold-a08);
+}
+
+.site-footer__contact--copied {
   color: var(--gold);
 }
 
@@ -78,5 +94,11 @@
 
   .site-footer__contacts {
     justify-items: start;
+    gap: 0.25rem;
+  }
+
+  .site-footer__contact--copy {
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
   }
 }

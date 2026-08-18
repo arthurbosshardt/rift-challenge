@@ -24,13 +24,13 @@
         <dl class="detail__meta">
           <div>
             <dt>{{ 'challenge.start' | t }}</dt>
-            <dd>{{ preview.startAt | challengeDate:'compact' }}</dd>
+            <dd>{{ preview.startAt | challengeDate:'full' }}</dd>
           </div>
           <div>
             <dt>{{ 'challenge.end' | t }}</dt>
             <dd>
               @if (preview.endAt) {
-                {{ preview.endAt | challengeDate:'compact' }}
+                {{ preview.endAt | challengeDate:'full' }}
               } @else {
                 —
               }
@@ -197,10 +197,11 @@
                   <button
                     type="button"
                     class="refresh__info-btn"
+                    appClampTooltip
                     [attr.aria-label]="'challenge.refreshHint' | t"
                   >
                     <span aria-hidden="true">i</span>
-                    <span class="refresh__info-tooltip">{{ 'challenge.refreshHint' | t }}</span>
+                    <span class="refresh__info-tooltip" role="tooltip">{{ 'challenge.refreshHint' | t }}</span>
                   </button>
                 </div>
 
@@ -225,13 +226,13 @@
         <dl class="detail__meta">
           <div>
             <dt>{{ 'challenge.start' | t }}</dt>
-            <dd>{{ currentChallenge.startAt | challengeDate:'compact' }}</dd>
+            <dd>{{ currentChallenge.startAt | challengeDate:'full' }}</dd>
           </div>
           <div>
             <dt>{{ 'challenge.end' | t }}</dt>
             <dd>
               @if (currentChallenge.endAt) {
-                {{ currentChallenge.endAt | challengeDate:'compact' }}
+                {{ currentChallenge.endAt | challengeDate:'full' }}
               } @else {
                 —
               }
@@ -302,6 +303,8 @@
                     @if (participant.hasRankData) {
                       <span
                         class="leaderboard__lp leaderboard__lp--hint"
+                        appClampTooltip
+                        tabindex="0"
                         [class.leaderboard__lp--negative]="participant.lpGained < 0"
                         [class.leaderboard__lp--positive]="participant.lpGained > 0"
                         [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
@@ -375,6 +378,8 @@
                     @if (duoHasRankData(duo)) {
                       <span
                         class="leaderboard__lp leaderboard__lp--hint"
+                        appClampTooltip
+                        tabindex="0"
                         [class.leaderboard__lp--negative]="duo.combinedLpGained < 0"
                         [class.leaderboard__lp--positive]="duo.combinedLpGained > 0"
                         [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
@@ -387,22 +392,20 @@
                     } @else {
                       <span class="leaderboard__lp">{{ lpLabel(duo.combinedLpGained, false) }}</span>
                     }
-                    <span class="leaderboard__wl">
-                      <span [class]="'leaderboard__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
-                        {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
-                      </span>
-                      @if (hasRecord(duo.wins, duo.losses)) {
-                        <span class="leaderboard__record">
-                          <span class="leaderboard__wins">
-                            {{ duo.wins }}<span class="leaderboard__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
-                          </span>
-                          <span class="leaderboard__record-sep" aria-hidden="true">/</span>
-                          <span class="leaderboard__losses">
-                            {{ duo.losses }}<span class="leaderboard__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
-                          </span>
-                        </span>
-                      }
+                    <span [class]="'leaderboard__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                      {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
                     </span>
+                    @if (hasRecord(duo.wins, duo.losses)) {
+                      <span class="leaderboard__record">
+                        <span class="leaderboard__wins">
+                          {{ duo.wins }}<span class="leaderboard__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                        </span>
+                        <span class="leaderboard__record-sep" aria-hidden="true">/</span>
+                        <span class="leaderboard__losses">
+                          {{ duo.losses }}<span class="leaderboard__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                        </span>
+                      </span>
+                    }
                   </div>
                   @if (!duo.eligible && duo.ineligibilityReason) {
                     <span class="leaderboard__ineligible">{{ ineligibilityLabel(duo.ineligibilityReason) }}</span>

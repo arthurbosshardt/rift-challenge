@@ -207,7 +207,7 @@ h4.challenge-form__schedule-title {
   position: absolute;
   bottom: calc(100% + 0.5rem);
   left: 50%;
-  z-index: 10;
+  z-index: var(--z-tooltip);
   width: max-content;
   max-width: 14rem;
   padding: 0.5rem 0.625rem;

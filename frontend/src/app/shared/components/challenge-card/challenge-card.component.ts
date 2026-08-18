@@ -20,7 +20,7 @@ import {
 import { ChallengeDatePipe } from '../../pipes/challenge-date.pipe';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { formatRankLabel } from '../../../core/utils/rank-display';
+import { formatFinishedRankLabel, formatRankLabel } from '../../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../../core/utils/record-display';
 import {
   groupChallengeCardPreviewItems,
@@ -37,9 +37,11 @@ import {
   ChallengeBadgeKind,
 } from '../challenge-badge/challenge-badge.component';
 
+import { ClampTooltipDirective } from '../../directives/clamp-tooltip.directive';
+
 @Component({
   selector: 'app-challenge-card',
-  imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, ChallengeBadgeComponent],
+  imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, ChallengeBadgeComponent, ClampTooltipDirective],
   templateUrl: './challenge-card.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './challenge-card.component.scss',
@@ -239,13 +241,23 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     if (!participant.currentTier) {
       return null;
     }
-    const includeLp = this.challenge().status !== 'FINISHED';
+
+    const locale = this.i18n.locale();
+    if (this.challenge().status === 'FINISHED') {
+      return formatFinishedRankLabel(
+        participant.currentTier,
+        participant.currentRank,
+        participant.currentLp,
+        locale,
+      );
+    }
+
     return formatRankLabel(
       participant.currentTier,
       participant.currentRank,
       participant.currentLp,
-      this.i18n.locale(),
-      includeLp,
+      locale,
+      true,
     );
   }
 

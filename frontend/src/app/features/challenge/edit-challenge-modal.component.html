@@ -7,7 +7,7 @@
     (click)="close()"
   >
     <section class="modal-panel modal-panel--edit edit-challenge-modal" (click)="$event.stopPropagation()">
-      @if (saving()) {
+      @if (blockingSave()) {
         <div class="modal-saving-overlay" aria-live="polite" aria-busy="true">
           <app-loader [label]="'challenge.savingChanges' | t" [centered]="false" />
         </div>
@@ -91,6 +91,7 @@
               <button
                 type="button"
                 class="visibility-switch__info"
+                appClampTooltip
                 [attr.aria-label]="'create.privateInfoAria' | t"
                 (click)="$event.stopPropagation()"
               >
@@ -136,6 +137,7 @@
               <button
                 type="button"
                 class="visibility-switch__info visibility-switch__info--end"
+                appClampTooltip
                 [attr.aria-label]="'create.publicInfoAria' | t"
                 (click)="$event.stopPropagation()"
               >

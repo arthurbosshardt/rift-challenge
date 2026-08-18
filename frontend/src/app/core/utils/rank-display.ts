@@ -69,6 +69,19 @@ export function formatRankLabel(
   return includeLp ? `${rankLabel} · ${lp} LP` : rankLabel;
 }
 
+export function formatFinishedRankLabel(
+  tier: string | null | undefined,
+  rank: string | null | undefined,
+  lp: number,
+  locale: 'fr' | 'en' = 'fr',
+): string {
+  const rankText = formatRankLabel(tier, rank, lp, locale, false);
+  if (locale === 'en') {
+    return `finished at ${rankText}`;
+  }
+  return `a terminé ${rankText}`;
+}
+
 export function formatDurationCountdown(
   targetIso: string,
   nowMs = Date.now(),

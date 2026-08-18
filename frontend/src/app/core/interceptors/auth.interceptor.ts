@@ -1,7 +1,9 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { from, switchMap } from 'rxjs';
+import { catchError, from, of, switchMap, timeout } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+
+const AUTH_RESOLVE_TIMEOUT_MS = 8_000;
 
 function isPublicApiRequest(url: string): boolean {
   return url.includes('/api/challenges/public') || url.includes('/api/health');
@@ -15,6 +17,8 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
 
   return from(auth.resolveAccessToken()).pipe(
+    timeout(AUTH_RESOLVE_TIMEOUT_MS),
+    catchError(() => of(auth.peekAccessToken())),
     switchMap((token) => {
       if (!token) {
         return next(request);
