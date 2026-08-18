@@ -80,7 +80,7 @@
   text-align: right;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 899px) {
   .leaderboard-skeleton__list {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }

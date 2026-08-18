@@ -1,0 +1,52 @@
+:host {
+  display: block;
+}
+
+.summoner-typeahead {
+  position: relative;
+}
+
+.summoner-typeahead input {
+  width: 100%;
+}
+
+.summoner-typeahead__list {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-card);
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.summoner-typeahead__option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.summoner-typeahead__option:hover,
+.summoner-typeahead__option:focus-visible {
+  background: var(--surface-hover);
+}
+
+.summoner-typeahead__riot-id {
+  font-size: 0.875rem;
+  font-weight: 600;
+}

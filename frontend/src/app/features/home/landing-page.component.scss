@@ -133,8 +133,21 @@
 
 .landing-btn--secondary:hover {
   background: var(--surface-hover);
-  border-color: var(--gold-a35);
-  color: var(--gold);
+}
+
+.landing-btn--disabled,
+.landing-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.landing__warmup {
+  margin: 0 0 0.75rem;
+  max-width: 36rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
 .landing__steps {
@@ -460,13 +473,7 @@
   overflow: hidden;
 }
 
-@media (min-width: 961px) and (max-width: 1400px) {
-  .landing__types {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 960px) {
+@media (max-width: 899px) {
   .landing {
     align-items: flex-start;
     padding-inline: clamp(1rem, 4vw, 2rem);
@@ -505,13 +512,6 @@
     min-height: 18rem;
   }
 
-  .landing__cards {
-    min-height: 18rem;
-    height: auto;
-  }
-}
-
-@media (max-width: 640px) {
   .landing__types {
     grid-template-columns: 1fr;
   }
@@ -520,6 +520,7 @@
     grid-template-columns: 1fr;
     grid-template-rows: repeat(4, minmax(12rem, auto));
     min-height: auto;
+    height: auto;
     gap: 0.5rem;
   }
 
@@ -546,28 +547,5 @@
 
   .landing__actions .landing-btn {
     width: 100%;
-  }
-}
-
-@media (max-height: 720px) {
-  .landing__intro-brand {
-    font-size: clamp(1.75rem, 3.5vw, 2.25rem);
-  }
-
-  .landing__intro-question {
-    font-size: clamp(1.375rem, 2.6vw, 1.75rem);
-  }
-
-  .landing__subtitle {
-    font-size: 0.875rem;
-  }
-
-  .landing__brand {
-    gap: 0.625rem;
-    padding-bottom: 0.875rem;
-  }
-
-  .landing__left {
-    gap: 1rem;
   }
 }

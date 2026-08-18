@@ -75,8 +75,8 @@ public class ChallengeDuoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A duo must contain two different players");
         }
 
-        RiotAccountDto account1 = riotAccountClient.getAccountByRiotId(parsed1.gameName(), parsed1.tagLine());
-        RiotAccountDto account2 = riotAccountClient.getAccountByRiotId(parsed2.gameName(), parsed2.tagLine());
+        RiotAccountDto account1 = requireRiotAccount(parsed1, "player 1");
+        RiotAccountDto account2 = requireRiotAccount(parsed2, "player 2");
 
         if (participantRepository.existsByChallengeIdAndRiotPuuid(challengeId, account1.puuid())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Player already added");
@@ -119,6 +119,20 @@ public class ChallengeDuoService {
         }
 
         challengeDuoRepository.delete(duo);
+    }
+
+    private RiotAccountDto requireRiotAccount(RiotIdParser.ParsedRiotId parsed, String playerLabel) {
+        try {
+            return riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
+        } catch (ResponseStatusException exception) {
+            if (exception.getStatusCode() == HttpStatus.NOT_FOUND) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Riot account not found for " + playerLabel
+                );
+            }
+            throw exception;
+        }
     }
 
     private void captureBaselineIfRanked(ChallengeParticipant participant) {

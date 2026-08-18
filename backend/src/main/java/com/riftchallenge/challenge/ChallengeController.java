@@ -9,6 +9,7 @@ import com.riftchallenge.challenge.dto.ChallengeDetailResponse;
 import com.riftchallenge.challenge.dto.ChallengeSummaryResponse;
 import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
+import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
@@ -94,6 +95,16 @@ public class ChallengeController {
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         return challengeService.createChallenge(ownerId, request);
+    }
+
+    @PatchMapping("/{challengeId}")
+    public ChallengeDetailResponse updateChallenge(
+            Authentication authentication,
+            @PathVariable UUID challengeId,
+            @Valid @RequestBody UpdateChallengeRequest request
+    ) {
+        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        return challengeService.updateChallenge(challengeId, ownerId, request);
     }
 
     @PatchMapping("/{challengeId}/schedule")

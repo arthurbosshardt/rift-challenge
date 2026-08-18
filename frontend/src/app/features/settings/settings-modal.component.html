@@ -158,17 +158,23 @@
               } @else {
                 <p class="settings-section__empty">{{ 'accounts.primaryEmpty' | t }}</p>
 
-                <form class="settings-form" (ngSubmit)="linkPrimaryAccount()">
+                <form
+                  class="settings-form"
+                  [class.settings-form--invalid]="riotInvalidForm() === 'primary'"
+                  (ngSubmit)="linkPrimaryAccount()"
+                >
                   <div class="settings-form__row">
                     <label>
                       {{ 'challenge.gameName' | t }}
-                      <input
+                      <app-summoner-typeahead
                         name="primaryGameName"
-                        type="text"
-                        [(ngModel)]="primaryGameNameInput"
+                        [value]="primaryGameNameInput"
+                        (valueChange)="primaryGameNameInput = $event; riotInvalidForm.set(null)"
+                        (selected)="applyPrimarySummoner($event)"
                         [placeholder]="'challenge.gameNamePlaceholder' | t"
                         [disabled]="linkingPrimary()"
-                        autocomplete="off"
+                        [invalid]="riotInvalidForm() === 'primary'"
+                        [ariaInvalid]="riotInvalidForm() === 'primary'"
                       />
                     </label>
                     <label>
@@ -179,6 +185,7 @@
                         [(ngModel)]="primaryTagLineInput"
                         [placeholder]="'challenge.tagLinePlaceholder' | t"
                         [disabled]="linkingPrimary()"
+                        [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
                         autocomplete="off"
                       />
                     </label>
@@ -231,18 +238,23 @@
                 }
 
                 @if (canAddSmurf()) {
-                  <form class="settings-form" (ngSubmit)="linkSmurfAccount()">
+                  <form
+                    class="settings-form"
+                    [class.settings-form--invalid]="riotInvalidForm() === 'smurf'"
+                    (ngSubmit)="linkSmurfAccount()"
+                  >
                     <div class="settings-form__row settings-form__row--inline">
                       <label>
                         {{ 'challenge.gameName' | t }}
-                        <input
+                        <app-summoner-typeahead
                           name="smurfGameName"
-                          type="text"
-                          [(ngModel)]="smurfGameNameInput"
+                          [value]="smurfGameNameInput"
+                          (valueChange)="smurfGameNameInput = $event; riotInvalidForm.set(null)"
+                          (selected)="applySmurfSummoner($event)"
                           [placeholder]="'challenge.gameNamePlaceholder' | t"
-                          [attr.aria-label]="'challenge.gameName' | t"
                           [disabled]="linkingSmurf()"
-                          autocomplete="off"
+                          [invalid]="riotInvalidForm() === 'smurf'"
+                          [ariaInvalid]="riotInvalidForm() === 'smurf'"
                         />
                       </label>
                       <label>
@@ -254,6 +266,7 @@
                           [placeholder]="'challenge.tagLinePlaceholder' | t"
                           [attr.aria-label]="'challenge.tagLine' | t"
                           [disabled]="linkingSmurf()"
+                          [class.challenge-form__control--invalid]="riotInvalidForm() === 'smurf'"
                           autocomplete="off"
                         />
                       </label>

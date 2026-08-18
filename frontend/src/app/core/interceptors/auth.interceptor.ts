@@ -4,7 +4,7 @@ import { from, switchMap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 function isPublicApiRequest(url: string): boolean {
-  return url.includes('/api/challenges/public');
+  return url.includes('/api/challenges/public') || url.includes('/api/health');
 }
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {

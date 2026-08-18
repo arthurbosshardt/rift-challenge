@@ -1,4 +1,4 @@
-@if (editChallengeModal.isOpen() && editChallengeModal.challenge(); as challenge) {
+﻿@if (editChallengeModal.isOpen() && editChallengeModal.challenge(); as challenge) {
   <div
     class="modal-overlay"
     role="dialog"
@@ -11,7 +11,7 @@
         type="button"
         class="edit-challenge-modal__close"
         [attr.aria-label]="'auth.close' | t"
-        [disabled]="saving() || addingParticipant()"
+        [disabled]="saving()"
         (click)="close()"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -79,7 +79,7 @@
               role="switch"
               [attr.aria-checked]="isPublicInput"
               [class.visibility-switch__toggle--public]="isPublicInput"
-              [disabled]="saving() || addingParticipant()"
+              [disabled]="saving()"
               (click)="toggleVisibility()"
             >
               @if (isPublicInput) {
@@ -198,24 +198,7 @@
           </div>
         </section>
 
-        @if (formError()) {
-          <p class="form-error" role="alert">{{ formError() }}</p>
-        }
-        @if (saveSuccess()) {
-          <p class="edit-challenge-modal__success">{{ 'challenge.changesSaved' | t }}</p>
-        }
-
-        <footer class="edit-challenge-modal__footer">
-          <button type="button" class="edit-challenge-modal__cancel" [disabled]="saving()" (click)="close()">
-            {{ 'create.cancel' | t }}
-          </button>
-          <button type="submit" [disabled]="saving()">
-            {{ saving() ? ('challenge.savingChanges' | t) : ('challenge.saveChanges' | t) }}
-          </button>
-        </footer>
-      </form>
-
-      <section class="edit-challenge-modal__section edit-challenge-modal__section--participants">
+        <section class="edit-challenge-modal__section edit-challenge-modal__section--participants">
         <div class="edit-challenge-modal__section-header">
           <span class="edit-challenge-modal__count">{{ entryCount(challenge) }} / {{ entryLimit(challenge) }}</span>
           <h3>{{ challenge.type === 'DUOQ' ? ('challenge.duos' | t) : ('challenge.participants' | t) }}</h3>
@@ -228,7 +211,7 @@
             </p>
           } @else if (challenge.type === 'SOLOQ') {
             <ul [class]="participantListClass(challenge)">
-              @for (participant of challenge.participants; track participant.id) {
+              @for (participant of draftParticipants(); track participant.id) {
                 <li class="edit-challenge-modal__list-item">
                   <app-player-identity
                     [compact]="true"
@@ -242,24 +225,20 @@
                     type="button"
                     class="edit-challenge-modal__action edit-challenge-modal__action--remove"
                     (click)="removeParticipant(participant)"
-                    [disabled]="removingParticipantId() === participant.id"
+                    [disabled]="saving()"
                     [attr.aria-label]="'challenge.removeAria' | t:{ name: participant.riotId }"
                     [attr.title]="'challenge.remove' | t"
                   >
-                    @if (removingParticipantId() === participant.id) {
-                      <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
-                    } @else {
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                      </svg>
-                    }
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
                   </button>
                 </li>
               }
             </ul>
           } @else {
             <ul [class]="participantListClass(challenge)">
-              @for (duo of challenge.duos; track duo.id) {
+              @for (duo of draftDuos(); track duo.id) {
                 <li class="edit-challenge-modal__list-item edit-challenge-modal__list-item--duo">
                   <div class="edit-challenge-modal__duo-stack">
                     <app-player-identity
@@ -283,17 +262,13 @@
                     type="button"
                     class="edit-challenge-modal__action edit-challenge-modal__action--remove"
                     (click)="removeDuo(duo)"
-                    [disabled]="removingDuoId() === duo.id"
+                    [disabled]="saving()"
                     [attr.aria-label]="'challenge.removeDuoAria' | t:{ name: duoLabel(duo) }"
                     [attr.title]="'challenge.remove' | t"
                   >
-                    @if (removingDuoId() === duo.id) {
-                      <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
-                    } @else {
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                      </svg>
-                    }
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
                   </button>
                 </li>
               }
@@ -302,7 +277,10 @@
         </div>
 
         @if (challenge.type === 'SOLOQ') {
-          <form class="challenge-form edit-challenge-modal__form" (ngSubmit)="addParticipant()">
+          <div
+            class="challenge-form edit-challenge-modal__form"
+            [class.edit-challenge-modal__form--invalid]="isParticipantInvalid('gameName') || isParticipantInvalid('tagLine')"
+          >
             <span class="edit-challenge-modal__form-title">{{ 'challenge.addPlayer' | t }}</span>
             <div class="edit-challenge-modal__form-row">
               <label [class.challenge-form__field--invalid]="isParticipantInvalid('gameName')">
@@ -310,16 +288,15 @@
                   {{ 'challenge.gameName' | t }}
                   <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
                 </span>
-                <input
+                <app-summoner-typeahead
                   name="gameName"
-                  type="text"
-                  [(ngModel)]="gameNameInput"
+                  [value]="gameNameInput"
+                  (valueChange)="gameNameInput = $event; clearParticipantInvalid('gameName')"
+                  (selected)="applySummoner('solo', $event)"
                   [placeholder]="'challenge.gameNamePlaceholder' | t"
-                  [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
-                  [class.challenge-form__control--invalid]="isParticipantInvalid('gameName')"
-                  [attr.aria-invalid]="isParticipantInvalid('gameName')"
-                  (ngModelChange)="clearParticipantInvalid('gameName')"
-                  autocomplete="off"
+                  [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
+                  [invalid]="isParticipantInvalid('gameName')"
+                  [ariaInvalid]="isParticipantInvalid('gameName')"
                 />
                 @if (participantFieldError('gameName'); as message) {
                   <span class="field-error" role="alert">{{ message }}</span>
@@ -335,7 +312,7 @@
                   type="text"
                   [(ngModel)]="tagLineInput"
                   [placeholder]="'challenge.tagLinePlaceholder' | t"
-                  [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                  [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
                   [class.challenge-form__control--invalid]="isParticipantInvalid('tagLine')"
                   [attr.aria-invalid]="isParticipantInvalid('tagLine')"
                   (ngModelChange)="clearParticipantInvalid('tagLine')"
@@ -346,30 +323,32 @@
                 }
               </label>
               <button
-                type="submit"
+                type="button"
                 class="edit-challenge-modal__action edit-challenge-modal__action--add"
-                [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
                 [attr.aria-label]="'challenge.add' | t"
                 [attr.title]="'challenge.add' | t"
+                (click)="addParticipant()"
               >
-                @if (addingParticipant()) {
-                  <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
-                } @else {
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                  </svg>
-                }
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                </svg>
               </button>
             </div>
             @if (participantFormError()) {
               <p class="form-error" role="alert">{{ participantFormError() }}</p>
             }
-          </form>
+          </div>
         } @else {
-          <form class="challenge-form edit-challenge-modal__form" (ngSubmit)="addDuo()">
+          <div class="challenge-form edit-challenge-modal__form">
             <span class="edit-challenge-modal__form-title">{{ 'challenge.addDuo' | t }}</span>
             <div class="edit-challenge-modal__duo-fields">
-              <div class="edit-challenge-modal__duo-player">
+              <div
+                class="edit-challenge-modal__duo-player"
+                [class.edit-challenge-modal__duo-player--invalid]="
+                  isParticipantInvalid('duoPlayer1GameName') || isParticipantInvalid('duoPlayer1TagLine')
+                "
+              >
                 <span>{{ 'challenge.duoPlayer1Title' | t }}</span>
                 <div class="edit-challenge-modal__form-row">
                   <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer1GameName')">
@@ -377,16 +356,15 @@
                       {{ 'challenge.gameName' | t }}
                       <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
                     </span>
-                    <input
+                    <app-summoner-typeahead
                       name="duoPlayer1GameName"
-                      type="text"
-                      [(ngModel)]="duoPlayer1GameName"
+                      [value]="duoPlayer1GameName"
+                      (valueChange)="duoPlayer1GameName = $event; clearParticipantInvalid('duoPlayer1GameName')"
+                      (selected)="applySummoner('duo1', $event)"
                       [placeholder]="'challenge.gameNamePlaceholder' | t"
-                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
-                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer1GameName')"
-                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer1GameName')"
-                      (ngModelChange)="clearParticipantInvalid('duoPlayer1GameName')"
-                      autocomplete="off"
+                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
+                      [invalid]="isParticipantInvalid('duoPlayer1GameName')"
+                      [ariaInvalid]="isParticipantInvalid('duoPlayer1GameName')"
                     />
                     @if (participantFieldError('duoPlayer1GameName'); as message) {
                       <span class="field-error" role="alert">{{ message }}</span>
@@ -402,7 +380,7 @@
                       type="text"
                       [(ngModel)]="duoPlayer1TagLine"
                       [placeholder]="'challenge.tagLinePlaceholder' | t"
-                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
                       [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer1TagLine')"
                       [attr.aria-invalid]="isParticipantInvalid('duoPlayer1TagLine')"
                       (ngModelChange)="clearParticipantInvalid('duoPlayer1TagLine')"
@@ -414,7 +392,12 @@
                   </label>
                 </div>
               </div>
-              <div class="edit-challenge-modal__duo-player">
+              <div
+                class="edit-challenge-modal__duo-player"
+                [class.edit-challenge-modal__duo-player--invalid]="
+                  isParticipantInvalid('duoPlayer2GameName') || isParticipantInvalid('duoPlayer2TagLine')
+                "
+              >
                 <span>{{ 'challenge.duoPlayer2Title' | t }}</span>
                 <div class="edit-challenge-modal__form-row">
                   <label [class.challenge-form__field--invalid]="isParticipantInvalid('duoPlayer2GameName')">
@@ -422,16 +405,15 @@
                       {{ 'challenge.gameName' | t }}
                       <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
                     </span>
-                    <input
+                    <app-summoner-typeahead
                       name="duoPlayer2GameName"
-                      type="text"
-                      [(ngModel)]="duoPlayer2GameName"
+                      [value]="duoPlayer2GameName"
+                      (valueChange)="duoPlayer2GameName = $event; clearParticipantInvalid('duoPlayer2GameName')"
+                      (selected)="applySummoner('duo2', $event)"
                       [placeholder]="'challenge.gameNamePlaceholder' | t"
-                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
-                      [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer2GameName')"
-                      [attr.aria-invalid]="isParticipantInvalid('duoPlayer2GameName')"
-                      (ngModelChange)="clearParticipantInvalid('duoPlayer2GameName')"
-                      autocomplete="off"
+                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
+                      [invalid]="isParticipantInvalid('duoPlayer2GameName')"
+                      [ariaInvalid]="isParticipantInvalid('duoPlayer2GameName')"
                     />
                     @if (participantFieldError('duoPlayer2GameName'); as message) {
                       <span class="field-error" role="alert">{{ message }}</span>
@@ -447,7 +429,7 @@
                       type="text"
                       [(ngModel)]="duoPlayer2TagLine"
                       [placeholder]="'challenge.tagLinePlaceholder' | t"
-                      [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                      [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
                       [class.challenge-form__control--invalid]="isParticipantInvalid('duoPlayer2TagLine')"
                       [attr.aria-invalid]="isParticipantInvalid('duoPlayer2TagLine')"
                       (ngModelChange)="clearParticipantInvalid('duoPlayer2TagLine')"
@@ -462,27 +444,41 @@
             </div>
             <div class="edit-challenge-modal__form-actions">
               <button
-                type="submit"
+                type="button"
                 class="edit-challenge-modal__action edit-challenge-modal__action--add"
-                [disabled]="addingParticipant() || entryCount(challenge) >= entryLimit(challenge)"
+                [disabled]="saving() || entryCount(challenge) >= entryLimit(challenge)"
                 [attr.aria-label]="'challenge.addDuoButton' | t"
                 [attr.title]="'challenge.addDuoButton' | t"
+                (click)="addDuo()"
               >
-                @if (addingParticipant()) {
-                  <span class="edit-challenge-modal__action-loading" aria-hidden="true">…</span>
-                } @else {
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                  </svg>
-                }
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                </svg>
               </button>
             </div>
             @if (participantFormError()) {
               <p class="form-error" role="alert">{{ participantFormError() }}</p>
             }
-          </form>
+          </div>
         }
+
+        @if (formError()) {
+          <p class="form-error" role="alert">{{ formError() }}</p>
+        }
+        @if (saveSuccess()) {
+          <p class="edit-challenge-modal__success">{{ 'challenge.changesSaved' | t }}</p>
+        }
+
+        <footer class="edit-challenge-modal__footer">
+          <button type="button" class="edit-challenge-modal__cancel" [disabled]="saving()" (click)="close()">
+            {{ 'create.cancel' | t }}
+          </button>
+          <button type="submit" [disabled]="saving()">
+            {{ saving() ? ('challenge.savingChanges' | t) : ('challenge.saveChanges' | t) }}
+          </button>
+        </footer>
       </section>
+      </form>
     </section>
   </div>
 }

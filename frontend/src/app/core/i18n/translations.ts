@@ -21,6 +21,8 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
       'Rift Challenge permet de créer des défis de Soloq ou Duoq avec vos amis : créez un challenge sur une période définie et suivez la progression de tous les participants !',
     'landing.browsePublic': 'Voir les challenges publics',
     'landing.getStarted': 'Se connecter',
+    'landing.warming':
+      'Les serveurs démarrent (hébergement gratuit). Comptez 2 à 3 minutes. Les boutons ci-dessous resteront indisponibles le temps que tout soit prêt — ce message disparaîtra si le site grandit.',
     'landing.inspiredTitle': 'Inspiré des défis existants',
     'landing.inspiredIntro':
       'Rift Challenge reprend l\'esprit des courses au classement déjà populaires dans la communauté LoL — SoloQ coréenne, Iron to Challenger, défis DuoQ entre streamers, challenges LP entre amis — et les formalise dans un outil dédié.',
@@ -339,6 +341,8 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
       'Rift Challenge runs SoloQ and DuoQ challenges with friends: create a challenge, set a time window, then see who gains the most LP before the end.',
     'landing.browsePublic': 'Browse public challenges',
     'landing.getStarted': 'Sign in',
+    'landing.warming':
+      'Servers are starting (free hosting). This usually takes 2–3 minutes. The buttons below stay disabled until the API is ready — this notice will go away if the site grows.',
     'landing.inspiredTitle': 'Inspired by existing challenges',
     'landing.inspiredIntro':
       'Rift Challenge builds on community ranking challenges — Korean SoloQ streams, Iron to Challenger, streamer DuoQ challenges, LP challenges between friends — and turns them into a dedicated tool.',

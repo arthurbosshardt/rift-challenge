@@ -22,6 +22,18 @@ public interface ChallengeParticipantRepository extends JpaRepository<ChallengeP
     List<ChallengeParticipant> findByDuoIdOrderByCreatedAtAsc(UUID duoId);
 
     @Query("""
+            SELECT p
+            FROM ChallengeParticipant p
+            WHERE LOWER(p.riotGameName) LIKE LOWER(CONCAT(:query, '%'))
+               OR LOWER(CONCAT(p.riotGameName, '#', p.riotTagLine)) LIKE LOWER(CONCAT(:query, '%'))
+            ORDER BY p.riotGameName ASC
+            """)
+    List<ChallengeParticipant> searchByRiotId(
+            @Param("query") String query,
+            org.springframework.data.domain.Pageable pageable
+    );
+
+    @Query("""
             SELECT DISTINCT rp.challengeId
             FROM ChallengeParticipant rp
             WHERE rp.riotPuuid IN :puuids

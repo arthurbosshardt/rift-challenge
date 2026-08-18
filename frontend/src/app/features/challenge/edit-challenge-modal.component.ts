@@ -19,6 +19,8 @@ import { isChallengeNameTakenError, mapChallengeNameError } from '../../core/uti
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
+import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
+import { SummonerSearchService, SummonerSuggestion } from '../../core/services/summoner-search.service';
 import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
@@ -51,7 +53,7 @@ type ScheduleValidationResult =
 
 @Component({
   selector: 'app-edit-challenge-modal',
-  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent],
+  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent],
   templateUrl: './edit-challenge-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './edit-challenge-modal.component.scss',
@@ -59,6 +61,7 @@ type ScheduleValidationResult =
 export class EditChallengeModalComponent {
   protected readonly editChallengeModal = inject(EditChallengeModalService);
   private readonly challengeApi = inject(ChallengeApiService);
+  private readonly summonerSearch = inject(SummonerSearchService);
   private readonly i18n = inject(I18nService);
 
   protected startDateInput = '';
@@ -83,12 +86,13 @@ export class EditChallengeModalComponent {
   protected readonly nameFieldErrors = signal<Partial<Record<NameInvalidField, string>>>({});
   protected readonly scheduleInvalidFields = signal<ReadonlySet<ScheduleInvalidField>>(new Set());
   protected readonly scheduleFieldErrors = signal<Partial<Record<ScheduleInvalidField, string>>>({});
-  protected readonly addingParticipant = signal(false);
   protected readonly participantFormError = signal<string | null>(null);
   protected readonly participantInvalidFields = signal<ReadonlySet<ParticipantInvalidField>>(new Set());
   protected readonly participantFieldErrors = signal<Partial<Record<ParticipantInvalidField, string>>>({});
-  protected readonly removingParticipantId = signal<string | null>(null);
-  protected readonly removingDuoId = signal<string | null>(null);
+  protected readonly draftParticipants = signal<ParticipantProgress[]>([]);
+  protected readonly draftDuos = signal<DuoProgress[]>([]);
+  private removedParticipantIds = new Set<string>();
+  private removedDuoIds = new Set<string>();
 
   constructor() {
     effect(() => {
@@ -99,6 +103,7 @@ export class EditChallengeModalComponent {
           this.nameInput = challenge.name;
           this.isPublicInput = challenge.isPublic;
           this.resetParticipantInputs();
+          this.hydrateDrafts(challenge);
           this.clearValidation();
           this.saveSuccess.set(false);
         }
@@ -112,7 +117,7 @@ export class EditChallengeModalComponent {
 
   @HostListener('document:keydown.escape')
   protected closeOnEscape(): void {
-    if (this.editChallengeModal.isOpen() && !this.saving() && !this.addingParticipant()) {
+    if (this.editChallengeModal.isOpen() && !this.saving()) {
       this.close();
     }
   }
@@ -128,7 +133,7 @@ export class EditChallengeModalComponent {
   }
 
   protected entryCount(challenge: ChallengeDetail): number {
-    return challenge.type === 'DUOQ' ? challenge.duos.length : challenge.participants.length;
+    return challenge.type === 'DUOQ' ? this.draftDuos().length : this.draftParticipants().length;
   }
 
   protected entryLimit(challenge: ChallengeDetail): number {
@@ -258,8 +263,17 @@ export class EditChallengeModalComponent {
     const nameChanged = trimmedName !== challenge.name;
     const visibilityChanged = this.isPublicInput !== challenge.isPublic;
     const scheduleChanged = this.hasScheduleChanges(challenge, scheduleValidation.startAt, scheduleValidation.endAt);
+    this.flushCurrentInputsToDraft(challenge);
 
-    if (!nameChanged && !visibilityChanged && !scheduleChanged) {
+    const pendingParticipants = this.draftParticipants().filter((item) => item.id.startsWith('pending-'));
+    const pendingDuos = this.draftDuos().filter((item) => item.id.startsWith('pending-'));
+    const rosterChanged =
+      this.removedParticipantIds.size > 0 ||
+      this.removedDuoIds.size > 0 ||
+      pendingParticipants.length > 0 ||
+      pendingDuos.length > 0;
+
+    if (!nameChanged && !visibilityChanged && !scheduleChanged && !rosterChanged) {
       this.close();
       return;
     }
@@ -268,32 +282,50 @@ export class EditChallengeModalComponent {
     this.formError.set(null);
 
     try {
+      await this.assertPendingSummonersExist(challenge, pendingParticipants, pendingDuos);
+
       let updated = challenge;
 
-      if (nameChanged) {
-        updated = await firstValueFrom(this.challengeApi.updateChallengeName(updated.id, { name: trimmedName }));
-      }
-
-      if (scheduleChanged) {
+      if (nameChanged || visibilityChanged || scheduleChanged) {
         updated = await firstValueFrom(
-          this.challengeApi.updateChallengeSchedule(updated.id, {
-            startAt: scheduleValidation.startAt,
-            endAt: scheduleValidation.endAt,
+          this.challengeApi.updateChallenge(updated.id, {
+            ...(nameChanged ? { name: trimmedName } : {}),
+            ...(scheduleChanged
+              ? { startAt: scheduleValidation.startAt, endAt: scheduleValidation.endAt }
+              : {}),
+            ...(visibilityChanged ? { isPublic: this.isPublicInput } : {}),
           }),
         );
       }
 
-      if (visibilityChanged) {
-        updated = await firstValueFrom(
-          this.challengeApi.updateChallengeVisibility(updated.id, { isPublic: this.isPublicInput }),
+      for (const participantId of this.removedParticipantIds) {
+        await firstValueFrom(this.challengeApi.removeParticipant(updated.id, participantId));
+      }
+      for (const duoId of this.removedDuoIds) {
+        await firstValueFrom(this.challengeApi.removeDuo(updated.id, duoId));
+      }
+      for (const participant of pendingParticipants) {
+        await firstValueFrom(this.challengeApi.addParticipant(updated.id, { riotId: participant.riotId }));
+      }
+      for (const duo of pendingDuos) {
+        await firstValueFrom(
+          this.challengeApi.addDuo(updated.id, {
+            player1RiotId: duo.player1.riotId,
+            player2RiotId: duo.player2.riotId,
+          }),
         );
       }
 
+      if (rosterChanged) {
+        updated = await firstValueFrom(this.challengeApi.getChallengeByShareSlug(updated.shareSlug, true));
+      }
       const normalized = normalizeChallengeDetail(updated);
       this.editChallengeModal.challenge.set(normalized);
+      this.hydrateDrafts(normalized);
       this.syncScheduleInputs(normalized);
       this.nameInput = normalized.name;
       this.isPublicInput = normalized.isPublic;
+      this.resetParticipantInputs();
       this.saveSuccess.set(true);
       this.editChallengeModal.notifyUpdated();
       window.setTimeout(() => this.saveSuccess.set(false), 2500);
@@ -302,8 +334,12 @@ export class EditChallengeModalComponent {
         this.nameInvalidFields.set(new Set(['name']));
         this.nameFieldErrors.set({ name: this.i18n.t('create.nameTaken') });
         this.formError.set(this.i18n.t('create.nameTaken'));
+      } else if (err instanceof HttpErrorResponse && this.applyRiotNotFound(err, challenge)) {
+        this.formError.set(mapParticipantError(err, this.i18n));
       } else if (err instanceof HttpErrorResponse && nameChanged) {
         this.formError.set(mapChallengeNameError(err, this.i18n));
+      } else if (err instanceof HttpErrorResponse) {
+        this.formError.set(mapParticipantError(err, this.i18n));
       } else {
         this.formError.set(this.i18n.t('challenge.saveChangesError'));
       }
@@ -363,20 +399,14 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    this.addingParticipant.set(true);
+    if (this.draftParticipants().some((item) => item.riotId.toLowerCase() === riotId.toLowerCase())) {
+      this.participantFormError.set(this.i18n.t('errors.alreadyAdded'));
+      return;
+    }
 
-    this.challengeApi.addParticipant(challenge.id, { riotId }).subscribe({
-      next: () => {
-        this.resetParticipantInputs();
-        this.clearParticipantValidation();
-        this.addingParticipant.set(false);
-        void this.reloadChallenge();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.participantFormError.set(mapParticipantError(err, this.i18n));
-        this.addingParticipant.set(false);
-      },
-    });
+    this.draftParticipants.update((list) => [...list, this.toPendingParticipant(this.gameNameInput, this.tagLineInput)]);
+    this.resetParticipantInputs();
+    this.clearParticipantValidation();
   }
 
   protected addDuo(): void {
@@ -401,80 +431,55 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    this.addingParticipant.set(true);
+    const existing = this.draftDuos().flatMap((duo) => [duo.player1.riotId, duo.player2.riotId]);
+    if (
+      existing.some((id) => id.toLowerCase() === player1RiotId.toLowerCase() || id.toLowerCase() === player2RiotId.toLowerCase())
+    ) {
+      this.participantFormError.set(this.i18n.t('errors.alreadyAdded'));
+      return;
+    }
 
-    this.challengeApi.addDuo(challenge.id, { player1RiotId, player2RiotId }).subscribe({
-      next: () => {
-        this.resetParticipantInputs();
-        this.clearParticipantValidation();
-        this.addingParticipant.set(false);
-        void this.reloadChallenge();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.participantFormError.set(mapParticipantError(err, this.i18n));
-        this.addingParticipant.set(false);
-      },
-    });
+    this.draftDuos.update((list) => [
+      ...list,
+      this.toPendingDuo(
+        this.duoPlayer1GameName,
+        this.duoPlayer1TagLine,
+        this.duoPlayer2GameName,
+        this.duoPlayer2TagLine,
+      ),
+    ]);
+    this.resetParticipantInputs();
+    this.clearParticipantValidation();
   }
 
   protected removeParticipant(participant: ParticipantProgress): void {
-    const challenge = this.editChallengeModal.challenge();
-    if (!challenge?.isOwner || this.removingParticipantId()) {
+    if (this.saving()) {
       return;
     }
 
     this.participantFormError.set(null);
-    this.removingParticipantId.set(participant.id);
+    if (participant.id.startsWith('pending-')) {
+      this.draftParticipants.update((list) => list.filter((item) => item.id !== participant.id));
+      return;
+    }
 
-    this.challengeApi.removeParticipant(challenge.id, participant.id).subscribe({
-      next: () => {
-        this.removingParticipantId.set(null);
-        void this.reloadChallenge();
-      },
-      error: () => {
-        this.participantFormError.set(this.i18n.t('errors.removeParticipant'));
-        this.removingParticipantId.set(null);
-      },
-    });
+    this.removedParticipantIds.add(participant.id);
+    this.draftParticipants.update((list) => list.filter((item) => item.id !== participant.id));
   }
 
   protected removeDuo(duo: DuoProgress): void {
-    const challenge = this.editChallengeModal.challenge();
-    if (!challenge?.isOwner || this.removingDuoId()) {
+    if (this.saving()) {
       return;
     }
 
     this.participantFormError.set(null);
-    this.removingDuoId.set(duo.id);
-
-    this.challengeApi.removeDuo(challenge.id, duo.id).subscribe({
-      next: () => {
-        this.removingDuoId.set(null);
-        void this.reloadChallenge();
-      },
-      error: () => {
-        this.participantFormError.set(this.i18n.t('errors.removeDuo'));
-        this.removingDuoId.set(null);
-      },
-    });
-  }
-
-  private reloadChallenge(): void {
-    const challenge = this.editChallengeModal.challenge();
-    if (!challenge) {
+    if (duo.id.startsWith('pending-')) {
+      this.draftDuos.update((list) => list.filter((item) => item.id !== duo.id));
       return;
     }
 
-    this.challengeApi.getChallengeByShareSlug(challenge.shareSlug).subscribe({
-      next: (updated) => {
-        const normalized = normalizeChallengeDetail(updated);
-        this.editChallengeModal.challenge.set(normalized);
-        this.syncScheduleInputs(normalized);
-        this.nameInput = normalized.name;
-        this.isPublicInput = normalized.isPublic;
-        this.editChallengeModal.notifyUpdated();
-      },
-    });
+    this.removedDuoIds.add(duo.id);
+    this.draftDuos.update((list) => list.filter((item) => item.id !== duo.id));
   }
 
   private syncScheduleInputs(challenge: ChallengeDetail): void {
@@ -504,6 +509,175 @@ export class EditChallengeModalComponent {
     this.duoPlayer1TagLine = '';
     this.duoPlayer2GameName = '';
     this.duoPlayer2TagLine = '';
+  }
+
+  private hydrateDrafts(challenge: ChallengeDetail): void {
+    this.draftParticipants.set([...challenge.participants]);
+    this.draftDuos.set([...challenge.duos]);
+    this.removedParticipantIds = new Set();
+    this.removedDuoIds = new Set();
+  }
+
+  protected applySummoner(target: 'solo' | 'duo1' | 'duo2', suggestion: SummonerSuggestion): void {
+    if (target === 'solo') {
+      this.gameNameInput = suggestion.gameName;
+      this.tagLineInput = suggestion.tagLine;
+      this.clearParticipantInvalid('gameName');
+      this.clearParticipantInvalid('tagLine');
+      return;
+    }
+    if (target === 'duo1') {
+      this.duoPlayer1GameName = suggestion.gameName;
+      this.duoPlayer1TagLine = suggestion.tagLine;
+      this.clearParticipantInvalid('duoPlayer1GameName');
+      this.clearParticipantInvalid('duoPlayer1TagLine');
+      return;
+    }
+    this.duoPlayer2GameName = suggestion.gameName;
+    this.duoPlayer2TagLine = suggestion.tagLine;
+    this.clearParticipantInvalid('duoPlayer2GameName');
+    this.clearParticipantInvalid('duoPlayer2TagLine');
+  }
+
+  private flushCurrentInputsToDraft(challenge: ChallengeDetail): void {
+    if (challenge.type === 'SOLOQ' && this.gameNameInput.trim() && this.tagLineInput.trim()) {
+      this.addParticipant();
+    }
+    if (challenge.type === 'DUOQ' && this.duoPlayer1GameName.trim() && this.duoPlayer2GameName.trim()) {
+      this.addDuo();
+    }
+  }
+
+  private async assertPendingSummonersExist(
+    challenge: ChallengeDetail,
+    pendingParticipants: ParticipantProgress[],
+    pendingDuos: DuoProgress[],
+  ): Promise<void> {
+    if (challenge.type === 'SOLOQ') {
+      for (const participant of pendingParticipants) {
+        try {
+          await firstValueFrom(this.summonerSearch.resolve(participant.riotId));
+        } catch (err) {
+          this.draftParticipants.update((list) => list.filter((item) => item.id !== participant.id));
+          this.gameNameInput = participant.gameName;
+          this.tagLineInput = participant.tagLine;
+          this.participantInvalidFields.set(new Set(['gameName', 'tagLine']));
+          this.participantFieldErrors.set({
+            gameName: this.i18n.t('errors.riotNotFound'),
+            tagLine: this.i18n.t('errors.riotNotFound'),
+          });
+          throw err;
+        }
+      }
+      return;
+    }
+
+    for (const duo of pendingDuos) {
+      try {
+        await firstValueFrom(this.summonerSearch.resolve(duo.player1.riotId));
+      } catch (err) {
+        this.draftDuos.update((list) => list.filter((item) => item.id !== duo.id));
+        this.duoPlayer1GameName = duo.player1.gameName;
+        this.duoPlayer1TagLine = duo.player1.tagLine;
+        this.duoPlayer2GameName = duo.player2.gameName;
+        this.duoPlayer2TagLine = duo.player2.tagLine;
+        this.participantInvalidFields.set(new Set(['duoPlayer1GameName', 'duoPlayer1TagLine']));
+        this.participantFieldErrors.set({
+          duoPlayer1GameName: this.i18n.t('errors.riotNotFound'),
+          duoPlayer1TagLine: this.i18n.t('errors.riotNotFound'),
+        });
+        throw err;
+      }
+      try {
+        await firstValueFrom(this.summonerSearch.resolve(duo.player2.riotId));
+      } catch (err) {
+        this.draftDuos.update((list) => list.filter((item) => item.id !== duo.id));
+        this.duoPlayer1GameName = duo.player1.gameName;
+        this.duoPlayer1TagLine = duo.player1.tagLine;
+        this.duoPlayer2GameName = duo.player2.gameName;
+        this.duoPlayer2TagLine = duo.player2.tagLine;
+        this.participantInvalidFields.set(new Set(['duoPlayer2GameName', 'duoPlayer2TagLine']));
+        this.participantFieldErrors.set({
+          duoPlayer2GameName: this.i18n.t('errors.riotNotFound'),
+          duoPlayer2TagLine: this.i18n.t('errors.riotNotFound'),
+        });
+        throw err;
+      }
+    }
+  }
+
+  private applyRiotNotFound(err: HttpErrorResponse, challenge: ChallengeDetail): boolean {
+    const message = typeof err.error?.message === 'string' ? err.error.message : '';
+    if (err.status !== 404 || !message.includes('Riot account')) {
+      return false;
+    }
+
+    if (challenge.type === 'DUOQ' && message.includes('player 2')) {
+      this.participantInvalidFields.set(new Set(['duoPlayer2GameName', 'duoPlayer2TagLine']));
+      this.participantFieldErrors.set({
+        duoPlayer2GameName: this.i18n.t('errors.riotNotFound'),
+        duoPlayer2TagLine: this.i18n.t('errors.riotNotFound'),
+      });
+      return true;
+    }
+    if (challenge.type === 'DUOQ' && message.includes('player 1')) {
+      this.participantInvalidFields.set(new Set(['duoPlayer1GameName', 'duoPlayer1TagLine']));
+      this.participantFieldErrors.set({
+        duoPlayer1GameName: this.i18n.t('errors.riotNotFound'),
+        duoPlayer1TagLine: this.i18n.t('errors.riotNotFound'),
+      });
+      return true;
+    }
+
+    this.participantInvalidFields.set(new Set(['gameName', 'tagLine']));
+    this.participantFieldErrors.set({
+      gameName: this.i18n.t('errors.riotNotFound'),
+      tagLine: this.i18n.t('errors.riotNotFound'),
+    });
+    return true;
+  }
+
+  private toPendingParticipant(gameName: string, tagLine: string): ParticipantProgress {
+    return {
+      id: `pending-${crypto.randomUUID()}`,
+      gameName,
+      tagLine,
+      riotId: `${gameName}#${tagLine}`,
+      position: 0,
+      currentTier: null,
+      currentRank: null,
+      currentLp: 0,
+      lpGained: 0,
+      rankScore: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      profileIconId: null,
+      hasRankData: false,
+      recentMatches: [],
+    };
+  }
+
+  private toPendingDuo(
+    player1GameName: string,
+    player1TagLine: string,
+    player2GameName: string,
+    player2TagLine: string,
+  ): DuoProgress {
+    return {
+      id: `pending-${crypto.randomUUID()}`,
+      player1: this.toPendingParticipant(player1GameName, player1TagLine),
+      player2: this.toPendingParticipant(player2GameName, player2TagLine),
+      combinedRankScore: 0,
+      combinedLpGained: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      eligible: true,
+      ineligibilityReason: null,
+      position: 0,
+      recentMatches: [],
+    };
   }
 
   private clearValidation(): void {

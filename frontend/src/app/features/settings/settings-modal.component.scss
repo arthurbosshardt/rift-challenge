@@ -262,6 +262,12 @@
   width: 100%;
 }
 
+.settings-form--invalid {
+  outline: 2px solid var(--danger);
+  outline-offset: 6px;
+  border-radius: var(--radius-md);
+}
+
 .settings-form__row {
   display: flex;
   flex-wrap: wrap;
@@ -303,7 +309,7 @@
   font-size: 0.875rem;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 899px) {
   .settings-modal__header,
   .settings-modal__body {
     padding-inline: 1rem;

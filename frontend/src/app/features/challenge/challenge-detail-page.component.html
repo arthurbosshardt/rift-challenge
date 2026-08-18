@@ -192,15 +192,13 @@
           <p class="participants__empty">
             {{ currentChallenge.type === 'DUOQ' ? ('challenge.noDuos' | t) : ('challenge.noParticipants' | t) }}
           </p>
+        } @else if (refreshing()) {
+          <div class="stats-panel" role="status" [attr.aria-label]="'challenge.refreshingStats' | t">
+            <app-leaderboard-skeleton [rowCount]="4" />
+          </div>
         } @else {
-          <div class="stats-panel" [class.stats-panel--refreshing]="refreshing()">
-            @if (refreshing()) {
-              <div class="stats-panel__overlay" role="status" aria-live="polite" [attr.aria-label]="'challenge.refreshingStats' | t">
-                <app-leaderboard-skeleton [rowCount]="4" />
-              </div>
-            }
-
-            <div class="stats-panel__content" [attr.aria-busy]="refreshing()">
+          <div class="stats-panel">
+            <div class="stats-panel__content">
               @if (hasLeaderboard(currentChallenge)) {
                 <div class="sort-controls" role="toolbar" [attr.aria-label]="'challenge.sortAria' | t">
                   <div class="sort-controls__criteria" role="tablist" [attr.aria-label]="'challenge.sortAria' | t">

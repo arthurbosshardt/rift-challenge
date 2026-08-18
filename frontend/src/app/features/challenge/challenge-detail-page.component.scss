@@ -405,29 +405,6 @@
 .stats-panel__content {
   display: grid;
   gap: 0.75rem;
-  transition: opacity 0.2s ease;
-}
-
-.stats-panel--refreshing .stats-panel__content {
-  opacity: 0.45;
-  pointer-events: none;
-  user-select: none;
-}
-
-.stats-panel__overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  padding: 2rem 1rem;
-  border-radius: 12px;
-  background: rgba(8, 12, 18, 0.55);
-  backdrop-filter: blur(2px);
-}
-
-.stats-panel__overlay app-leaderboard-skeleton {
-  width: min(100%, 48rem);
 }
 
 .refresh__error {
@@ -673,7 +650,7 @@
   letter-spacing: 0.04em;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 899px) {
   .leaderboard {
     --duo-player-row-height: 3rem;
     --duo-day-label-space: 0.875rem;
@@ -769,7 +746,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 899px) {
   .detail__heading {
     flex-direction: column;
     align-items: stretch;

@@ -137,18 +137,12 @@
     }
   </section>
 
-  @if (loading()) {
+  @if (loading() || refreshing()) {
     <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
   } @else if (error()) {
     <p class="state state--error">{{ error() }}</p>
   } @else {
-    <div class="challenge-list" [class.challenge-list--refreshing]="refreshing()">
-      @if (refreshing()) {
-        <div class="challenge-list__refresh-overlay" role="status" aria-live="polite" [attr.aria-label]="'home.loading' | t">
-          <app-challenge-list-skeleton [count]="1" [ariaLabel]="'home.loading' | t" />
-        </div>
-      }
-
+    <div class="challenge-list">
       @if (filteredChallenges().length === 0) {
         <p class="state">
           @if (hasActiveFilters()) {

@@ -8,6 +8,7 @@ import { DeleteChallengeConfirmModalComponent } from './features/challenge/delet
 import { EditChallengeModalComponent } from './features/challenge/edit-challenge-modal.component';
 import { SettingsModalComponent } from './features/settings/settings-modal.component';
 import { ThemeService } from './core/theme/theme.service';
+import { BackendStatusService } from './core/services/backend-status.service';
 
 @Component({
   selector: 'app-root',
@@ -28,5 +29,6 @@ import { ThemeService } from './core/theme/theme.service';
 export class App {
   constructor() {
     inject(ThemeService);
+    inject(BackendStatusService).start();
   }
 }

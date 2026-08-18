@@ -31,6 +31,7 @@ public class SecurityConfig {
         return http
                 .securityMatcher(
                         "/actuator/health",
+                        "/api/health",
                         "/api/challenges/public",
                         "/api/champion-icons/**"
                 )
@@ -63,6 +64,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/share/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/champion-icons/**").permitAll()

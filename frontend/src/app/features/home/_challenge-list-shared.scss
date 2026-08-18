@@ -7,30 +7,6 @@
   position: relative;
 }
 
-.challenge-list--refreshing .challenge-grid,
-.challenge-list--refreshing .state {
-  opacity: 0.45;
-  pointer-events: none;
-  user-select: none;
-}
-
-.challenge-list__refresh-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  min-height: min(45vh, 22rem);
-  padding: 2rem 1rem;
-  border-radius: 12px;
-  background: rgba(8, 12, 18, 0.55);
-  backdrop-filter: blur(2px);
-}
-
-.challenge-list__refresh-overlay app-challenge-list-skeleton {
-  width: min(100%, 42rem);
-}
-
 .link-banner {
   display: inline-flex;
   flex-wrap: wrap;
@@ -288,7 +264,7 @@
   border: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 899px) {
   .challenge-search__field--text {
     flex: 1 1 100%;
     width: 100%;
@@ -303,7 +279,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 899px) {
   .challenge-search__filters {
     row-gap: 0.625rem;
   }

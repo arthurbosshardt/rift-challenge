@@ -42,11 +42,26 @@
 
         <div class="landing__body">
           @if (!auth.isAuthenticated()) {
+            @if (!backend.ready()) {
+              <p class="landing__warmup" role="status">{{ 'landing.warming' | t }}</p>
+            }
             <div class="landing__actions">
-              <a routerLink="/public-challenges" class="landing-btn landing-btn--primary">
+              <a
+                class="landing-btn landing-btn--primary"
+                [class.landing-btn--disabled]="!backend.ready()"
+                [routerLink]="backend.ready() ? '/public-challenges' : null"
+                [attr.aria-disabled]="!backend.ready()"
+                [attr.tabindex]="backend.ready() ? 0 : -1"
+                (click)="backend.ready() || $event.preventDefault()"
+              >
                 {{ 'landing.browsePublic' | t }}
               </a>
-              <button type="button" class="landing-btn landing-btn--secondary" (click)="authModal.open()">
+              <button
+                type="button"
+                class="landing-btn landing-btn--secondary"
+                [disabled]="!backend.ready()"
+                (click)="authModal.open()"
+              >
                 {{ 'landing.getStarted' | t }}
               </button>
             </div>

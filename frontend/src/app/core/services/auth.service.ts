@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
@@ -37,6 +37,7 @@ export class AuthService {
   private readonly ready = new Promise<void>((resolve) => {
     this.readyResolve = resolve;
   });
+  private profileLoad: Promise<void> | null = null;
   private activityBound = false;
 
   readonly isAuthenticated = computed(() => this.session() !== null);
@@ -52,8 +53,18 @@ export class AuthService {
       };
     }
     const username = this.profileUsername();
-    return username
-      ? { label: username, gameName: username, profileIconId: null as number | null }
+    if (username) {
+      return { label: username, gameName: username, profileIconId: null as number | null };
+    }
+    const sessionUser = this.session()?.user;
+    const fallback =
+      (typeof sessionUser?.user_metadata?.['username'] === 'string'
+        ? sessionUser.user_metadata['username']
+        : null) ??
+      sessionUser?.email ??
+      null;
+    return fallback
+      ? { label: fallback, gameName: fallback, profileIconId: null as number | null }
       : null;
   });
   readonly isProfileLoading = computed(() => this.profileLoading());
@@ -79,21 +90,30 @@ export class AuthService {
       }
       this.bindActivityTracking();
 
-      this.supabase.auth.onAuthStateChange((_event, session) => {
-        if (session && !this.sessionWithinTtl(session, true)) {
-          void this.logout();
-          return;
-        }
-        this.session.set(session);
-        if (session) {
-          this.touchLastSeen();
-          void this.loadProfile();
-        } else {
+      this.supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          this.session.set(null);
           this.profileUsername.set(null);
           this.linkedRiotAccount.set(null);
           this.profileLoading.set(false);
           this.clearLastSeen();
+          return;
         }
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          this.session.set(session);
+          this.touchLastSeen();
+          void this.loadProfile();
+          return;
+        }
+
+        if (!this.sessionWithinTtl(session, true)) {
+          void this.logout();
+          return;
+        }
+        this.session.set(session);
+        this.touchLastSeen();
+        void this.loadProfile();
       });
     } finally {
       this.readyResolve?.();
@@ -117,10 +137,10 @@ export class AuthService {
         this.session.set(null);
         return error.message;
       }
-      this.session.set(data.session);
       this.touchLastSeen();
+      this.session.set(data.session);
       if (data.session) {
-        void this.loadProfile();
+        await this.loadProfile();
       }
       return null;
     }
@@ -183,10 +203,10 @@ export class AuthService {
   async signInWithEmail(email: string, password: string): Promise<string | null> {
     const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
     if (!error) {
-      this.session.set(data.session);
       this.touchLastSeen();
+      this.session.set(data.session);
       if (data.session) {
-        void this.loadProfile();
+        await this.loadProfile();
       }
     }
     return error?.message ?? null;
@@ -251,6 +271,16 @@ export class AuthService {
   }
 
   private async loadProfile(): Promise<void> {
+    if (this.profileLoad) {
+      return this.profileLoad;
+    }
+    this.profileLoad = this.doLoadProfile().finally(() => {
+      this.profileLoad = null;
+    });
+    return this.profileLoad;
+  }
+
+  private async doLoadProfile(): Promise<void> {
     this.profileLoading.set(true);
     try {
       const accessToken = await this.resolveAccessToken();
@@ -262,7 +292,9 @@ export class AuthService {
 
       let me: AuthMeResponse;
       try {
-        me = await firstValueFrom(this.http.get<AuthMeResponse>(apiUrl('/api/auth/me')));
+        me = await firstValueFrom(
+          this.http.get<AuthMeResponse>(apiUrl('/api/auth/me')).pipe(timeout(8000)),
+        );
       } catch (error) {
         if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
           await this.logout();
@@ -366,6 +398,7 @@ export class AuthService {
   private clearLastSeen(): void {
     try {
       localStorage.removeItem(SESSION_LAST_SEEN_KEY);
+      localStorage.removeItem('riftrace.session.lastSeen');
     } catch {
       /* ignore */
     }

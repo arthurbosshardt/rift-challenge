@@ -36,11 +36,20 @@ public class ChallengeDuoProgressService {
 
     @Transactional(readOnly = true)
     public List<DuoProgressResponse> buildProgress(UUID challengeId) {
+        return buildProgress(challengeId, true);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DuoProgressResponse> buildPreview(UUID challengeId) {
+        return buildProgress(challengeId, false);
+    }
+
+    private List<DuoProgressResponse> buildProgress(UUID challengeId, boolean includeMatchHistory) {
         List<ChallengeDuo> duos = challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId);
 
         List<DuoProgressResponse> unsorted = new ArrayList<>();
         for (ChallengeDuo duo : duos) {
-            unsorted.add(buildForDuo(duo));
+            unsorted.add(buildForDuo(duo, includeMatchHistory));
         }
 
         unsorted.sort(Comparator.comparingInt(DuoProgressResponse::combinedRankScore).reversed());
@@ -52,7 +61,7 @@ public class ChallengeDuoProgressService {
         return ranked;
     }
 
-    private DuoProgressResponse buildForDuo(ChallengeDuo duo) {
+    private DuoProgressResponse buildForDuo(ChallengeDuo duo, boolean includeMatchHistory) {
         List<ChallengeParticipant> members = participantRepository.findByDuoIdOrderByCreatedAtAsc(duo.getId());
         if (members.size() != 2) {
             throw new IllegalStateException("Duo must contain exactly two participants");
@@ -61,8 +70,8 @@ public class ChallengeDuoProgressService {
         ChallengeParticipant player1 = members.get(0);
         ChallengeParticipant player2 = members.get(1);
 
-        ParticipantProgressResponse progress1 = progressService.buildForParticipant(player1);
-        ParticipantProgressResponse progress2 = progressService.buildForParticipant(player2);
+        ParticipantProgressResponse progress1 = progressService.buildForParticipant(player1, includeMatchHistory);
+        ParticipantProgressResponse progress2 = progressService.buildForParticipant(player2, includeMatchHistory);
 
         DuoEligibilityService.DuoEligibility eligibility = duoEligibilityService.evaluate(
                 duo.getChallengeId(),
@@ -92,14 +101,16 @@ public class ChallengeDuoProgressService {
                 eligibility.eligible(),
                 eligibility.reason(),
                 0,
-                matchHistoryService.buildForDuo(
-                        duo.getChallengeId(),
-                        player1,
-                        player2,
-                        progress1,
-                        progress2,
-                        eligibility.togetherMatchIds()
-                )
+                includeMatchHistory
+                        ? matchHistoryService.buildForDuo(
+                                duo.getChallengeId(),
+                                player1,
+                                player2,
+                                progress1,
+                                progress2,
+                                eligibility.togetherMatchIds()
+                        )
+                        : List.of()
         );
     }
 

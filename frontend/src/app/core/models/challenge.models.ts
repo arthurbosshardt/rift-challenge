@@ -137,6 +137,13 @@ export interface UpdateChallengeNameRequest {
   name: string;
 }
 
+export interface UpdateChallengeRequest {
+  name?: string;
+  startAt?: string;
+  endAt?: string;
+  isPublic?: boolean;
+}
+
 export interface AddParticipantRequest {
   riotId: string;
 }

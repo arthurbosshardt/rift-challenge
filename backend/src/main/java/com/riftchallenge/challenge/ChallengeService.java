@@ -11,6 +11,7 @@ import com.riftchallenge.challenge.dto.ChallengeDetailResponse;
 import com.riftchallenge.challenge.dto.ChallengeSummaryResponse;
 import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
+import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
@@ -158,7 +159,7 @@ public class ChallengeService {
         boolean started = !"NOT_STARTED".equals(status);
 
         if (challenge.getType() == ChallengeType.DUOQ) {
-            List<DuoProgressResponse> duos = duoProgressService.buildProgress(challenge.getId());
+            List<DuoProgressResponse> duos = duoProgressService.buildPreview(challenge.getId());
             List<String> participantGameNames = duos.stream()
                     .flatMap(duo -> java.util.stream.Stream.of(
                             duo.player1().gameName(),
@@ -179,7 +180,7 @@ public class ChallengeService {
         List<ParticipantPreviewResponse> previewParticipants;
 
         if (started) {
-            previewParticipants = progressService.buildProgress(participants).stream()
+            previewParticipants = progressService.buildPreviewProgress(participants).stream()
                     .limit(PREVIEW_LIMIT)
                     .map(ParticipantPreviewResponse::from)
                     .toList();
@@ -268,6 +269,40 @@ public class ChallengeService {
         requireUniqueChallengeName(name, challenge.getId());
         challenge.updateName(name);
         challengeRepository.save(challenge);
+        return getById(challenge.getId(), ownerId);
+    }
+
+    @Transactional
+    public ChallengeDetailResponse updateChallenge(UUID challengeId, UUID ownerId, UpdateChallengeRequest request) {
+        Challenge challenge = requireOwnedChallenge(challengeId, ownerId);
+        boolean scheduleChanged = false;
+
+        if (request.name() != null) {
+            String name = request.name().trim();
+            if (name.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name is required");
+            }
+            requireUniqueChallengeName(name, challenge.getId());
+            challenge.updateName(name);
+        }
+
+        Instant startAt = request.startAt() != null ? request.startAt() : challenge.getStartAt();
+        Instant endAt = request.endAt() != null ? request.endAt() : challenge.getEndAt();
+        if (request.startAt() != null || request.endAt() != null) {
+            requireEndAfterStart(startAt, endAt);
+            challenge.updateStartAt(startAt);
+            challenge.updateEndAt(endAt);
+            scheduleChanged = true;
+        }
+
+        if (request.isPublic() != null) {
+            challenge.updateVisibility(request.isPublic());
+        }
+
+        challengeRepository.save(challenge);
+        if (scheduleChanged) {
+            maybeAutoRefreshAfterScheduleChange(challenge.getId(), startAt);
+        }
         return getById(challenge.getId(), ownerId);
     }
 

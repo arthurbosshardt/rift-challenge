@@ -17,7 +17,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 900px) {
   .challenge-card-skeleton__layout {
     gap: 1.5rem;
   }
@@ -169,7 +169,7 @@
   min-width: 0;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 899px) {
   .challenge-card-skeleton__layout {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -189,7 +189,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 899px) {
   .challenge-card-skeleton {
     padding: 1rem;
   }

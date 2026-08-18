@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   AddDuoRequest,
   AddParticipantRequest,
@@ -14,16 +14,11 @@ import {
   UpdateChallengeStartRequest,
   UpdateChallengeVisibilityRequest,
   UpdateChallengeNameRequest,
+  UpdateChallengeRequest,
 } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import { normalizeRiotId } from '../utils/riot-id';
-import {
-  enrichSummaryFromDetail,
-  normalizeChallengeSummaries,
-  summaryChallengeNeedsEnrichment,
-  summaryChallengeNeedsStatsRefresh,
-  type RawChallengeSummary,
-} from '../utils/challenge-summary';
+import { normalizeChallengeSummaries, type RawChallengeSummary } from '../utils/challenge-summary';
 
 @Injectable({ providedIn: 'root' })
 export class ChallengeApiService {
@@ -35,7 +30,7 @@ export class ChallengeApiService {
     const url = forceRefresh
       ? `${this.baseUrl}/public?_=${Date.now()}`
       : `${this.baseUrl}/public`;
-    return this.listChallenges(url, forceRefresh);
+    return this.listChallenges(url);
   }
 
   listOwnedChallenges(): Observable<ChallengeSummary[]> {
@@ -46,32 +41,8 @@ export class ChallengeApiService {
     return this.listChallenges(`${this.baseUrl}/participating`);
   }
 
-  private listChallenges(url: string, forceRefresh = false): Observable<ChallengeSummary[]> {
-    return this.http.get<RawChallengeSummary[]>(url).pipe(
-      switchMap((raw) => {
-        const normalized = normalizeChallengeSummaries(raw);
-        if (normalized.length === 0) {
-          return of(normalized);
-        }
-
-        return forkJoin(
-          normalized.map((challenge, index) => {
-            const needsEnrichment =
-              summaryChallengeNeedsEnrichment(raw[index]) ||
-              (forceRefresh && summaryChallengeNeedsStatsRefresh(challenge));
-
-            if (!needsEnrichment) {
-              return of(challenge);
-            }
-
-            return this.getChallengeByShareSlug(challenge.shareSlug, forceRefresh).pipe(
-              map((detail) => enrichSummaryFromDetail(challenge, detail)),
-              catchError(() => of(challenge)),
-            );
-          }),
-        );
-      }),
-    );
+  private listChallenges(url: string): Observable<ChallengeSummary[]> {
+    return this.http.get<RawChallengeSummary[]>(url).pipe(map((raw) => normalizeChallengeSummaries(raw)));
   }
 
   /** @deprecated Use listOwnedChallenges() */
@@ -86,6 +57,10 @@ export class ChallengeApiService {
 
   createChallenge(request: CreateChallengeRequest): Observable<ChallengeDetail> {
     return this.http.post<ChallengeDetail>(this.baseUrl, request);
+  }
+
+  updateChallenge(challengeId: string, request: UpdateChallengeRequest): Observable<ChallengeDetail> {
+    return this.http.patch<ChallengeDetail>(`${this.baseUrl}/${challengeId}`, request);
   }
 
   updateChallengeSchedule(challengeId: string, request: UpdateChallengeScheduleRequest): Observable<ChallengeDetail> {

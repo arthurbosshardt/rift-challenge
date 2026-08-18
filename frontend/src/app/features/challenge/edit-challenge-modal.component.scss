@@ -372,7 +372,14 @@
   font-size: 0.875rem;
 }
 
-@media (max-width: 640px) {
+.edit-challenge-modal__form--invalid,
+.edit-challenge-modal__duo-player--invalid {
+  outline: 2px solid var(--danger);
+  outline-offset: 6px;
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 899px) {
   .modal-panel--edit,
   .edit-challenge-modal {
     width: 100%;
@@ -389,11 +396,5 @@
   .edit-challenge-modal__list--cols-2,
   .edit-challenge-modal__list--cols-3 {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .edit-challenge-modal__list--cols-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

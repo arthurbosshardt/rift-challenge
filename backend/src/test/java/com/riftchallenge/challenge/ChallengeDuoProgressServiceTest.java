@@ -2,6 +2,7 @@ package com.riftchallenge.challenge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
@@ -81,8 +82,8 @@ class ChallengeDuoProgressServiceTest {
         when(challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(duo));
         when(participantRepository.findByDuoIdOrderByCreatedAtAsc(duo.getId()))
                 .thenReturn(List.of(player1, player2));
-        when(progressService.buildForParticipant(player1)).thenReturn(progress1);
-        when(progressService.buildForParticipant(player2)).thenReturn(progress2);
+        when(progressService.buildForParticipant(player1, true)).thenReturn(progress1);
+        when(progressService.buildForParticipant(player2, true)).thenReturn(progress2);
         when(duoEligibilityService.evaluate(challengeId, player1, player2))
                 .thenReturn(new DuoEligibilityService.DuoEligibility(true, null, java.util.Set.of()));
         when(duoEligibilityService.statsForTogetherMatches(player1, java.util.Set.of()))
@@ -122,7 +123,7 @@ class ChallengeDuoProgressServiceTest {
         when(challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(duo));
         when(participantRepository.findByDuoIdOrderByCreatedAtAsc(duo.getId()))
                 .thenReturn(List.of(player1, player2));
-        when(progressService.buildForParticipant(any())).thenReturn(progress1, progress2);
+        when(progressService.buildForParticipant(any(), anyBoolean())).thenReturn(progress1, progress2);
         when(duoEligibilityService.evaluate(challengeId, player1, player2))
                 .thenReturn(new DuoEligibilityService.DuoEligibility(
                         false,

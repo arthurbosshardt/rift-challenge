@@ -15,6 +15,7 @@ import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
+import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.synchronization.ChallengeSyncService;
@@ -100,7 +101,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(matchingChallenge, otherChallenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(matchingChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", null, null);
 
@@ -122,7 +123,7 @@ class ChallengeServiceTest {
         when(participantRepository.findDistinctPublicChallengeIdsByParticipantSearch(NOW, "tanor"))
                 .thenReturn(List.of(challenge.getId()));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, "tanor", null);
 
@@ -142,7 +143,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("so", "ta", null);
 
@@ -168,7 +169,7 @@ class ChallengeServiceTest {
         );
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(soloChallenge, duoChallenge));
-        when(duoProgressService.buildProgress(duoChallenge.getId())).thenReturn(List.of());
+        when(duoProgressService.buildPreview(duoChallenge.getId())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, ChallengeType.DUOQ);
 
@@ -197,7 +198,7 @@ class ChallengeServiceTest {
         when(participantRepository.findDistinctPublicChallengeIdsByParticipantSearch(NOW, "tanor"))
                 .thenReturn(List.of(matchingChallenge.getId()));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(matchingChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", "tanor", null);
 
@@ -217,7 +218,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(activeChallenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(activeChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges();
 
@@ -351,6 +352,41 @@ class ChallengeServiceTest {
         assertThat(challenge.getName()).isEqualTo("New name");
         assertThat(response.name()).isEqualTo("New name");
         verify(challengeRepository).save(challenge);
+    }
+
+    @Test
+    void updateChallenge_whenOwner_updatesNameScheduleAndVisibilityTogether() {
+        UUID ownerId = UUID.randomUUID();
+        Instant newStart = NOW.minusSeconds(7200);
+        Instant newEnd = NOW.plusSeconds(86_400);
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Old name",
+                ChallengeType.SOLOQ,
+                NOW.minusSeconds(3600),
+                NOW.plusSeconds(3600),
+                false
+        );
+        UUID challengeId = challenge.getId();
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(challengeRepository.save(challenge)).thenReturn(challenge);
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
+        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
+        when(challengeSyncService.refreshChallenge(challengeId)).thenReturn(NOW);
+
+        var response = challengeService.updateChallenge(
+                challengeId,
+                ownerId,
+                new UpdateChallengeRequest("New name", newStart, newEnd, true)
+        );
+
+        assertThat(response.name()).isEqualTo("New name");
+        assertThat(response.startAt()).isEqualTo(newStart);
+        assertThat(response.endAt()).isEqualTo(newEnd);
+        assertThat(response.isPublic()).isTrue();
+        verify(challengeRepository).save(challenge);
+        verify(challengeSyncService).refreshChallenge(challengeId);
     }
 
     @Test
@@ -607,7 +643,7 @@ class ChallengeServiceTest {
         when(userRiotAccountService.listLinkedPuids(userId)).thenReturn(List.of("puuid-1"));
         when(participantRepository.findDistinctChallengeIdsByRiotPuuidIn(List.of("puuid-1"))).thenReturn(List.of(challengeId));
         when(challengeRepository.findByIdInOrderByStartAtDesc(List.of(challengeId))).thenReturn(List.of(challenge));
-        when(duoProgressService.buildProgress(any())).thenReturn(List.of());
+        when(duoProgressService.buildPreview(any())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listParticipatingChallenges(userId);
 
@@ -645,7 +681,7 @@ class ChallengeServiceTest {
                 .thenReturn(List.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
                 .thenReturn(List.of(tanor, kaori));
-        when(progressService.buildProgress(List.of(tanor, kaori))).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(List.of(tanor, kaori))).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, null);
 

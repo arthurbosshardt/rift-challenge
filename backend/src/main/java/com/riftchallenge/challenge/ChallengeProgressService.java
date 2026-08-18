@@ -34,10 +34,22 @@ public class ChallengeProgressService {
 
     @Transactional(readOnly = true)
     public List<ParticipantProgressResponse> buildProgress(List<ChallengeParticipant> participants) {
+        return buildProgress(participants, true);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ParticipantProgressResponse> buildPreviewProgress(List<ChallengeParticipant> participants) {
+        return buildProgress(participants, false);
+    }
+
+    private List<ParticipantProgressResponse> buildProgress(
+            List<ChallengeParticipant> participants,
+            boolean includeMatchHistory
+    ) {
         List<ParticipantProgressResponse> unsorted = new ArrayList<>();
 
         for (ChallengeParticipant participant : participants) {
-            unsorted.add(buildForParticipant(participant));
+            unsorted.add(buildForParticipant(participant, includeMatchHistory));
         }
 
         unsorted.sort(Comparator.comparingInt(ParticipantProgressResponse::rankScore).reversed());
@@ -51,6 +63,14 @@ public class ChallengeProgressService {
 
     @Transactional(readOnly = true)
     public ParticipantProgressResponse buildForParticipant(ChallengeParticipant participant) {
+        return buildForParticipant(participant, true);
+    }
+
+    @Transactional(readOnly = true)
+    public ParticipantProgressResponse buildForParticipant(
+            ChallengeParticipant participant,
+            boolean includeMatchHistory
+    ) {
         UUID participantId = participant.getId();
 
         RankSnapshot baseline = rankSnapshotRepository
@@ -79,7 +99,7 @@ public class ChallengeProgressService {
                     (int) wins,
                     (int) losses
             );
-            return attachMatchHistory(participant, progress);
+            return includeMatchHistory ? attachMatchHistory(participant, progress) : progress;
         }
 
         int lpGained = computeLpGained(baseline, current, (int) wins, (int) losses);
@@ -100,7 +120,7 @@ public class ChallengeProgressService {
                 (int) wins,
                 (int) losses
         );
-        return attachMatchHistory(participant, progress);
+        return includeMatchHistory ? attachMatchHistory(participant, progress) : progress;
     }
 
     private ParticipantProgressResponse attachMatchHistory(

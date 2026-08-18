@@ -116,9 +116,7 @@ export class LoginModalComponent {
       return;
     }
 
-    if (!this.auth.linkedAccount()) {
-      await this.auth.refreshProfile();
-    }
+    await this.auth.refreshProfile();
 
     const destination = this.auth.linkedAccount() ? '/my-challenges' : '/public-challenges';
     await this.router.navigateByUrl(destination);

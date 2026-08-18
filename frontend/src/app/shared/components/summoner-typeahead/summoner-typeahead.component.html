@@ -1,0 +1,32 @@
+<div class="summoner-typeahead" #root>
+  <input
+    [name]="name()"
+    type="text"
+    [ngModel]="value()"
+    (ngModelChange)="onInput($event)"
+    [placeholder]="placeholder()"
+    [disabled]="disabled()"
+    [class.challenge-form__control--invalid]="invalid()"
+    [attr.aria-invalid]="ariaInvalid()"
+    [attr.aria-expanded]="open()"
+    aria-autocomplete="list"
+    autocomplete="off"
+    spellcheck="false"
+  />
+  @if (open() && suggestions().length > 0) {
+    <ul class="summoner-typeahead__list" role="listbox">
+      @for (suggestion of suggestions(); track suggestion.puuid) {
+        <li>
+          <button type="button" class="summoner-typeahead__option" (mousedown)="pick(suggestion)">
+            <app-player-avatar
+              [profileIconId]="suggestion.profileIconId"
+              [gameName]="suggestion.gameName"
+              size="xs"
+            />
+            <span class="summoner-typeahead__riot-id">{{ suggestion.riotId }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>
