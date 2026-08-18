@@ -46,7 +46,10 @@ export class DashboardPageComponent implements OnInit {
   protected getGameAriaLabel(game: RecentGameResponse): string {
     const resultKey = game.win ? 'game.victory' : 'game.defeat';
     const result = this.i18n.t(resultKey);
-    return `${result} with ${game.gameName}`;
+    return this.i18n.t('game.ariaLabel', {
+      result: result,
+      playerName: game.gameName,
+    });
   }
 
   private async loadPage(): Promise<void> {

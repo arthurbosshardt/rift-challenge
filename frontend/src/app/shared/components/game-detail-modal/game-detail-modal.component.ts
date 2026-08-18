@@ -34,24 +34,24 @@ export class GameDetailModalComponent {
 
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) {
-      const minuteStr = minutes === 1 ? 'minute' : 'minutes';
-      return this.i18n.locale() === 'fr'
-        ? `il y a ${minutes} ${minuteStr}`
-        : `${minutes} ${minuteStr} ago`;
+      return this.i18n.t('game.minutesAgo', {
+        count: minutes,
+        countPlural: minutes > 1 ? 's' : '',
+      });
     }
 
     const hours = Math.floor(minutes / 60);
     if (hours < 24) {
-      const hourStr = hours === 1 ? 'heure' : 'heures';
-      return this.i18n.locale() === 'fr'
-        ? `il y a ${hours} ${hourStr}`
-        : `${hours} ${hourStr === 'heure' ? 'hour' : 'hours'} ago`;
+      return this.i18n.t('game.hoursAgo', {
+        count: hours,
+        countPlural: hours > 1 ? 's' : '',
+      });
     }
 
     const days = Math.floor(hours / 24);
-    const dayStr = days === 1 ? 'jour' : 'jours';
-    return this.i18n.locale() === 'fr'
-      ? `il y a ${days} ${dayStr}`
-      : `${days} ${dayStr === 'jour' ? 'day' : 'days'} ago`;
+    return this.i18n.t('game.daysAgo', {
+      count: days,
+      countPlural: days > 1 ? 's' : '',
+    });
   }
 }

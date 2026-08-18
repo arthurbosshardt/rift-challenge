@@ -119,6 +119,6 @@ export class ChallengeApiService {
   }
 
   listRecentGames(): Observable<RecentGameResponse[]> {
-    return this.http.get<RecentGameResponse[]>(`${this.baseUrl}/recent`);
+    return this.http.get<RecentGameResponse[]>(apiUrl('/api/challenges/recent'));
   }
 }

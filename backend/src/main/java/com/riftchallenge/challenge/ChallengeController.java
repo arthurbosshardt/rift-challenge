@@ -14,6 +14,7 @@ import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
+import com.riftchallenge.riot.ChampionIconUrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -44,7 +45,7 @@ public class ChallengeController {
     private final ChallengeRefreshRequestThrottle refreshRequestThrottle;
     private final UserRiotAccountRepository userRiotAccountRepository;
     private final ChallengeParticipantMatchRepository participantMatchRepository;
-    private final com.riftchallenge.riot.ChampionIconUrlService championIconUrlService;
+    private final ChampionIconUrlService championIconUrlService;
 
     public ChallengeController(
             ChallengeService challengeService,
@@ -53,7 +54,7 @@ public class ChallengeController {
             ChallengeRefreshRequestThrottle refreshRequestThrottle,
             UserRiotAccountRepository userRiotAccountRepository,
             ChallengeParticipantMatchRepository participantMatchRepository,
-            com.riftchallenge.riot.ChampionIconUrlService championIconUrlService
+            ChampionIconUrlService championIconUrlService
     ) {
         this.challengeService = challengeService;
         this.participantService = participantService;
