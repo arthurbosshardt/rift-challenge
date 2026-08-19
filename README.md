@@ -7,6 +7,7 @@ Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreS
 - `frontend/` — Angular
 - `backend/` — Spring Boot 3.3 / Java 21
 - `.cursor/rules/` — règles projet
+- [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — recap métier + technique + design system (pour reprise IA)
 
 ## Prérequis locaux
 
