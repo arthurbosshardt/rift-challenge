@@ -1,0 +1,19 @@
+<div class="match-history-skeleton__track">
+  @for (column of columns; track $index) {
+    <div class="match-history-skeleton__column">
+      <div class="match-history-skeleton__group">
+        @for (bubble of column; track bubble) {
+          <app-skeleton class="match-history-skeleton__bubble" [circle]="true" />
+        }
+      </div>
+      @if (duoMode()) {
+        <div class="match-history-skeleton__group">
+          @for (bubble of column; track bubble) {
+            <app-skeleton class="match-history-skeleton__bubble" [circle]="true" />
+          }
+        </div>
+      }
+      <app-skeleton class="match-history-skeleton__label" height="0.5rem" width="1.25rem" radius="2px" />
+    </div>
+  }
+</div>

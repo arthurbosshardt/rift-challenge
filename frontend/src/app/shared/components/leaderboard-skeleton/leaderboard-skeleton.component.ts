@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { MatchHistorySkeletonComponent } from '../match-history-skeleton/match-history-skeleton.component';
 
 @Component({
   selector: 'app-leaderboard-skeleton',
-  imports: [SkeletonComponent],
+  imports: [SkeletonComponent, MatchHistorySkeletonComponent],
   templateUrl: './leaderboard-skeleton.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leaderboard-skeleton.component.scss',

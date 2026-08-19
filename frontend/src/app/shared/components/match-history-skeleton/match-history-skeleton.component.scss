@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.match-history-skeleton__track {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.match-history-skeleton__column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3125rem;
+  flex: 0 0 auto;
+}
+
+.match-history-skeleton__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.3125rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.match-history-skeleton__group + .match-history-skeleton__group {
+  margin-top: 0.5rem;
+}
+
+.match-history-skeleton__bubble {
+  width: 4rem;
+  height: 4rem;
+}
+
+@media (max-width: 1023px) {
+  .match-history-skeleton__bubble {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}

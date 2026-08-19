@@ -5,11 +5,14 @@ import { SettingsModalService } from '../../core/services/settings-modal.service
 import { AccountRecentGames, ChallengeSummary, ParticipantMatchHistory } from '../../core/models/challenge.models';
 import { formatRankLabel, tierColor } from '../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../core/utils/record-display';
+import { formatTimeSince } from '../../core/utils/relative-time';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { ChallengeCardComponent } from '../../shared/components/challenge-card/challenge-card.component';
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
+import { MatchHistorySkeletonComponent } from '../../shared/components/match-history-skeleton/match-history-skeleton.component';
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -17,7 +20,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 type ActivityView = 'activity' | 'challenges';
 
-const REFRESH_COOLDOWN_MS = 10000;
+const REFRESH_COOLDOWN_MS = 5000;
 
 interface ActivityAccount extends AccountRecentGames {
   matches: ParticipantMatchHistory[];
@@ -31,6 +34,8 @@ interface ActivityAccount extends AccountRecentGames {
     ChallengeListSkeletonComponent,
     PlayerIdentityComponent,
     MatchHistoryStripComponent,
+    MatchHistorySkeletonComponent,
+    SkeletonComponent,
     NavIconComponent,
     TranslatePipe,
   ],
@@ -54,16 +59,19 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   protected readonly activityAccounts = signal<ActivityAccount[]>([]);
   protected readonly activityLoading = signal(true);
   protected readonly activityError = signal<string | null>(null);
-  protected readonly refreshCooldown = signal(false);
-  private refreshCooldownTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly refreshCooldownSeconds = signal(0);
+  protected readonly lastRefreshedAt = signal<string | null>(null);
+  private refreshCooldownInterval: ReturnType<typeof setInterval> | null = null;
+
+  protected readonly activitySkeletonRows = [0, 1];
 
   ngOnInit(): void {
     void this.loadPage();
   }
 
   ngOnDestroy(): void {
-    if (this.refreshCooldownTimer) {
-      clearTimeout(this.refreshCooldownTimer);
+    if (this.refreshCooldownInterval) {
+      clearInterval(this.refreshCooldownInterval);
     }
   }
 
@@ -103,13 +111,51 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     return total > 0 ? wins / total : 0;
   }
 
+  protected lastRefreshedLabel(): string | null {
+    const lastRefreshedAt = this.lastRefreshedAt();
+    if (!lastRefreshedAt) {
+      return null;
+    }
+    const time = formatTimeSince(lastRefreshedAt, Date.now(), this.i18n.locale());
+    if (!time) {
+      return null;
+    }
+    return this.i18n.t('activity.lastRefreshed', { time });
+  }
+
+  protected refreshButtonLabel(): string {
+    const seconds = this.refreshCooldownSeconds();
+    if (seconds > 0) {
+      return this.i18n.locale() === 'en' ? `${seconds}seconds` : `${seconds} secondes`;
+    }
+    return this.i18n.t('activity.refreshLabel');
+  }
+
   protected refreshActivity(): void {
-    if (this.refreshCooldown() || this.activityLoading()) {
+    if (this.refreshCooldownSeconds() > 0 || this.activityLoading()) {
       return;
     }
     this.loadActivity();
-    this.refreshCooldown.set(true);
-    this.refreshCooldownTimer = setTimeout(() => this.refreshCooldown.set(false), REFRESH_COOLDOWN_MS);
+    this.startRefreshCooldown();
+  }
+
+  private startRefreshCooldown(): void {
+    if (this.refreshCooldownInterval) {
+      clearInterval(this.refreshCooldownInterval);
+    }
+    this.refreshCooldownSeconds.set(Math.round(REFRESH_COOLDOWN_MS / 1000));
+    this.refreshCooldownInterval = setInterval(() => {
+      const next = this.refreshCooldownSeconds() - 1;
+      if (next <= 0) {
+        this.refreshCooldownSeconds.set(0);
+        if (this.refreshCooldownInterval) {
+          clearInterval(this.refreshCooldownInterval);
+          this.refreshCooldownInterval = null;
+        }
+        return;
+      }
+      this.refreshCooldownSeconds.set(next);
+    }, 1000);
   }
 
   private async loadPage(): Promise<void> {
@@ -172,6 +218,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
           })),
         );
         this.activityLoading.set(false);
+        this.lastRefreshedAt.set(new Date().toISOString());
       },
       error: (err: { status?: number }) => {
         if (err.status === 401) {

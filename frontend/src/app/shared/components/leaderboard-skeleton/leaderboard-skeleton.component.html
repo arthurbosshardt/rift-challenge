@@ -35,11 +35,7 @@
             </div>
           </div>
         }
-        <div class="leaderboard-skeleton__history">
-          @for (_ of [0, 1, 2, 3, 4]; track _) {
-            <app-skeleton [circle]="true" width="1.75rem" height="1.75rem" />
-          }
-        </div>
+        <app-match-history-skeleton class="leaderboard-skeleton__history" [duoMode]="duoMode()" />
         <div class="leaderboard-skeleton__stats">
           <app-skeleton height="0.875rem" maxWidth="3rem" />
           <app-skeleton height="0.75rem" maxWidth="4rem" />

@@ -107,9 +107,6 @@
 }
 
 .leaderboard-skeleton__history {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
   min-width: 0;
 }
 
@@ -132,7 +129,9 @@
     grid-column: auto;
     width: 100%;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas: 'rank identity stats';
+    grid-template-areas:
+      'rank identity stats'
+      'history history history';
     align-items: start;
   }
 
@@ -172,7 +171,8 @@
   }
 
   .leaderboard-skeleton__history {
-    display: none;
+    grid-area: history;
+    margin-top: 0.125rem;
   }
 
   .leaderboard-skeleton__sort {
