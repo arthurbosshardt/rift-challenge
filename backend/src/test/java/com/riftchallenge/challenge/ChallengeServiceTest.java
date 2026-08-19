@@ -373,6 +373,7 @@ class ChallengeServiceTest {
 
         assertThat(challenge.getName()).isEqualTo("New name");
         assertThat(response.name()).isEqualTo("New name");
+        assertThat(response.shareSlug()).isEqualTo(challengeId.toString());
         verify(challengeRepository).save(challenge);
     }
 
@@ -706,9 +707,9 @@ class ChallengeServiceTest {
                 NOW.plusSeconds(3600),
                 false
         );
-        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
 
-        assertThatThrownBy(() -> challengeService.getByShareSlug("Private race", null))
+        assertThatThrownBy(() -> challengeService.getByShareSlug(challenge.getShareSlug(), null))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
@@ -724,9 +725,9 @@ class ChallengeServiceTest {
                 NOW.plusSeconds(3600),
                 false
         );
-        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
 
-        assertThatThrownBy(() -> challengeService.getByShareSlug("Private race", UUID.randomUUID()))
+        assertThatThrownBy(() -> challengeService.getByShareSlug(challenge.getShareSlug(), UUID.randomUUID()))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
@@ -742,14 +743,15 @@ class ChallengeServiceTest {
                 NOW.plusSeconds(3600),
                 false
         );
-        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
         when(progressService.buildProgress(List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(challenge.getId())).thenReturn(Optional.empty());
 
-        var response = challengeService.getByShareSlug("Private race", ownerId);
+        var response = challengeService.getByShareSlug(challenge.getShareSlug(), ownerId);
 
         assertThat(response.name()).isEqualTo("Private race");
         assertThat(response.isOwner()).isTrue();
+        assertThat(response.shareSlug()).isEqualTo(challenge.getId().toString());
     }
 }

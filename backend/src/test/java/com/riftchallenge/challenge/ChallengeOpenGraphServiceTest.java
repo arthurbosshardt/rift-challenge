@@ -76,18 +76,18 @@ class ChallengeOpenGraphServiceTest {
                 true
         );
 
-        when(challengeRepository.findByShareSlug("Les solo petits soldats 2025")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(8L);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
         when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
 
-        String html = openGraphService.renderPreviewHtml("Les solo petits soldats 2025");
+        String html = openGraphService.renderPreviewHtml(challenge.getShareSlug());
 
         assertThat(html).contains("property=\"og:title\" content=\"Les solo petits soldats 2025\"");
         assertThat(html).contains("SoloQ");
         assertThat(html).contains("8 joueurs");
         assertThat(html).contains("Terminé");
-        assertThat(html).contains("https://rift-challenge.com/challenges/Les%20solo%20petits%20soldats%202025");
+        assertThat(html).contains("https://rift-challenge.com/challenges/" + challenge.getId());
         assertThat(html).contains("property=\"og:image\" content=\"https://rift-challenge.com/api/challenge-preview-image?slug=");
         assertThat(html).contains("summary_large_image");
     }
@@ -107,7 +107,7 @@ class ChallengeOpenGraphServiceTest {
         ChallengeParticipant second = participant(challenge.getId(), "Pascal", "EUW");
         ChallengeParticipant third = participant(challenge.getId(), "Jungle", "EUW");
 
-        when(challengeRepository.findByShareSlug("Race active")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(3L);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
                 .thenReturn(List.of(first, second, third));
@@ -117,12 +117,12 @@ class ChallengeOpenGraphServiceTest {
                 progress(third, 3, "Jungle", 15, "EMERALD", "IV")
         ));
 
-        String html = openGraphService.renderPreviewHtml("Race active");
+        String html = openGraphService.renderPreviewHtml(challenge.getShareSlug());
 
         assertThat(html).contains("#1 Nikos");
         assertThat(html).contains("#2 Pascal");
         assertThat(html).contains("#3 Jungle");
-        assertThat(html).contains("/api/challenge-preview-image?slug=Race%20active");
+        assertThat(html).contains("/api/challenge-preview-image?slug=" + challenge.getId());
     }
 
     @Test
@@ -138,7 +138,7 @@ class ChallengeOpenGraphServiceTest {
         );
         ChallengeParticipant first = participant(challenge.getId(), "Nikos", "EUW");
 
-        when(challengeRepository.findByShareSlug("Race active")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(1L);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
                 .thenReturn(List.of(first));
@@ -146,7 +146,7 @@ class ChallengeOpenGraphServiceTest {
                 progress(first, 1, "Nikos", 42, "DIAMOND", "IV")
         ));
 
-        byte[] png = openGraphService.renderPreviewImage("Race active");
+        byte[] png = openGraphService.renderPreviewImage(challenge.getShareSlug());
 
         assertThat(png).isNotEmpty();
         assertThat(png[0]).isEqualTo((byte) 0x89);
@@ -191,9 +191,9 @@ class ChallengeOpenGraphServiceTest {
                 NOW.plusSeconds(3600),
                 false
         );
-        when(challengeRepository.findByShareSlug("Private race")).thenReturn(Optional.of(challenge));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
 
-        assertThatThrownBy(() -> openGraphService.renderPreviewHtml("Private race"))
+        assertThatThrownBy(() -> openGraphService.renderPreviewHtml(challenge.getShareSlug()))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);

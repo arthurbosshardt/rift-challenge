@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { APP_VERSION } from '../../../core/version';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { LAST_UPDATED_AT, formatLastUpdatedDate } from '../../../core/version';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 
@@ -16,8 +16,11 @@ export class SiteFooterComponent {
 
   protected readonly creatorEmail = 'tanor.pro@gmail.com';
   protected readonly creatorDiscord = '_tanor';
-  protected readonly appVersion = APP_VERSION;
   protected readonly copiedField = signal<'discord' | 'email' | null>(null);
+  protected readonly lastUpdatedLabel = computed(() => {
+    const date = formatLastUpdatedDate(LAST_UPDATED_AT, this.i18n.locale());
+    return this.i18n.t('footer.lastUpdated', { date });
+  });
 
   protected copyDiscordAria(): string {
     return this.i18n.t('footer.copyDiscordAria', { username: this.creatorDiscord });
