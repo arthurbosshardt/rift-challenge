@@ -1,9 +1,10 @@
 import { Injectable, signal } from '@angular/core';
-
-const COMMUNITY_DRAGON_CHAMPION_ICON_BASE =
-  'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons';
-const COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE =
-  'https://cdn.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons';
+import {
+  COMMUNITY_DRAGON_CHAMPION_ICON_BASE,
+  COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE,
+  DDRAGON_API_BASE,
+  DDRAGON_CDN_BASE,
+} from '../constants/ddragon-constants';
 
 interface DdragonChampionEntry {
   key: string;
@@ -31,7 +32,7 @@ export class ChampionDataService {
     const name = this.idToDdragonName().get(championId);
     const version = this.ddragonVersion();
     if (name && version) {
-      urls.push(`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${name}.png`);
+      urls.push(`${DDRAGON_CDN_BASE}/cdn/${version}/img/champion/${name}.png`);
     }
 
     urls.push(
@@ -51,7 +52,7 @@ export class ChampionDataService {
 
   private async load(): Promise<void> {
     try {
-      const versionsResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+      const versionsResponse = await fetch(`${DDRAGON_API_BASE}/versions.json`);
       if (!versionsResponse.ok) {
         return;
       }
@@ -63,7 +64,7 @@ export class ChampionDataService {
       }
 
       const championsResponse = await fetch(
-        `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
+        `${DDRAGON_CDN_BASE}/cdn/${version}/data/en_US/champion.json`,
       );
       if (!championsResponse.ok) {
         return;

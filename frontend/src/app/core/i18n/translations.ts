@@ -2,6 +2,7 @@ export type AppLocale = 'fr' | 'en';
 
 export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
   fr: {
+    'common.loading': 'Chargement',
     'nav.dashboard': 'Mes games récentes',
     'nav.myChallenges': 'Mes challenges',
     'nav.createdChallenges': 'Challenges créés',
@@ -382,6 +383,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'duo.ineligibleSolo': 'Un joueur a joué en SoloQ sans son coéquipier pendant le challenge',
   },
   en: {
+    'common.loading': 'Loading',
     'nav.dashboard': 'My recent games',
     'nav.myChallenges': 'My challenges',
     'nav.createdChallenges': 'Created challenges',
