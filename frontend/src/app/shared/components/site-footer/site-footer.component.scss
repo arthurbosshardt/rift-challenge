@@ -97,6 +97,9 @@
   letter-spacing: 0.01em;
   white-space: nowrap;
   opacity: 0.75;
+  /* Contact buttons carry their own vertical padding the label/date text
+     doesn't have; match it here so all three rows read as equally spaced. */
+  padding-top: 0.375rem;
 }
 
 .site-footer__updated-label {
@@ -133,5 +136,6 @@
   .site-footer__updated-label,
   .site-footer__updated-date {
     justify-self: end;
+    padding-top: 0;
   }
 }
