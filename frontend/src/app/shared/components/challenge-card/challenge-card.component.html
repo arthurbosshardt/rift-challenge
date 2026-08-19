@@ -3,7 +3,7 @@
     [routerLink]="['/challenges', challenge().shareSlug]"
     [state]="{ challengeSummary: challenge() }"
   >
-  <div class="challenge-card__layout" [class.challenge-card__layout--summary-only]="hidePreview()" #cardLayout>
+  <div class="challenge-card__layout" [class.challenge-card__layout--summary-only]="hidePreview()">
     <div class="challenge-card__summary">
       <div class="challenge-card__header">
         <h2 class="challenge-card__title">

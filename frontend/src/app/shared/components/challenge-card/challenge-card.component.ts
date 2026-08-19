@@ -54,12 +54,10 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly previewViewport = viewChild<ElementRef<HTMLElement>>('previewViewport');
   private readonly previewTrack = viewChild<ElementRef<HTMLElement>>('previewTrack');
-  private readonly cardLayout = viewChild<ElementRef<HTMLElement>>('cardLayout');
   private resizeObserver: ResizeObserver | null = null;
 
   protected readonly showPreviewFade = signal(false);
   protected readonly previewViewportWidth = signal(0);
-  protected readonly cardLayoutWidth = signal(0);
   protected readonly entryCount = computed(() => this.challenge().entryCount ?? 0);
   protected readonly previewParticipants = computed(() => this.challenge().previewParticipants ?? []);
   protected readonly previewDuos = computed(() => this.challenge().previewDuos ?? []);
@@ -67,18 +65,10 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     this.challenge().type === 'DUOQ' ? this.previewDuos().length : this.previewParticipants().length,
   );
   protected readonly visiblePreviewCount = computed(() =>
-    resolveChallengeCardPreviewVisibleCount(
-      this.previewViewportWidth(),
-      this.previewEntryCount(),
-      this.cardLayoutWidth(),
-    ),
+    resolveChallengeCardPreviewVisibleCount(this.previewViewportWidth(), this.previewEntryCount()),
   );
   protected readonly previewColumnCount = computed(() =>
-    resolveChallengeCardPreviewColumnCount(
-      this.previewViewportWidth(),
-      this.visiblePreviewCount(),
-      this.cardLayoutWidth(),
-    ),
+    resolveChallengeCardPreviewColumnCount(this.previewViewportWidth(), this.visiblePreviewCount()),
   );
   protected readonly visiblePreviewParticipants = computed(() =>
     this.previewParticipants().slice(0, this.visiblePreviewCount()),
@@ -126,31 +116,22 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
 
     const viewportElement = this.previewViewport()?.nativeElement;
     const trackElement = this.previewTrack()?.nativeElement;
-    const layoutElement = this.cardLayout()?.nativeElement;
     if (!viewportElement || !trackElement) {
       this.updatePreviewFade();
       return;
     }
 
     if (typeof ResizeObserver === 'undefined') {
-      this.cardLayoutWidth.set(layoutElement?.clientWidth ?? 0);
       this.updatePreviewFade();
       return;
     }
 
     this.resizeObserver = new ResizeObserver(() => {
       this.previewViewportWidth.set(viewportElement.clientWidth);
-      if (layoutElement) {
-        this.cardLayoutWidth.set(layoutElement.clientWidth);
-      }
       this.updatePreviewFade();
     });
     this.resizeObserver.observe(viewportElement);
     this.resizeObserver.observe(trackElement);
-    if (layoutElement) {
-      this.resizeObserver.observe(layoutElement);
-      this.cardLayoutWidth.set(layoutElement.clientWidth);
-    }
     this.previewViewportWidth.set(viewportElement.clientWidth);
     this.updatePreviewFade();
   }

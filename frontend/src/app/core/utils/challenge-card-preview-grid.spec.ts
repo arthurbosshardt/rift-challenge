@@ -7,27 +7,23 @@ import {
 } from './challenge-card-preview-grid';
 
 describe('challenge-card-preview-grid', () => {
-  it('limits visible items to the top three in narrow viewports', () => {
-    expect(resolveChallengeCardPreviewVisibleCount(420, 8)).toBe(3);
-    expect(resolveChallengeCardPreviewVisibleCount(300, 2)).toBe(2);
+  it('limits visible items when a single column would be too narrow to read', () => {
+    expect(resolveChallengeCardPreviewVisibleCount(279, 8)).toBe(3);
+    expect(resolveChallengeCardPreviewVisibleCount(100, 2)).toBe(2);
+    expect(resolveChallengeCardPreviewVisibleCount(280, 8)).toBe(8);
     expect(resolveChallengeCardPreviewVisibleCount(500, 8)).toBe(8);
-    expect(resolveChallengeCardPreviewVisibleCount(720, 8, 760)).toBe(3);
-    expect(resolveChallengeCardPreviewVisibleCount(720, 8, 761)).toBe(8);
-    expect(resolveChallengeCardPreviewVisibleCount(1200, 8, 760)).toBe(8);
+    expect(resolveChallengeCardPreviewVisibleCount(1200, 8)).toBe(8);
   });
 
-  it('resolves column count from preview viewport width', () => {
-    expect(resolveChallengeCardPreviewColumnCount(420, 6)).toBe(1);
-    expect(resolveChallengeCardPreviewColumnCount(421, 0)).toBe(1);
-    expect(resolveChallengeCardPreviewColumnCount(500, 4)).toBe(2);
-    expect(resolveChallengeCardPreviewColumnCount(679, 8)).toBe(2);
-    expect(resolveChallengeCardPreviewColumnCount(680, 7)).toBe(3);
-    expect(resolveChallengeCardPreviewColumnCount(680, 9)).toBe(3);
+  it('resolves column count from the actual preview width, not a fixed item count', () => {
+    expect(resolveChallengeCardPreviewColumnCount(279, 6)).toBe(1);
+    expect(resolveChallengeCardPreviewColumnCount(280, 6)).toBe(1);
+    expect(resolveChallengeCardPreviewColumnCount(560, 3)).toBe(1);
+    expect(resolveChallengeCardPreviewColumnCount(560, 6)).toBe(2);
+    expect(resolveChallengeCardPreviewColumnCount(840, 6)).toBe(2);
+    expect(resolveChallengeCardPreviewColumnCount(840, 7)).toBe(3);
     expect(resolveChallengeCardPreviewColumnCount(500, 10)).toBe(1);
-    expect(resolveChallengeCardPreviewColumnCount(720, 8, 760)).toBe(1);
-    expect(resolveChallengeCardPreviewColumnCount(720, 8, 761)).toBe(3);
-    expect(resolveChallengeCardPreviewColumnCount(1200, 8, 760)).toBe(3);
-    expect(resolveChallengeCardPreviewColumnCount(1200, 6, 760)).toBe(2);
+    expect(resolveChallengeCardPreviewColumnCount(1200, 0)).toBe(1);
   });
 
   it('keeps the top three entries in the first column', () => {
