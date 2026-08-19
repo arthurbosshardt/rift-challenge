@@ -65,35 +65,39 @@
           <div class="game-detail-modal__matchup">
             <div class="game-detail-modal__matchup-header">
               <div
-                class="game-detail-modal__team-header"
-                [class.game-detail-modal__team-header--blue]="teamSide(match.myTeam) === 'blue'"
-                [class.game-detail-modal__team-header--red]="teamSide(match.myTeam) === 'red'"
+                class="game-detail-modal__team-banner"
+                [class.game-detail-modal__team-banner--blue]="teamSide(match.myTeam) === 'blue'"
+                [class.game-detail-modal__team-banner--red]="teamSide(match.myTeam) === 'red'"
               >
                 <span class="game-detail-modal__team-label">{{ 'gameDetail.yourTeam' | t }}</span>
                 <span class="game-detail-modal__team-badges">
                   <span class="game-detail-modal__badge" [class.game-detail-modal__badge--blue]="teamSide(match.myTeam) === 'blue'" [class.game-detail-modal__badge--red]="teamSide(match.myTeam) === 'red'">
-                    {{ teamKills(match.myTeam) }} {{ 'gameDetail.kills' | t }}
+                    <span class="game-detail-modal__badge-value">{{ teamKills(match.myTeam) }}</span>
+                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
                   </span>
                   <span class="game-detail-modal__badge game-detail-modal__badge--gold">
-                    {{ formatNumber(teamGold(match.myTeam)) }} {{ 'gameDetail.gold' | t }}
+                    <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(match.myTeam)) }}</span>
+                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
                   </span>
                 </span>
               </div>
               <span class="game-detail-modal__matchup-header-spacer" aria-hidden="true"></span>
               <div
-                class="game-detail-modal__team-header game-detail-modal__team-header--enemy"
-                [class.game-detail-modal__team-header--blue]="teamSide(match.enemyTeam) === 'blue'"
-                [class.game-detail-modal__team-header--red]="teamSide(match.enemyTeam) === 'red'"
+                class="game-detail-modal__team-banner game-detail-modal__team-banner--enemy"
+                [class.game-detail-modal__team-banner--blue]="teamSide(match.enemyTeam) === 'blue'"
+                [class.game-detail-modal__team-banner--red]="teamSide(match.enemyTeam) === 'red'"
               >
+                <span class="game-detail-modal__team-label">{{ 'gameDetail.enemyTeam' | t }}</span>
                 <span class="game-detail-modal__team-badges">
-                  <span class="game-detail-modal__badge game-detail-modal__badge--gold">
-                    {{ formatNumber(teamGold(match.enemyTeam)) }} {{ 'gameDetail.gold' | t }}
-                  </span>
                   <span class="game-detail-modal__badge" [class.game-detail-modal__badge--blue]="teamSide(match.enemyTeam) === 'blue'" [class.game-detail-modal__badge--red]="teamSide(match.enemyTeam) === 'red'">
-                    {{ teamKills(match.enemyTeam) }} {{ 'gameDetail.kills' | t }}
+                    <span class="game-detail-modal__badge-value">{{ teamKills(match.enemyTeam) }}</span>
+                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
+                  </span>
+                  <span class="game-detail-modal__badge game-detail-modal__badge--gold">
+                    <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(match.enemyTeam)) }}</span>
+                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
                   </span>
                 </span>
-                <span class="game-detail-modal__team-label">{{ 'gameDetail.enemyTeam' | t }}</span>
               </div>
             </div>
 
@@ -130,9 +134,9 @@
 
           <div class="game-detail-modal__mobile">
             <div
-              class="game-detail-modal__team-header"
-              [class.game-detail-modal__team-header--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
-              [class.game-detail-modal__team-header--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
+              class="game-detail-modal__team-banner"
+              [class.game-detail-modal__team-banner--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
+              [class.game-detail-modal__team-banner--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
             >
               <span class="game-detail-modal__team-label">
                 {{ (selectedTeam() === 'mine' ? 'gameDetail.yourTeam' : 'gameDetail.enemyTeam') | t }}
@@ -143,11 +147,12 @@
                   [class.game-detail-modal__badge--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
                   [class.game-detail-modal__badge--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
                 >
-                  {{ teamKills(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) }} {{ 'gameDetail.kills' | t }}
+                  <span class="game-detail-modal__badge-value">{{ teamKills(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) }}</span>
+                  <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
                 </span>
                 <span class="game-detail-modal__badge game-detail-modal__badge--gold">
-                  {{ formatNumber(teamGold(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam)) }}
-                  {{ 'gameDetail.gold' | t }}
+                  <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam)) }}</span>
+                  <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
                 </span>
               </span>
             </div>
@@ -223,6 +228,9 @@
     </div>
 
     <div class="game-detail-modal__identity">
+      @if (player.profileIconUrl) {
+        <img class="game-detail-modal__avatar" [src]="player.profileIconUrl" alt="" loading="lazy" decoding="async" />
+      }
       <span
         class="game-detail-modal__name"
         role="button"
@@ -273,7 +281,7 @@
 
     <div class="game-detail-modal__items">
       @for (item of player.items; track $index) {
-        <span class="game-detail-modal__item" [class.game-detail-modal__item--empty]="!item.iconUrl">
+        <span class="game-detail-modal__item" [class.game-detail-modal__item--empty]="!item.iconUrl" [title]="itemTooltip(item.itemId)">
           @if (item.iconUrl) {
             <img [src]="item.iconUrl" alt="" loading="lazy" decoding="async" />
           }

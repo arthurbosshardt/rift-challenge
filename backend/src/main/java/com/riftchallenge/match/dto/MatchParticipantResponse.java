@@ -6,6 +6,7 @@ public record MatchParticipantResponse(
         String gameName,
         String tagLine,
         Integer profileIconId,
+        String profileIconUrl,
         Integer championId,
         String championIconUrl,
         int champLevel,

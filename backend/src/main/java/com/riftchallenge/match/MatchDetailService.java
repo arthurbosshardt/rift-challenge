@@ -4,6 +4,7 @@ import com.riftchallenge.match.dto.MatchDetailResponse;
 import com.riftchallenge.match.dto.MatchItemResponse;
 import com.riftchallenge.match.dto.MatchParticipantResponse;
 import com.riftchallenge.riot.ChampionIconUrlService;
+import com.riftchallenge.riot.ProfileIconLoader;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
 import com.riftchallenge.riot.RuneIconUrlService;
@@ -31,19 +32,22 @@ public class MatchDetailService {
     private final ChampionIconUrlService championIconUrlService;
     private final SummonerSpellIconUrlService summonerSpellIconUrlService;
     private final RuneIconUrlService runeIconUrlService;
+    private final ProfileIconLoader profileIconLoader;
 
     public MatchDetailService(
             RiotMatchClient riotMatchClient,
             RiotLeagueClient riotLeagueClient,
             ChampionIconUrlService championIconUrlService,
             SummonerSpellIconUrlService summonerSpellIconUrlService,
-            RuneIconUrlService runeIconUrlService
+            RuneIconUrlService runeIconUrlService,
+            ProfileIconLoader profileIconLoader
     ) {
         this.riotMatchClient = riotMatchClient;
         this.riotLeagueClient = riotLeagueClient;
         this.championIconUrlService = championIconUrlService;
         this.summonerSpellIconUrlService = summonerSpellIconUrlService;
         this.runeIconUrlService = runeIconUrlService;
+        this.profileIconLoader = profileIconLoader;
     }
 
     public MatchDetailResponse buildMatchDetail(String matchId, String focusPuuid) {
@@ -110,6 +114,9 @@ public class MatchDetailService {
                 participant.riotIdGameName(),
                 participant.riotIdTagline(),
                 participant.profileIcon(),
+                participant.profileIcon() != null && participant.profileIcon() > 0
+                        ? profileIconLoader.buildUrl(participant.profileIcon())
+                        : null,
                 participant.championId(),
                 championIconUrlService.buildApiPath(participant.championId()),
                 participant.champLevel(),

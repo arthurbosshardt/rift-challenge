@@ -7,6 +7,7 @@ import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { rankEmblemUrl, formatRankLabel } from '../../../core/utils/rank-display';
 import { GameDetailSkeletonComponent } from '../game-detail-skeleton/game-detail-skeleton.component';
+import { ItemDataService } from '../../../core/services/item-data.service';
 
 const HIGH_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
 
@@ -29,6 +30,7 @@ export class GameDetailModalComponent {
   protected readonly modalService = inject(GameDetailModalService);
   private readonly challengeApi = inject(ChallengeApiService);
   private readonly i18n = inject(I18nService);
+  private readonly itemData = inject(ItemDataService);
 
   protected readonly detail = signal<MatchDetail | null>(null);
   protected readonly loading = signal(false);
@@ -140,14 +142,19 @@ export class GameDetailModalComponent {
     if (!player.rankTier) {
       return '';
     }
-    if (HIGH_TIERS.has(player.rankTier.toUpperCase())) {
-      return `${player.rankLeaguePoints ?? 0}`;
+    const lp = `${player.rankLeaguePoints ?? 0} LP`;
+    if (HIGH_TIERS.has(player.rankTier.toUpperCase()) || !player.rankDivision) {
+      return lp;
     }
-    return player.rankDivision ?? '';
+    return `${player.rankDivision} · ${lp}`;
   }
 
   protected rankTitle(player: MatchParticipant): string {
     return formatRankLabel(player.rankTier, player.rankDivision, player.rankLeaguePoints ?? 0, this.i18n.locale());
+  }
+
+  protected itemTooltip(itemId: number | null): string | null {
+    return this.itemData.tooltip(itemId);
   }
 
   private playerKey(player: MatchParticipant): string {

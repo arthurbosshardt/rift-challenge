@@ -218,6 +218,7 @@ export interface MatchParticipant {
   gameName: string;
   tagLine: string;
   profileIconId: number | null;
+  profileIconUrl: string | null;
   championId: number | null;
   championIconUrl: string | null;
   champLevel: number;
