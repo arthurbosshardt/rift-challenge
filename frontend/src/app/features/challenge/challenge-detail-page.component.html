@@ -163,7 +163,7 @@
               type="button"
               class="refresh-action-btn"
               (click)="refreshChallenge()"
-              [disabled]="!currentChallenge.refreshAvailable || refreshing()"
+              [disabled]="!currentChallenge.refreshAvailable || refreshing() || currentChallenge.entryCount === 0"
               [attr.aria-label]="refreshing() ? ('challenge.refreshing' | t) : ('challenge.refreshData' | t)"
             >
               <svg
@@ -298,7 +298,11 @@
                     [tier]="participant.hasRankData ? participant.currentTier : null"
                     [rankLabel]="participantRankLabel(participant)"
                   />
-                  <app-match-history-strip class="leaderboard__history" [soloEntries]="participant.recentMatches" />
+                  <app-match-history-strip
+                    class="leaderboard__history"
+                    [soloEntries]="participant.recentMatches"
+                    (entryClick)="openParticipantGameDetail($event, participant.id)"
+                  />
                   <div class="leaderboard__stats">
                     @if (participant.hasRankData) {
                       <span
@@ -373,6 +377,7 @@
                     class="leaderboard__history"
                     [duoMode]="true"
                     [duoEntries]="duo.recentMatches"
+                    (entryClick)="openDuoGameDetail($event, duo.id)"
                   />
                   <div class="leaderboard__stats">
                     @if (duoHasRankData(duo)) {

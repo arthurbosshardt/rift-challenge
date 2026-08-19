@@ -128,9 +128,9 @@ h4.challenge-form__schedule-title {
 }
 
 .visibility-switch {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
   gap: 0.875rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
@@ -143,6 +143,8 @@ h4.challenge-form__schedule-title {
 .visibility-switch__label {
   display: inline-flex;
   align-items: center;
+  justify-self: end;
+  min-width: 0;
   gap: 0.375rem;
   color: var(--text-muted);
   font-size: 0.875rem;
@@ -151,6 +153,10 @@ h4.challenge-form__schedule-title {
     color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     font-weight 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visibility-switch__label:last-child {
+  justify-self: start;
 }
 
 .visibility-switch__label-icon {
@@ -246,6 +252,7 @@ h4.challenge-form__schedule-title {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  justify-self: center;
   width: 3rem;
   height: 2rem;
   padding: 0;
@@ -287,9 +294,9 @@ h4.challenge-form__schedule-title {
 }
 
 .type-switch {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
   gap: 0.875rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
@@ -302,6 +309,8 @@ h4.challenge-form__schedule-title {
 .type-switch__label {
   display: inline-flex;
   align-items: center;
+  justify-self: end;
+  min-width: 0;
   gap: 0.375rem;
   color: var(--text-muted);
   font-size: 0.875rem;
@@ -310,6 +319,10 @@ h4.challenge-form__schedule-title {
     color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     font-weight 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.type-switch__label:last-child {
+  justify-self: start;
 }
 
 .type-switch__label-icon {
@@ -343,6 +356,7 @@ h4.challenge-form__schedule-title {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  justify-self: center;
   width: 3rem;
   height: 2rem;
   padding: 0;
@@ -470,12 +484,10 @@ h4.challenge-form__schedule-title {
 
 @media (max-width: 1023px) {
   .visibility-switch {
-    flex-wrap: wrap;
     gap: 0.625rem;
   }
 
   .type-switch {
-    flex-wrap: wrap;
     gap: 0.625rem;
   }
 }

@@ -124,7 +124,10 @@
                 </span>
               </div>
               @if (account.matches.length > 0) {
-                <app-match-history-strip [soloEntries]="account.matches" />
+                <app-match-history-strip
+                  [soloEntries]="account.matches"
+                  (entryClick)="openGameDetail($event, account.accountId)"
+                />
               } @else {
                 <p class="activity-account__empty">{{ 'activity.accountEmpty' | t }}</p>
               }

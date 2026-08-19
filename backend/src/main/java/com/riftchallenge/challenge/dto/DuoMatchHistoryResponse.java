@@ -3,6 +3,7 @@ package com.riftchallenge.challenge.dto;
 import java.time.Instant;
 
 public record DuoMatchHistoryResponse(
+        String matchId,
         boolean win,
         int player1ChampionId,
         String player1ChampionIconUrl,

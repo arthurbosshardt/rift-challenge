@@ -8,11 +8,13 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
 import { DuoMatchHistory, ParticipantMatchHistory } from '../../../core/models/challenge.models';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { apiUrl } from '../../../core/utils/api-url';
 import {
   formatMatchHistoryDayLabel,
@@ -21,7 +23,7 @@ import {
 
 @Component({
   selector: 'app-match-history-strip',
-  imports: [],
+  imports: [TranslatePipe],
   templateUrl: './match-history-strip.component.html',
   styleUrl: './match-history-strip.component.scss',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -30,6 +32,7 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
   readonly soloEntries = input<ParticipantMatchHistory[]>([]);
   readonly duoEntries = input<DuoMatchHistory[]>([]);
   readonly duoMode = input(false);
+  readonly entryClick = output<string>();
 
   private readonly i18n = inject(I18nService);
   private readonly viewport = viewChild<ElementRef<HTMLElement>>('viewport');
@@ -38,8 +41,12 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
 
   protected readonly showRightFade = signal(false);
   protected readonly dragging = signal(false);
+  private pointerDownActive = false;
+  private activePointerId: number | null = null;
   private dragStartX = 0;
   private dragStartScrollLeft = 0;
+  private dragMoved = false;
+  private static readonly DRAG_THRESHOLD_PX = 4;
 
   protected readonly soloGroups = computed(() =>
     groupMatchHistoryByLocalDay(this.soloEntries()),
@@ -118,35 +125,55 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
     if (!viewportElement) {
       return;
     }
-    this.dragging.set(true);
+    this.pointerDownActive = true;
+    this.activePointerId = event.pointerId;
+    this.dragMoved = false;
     this.dragStartX = event.clientX;
     this.dragStartScrollLeft = viewportElement.scrollLeft;
-    viewportElement.setPointerCapture(event.pointerId);
-    event.preventDefault();
   }
 
   protected onPointerMove(event: PointerEvent): void {
-    if (!this.dragging()) {
+    if (!this.pointerDownActive || event.pointerId !== this.activePointerId) {
       return;
     }
     const viewportElement = this.viewport()?.nativeElement;
     if (!viewportElement) {
       return;
     }
-    viewportElement.scrollLeft = this.dragStartScrollLeft - (event.clientX - this.dragStartX);
+    const deltaX = event.clientX - this.dragStartX;
+    if (!this.dragMoved && Math.abs(deltaX) > MatchHistoryStripComponent.DRAG_THRESHOLD_PX) {
+      this.dragMoved = true;
+      this.dragging.set(true);
+      viewportElement.setPointerCapture(event.pointerId);
+    }
+    if (this.dragMoved) {
+      event.preventDefault();
+      viewportElement.scrollLeft = this.dragStartScrollLeft - deltaX;
+    }
   }
 
   protected onPointerUp(event: PointerEvent): void {
-    if (!this.dragging()) {
+    if (!this.pointerDownActive || event.pointerId !== this.activePointerId) {
       return;
     }
+    this.pointerDownActive = false;
+    this.activePointerId = null;
+    if (this.dragMoved) {
+      this.viewport()?.nativeElement.releasePointerCapture(event.pointerId);
+    }
     this.dragging.set(false);
-    this.viewport()?.nativeElement.releasePointerCapture(event.pointerId);
   }
 
   protected dayLabel(dayKey: string): string {
     this.i18n.locale();
     return formatMatchHistoryDayLabel(dayKey, this.i18n.locale());
+  }
+
+  protected onEntryClick(matchId: string): void {
+    if (this.dragMoved) {
+      return;
+    }
+    this.entryClick.emit(matchId);
   }
 
   protected matchIconSrc(

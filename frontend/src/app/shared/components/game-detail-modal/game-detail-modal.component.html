@@ -1,0 +1,148 @@
+@if (modalService.isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" [attr.aria-label]="'gameDetail.title' | t">
+    <section class="modal-panel modal-panel--wide game-detail-modal" (click)="$event.stopPropagation()">
+      <header class="game-detail-modal__header">
+        <div class="game-detail-modal__header-info">
+          @if (detail(); as match) {
+            <span
+              class="game-detail-modal__result"
+              [class.game-detail-modal__result--win]="match.win"
+              [class.game-detail-modal__result--loss]="!match.win"
+            >
+              {{ (match.win ? 'gameDetail.victory' : 'gameDetail.defeat') | t }}
+            </span>
+            <span class="game-detail-modal__meta">
+              {{ 'gameDetail.rankedSolo' | t }} · {{ formatDuration(match.durationSeconds) }}
+            </span>
+          } @else {
+            <span class="game-detail-modal__result">{{ 'gameDetail.title' | t }}</span>
+          }
+        </div>
+        <button type="button" class="game-detail-modal__close" [attr.aria-label]="'auth.close' | t" (click)="close()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <div class="game-detail-modal__body">
+        @if (loading()) {
+          <div class="game-detail-modal__state" role="status">{{ 'activity.loading' | t }}</div>
+        } @else if (error()) {
+          <p class="game-detail-modal__state game-detail-modal__state--error">{{ error() }}</p>
+        } @else if (detail(); as match) {
+          <div class="game-detail-modal__teams">
+            <div class="game-detail-modal__team">
+              <div class="game-detail-modal__team-header game-detail-modal__team-header--mine">
+                <span class="game-detail-modal__team-label">{{ 'gameDetail.yourTeam' | t }}</span>
+                <span class="game-detail-modal__team-totals">
+                  {{ teamKills(match.myTeam) }} {{ 'gameDetail.kills' | t }} · {{ formatNumber(teamGold(match.myTeam)) }}
+                  {{ 'gameDetail.gold' | t }}
+                </span>
+              </div>
+              <div class="game-detail-modal__rows">
+                @for (player of match.myTeam; track $index) {
+                  <ng-container *ngTemplateOutlet="playerRow; context: { player: player }" />
+                }
+              </div>
+            </div>
+
+            <div class="game-detail-modal__team game-detail-modal__team--enemy">
+              <div class="game-detail-modal__team-header game-detail-modal__team-header--enemy">
+                <span class="game-detail-modal__team-label">{{ 'gameDetail.enemyTeam' | t }}</span>
+                <span class="game-detail-modal__team-totals">
+                  {{ teamKills(match.enemyTeam) }} {{ 'gameDetail.kills' | t }} ·
+                  {{ formatNumber(teamGold(match.enemyTeam)) }} {{ 'gameDetail.gold' | t }}
+                </span>
+              </div>
+              <div class="game-detail-modal__rows">
+                @for (player of match.enemyTeam; track $index) {
+                  <ng-container *ngTemplateOutlet="playerRow; context: { player: player }" />
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <ng-template #playerRow let-player="player">
+    <div
+      class="game-detail-modal__player"
+      [class.game-detail-modal__player--focus]="player.isFocusPlayer"
+      [class.game-detail-modal__player--win]="player.win"
+      [class.game-detail-modal__player--loss]="!player.win"
+    >
+      <div class="game-detail-modal__champion">
+        @if (player.championIconUrl) {
+          <img class="game-detail-modal__champion-icon" [src]="player.championIconUrl" alt="" loading="lazy" decoding="async" />
+        } @else {
+          <span class="game-detail-modal__champion-icon game-detail-modal__champion-icon--fallback">?</span>
+        }
+        <span class="game-detail-modal__champion-level">{{ player.champLevel }}</span>
+      </div>
+
+      <div class="game-detail-modal__spells">
+        @if (player.summoner1IconUrl) {
+          <img [src]="player.summoner1IconUrl" alt="" loading="lazy" decoding="async" />
+        }
+        @if (player.summoner2IconUrl) {
+          <img [src]="player.summoner2IconUrl" alt="" loading="lazy" decoding="async" />
+        }
+      </div>
+
+      <div class="game-detail-modal__identity">
+        <span class="game-detail-modal__name">
+          {{ player.gameName }}<span class="game-detail-modal__tag">#{{ player.tagLine }}</span>
+        </span>
+        @if (player.role) {
+          <span class="game-detail-modal__role">{{ roleLabel(player.role) }}</span>
+        }
+      </div>
+
+      <div class="game-detail-modal__kda">
+        <span class="game-detail-modal__kda-numbers">{{ kda(player) }}</span>
+        <span class="game-detail-modal__kda-ratio">{{ kdaRatio(player) }}</span>
+      </div>
+
+      <div class="game-detail-modal__stat game-detail-modal__stat--cs">
+        <span class="game-detail-modal__stat-value">{{ player.cs }}</span>
+        <span class="game-detail-modal__stat-label">{{ 'gameDetail.cs' | t }}</span>
+      </div>
+
+      <div class="game-detail-modal__stat game-detail-modal__stat--gold">
+        <span class="game-detail-modal__stat-value">{{ formatNumber(player.goldEarned) }}</span>
+        <span class="game-detail-modal__stat-label">{{ 'gameDetail.gold' | t }}</span>
+      </div>
+
+      <div class="game-detail-modal__damage">
+        <span class="game-detail-modal__stat-value">{{ formatNumber(player.damageDealt) }}</span>
+        <span class="game-detail-modal__damage-bar-track">
+          <span class="game-detail-modal__damage-bar-fill" [style.width.%]="damageBarWidth(player)"></span>
+        </span>
+      </div>
+
+      <div class="game-detail-modal__stat game-detail-modal__stat--wards">
+        <span class="game-detail-modal__stat-value">{{ player.wardsPlaced }}</span>
+        <span class="game-detail-modal__stat-label">{{ 'gameDetail.wards' | t }}</span>
+      </div>
+
+      <div class="game-detail-modal__items">
+        @for (item of player.items; track $index) {
+          <span class="game-detail-modal__item" [class.game-detail-modal__item--empty]="!item.iconUrl">
+            @if (item.iconUrl) {
+              <img [src]="item.iconUrl" alt="" loading="lazy" decoding="async" />
+            }
+          </span>
+        }
+      </div>
+    </div>
+  </ng-template>
+}

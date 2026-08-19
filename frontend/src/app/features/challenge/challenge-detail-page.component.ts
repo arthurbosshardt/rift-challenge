@@ -26,6 +26,7 @@ import { ChallengeDetailSkeletonComponent } from '../../shared/components/challe
 import { LeaderboardSkeletonComponent } from '../../shared/components/leaderboard-skeleton/leaderboard-skeleton.component';
 import { LeaderboardSortControlsComponent } from '../../shared/components/leaderboard-sort-controls/leaderboard-sort-controls.component';
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
+import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
 import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
@@ -47,6 +48,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly editChallengeModal = inject(EditChallengeModalService);
   private readonly deleteChallengeConfirm = inject(DeleteChallengeConfirmService);
+  private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
 
   private shareSlug = '';
@@ -382,6 +384,22 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   }
 
   protected hasRecord = hasPlayedRecord;
+
+  protected openParticipantGameDetail(matchId: string, participantId: string): void {
+    const challengeId = this.challenge()?.id;
+    if (!challengeId) {
+      return;
+    }
+    this.gameDetailModal.open(matchId, { type: 'participant', challengeId, participantId });
+  }
+
+  protected openDuoGameDetail(matchId: string, duoId: string): void {
+    const challengeId = this.challenge()?.id;
+    if (!challengeId) {
+      return;
+    }
+    this.gameDetailModal.open(matchId, { type: 'duo', challengeId, duoId });
+  }
 
   protected ineligibilityLabel(reason: string | null | undefined): string {
     if (!reason) {

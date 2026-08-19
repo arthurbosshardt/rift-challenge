@@ -27,13 +27,18 @@
                         [class.match-history__entry--loss]="!entry.win"
                       >
                         <div class="match-history__bubble-wrap">
-                          <span class="match-history__bubble" aria-hidden="true">
+                          <button
+                            type="button"
+                            class="match-history__bubble"
+                            [attr.aria-label]="(entry.win ? 'matchHistory.win' : 'matchHistory.loss') | t"
+                            (click)="onEntryClick(entry.matchId)"
+                          >
                             @if (matchIconSrc(entry.player1ChampionId, entry.player1ChampionIconUrl); as src) {
-                              <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" />
+                              <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" draggable="false" />
                             } @else {
                               <span class="match-history__fallback">?</span>
                             }
-                          </span>
+                          </button>
                         </div>
                       </div>
                     }
@@ -48,13 +53,18 @@
                         [class.match-history__entry--loss]="!entry.win"
                       >
                         <div class="match-history__bubble-wrap">
-                          <span class="match-history__bubble" aria-hidden="true">
+                          <button
+                            type="button"
+                            class="match-history__bubble"
+                            [attr.aria-label]="(entry.win ? 'matchHistory.win' : 'matchHistory.loss') | t"
+                            (click)="onEntryClick(entry.matchId)"
+                          >
                             @if (matchIconSrc(entry.player2ChampionId, entry.player2ChampionIconUrl); as src) {
-                              <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" />
+                              <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" draggable="false" />
                             } @else {
                               <span class="match-history__fallback">?</span>
                             }
-                          </span>
+                          </button>
                         </div>
                       </div>
                     }
@@ -75,13 +85,18 @@
                     [class.match-history__entry--loss]="!entry.win"
                   >
                     <div class="match-history__bubble-wrap">
-                      <span class="match-history__bubble" aria-hidden="true">
+                      <button
+                        type="button"
+                        class="match-history__bubble"
+                        [attr.aria-label]="(entry.win ? 'matchHistory.win' : 'matchHistory.loss') | t"
+                        (click)="onEntryClick(entry.matchId)"
+                      >
                         @if (matchIconSrc(entry.championId, entry.championIconUrl); as src) {
-                          <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" />
+                          <img class="match-history__champion" [src]="src" alt="" loading="lazy" decoding="async" draggable="false" />
                         } @else {
                           <span class="match-history__fallback">?</span>
                         }
-                      </span>
+                      </button>
                     </div>
                   </div>
                 }

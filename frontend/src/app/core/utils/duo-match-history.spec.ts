@@ -5,6 +5,7 @@ import { duoPlayer1MatchHistory, duoPlayer2MatchHistory } from './duo-match-hist
 describe('duoMatchHistory', () => {
   const matches: DuoMatchHistory[] = [
     {
+      matchId: 'EUW1_1234567890',
       win: true,
       player1ChampionId: 103,
       player1ChampionIconUrl: '/api/champion-icons/103.png',
@@ -19,6 +20,7 @@ describe('duoMatchHistory', () => {
   it('splits duo history per player', () => {
     expect(duoPlayer1MatchHistory(matches)).toEqual([
       {
+        matchId: 'EUW1_1234567890',
         championId: 103,
         championIconUrl: '/api/champion-icons/103.png',
         win: true,
@@ -28,6 +30,7 @@ describe('duoMatchHistory', () => {
     ]);
     expect(duoPlayer2MatchHistory(matches)).toEqual([
       {
+        matchId: 'EUW1_1234567890',
         championId: 86,
         championIconUrl: '/api/champion-icons/86.png',
         win: true,

@@ -67,6 +67,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/share/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/challenges/*/participants/*/matches/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/challenges/*/duos/*/matches/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/champion-icons/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/challenges/*/refresh").permitAll()
                         .requestMatchers("/actuator/health").permitAll()

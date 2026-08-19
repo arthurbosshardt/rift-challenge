@@ -3,6 +3,8 @@ package com.riftchallenge.account;
 import com.riftchallenge.account.dto.LinkRiotAccountRequest;
 import com.riftchallenge.account.dto.UserRiotAccountResponse;
 import com.riftchallenge.authentication.AuthenticatedUserIds;
+import com.riftchallenge.match.MatchDetailService;
+import com.riftchallenge.match.dto.MatchDetailResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -22,9 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserRiotAccountController {
 
     private final UserRiotAccountService userRiotAccountService;
+    private final MatchDetailService matchDetailService;
 
-    public UserRiotAccountController(UserRiotAccountService userRiotAccountService) {
+    public UserRiotAccountController(UserRiotAccountService userRiotAccountService, MatchDetailService matchDetailService) {
         this.userRiotAccountService = userRiotAccountService;
+        this.matchDetailService = matchDetailService;
     }
 
     @GetMapping
@@ -48,5 +52,16 @@ public class UserRiotAccountController {
     public void unlinkAccount(Authentication authentication, @PathVariable UUID accountId) {
         UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
         userRiotAccountService.unlinkAccount(userId, accountId);
+    }
+
+    @GetMapping("/{accountId}/matches/{matchId}")
+    public MatchDetailResponse getMatchDetail(
+            Authentication authentication,
+            @PathVariable UUID accountId,
+            @PathVariable String matchId
+    ) {
+        UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
+        String puuid = userRiotAccountService.resolveOwnedAccountPuuid(userId, accountId);
+        return matchDetailService.buildMatchDetail(matchId, puuid);
     }
 }

@@ -71,6 +71,7 @@ public class MatchHistoryService {
                     : -MatchLpEstimator.averageLossLp(state.tier());
 
             history.add(new ParticipantMatchHistoryResponse(
+                    row.getMatchId(),
                     row.getChampionId(),
                     championIconUrlService.buildApiPath(row.getChampionId()),
                     row.isWin(),
@@ -136,6 +137,7 @@ public class MatchHistoryService {
                     : -MatchLpEstimator.averageLossLp(state2.tier());
 
             history.add(new DuoMatchHistoryResponse(
+                    row.getMatchId(),
                     row.isWin(),
                     nullSafeChampionId(row.getPlayer1ChampionId()),
                     championIconUrlService.buildApiPath(row.getPlayer1ChampionId()),

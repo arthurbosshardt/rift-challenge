@@ -11,6 +11,7 @@ import { ChallengeListSkeletonComponent } from '../../shared/components/challeng
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
+import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 
@@ -41,6 +42,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   private readonly challengeApi = inject(ChallengeApiService);
   protected readonly auth = inject(AuthService);
   protected readonly settingsModal = inject(SettingsModalService);
+  private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
 
   protected readonly view = signal<ActivityView>('activity');
@@ -67,6 +69,10 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
 
   protected setView(view: ActivityView): void {
     this.view.set(view);
+  }
+
+  protected openGameDetail(matchId: string, accountId: string): void {
+    this.gameDetailModal.open(matchId, { type: 'account', accountId });
   }
 
   protected accountRankLabel(account: AccountRecentGames): string {
@@ -156,6 +162,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
           accounts.map((account) => ({
             ...account,
             matches: account.games.map((game) => ({
+              matchId: game.id,
               championId: game.championId,
               championIconUrl: game.championIconUrl,
               win: game.win,

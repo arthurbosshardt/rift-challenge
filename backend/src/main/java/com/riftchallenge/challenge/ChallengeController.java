@@ -14,6 +14,8 @@ import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
+import com.riftchallenge.match.MatchDetailService;
+import com.riftchallenge.match.dto.MatchDetailResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/challenges")
@@ -41,6 +44,9 @@ public class ChallengeController {
     private final ChallengeRefreshRequestThrottle refreshRequestThrottle;
     private final RecentActivityService recentActivityService;
     private final RecentActivityRequestThrottle recentActivityRequestThrottle;
+    private final ChallengeParticipantRepository participantRepository;
+    private final ChallengeDuoRepository duoRepository;
+    private final MatchDetailService matchDetailService;
 
     public ChallengeController(
             ChallengeService challengeService,
@@ -48,7 +54,10 @@ public class ChallengeController {
             ChallengeDuoService duoService,
             ChallengeRefreshRequestThrottle refreshRequestThrottle,
             RecentActivityService recentActivityService,
-            RecentActivityRequestThrottle recentActivityRequestThrottle
+            RecentActivityRequestThrottle recentActivityRequestThrottle,
+            ChallengeParticipantRepository participantRepository,
+            ChallengeDuoRepository duoRepository,
+            MatchDetailService matchDetailService
     ) {
         this.challengeService = challengeService;
         this.participantService = participantService;
@@ -56,6 +65,9 @@ public class ChallengeController {
         this.refreshRequestThrottle = refreshRequestThrottle;
         this.recentActivityService = recentActivityService;
         this.recentActivityRequestThrottle = recentActivityRequestThrottle;
+        this.participantRepository = participantRepository;
+        this.duoRepository = duoRepository;
+        this.matchDetailService = matchDetailService;
     }
 
     @GetMapping("/public")
@@ -234,5 +246,30 @@ public class ChallengeController {
         UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
         recentActivityRequestThrottle.enforce(userId);
         return recentActivityService.listRecentGames(userId);
+    }
+
+    @GetMapping("/{challengeId}/participants/{participantId}/matches/{matchId}")
+    public MatchDetailResponse getParticipantMatchDetail(
+            @PathVariable UUID challengeId,
+            @PathVariable UUID participantId,
+            @PathVariable String matchId
+    ) {
+        ChallengeParticipant participant = participantRepository.findByIdAndChallengeId(participantId, challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
+        return matchDetailService.buildMatchDetail(matchId, participant.getRiotPuuid());
+    }
+
+    @GetMapping("/{challengeId}/duos/{duoId}/matches/{matchId}")
+    public MatchDetailResponse getDuoMatchDetail(
+            @PathVariable UUID challengeId,
+            @PathVariable UUID duoId,
+            @PathVariable String matchId
+    ) {
+        duoRepository.findByIdAndChallengeId(duoId, challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duo not found"));
+        ChallengeParticipant focusPlayer = participantRepository.findByDuoIdOrderByCreatedAtAsc(duoId).stream()
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duo has no players"));
+        return matchDetailService.buildMatchDetail(matchId, focusPlayer.getRiotPuuid());
     }
 }

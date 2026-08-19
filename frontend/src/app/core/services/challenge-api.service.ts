@@ -16,6 +16,7 @@ import {
   UpdateChallengeNameRequest,
   UpdateChallengeRequest,
   AccountRecentGames,
+  MatchDetail,
 } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import { normalizeRiotId } from '../utils/riot-id';
@@ -120,5 +121,19 @@ export class ChallengeApiService {
 
   listRecentGames(): Observable<AccountRecentGames[]> {
     return this.http.get<AccountRecentGames[]>(apiUrl('/api/challenges/recent'));
+  }
+
+  getAccountMatchDetail(accountId: string, matchId: string): Observable<MatchDetail> {
+    return this.http.get<MatchDetail>(apiUrl(`/api/me/riot-accounts/${accountId}/matches/${matchId}`));
+  }
+
+  getParticipantMatchDetail(challengeId: string, participantId: string, matchId: string): Observable<MatchDetail> {
+    return this.http.get<MatchDetail>(
+      `${this.baseUrl}/${challengeId}/participants/${participantId}/matches/${matchId}`,
+    );
+  }
+
+  getDuoMatchDetail(challengeId: string, duoId: string, matchId: string): Observable<MatchDetail> {
+    return this.http.get<MatchDetail>(`${this.baseUrl}/${challengeId}/duos/${duoId}/matches/${matchId}`);
   }
 }

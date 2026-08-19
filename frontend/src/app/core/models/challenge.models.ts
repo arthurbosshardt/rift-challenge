@@ -46,6 +46,7 @@ export interface ChallengeSummary {
 }
 
 export interface ParticipantMatchHistory {
+  matchId: string;
   championId: number | null;
   championIconUrl: string | null;
   win: boolean;
@@ -54,6 +55,7 @@ export interface ParticipantMatchHistory {
 }
 
 export interface DuoMatchHistory {
+  matchId: string;
   win: boolean;
   player1ChampionId: number;
   player1ChampionIconUrl: string | null;
@@ -205,4 +207,41 @@ export interface AccountRecentGames {
   wins: number | null;
   losses: number | null;
   games: RecentGameResponse[];
+}
+
+export interface MatchItem {
+  itemId: number | null;
+  iconUrl: string | null;
+}
+
+export interface MatchParticipant {
+  gameName: string;
+  tagLine: string;
+  profileIconId: number | null;
+  championId: number | null;
+  championIconUrl: string | null;
+  champLevel: number;
+  role: string | null;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  goldEarned: number;
+  damageDealt: number;
+  visionScore: number;
+  wardsPlaced: number;
+  summoner1IconUrl: string | null;
+  summoner2IconUrl: string | null;
+  items: MatchItem[];
+  isFocusPlayer: boolean;
+}
+
+export interface MatchDetail {
+  matchId: string;
+  playedAt: string;
+  durationSeconds: number;
+  win: boolean;
+  myTeam: MatchParticipant[];
+  enemyTeam: MatchParticipant[];
 }

@@ -55,6 +55,13 @@ public class UserRiotAccountService {
     }
 
     @Transactional(readOnly = true)
+    public String resolveOwnedAccountPuuid(UUID userId, UUID accountId) {
+        return userRiotAccountRepository.findByIdAndUserId(accountId, userId)
+                .map(UserRiotAccount::getRiotPuuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Linked account not found"));
+    }
+
+    @Transactional(readOnly = true)
     public List<String> listLinkedPuids(UUID userId) {
         return userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
                 .map(UserRiotAccount::getRiotPuuid)
