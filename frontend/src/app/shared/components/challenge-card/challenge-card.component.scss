@@ -397,6 +397,12 @@
   gap: 0.0625rem;
 }
 
+// On mobile, `appHideIfTruncated` toggles this class instead of letting the
+// rank text show an ellipsis: fully hidden rather than cut off.
+.challenge-card__preview-rank-label.truncated-hidden {
+  display: none;
+}
+
 .challenge-card__preview-rank-label--muted {
   color: var(--text-muted);
 }

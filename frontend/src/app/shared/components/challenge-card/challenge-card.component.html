@@ -127,7 +127,7 @@
                               <div class="challenge-card__duo-player-copy">
                                 <span class="challenge-card__preview-names">{{ duo.player1.gameName }}</span>
                                 @if (rankLabel(duo.player1); as p1Rank) {
-                                  <span class="challenge-card__preview-rank-label">{{ p1Rank }}</span>
+                                  <span class="challenge-card__preview-rank-label" appHideIfTruncated>{{ p1Rank }}</span>
                                 } @else {
                                   <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
                                     {{ duo.player1.riotId }}
@@ -153,7 +153,7 @@
                               <div class="challenge-card__duo-player-copy">
                                 <span class="challenge-card__preview-names">{{ duo.player2.gameName }}</span>
                                 @if (rankLabel(duo.player2); as p2Rank) {
-                                  <span class="challenge-card__preview-rank-label">{{ p2Rank }}</span>
+                                  <span class="challenge-card__preview-rank-label" appHideIfTruncated>{{ p2Rank }}</span>
                                 } @else {
                                   <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
                                     {{ duo.player2.riotId }}
@@ -232,7 +232,7 @@
                           <div class="challenge-card__preview-text">
                             <span class="challenge-card__preview-names">{{ participant.gameName }}</span>
                             @if (rankLabel(participant); as label) {
-                              <span class="challenge-card__preview-rank-label">{{ label }}</span>
+                              <span class="challenge-card__preview-rank-label" appHideIfTruncated>{{ label }}</span>
                             } @else {
                               <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
                                 {{ participant.riotId }}
