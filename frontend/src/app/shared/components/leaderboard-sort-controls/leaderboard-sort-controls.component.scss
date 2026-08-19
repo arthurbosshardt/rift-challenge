@@ -46,6 +46,23 @@
   color: var(--gold);
   border-color: rgba(197, 160, 89, 0.35);
   background: rgba(197, 160, 89, 0.12);
+  animation: switch-segment-select 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+@keyframes switch-segment-select {
+  from {
+    transform: scale(0.92);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sort-controls__tab--active {
+    animation: none;
+  }
 }
 
 .sort-controls__tab:hover:not(:disabled):not(.sort-controls__tab--active) {
