@@ -2,14 +2,15 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 export type NavIconName =
   | 'public-challenges'
-  | 'my-challenges'
+  | 'my-activity'
   | 'create-challenge'
   | 'created-challenges'
   | 'settings'
   | 'login'
   | 'signup'
   | 'logout'
-  | 'dashboard';
+  | 'challenges'
+  | 'history';
 
 @Component({
   selector: 'app-nav-icon',
@@ -27,12 +28,40 @@ export type NavIconName =
           />
         </svg>
       }
-      @case ('my-challenges') {
+      @case ('my-activity') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M18 20a6 6 0 0 0-12 0"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle cx="12" cy="10" r="4" fill="none" stroke="currentColor" stroke-width="1.75" />
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.75" />
+        </svg>
+      }
+      @case ('challenges') {
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
             fill="currentColor"
           />
+        </svg>
+      }
+      @case ('history') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M3 12a9 9 0 1 0 2.64-6.36L3 8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path d="M3 3v5h5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 7v5l4 2" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       }
       @case ('create-challenge') {
@@ -107,34 +136,6 @@ export type NavIconName =
             stroke="currentColor"
             stroke-width="1.75"
             stroke-linecap="round"
-          />
-        </svg>
-      }
-      @case ('dashboard') {
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M3 3L12 6L21 3V21H3V3Z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M12 6V21"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <path
-            d="M3 9H21"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-            stroke-linecap="round"
-            stroke-linejoin="round"
           />
         </svg>
       }

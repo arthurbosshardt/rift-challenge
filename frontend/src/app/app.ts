@@ -7,7 +7,6 @@ import { CreatedChallengesModalComponent } from './features/home/created-challen
 import { DeleteChallengeConfirmModalComponent } from './features/challenge/delete-challenge-confirm-modal.component';
 import { EditChallengeModalComponent } from './features/challenge/edit-challenge-modal.component';
 import { SettingsModalComponent } from './features/settings/settings-modal.component';
-import { GameDetailModalHostComponent } from './shared/components/game-detail-modal-host/game-detail-modal-host.component';
 import { ThemeService } from './core/theme/theme.service';
 import { BackendStatusService } from './core/services/backend-status.service';
 
@@ -22,11 +21,10 @@ import { BackendStatusService } from './core/services/backend-status.service';
     EditChallengeModalComponent,
     DeleteChallengeConfirmModalComponent,
     SettingsModalComponent,
-    GameDetailModalHostComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   template:
-    '<router-outlet /><app-login-modal /><app-logout-confirm-modal /><app-create-challenge-modal /><app-created-challenges-modal /><app-edit-challenge-modal /><app-delete-challenge-confirm-modal /><app-settings-modal /><app-game-detail-modal-host />',
+    '<router-outlet /><app-login-modal /><app-logout-confirm-modal /><app-create-challenge-modal /><app-created-challenges-modal /><app-edit-challenge-modal /><app-delete-challenge-confirm-modal /><app-settings-modal />',
 })
 export class App {
   constructor() {

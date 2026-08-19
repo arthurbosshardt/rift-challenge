@@ -1,25 +1,23 @@
 package com.riftchallenge.challenge;
 
 import com.riftchallenge.authentication.AuthenticatedUserIds;
+import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
 import com.riftchallenge.challenge.dto.AddDuoRequest;
 import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.CreateChallengeRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
 import com.riftchallenge.challenge.dto.ChallengeDetailResponse;
 import com.riftchallenge.challenge.dto.ChallengeSummaryResponse;
-import com.riftchallenge.challenge.dto.RecentGameResponse;
 import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
-import com.riftchallenge.riot.ChampionIconUrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,8 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.riftchallenge.account.UserRiotAccountRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
 
 @RestController
 @RequestMapping("/api/challenges")
@@ -43,26 +39,23 @@ public class ChallengeController {
     private final ChallengeParticipantService participantService;
     private final ChallengeDuoService duoService;
     private final ChallengeRefreshRequestThrottle refreshRequestThrottle;
-    private final UserRiotAccountRepository userRiotAccountRepository;
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
-    private final ChampionIconUrlService championIconUrlService;
+    private final RecentActivityService recentActivityService;
+    private final RecentActivityRequestThrottle recentActivityRequestThrottle;
 
     public ChallengeController(
             ChallengeService challengeService,
             ChallengeParticipantService participantService,
             ChallengeDuoService duoService,
             ChallengeRefreshRequestThrottle refreshRequestThrottle,
-            UserRiotAccountRepository userRiotAccountRepository,
-            ChallengeParticipantMatchRepository participantMatchRepository,
-            ChampionIconUrlService championIconUrlService
+            RecentActivityService recentActivityService,
+            RecentActivityRequestThrottle recentActivityRequestThrottle
     ) {
         this.challengeService = challengeService;
         this.participantService = participantService;
         this.duoService = duoService;
         this.refreshRequestThrottle = refreshRequestThrottle;
-        this.userRiotAccountRepository = userRiotAccountRepository;
-        this.participantMatchRepository = participantMatchRepository;
-        this.championIconUrlService = championIconUrlService;
+        this.recentActivityService = recentActivityService;
+        this.recentActivityRequestThrottle = recentActivityRequestThrottle;
     }
 
     @GetMapping("/public")
@@ -237,31 +230,9 @@ public class ChallengeController {
     }
 
     @GetMapping("/recent")
-    public List<RecentGameResponse> listRecentGames(Authentication authentication) {
+    public List<AccountRecentGamesResponse> listRecentGames(Authentication authentication) {
         UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
-        var puuids = userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
-                .map(account -> account.getRiotPuuid())
-                .toList();
-
-        if (puuids.isEmpty()) {
-            return List.of();
-        }
-
-        var recentGamesRows = participantMatchRepository.findRecentGamesByPuuids(
-                puuids,
-                PageRequest.of(0, 20)
-        );
-
-        return recentGamesRows.stream()
-                .map(row -> new RecentGameResponse(
-                        row.getMatchId(),
-                        row.getGameName(),
-                        row.getTagLine(),
-                        row.getChampionId(),
-                        championIconUrlService.buildApiPath(row.getChampionId()),
-                        row.isWin(),
-                        row.getGameStart()
-                ))
-                .toList();
+        recentActivityRequestThrottle.enforce(userId);
+        return recentActivityService.listRecentGames(userId);
     }
 }

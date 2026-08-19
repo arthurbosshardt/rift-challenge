@@ -4,7 +4,15 @@
     [class.match-history--duo]="duoMode()"
     [class.match-history--fade-right]="showRightFade()"
   >
-    <div class="match-history__viewport" #viewport>
+    <div
+      class="match-history__viewport"
+      [class.match-history__viewport--dragging]="dragging()"
+      #viewport
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerUp($event)"
+    >
       <div class="match-history__track" #track>
         @if (duoMode()) {
           @for (group of duoGroups(); track group.dayKey) {

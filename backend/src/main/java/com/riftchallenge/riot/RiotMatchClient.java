@@ -26,6 +26,33 @@ public class RiotMatchClient {
         return getAllRankedSoloMatchIdsInWindow(puuid, startTimeEpochSeconds, null, 100);
     }
 
+    /**
+     * Most recent ranked solo/duo matches regardless of when they were played —
+     * spans seasons, unlike the window-bound lookups used for challenge sync.
+     */
+    public List<String> getRecentRankedSoloMatchIds(String puuid, int count) {
+        String url = "https://%s.api.riotgames.com/lol/match/v5/matches/by-puuid/%s/ids?queue=%d&start=0&count=%d"
+                .formatted(properties.regionalRouting(), puuid, RANKED_SOLO_QUEUE_ID, count);
+
+        try {
+            String[] matchIds = riotRestClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(String[].class);
+
+            if (matchIds == null || matchIds.length == 0) {
+                return List.of();
+            }
+            return Arrays.asList(matchIds);
+        } catch (HttpClientErrorException.NotFound exception) {
+            return List.of();
+        } catch (HttpClientErrorException.TooManyRequests exception) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached");
+        } catch (HttpClientErrorException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed");
+        }
+    }
+
     public List<String> getAllRankedSoloMatchIdsInWindow(
             String puuid,
             long startTimeEpochSeconds,

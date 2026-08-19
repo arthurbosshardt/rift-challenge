@@ -7,7 +7,7 @@ async function defaultAuthenticatedRoute(auth: AuthService): Promise<string[]> {
   if (!auth.linkedAccount()) {
     await auth.refreshProfile();
   }
-  return auth.linkedAccount() ? ['/dashboard'] : ['/public-challenges'];
+  return auth.linkedAccount() ? ['/my-challenges'] : ['/public-challenges'];
 }
 
 export const rootRedirectGuard: CanActivateFn = async () => {

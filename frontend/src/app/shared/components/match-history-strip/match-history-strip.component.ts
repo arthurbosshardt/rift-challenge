@@ -37,6 +37,9 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
   private resizeObserver: ResizeObserver | null = null;
 
   protected readonly showRightFade = signal(false);
+  protected readonly dragging = signal(false);
+  private dragStartX = 0;
+  private dragStartScrollLeft = 0;
 
   protected readonly soloGroups = computed(() =>
     groupMatchHistoryByLocalDay(this.soloEntries()),
@@ -105,6 +108,40 @@ export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
     const scrolledToEnd =
       viewportElement.scrollLeft + viewportElement.clientWidth >= trackElement.scrollWidth - 1;
     this.showRightFade.set(overflows && !scrolledToEnd);
+  }
+
+  protected onPointerDown(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') {
+      return;
+    }
+    const viewportElement = this.viewport()?.nativeElement;
+    if (!viewportElement) {
+      return;
+    }
+    this.dragging.set(true);
+    this.dragStartX = event.clientX;
+    this.dragStartScrollLeft = viewportElement.scrollLeft;
+    viewportElement.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+
+  protected onPointerMove(event: PointerEvent): void {
+    if (!this.dragging()) {
+      return;
+    }
+    const viewportElement = this.viewport()?.nativeElement;
+    if (!viewportElement) {
+      return;
+    }
+    viewportElement.scrollLeft = this.dragStartScrollLeft - (event.clientX - this.dragStartX);
+  }
+
+  protected onPointerUp(event: PointerEvent): void {
+    if (!this.dragging()) {
+      return;
+    }
+    this.dragging.set(false);
+    this.viewport()?.nativeElement.releasePointerCapture(event.pointerId);
   }
 
   protected dayLabel(dayKey: string): string {

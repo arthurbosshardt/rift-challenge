@@ -13,22 +13,16 @@
       </div>
 
       <nav class="shell__nav shell__nav--primary shell__nav--desktop" aria-label="Main">
+        @if (auth.isAuthenticated() && auth.linkedAccount()) {
+          <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
+            <app-nav-icon name="my-activity" />
+            <span>{{ 'nav.myActivity' | t }}</span>
+          </a>
+        }
         <a routerLink="/public-challenges" routerLinkActive="active" (click)="closeUserMenu()">
           <app-nav-icon name="public-challenges" />
           <span>{{ 'nav.publicChallenges' | t }}</span>
         </a>
-        @if (auth.isAuthenticated() && auth.linkedAccount()) {
-          <!-- TODO: Uncomment when dashboard is ready
-          <a routerLink="/dashboard" routerLinkActive="active" (click)="closeUserMenu()">
-            <app-nav-icon name="dashboard" />
-            <span>{{ 'nav.dashboard' | t }}</span>
-          </a>
-          -->
-          <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
-            <app-nav-icon name="my-challenges" />
-            <span>{{ 'nav.myChallenges' | t }}</span>
-          </a>
-        }
       </nav>
 
       <div class="shell__actions">
@@ -92,6 +86,18 @@
 
           @if (userMenuOpen()) {
             <div class="user-menu__dropdown" role="menu">
+              @if (auth.isAuthenticated() && auth.linkedAccount()) {
+                <a
+                  routerLink="/my-challenges"
+                  routerLinkActive="active"
+                  role="menuitem"
+                  class="user-menu__item user-menu__item--mobile-nav"
+                  (click)="closeUserMenu()"
+                >
+                  <app-nav-icon name="my-activity" />
+                  <span>{{ 'nav.myActivity' | t }}</span>
+                </a>
+              }
               <a
                 routerLink="/public-challenges"
                 routerLinkActive="active"
@@ -102,30 +108,6 @@
                 <app-nav-icon name="public-challenges" />
                 <span>{{ 'nav.publicChallenges' | t }}</span>
               </a>
-              @if (auth.isAuthenticated() && auth.linkedAccount()) {
-                <!-- TODO: Uncomment when dashboard is ready
-                <a
-                  routerLink="/dashboard"
-                  routerLinkActive="active"
-                  role="menuitem"
-                  class="user-menu__item user-menu__item--mobile-nav"
-                  (click)="closeUserMenu()"
-                >
-                  <app-nav-icon name="dashboard" />
-                  <span>{{ 'nav.dashboard' | t }}</span>
-                </a>
-                -->
-                <a
-                  routerLink="/my-challenges"
-                  routerLinkActive="active"
-                  role="menuitem"
-                  class="user-menu__item user-menu__item--mobile-nav"
-                  (click)="closeUserMenu()"
-                >
-                  <app-nav-icon name="my-challenges" />
-                  <span>{{ 'nav.myChallenges' | t }}</span>
-                </a>
-              }
               @if (auth.isAuthenticated()) {
                 <button
                   type="button"

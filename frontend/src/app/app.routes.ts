@@ -9,8 +9,7 @@ import { AuthCallbackPageComponent } from './features/auth/auth-callback-page.co
 import { LoginRedirectComponent } from './features/auth/login-redirect.component';
 import { SettingsPageComponent } from './features/settings/settings-page.component';
 import { LandingPageComponent } from './features/home/landing-page.component';
-import { MyChallengesPageComponent } from './features/home/my-challenges-page.component';
-import { DashboardPageComponent } from './features/home/dashboard-page.component';
+import { MyActivityPageComponent } from './features/home/my-activity-page.component';
 import { PublicChallengesPageComponent } from './features/home/public-challenges-page.component';
 import { CreateChallengeRedirectComponent } from './features/challenge/create-challenge-redirect.component';
 import { ChallengeDetailPageComponent } from './features/challenge/challenge-detail-page.component';
@@ -45,12 +44,11 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: DashboardPageComponent,
-    canActivate: [linkedAccountGuard],
+    redirectTo: 'my-challenges',
   },
   {
     path: 'my-challenges',
-    component: MyChallengesPageComponent,
+    component: MyActivityPageComponent,
     canActivate: [linkedAccountGuard],
   },
   {

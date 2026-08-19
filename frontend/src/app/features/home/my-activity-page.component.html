@@ -1,0 +1,167 @@
+<app-page-shell [title]="''">
+  <div class="activity-switch" role="tablist" [attr.aria-label]="'nav.myActivity' | t">
+    <button
+      type="button"
+      class="activity-switch__btn"
+      role="tab"
+      [attr.aria-selected]="view() === 'activity'"
+      [class.activity-switch__btn--active]="view() === 'activity'"
+      (click)="setView('activity')"
+    >
+      <app-nav-icon name="history" />
+      {{ 'activity.recentTitle' | t }}
+    </button>
+    <button
+      type="button"
+      class="activity-switch__btn"
+      role="tab"
+      [attr.aria-selected]="view() === 'challenges'"
+      [class.activity-switch__btn--active]="view() === 'challenges'"
+      (click)="setView('challenges')"
+    >
+      <app-nav-icon name="challenges" />
+      {{ 'home.myChallengesTitle' | t }}
+    </button>
+  </div>
+
+  @if (view() === 'activity') {
+    <button
+      type="button"
+      class="refresh-action-btn activity-refresh-btn activity-refresh-btn--mobile"
+      (click)="refreshActivity()"
+      [disabled]="activityLoading() || refreshCooldown()"
+      [attr.aria-label]="'activity.refreshAria' | t"
+    >
+      <svg
+        class="refresh-action-btn__icon"
+        [class.refresh-action-btn__icon--spinning]="activityLoading()"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+        />
+      </svg>
+      <span class="refresh-action-btn__label refresh-action-btn__label--short">{{ 'activity.refreshLabel' | t }}</span>
+    </button>
+  }
+
+  <div class="activity-layout">
+    <section class="activity-column" [class.activity-column--hidden-mobile]="view() !== 'activity'">
+      <div class="activity-column__header">
+        <h2 class="activity-column__title">
+          <app-nav-icon name="history" />
+          {{ 'activity.recentTitle' | t }}
+        </h2>
+        <button
+          type="button"
+          class="refresh-action-btn activity-refresh-btn activity-refresh-btn--desktop"
+          (click)="refreshActivity()"
+          [disabled]="activityLoading() || refreshCooldown()"
+          [attr.aria-label]="'activity.refreshAria' | t"
+          [attr.title]="'activity.refreshAria' | t"
+        >
+          <svg
+            class="refresh-action-btn__icon"
+            [class.refresh-action-btn__icon--spinning]="activityLoading()"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      @if (auth.isProfileLoading()) {
+        <app-challenge-list-skeleton [count]="2" [ariaLabel]="'activity.loading' | t" />
+      } @else if (!auth.linkedAccount()) {
+        <p class="state">
+          {{ 'activity.linkAccountFirst' | t }}
+          <button type="button" class="state-link" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
+        </p>
+      } @else if (activityLoading()) {
+        <app-challenge-list-skeleton [count]="2" [ariaLabel]="'activity.loading' | t" />
+      } @else if (activityError()) {
+        <p class="state state--error">{{ activityError() }}</p>
+      } @else if (activityAccounts().length === 0) {
+        <p class="state">{{ 'activity.empty' | t }}</p>
+      } @else {
+        <div class="activity-accounts">
+          @for (account of activityAccounts(); track account.accountId) {
+            <div class="activity-account">
+              <div class="activity-account__header">
+                <div class="activity-account__identity-card">
+                  <app-player-identity
+                    [gameName]="account.gameName"
+                    [tagLine]="account.tagLine"
+                    [riotId]="account.gameName + '#' + account.tagLine"
+                    [profileIconId]="account.profileIconId"
+                    [tier]="account.tier"
+                    [compact]="true"
+                  />
+                </div>
+                <span class="activity-account__rank" [style.color]="accountRankColor(account)">
+                  {{ accountRankLabel(account) }}
+                </span>
+                @if (accountHasRecord(account)) {
+                  <span [class]="'activity-account__winrate ' + accountWinRateClass(account)">
+                    {{ accountWinRateLabel(account) }}
+                  </span>
+                  <span class="activity-account__record">
+                    <span class="activity-account__wins">
+                      {{ account.wins }}<span class="activity-account__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                    </span>
+                    <span class="activity-account__record-sep" aria-hidden="true">/</span>
+                    <span class="activity-account__losses">
+                      {{ account.losses }}<span class="activity-account__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                    </span>
+                  </span>
+                }
+                <span class="activity-account__badge" [class.activity-account__badge--primary]="account.primary">
+                  {{ (account.primary ? 'activity.primaryAccount' : 'activity.secondaryAccount') | t }}
+                </span>
+              </div>
+              @if (account.matches.length > 0) {
+                <app-match-history-strip [soloEntries]="account.matches" />
+              } @else {
+                <p class="activity-account__empty">{{ 'activity.accountEmpty' | t }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="activity-column" [class.activity-column--hidden-mobile]="view() !== 'challenges'">
+      <div class="activity-column__header">
+        <h2 class="activity-column__title">
+          <app-nav-icon name="challenges" />
+          {{ 'home.myChallengesTitle' | t }}
+        </h2>
+      </div>
+
+      @if (auth.isProfileLoading()) {
+        <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
+      } @else if (!auth.linkedAccount()) {
+        <p class="state">
+          {{ 'home.linkAccountFirst' | t }}
+          <button type="button" class="state-link" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
+        </p>
+      } @else if (challengesLoading()) {
+        <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
+      } @else if (challengesError()) {
+        <p class="state state--error">{{ challengesError() }}</p>
+      } @else if (challenges().length === 0) {
+        <p class="state">{{ 'home.emptyParticipating' | t }}</p>
+      } @else {
+        <div class="challenge-grid">
+          @for (challenge of challenges(); track challenge.id) {
+            <app-challenge-card [challenge]="challenge" />
+          }
+        </div>
+      }
+    </section>
+  </div>
+</app-page-shell>

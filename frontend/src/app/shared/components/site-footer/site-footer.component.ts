@@ -17,10 +17,7 @@ export class SiteFooterComponent {
   protected readonly creatorEmail = 'tanor.pro@gmail.com';
   protected readonly creatorDiscord = '_tanor';
   protected readonly copiedField = signal<'discord' | 'email' | null>(null);
-  protected readonly lastUpdatedLabel = computed(() => {
-    const date = formatLastUpdatedDate(LAST_UPDATED_AT, this.i18n.locale());
-    return this.i18n.t('footer.lastUpdated', { date });
-  });
+  protected readonly lastUpdatedDate = computed(() => formatLastUpdatedDate(LAST_UPDATED_AT, this.i18n.locale()));
 
   protected copyDiscordAria(): string {
     return this.i18n.t('footer.copyDiscordAria', { username: this.creatorDiscord });

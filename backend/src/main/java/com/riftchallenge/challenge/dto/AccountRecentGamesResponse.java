@@ -1,0 +1,19 @@
+package com.riftchallenge.challenge.dto;
+
+import java.util.List;
+import java.util.UUID;
+
+public record AccountRecentGamesResponse(
+        UUID accountId,
+        String gameName,
+        String tagLine,
+        Integer profileIconId,
+        boolean primary,
+        String tier,
+        String rank,
+        Integer leaguePoints,
+        Integer wins,
+        Integer losses,
+        List<RecentGameResponse> games
+) {
+}
