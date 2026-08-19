@@ -33,7 +33,7 @@
 
       <div class="game-detail-modal__body">
         @if (loading()) {
-          <div class="game-detail-modal__state" role="status">{{ 'activity.loading' | t }}</div>
+          <app-game-detail-skeleton />
         } @else if (error()) {
           <p class="game-detail-modal__state game-detail-modal__state--error">{{ error() }}</p>
         } @else if (detail(); as match) {
@@ -64,18 +64,34 @@
 
           <div class="game-detail-modal__matchup">
             <div class="game-detail-modal__matchup-header">
-              <div class="game-detail-modal__team-header game-detail-modal__team-header--mine">
+              <div
+                class="game-detail-modal__team-header"
+                [class.game-detail-modal__team-header--blue]="teamSide(match.myTeam) === 'blue'"
+                [class.game-detail-modal__team-header--red]="teamSide(match.myTeam) === 'red'"
+              >
                 <span class="game-detail-modal__team-label">{{ 'gameDetail.yourTeam' | t }}</span>
-                <span class="game-detail-modal__team-totals">
-                  {{ teamKills(match.myTeam) }} {{ 'gameDetail.kills' | t }} ·
-                  {{ formatNumber(teamGold(match.myTeam)) }} {{ 'gameDetail.gold' | t }}
+                <span class="game-detail-modal__team-badges">
+                  <span class="game-detail-modal__badge" [class.game-detail-modal__badge--blue]="teamSide(match.myTeam) === 'blue'" [class.game-detail-modal__badge--red]="teamSide(match.myTeam) === 'red'">
+                    {{ teamKills(match.myTeam) }} {{ 'gameDetail.kills' | t }}
+                  </span>
+                  <span class="game-detail-modal__badge game-detail-modal__badge--gold">
+                    {{ formatNumber(teamGold(match.myTeam)) }} {{ 'gameDetail.gold' | t }}
+                  </span>
                 </span>
               </div>
               <span class="game-detail-modal__matchup-header-spacer" aria-hidden="true"></span>
-              <div class="game-detail-modal__team-header game-detail-modal__team-header--enemy">
-                <span class="game-detail-modal__team-totals">
-                  {{ teamKills(match.enemyTeam) }} {{ 'gameDetail.kills' | t }} ·
-                  {{ formatNumber(teamGold(match.enemyTeam)) }} {{ 'gameDetail.gold' | t }}
+              <div
+                class="game-detail-modal__team-header game-detail-modal__team-header--enemy"
+                [class.game-detail-modal__team-header--blue]="teamSide(match.enemyTeam) === 'blue'"
+                [class.game-detail-modal__team-header--red]="teamSide(match.enemyTeam) === 'red'"
+              >
+                <span class="game-detail-modal__team-badges">
+                  <span class="game-detail-modal__badge game-detail-modal__badge--gold">
+                    {{ formatNumber(teamGold(match.enemyTeam)) }} {{ 'gameDetail.gold' | t }}
+                  </span>
+                  <span class="game-detail-modal__badge" [class.game-detail-modal__badge--blue]="teamSide(match.enemyTeam) === 'blue'" [class.game-detail-modal__badge--red]="teamSide(match.enemyTeam) === 'red'">
+                    {{ teamKills(match.enemyTeam) }} {{ 'gameDetail.kills' | t }}
+                  </span>
                 </span>
                 <span class="game-detail-modal__team-label">{{ 'gameDetail.enemyTeam' | t }}</span>
               </div>
@@ -113,16 +129,24 @@
           <div class="game-detail-modal__mobile">
             <div
               class="game-detail-modal__team-header"
-              [class.game-detail-modal__team-header--mine]="selectedTeam() === 'mine'"
-              [class.game-detail-modal__team-header--enemy]="selectedTeam() === 'enemy'"
+              [class.game-detail-modal__team-header--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
+              [class.game-detail-modal__team-header--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
             >
               <span class="game-detail-modal__team-label">
                 {{ (selectedTeam() === 'mine' ? 'gameDetail.yourTeam' : 'gameDetail.enemyTeam') | t }}
               </span>
-              <span class="game-detail-modal__team-totals">
-                {{ teamKills(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) }} {{ 'gameDetail.kills' | t }} ·
-                {{ formatNumber(teamGold(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam)) }}
-                {{ 'gameDetail.gold' | t }}
+              <span class="game-detail-modal__team-badges">
+                <span
+                  class="game-detail-modal__badge"
+                  [class.game-detail-modal__badge--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
+                  [class.game-detail-modal__badge--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
+                >
+                  {{ teamKills(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) }} {{ 'gameDetail.kills' | t }}
+                </span>
+                <span class="game-detail-modal__badge game-detail-modal__badge--gold">
+                  {{ formatNumber(teamGold(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam)) }}
+                  {{ 'gameDetail.gold' | t }}
+                </span>
               </span>
             </div>
             <div class="game-detail-modal__mobile-rows">
@@ -186,6 +210,17 @@
   </ng-template>
 
   <ng-template #playerFields let-player="player">
+    <div class="game-detail-modal__rank" [title]="rankTitle(player)" [attr.aria-label]="rankTitle(player)">
+      @if (rankEmblemUrl(player); as emblem) {
+        <img class="game-detail-modal__rank-icon" [src]="emblem" alt="" loading="lazy" decoding="async" />
+        @if (rankShortLabel(player); as short) {
+          <span class="game-detail-modal__rank-label">{{ short }}</span>
+        }
+      } @else {
+        <span class="game-detail-modal__rank-unranked" aria-hidden="true">—</span>
+      }
+    </div>
+
     <div class="game-detail-modal__champion">
       @if (player.championIconUrl) {
         <img class="game-detail-modal__champion-icon" [src]="player.championIconUrl" alt="" loading="lazy" decoding="async" />
@@ -195,34 +230,66 @@
       <span class="game-detail-modal__champion-level">{{ player.champLevel }}</span>
     </div>
 
-    <div class="game-detail-modal__spells">
+    <div class="game-detail-modal__loadout">
       @if (player.summoner1IconUrl) {
         <img [src]="player.summoner1IconUrl" alt="" loading="lazy" decoding="async" />
+      } @else {
+        <span class="game-detail-modal__loadout-empty"></span>
       }
       @if (player.summoner2IconUrl) {
         <img [src]="player.summoner2IconUrl" alt="" loading="lazy" decoding="async" />
+      } @else {
+        <span class="game-detail-modal__loadout-empty"></span>
+      }
+      @if (player.primaryRuneIconUrl) {
+        <img class="game-detail-modal__loadout-rune" [src]="player.primaryRuneIconUrl" alt="" loading="lazy" decoding="async" />
+      } @else {
+        <span class="game-detail-modal__loadout-empty"></span>
+      }
+      @if (player.secondaryStyleIconUrl) {
+        <img class="game-detail-modal__loadout-rune" [src]="player.secondaryStyleIconUrl" alt="" loading="lazy" decoding="async" />
+      } @else {
+        <span class="game-detail-modal__loadout-empty"></span>
       }
     </div>
 
     <div class="game-detail-modal__identity">
-      <span class="game-detail-modal__name">
-        {{ player.gameName }}<span class="game-detail-modal__tag">#{{ player.tagLine }}</span>
+      <span
+        class="game-detail-modal__name"
+        role="button"
+        tabindex="0"
+        [class.game-detail-modal__name--copied]="isCopied(player)"
+        [attr.aria-label]="copyNameAria(player)"
+        (click)="copyName(player, $event)"
+        (keydown.enter)="copyName(player, $event)"
+        (keydown.space)="copyName(player, $event)"
+      >
+        @if (isCopied(player)) {
+          {{ 'player.copied' | t }}
+        } @else {
+          {{ player.gameName }}<span class="game-detail-modal__tag">#{{ player.tagLine }}</span>
+        }
       </span>
     </div>
 
     <div class="game-detail-modal__kda">
       <span class="game-detail-modal__kda-numbers">{{ kda(player) }}</span>
-      <span class="game-detail-modal__stat-label">{{ 'gameDetail.kda' | t }} {{ kdaRatio(player) }}</span>
+      <span class="game-detail-modal__stat-label">{{ 'gameDetail.kda' | t }}</span>
     </div>
 
-    <div class="game-detail-modal__stat game-detail-modal__stat--cs">
-      <span class="game-detail-modal__stat-value">{{ player.cs }}</span>
-      <span class="game-detail-modal__stat-label">{{ 'gameDetail.cs' | t }}</span>
-    </div>
-
-    <div class="game-detail-modal__stat game-detail-modal__stat--gold">
-      <span class="game-detail-modal__stat-value">{{ formatNumber(player.goldEarned) }}</span>
-      <span class="game-detail-modal__stat-label">{{ 'gameDetail.gold' | t }}</span>
+    <div class="game-detail-modal__cgw">
+      <span class="game-detail-modal__cgw-row">
+        <span class="game-detail-modal__cgw-value">{{ player.cs }}</span>
+        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.cs' | t }} ({{ csPerMinute(player) }}/min)</span>
+      </span>
+      <span class="game-detail-modal__cgw-row">
+        <span class="game-detail-modal__cgw-value">{{ formatNumber(player.goldEarned) }}</span>
+        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.gold' | t }}</span>
+      </span>
+      <span class="game-detail-modal__cgw-row">
+        <span class="game-detail-modal__cgw-value">{{ player.wardsPlaced }}</span>
+        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.wards' | t }}</span>
+      </span>
     </div>
 
     <div class="game-detail-modal__damage">
@@ -233,11 +300,6 @@
       <span class="game-detail-modal__damage-bar-track">
         <span class="game-detail-modal__damage-bar-fill" [style.width.%]="damageBarWidth(player)"></span>
       </span>
-    </div>
-
-    <div class="game-detail-modal__stat game-detail-modal__stat--wards">
-      <span class="game-detail-modal__stat-value">{{ player.wardsPlaced }}</span>
-      <span class="game-detail-modal__stat-label">{{ 'gameDetail.wards' | t }}</span>
     </div>
 
     <div class="game-detail-modal__items">

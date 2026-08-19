@@ -4,12 +4,17 @@ import com.riftchallenge.match.dto.MatchDetailResponse;
 import com.riftchallenge.match.dto.MatchItemResponse;
 import com.riftchallenge.match.dto.MatchParticipantResponse;
 import com.riftchallenge.riot.ChampionIconUrlService;
+import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
+import com.riftchallenge.riot.RuneIconUrlService;
 import com.riftchallenge.riot.SummonerSpellIconUrlService;
+import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,17 +27,23 @@ public class MatchDetailService {
     private static final List<String> ROLE_ORDER = List.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
 
     private final RiotMatchClient riotMatchClient;
+    private final RiotLeagueClient riotLeagueClient;
     private final ChampionIconUrlService championIconUrlService;
     private final SummonerSpellIconUrlService summonerSpellIconUrlService;
+    private final RuneIconUrlService runeIconUrlService;
 
     public MatchDetailService(
             RiotMatchClient riotMatchClient,
+            RiotLeagueClient riotLeagueClient,
             ChampionIconUrlService championIconUrlService,
-            SummonerSpellIconUrlService summonerSpellIconUrlService
+            SummonerSpellIconUrlService summonerSpellIconUrlService,
+            RuneIconUrlService runeIconUrlService
     ) {
         this.riotMatchClient = riotMatchClient;
+        this.riotLeagueClient = riotLeagueClient;
         this.championIconUrlService = championIconUrlService;
         this.summonerSpellIconUrlService = summonerSpellIconUrlService;
+        this.runeIconUrlService = runeIconUrlService;
     }
 
     public MatchDetailResponse buildMatchDetail(String matchId, String focusPuuid) {
@@ -43,8 +54,11 @@ public class MatchDetailService {
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found in this match"));
 
-        List<MatchParticipantResponse> myTeam = buildTeam(match, focus.teamId(), focusPuuid);
-        List<MatchParticipantResponse> enemyTeam = buildTeam(match, focus.teamId() == 100 ? 200 : 100, focusPuuid);
+        Map<String, RiotLeagueEntryDto> ranksByPuuid = fetchRanks(match.info().participants());
+
+        List<MatchParticipantResponse> myTeam = buildTeam(match, focus.teamId(), focusPuuid, ranksByPuuid);
+        List<MatchParticipantResponse> enemyTeam =
+                buildTeam(match, focus.teamId() == 100 ? 200 : 100, focusPuuid, ranksByPuuid);
 
         return new MatchDetailResponse(
                 matchId,
@@ -56,11 +70,29 @@ public class MatchDetailService {
         );
     }
 
-    private List<MatchParticipantResponse> buildTeam(RiotMatchDetailDto match, int teamId, String focusPuuid) {
+    private Map<String, RiotLeagueEntryDto> fetchRanks(List<RiotMatchDetailDto.Participant> participants) {
+        Map<String, RiotLeagueEntryDto> ranksByPuuid = new ConcurrentHashMap<>();
+        participants.parallelStream().forEach(participant -> {
+            try {
+                riotLeagueClient.findRankedSoloEntry(participant.puuid())
+                        .ifPresent(entry -> ranksByPuuid.put(participant.puuid(), entry));
+            } catch (ResponseStatusException exception) {
+                // Rank badges are a nice-to-have: skip a player's rank rather than failing the whole match detail.
+            }
+        });
+        return ranksByPuuid;
+    }
+
+    private List<MatchParticipantResponse> buildTeam(
+            RiotMatchDetailDto match,
+            int teamId,
+            String focusPuuid,
+            Map<String, RiotLeagueEntryDto> ranksByPuuid
+    ) {
         return match.info().participants().stream()
                 .filter(participant -> participant.teamId() == teamId)
                 .sorted(Comparator.comparingInt(participant -> roleIndex(participant.teamPosition())))
-                .map(participant -> toParticipantResponse(participant, focusPuuid))
+                .map(participant -> toParticipantResponse(participant, focusPuuid, ranksByPuuid.get(participant.puuid())))
                 .toList();
     }
 
@@ -69,7 +101,11 @@ public class MatchDetailService {
         return index < 0 ? ROLE_ORDER.size() : index;
     }
 
-    private MatchParticipantResponse toParticipantResponse(RiotMatchDetailDto.Participant participant, String focusPuuid) {
+    private MatchParticipantResponse toParticipantResponse(
+            RiotMatchDetailDto.Participant participant,
+            String focusPuuid,
+            RiotLeagueEntryDto rank
+    ) {
         return new MatchParticipantResponse(
                 participant.riotIdGameName(),
                 participant.riotIdTagline(),
@@ -78,6 +114,7 @@ public class MatchDetailService {
                 championIconUrlService.buildApiPath(participant.championId()),
                 participant.champLevel(),
                 participant.teamPosition(),
+                participant.teamId(),
                 participant.win(),
                 participant.kills(),
                 participant.deaths(),
@@ -89,6 +126,11 @@ public class MatchDetailService {
                 participant.wardsPlaced(),
                 summonerSpellIconUrlService.buildIconUrl(participant.summoner1Id()),
                 summonerSpellIconUrlService.buildIconUrl(participant.summoner2Id()),
+                runeIconUrlService.primaryRuneIconUrl(participant.primaryKeystonePerkId()),
+                runeIconUrlService.treeIconUrl(participant.secondaryStyleId()),
+                rank == null ? null : rank.tier(),
+                rank == null ? null : rank.rank(),
+                rank == null ? null : rank.leaguePoints(),
                 buildItems(participant),
                 focusPuuid.equals(participant.puuid())
         );

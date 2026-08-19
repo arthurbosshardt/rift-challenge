@@ -53,7 +53,8 @@ public record RiotMatchDetailDto(
             int item3,
             int item4,
             int item5,
-            int item6
+            int item6,
+            Perks perks
     ) {
         public Participant(String puuid, boolean win, Integer profileIcon, Integer championId, String championName) {
             this(
@@ -65,8 +66,39 @@ public record RiotMatchDetailDto(
                     // visionScore, wardsPlaced, wardsKilled, summoner1Id, summoner2Id
                     0, 0, 0, 0, 0,
                     // item0..item6
-                    0, 0, 0, 0, 0, 0, 0
+                    0, 0, 0, 0, 0, 0, 0,
+                    null
             );
         }
+
+        public int primaryKeystonePerkId() {
+            if (perks == null || perks.styles() == null || perks.styles().isEmpty()) {
+                return 0;
+            }
+            PerkStyle primary = perks.styles().get(0);
+            if (primary.selections() == null || primary.selections().isEmpty()) {
+                return 0;
+            }
+            return primary.selections().get(0).perk();
+        }
+
+        public int secondaryStyleId() {
+            if (perks == null || perks.styles() == null || perks.styles().size() < 2) {
+                return 0;
+            }
+            return perks.styles().get(1).style();
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Perks(List<PerkStyle> styles) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PerkStyle(String description, int style, List<PerkSelection> selections) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PerkSelection(int perk) {
     }
 }

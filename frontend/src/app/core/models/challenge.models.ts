@@ -222,6 +222,7 @@ export interface MatchParticipant {
   championIconUrl: string | null;
   champLevel: number;
   role: string | null;
+  teamId: number;
   win: boolean;
   kills: number;
   deaths: number;
@@ -233,6 +234,11 @@ export interface MatchParticipant {
   wardsPlaced: number;
   summoner1IconUrl: string | null;
   summoner2IconUrl: string | null;
+  primaryRuneIconUrl: string | null;
+  secondaryStyleIconUrl: string | null;
+  rankTier: string | null;
+  rankDivision: string | null;
+  rankLeaguePoints: number | null;
   items: MatchItem[];
   isFocusPlayer: boolean;
 }
