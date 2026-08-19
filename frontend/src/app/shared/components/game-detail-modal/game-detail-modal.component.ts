@@ -10,6 +10,14 @@ import { GameDetailSkeletonComponent } from '../game-detail-skeleton/game-detail
 
 const HIGH_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
 
+const ROLE_ICON_PATHS: Record<string, string> = {
+  TOP: '/roles/top.png',
+  JUNGLE: '/roles/jungle.png',
+  MIDDLE: '/roles/mid.png',
+  BOTTOM: '/roles/bot.png',
+  UTILITY: '/roles/support.png',
+};
+
 @Component({
   selector: 'app-game-detail-modal',
   imports: [NgTemplateOutlet, TranslatePipe, GameDetailSkeletonComponent],
@@ -94,6 +102,13 @@ export class GameDetailModalComponent {
       return '';
     }
     return this.i18n.t(`gameDetail.role.${role}`);
+  }
+
+  protected roleIconUrl(role: string | null): string | null {
+    if (!role) {
+      return null;
+    }
+    return ROLE_ICON_PATHS[role] ?? null;
   }
 
   protected teamKills(team: MatchParticipant[]): number {

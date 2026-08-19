@@ -252,14 +252,12 @@
   flex-shrink: 0;
 }
 
-.game-detail-modal__role-slot svg,
-.game-detail-modal__inline-role svg {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
-.game-detail-modal__role-icon-fallback {
-  font-size: 0.75rem;
+.game-detail-modal__role-slot img,
+.game-detail-modal__inline-role img {
+  display: block;
+  width: 1.375rem;
+  height: 1.375rem;
+  object-fit: contain;
 }
 
 /* ---------- Desktop matchup grid: mine columns | role column | mirrored enemy columns ---------- */
@@ -333,8 +331,7 @@
     z-index: 0;
   }
 
-  .game-detail-modal__role-slot svg,
-  .game-detail-modal__role-slot .game-detail-modal__role-icon-fallback {
+  .game-detail-modal__role-slot img {
     position: relative;
     z-index: 1;
   }

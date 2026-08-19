@@ -296,6 +296,12 @@
 
   .activity-switch__btn {
     flex: 1 1 0;
+    min-width: 0;
+    padding: 0.5rem 0.5rem;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 
   .activity-layout {
