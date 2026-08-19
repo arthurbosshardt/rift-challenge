@@ -11,17 +11,11 @@ function resolveMaxColumnsForWidth(viewportWidth: number): number {
   return Math.max(1, Math.min(3, Math.floor(viewportWidth / CHALLENGE_CARD_PREVIEW_MIN_COLUMN_WIDTH)));
 }
 
-export function resolveChallengeCardPreviewVisibleCount(
-  viewportWidth: number,
-  totalCount: number,
-): number {
+export function resolveChallengeCardPreviewVisibleCount(totalCount: number): number {
   if (totalCount <= 0) {
     return 0;
   }
-  if (viewportWidth < CHALLENGE_CARD_PREVIEW_MIN_COLUMN_WIDTH) {
-    return Math.min(CHALLENGE_CARD_PREVIEW_NARROW_VISIBLE_COUNT, totalCount);
-  }
-  return totalCount;
+  return Math.min(CHALLENGE_CARD_PREVIEW_NARROW_VISIBLE_COUNT, totalCount);
 }
 
 export function resolveChallengeCardPreviewColumnCount(

@@ -121,11 +121,21 @@
 }
 
 .challenge-card__meta dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
   margin: 0 0 0.375rem;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+}
+
+.challenge-card__meta-icon {
+  width: 0.8125rem;
+  height: 0.8125rem;
+  flex-shrink: 0;
+  color: var(--text-subtle);
 }
 
 .challenge-card__meta dd {

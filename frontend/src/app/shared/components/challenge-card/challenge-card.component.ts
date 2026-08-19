@@ -65,7 +65,7 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     this.challenge().type === 'DUOQ' ? this.previewDuos().length : this.previewParticipants().length,
   );
   protected readonly visiblePreviewCount = computed(() =>
-    resolveChallengeCardPreviewVisibleCount(this.previewViewportWidth(), this.previewEntryCount()),
+    resolveChallengeCardPreviewVisibleCount(this.previewEntryCount()),
   );
   protected readonly previewColumnCount = computed(() =>
     resolveChallengeCardPreviewColumnCount(this.previewViewportWidth(), this.visiblePreviewCount()),

@@ -543,7 +543,7 @@ textarea:focus {
   gap: 0;
   height: var(--refresh-action-size);
   min-width: var(--refresh-action-size);
-  padding: 0 var(--refresh-action-inset) 0 var(--refresh-action-inset);
+  padding: 0 0.875rem 0 var(--refresh-action-inset);
   border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--danger) 14%, transparent);
@@ -555,21 +555,6 @@ textarea:focus {
   white-space: nowrap;
   flex-shrink: 0;
   overflow: hidden;
-  transition:
-    padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.15s ease,
-    color 0.15s ease,
-    background 0.15s ease,
-    box-shadow 0.15s ease;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.refresh-action-btn:hover:not(:disabled),
-.refresh-action-btn:focus-visible:not(:disabled) {
-  padding-right: 0.875rem;
-  border-color: color-mix(in srgb, var(--danger) 42%, transparent);
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: color-mix(in srgb, var(--danger) 82%, var(--text));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
@@ -591,35 +576,15 @@ textarea:focus {
 }
 
 .refresh-action-btn__label {
-  max-width: 0;
-  margin-left: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  opacity: 0;
-  flex-shrink: 0;
-  transition:
-    max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.12s ease;
-}
-
-.refresh-action-btn:hover:not(:disabled) .refresh-action-btn__label,
-.refresh-action-btn:focus-visible:not(:disabled) .refresh-action-btn__label {
   max-width: 11rem;
   margin-left: 0.5rem;
+  overflow: hidden;
+  white-space: nowrap;
   opacity: 1;
-  transition:
-    max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.18s ease 0.06s;
+  flex-shrink: 0;
 }
 
 .refresh-action-btn__label--short {
-  max-width: 0;
-}
-
-.refresh-action-btn:hover:not(:disabled) .refresh-action-btn__label--short,
-.refresh-action-btn:focus-visible:not(:disabled) .refresh-action-btn__label--short {
   max-width: 6rem;
 }
 
@@ -718,23 +683,6 @@ textarea:focus {
   .refresh-action-btn {
     --refresh-action-size: 2.5rem;
     --refresh-action-icon-size: 1.25rem;
-  }
-}
-
-@media (hover: none) {
-  .refresh-action-btn:not(:disabled) {
-    padding-right: 0.875rem;
-  }
-
-  .refresh-action-btn:not(:disabled) .refresh-action-btn__label,
-  .refresh-action-btn:not(:disabled) .refresh-action-btn__label--short {
-    max-width: 11rem;
-    margin-left: 0.5rem;
-    opacity: 1;
-  }
-
-  .refresh-action-btn:not(:disabled) .refresh-action-btn__label--short {
-    max-width: 6rem;
   }
 }
 

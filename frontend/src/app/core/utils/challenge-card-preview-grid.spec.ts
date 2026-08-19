@@ -7,12 +7,10 @@ import {
 } from './challenge-card-preview-grid';
 
 describe('challenge-card-preview-grid', () => {
-  it('limits visible items when a single column would be too narrow to read', () => {
-    expect(resolveChallengeCardPreviewVisibleCount(279, 8)).toBe(3);
-    expect(resolveChallengeCardPreviewVisibleCount(100, 2)).toBe(2);
-    expect(resolveChallengeCardPreviewVisibleCount(280, 8)).toBe(8);
-    expect(resolveChallengeCardPreviewVisibleCount(500, 8)).toBe(8);
-    expect(resolveChallengeCardPreviewVisibleCount(1200, 8)).toBe(8);
+  it('always caps visible items to the first three, regardless of width', () => {
+    expect(resolveChallengeCardPreviewVisibleCount(8)).toBe(3);
+    expect(resolveChallengeCardPreviewVisibleCount(2)).toBe(2);
+    expect(resolveChallengeCardPreviewVisibleCount(0)).toBe(0);
   });
 
   it('resolves column count from the actual preview width, not a fixed item count', () => {
