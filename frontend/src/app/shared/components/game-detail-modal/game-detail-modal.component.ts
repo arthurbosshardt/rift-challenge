@@ -2,12 +2,13 @@ import { Component, ChangeDetectionStrategy, computed, effect, inject, signal } 
 import { NgTemplateOutlet } from '@angular/common';
 import { ChallengeApiService } from '../../../core/services/challenge-api.service';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
-import { MatchDetail, MatchParticipant } from '../../../core/models/challenge.models';
+import { MatchDetail, MatchItem, MatchParticipant } from '../../../core/models/challenge.models';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { rankEmblemUrl, formatRankLabel } from '../../../core/utils/rank-display';
+import { rankEmblemUrl, formatRankLabel, tierLabel } from '../../../core/utils/rank-display';
 import { GameDetailSkeletonComponent } from '../game-detail-skeleton/game-detail-skeleton.component';
 import { ItemDataService } from '../../../core/services/item-data.service';
+import { apiUrl } from '../../../core/utils/api-url';
 
 const HIGH_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
 
@@ -38,6 +39,14 @@ export class GameDetailModalComponent {
   protected readonly selectedTeam = signal<'mine' | 'enemy'>('mine');
   protected readonly copiedKey = signal<string | null>(null);
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected readonly hoveredItem = signal<{
+    itemId: number;
+    iconUrl: string;
+    top: number;
+    left: number;
+    placement: 'above' | 'below';
+  } | null>(null);
 
   protected readonly rows = computed(() => {
     const match = this.detail();
@@ -138,23 +147,72 @@ export class GameDetailModalComponent {
     return rankEmblemUrl(player.rankTier);
   }
 
-  protected rankShortLabel(player: MatchParticipant): string {
-    if (!player.rankTier) {
-      return '';
+  protected rankTierName(player: MatchParticipant): string {
+    return tierLabel(player.rankTier, this.i18n.locale());
+  }
+
+  protected rankTierWithDivision(player: MatchParticipant): string {
+    const tier = this.rankTierName(player);
+    if (!player.rankTier || !player.rankDivision || HIGH_TIERS.has(player.rankTier.toUpperCase())) {
+      return tier;
     }
-    const lp = `${player.rankLeaguePoints ?? 0} LP`;
-    if (HIGH_TIERS.has(player.rankTier.toUpperCase()) || !player.rankDivision) {
-      return lp;
-    }
-    return `${player.rankDivision} · ${lp}`;
+    return `${tier} ${player.rankDivision}`;
+  }
+
+  protected rankLpOnly(player: MatchParticipant): string {
+    return `${player.rankLeaguePoints ?? 0} LP`;
   }
 
   protected rankTitle(player: MatchParticipant): string {
     return formatRankLabel(player.rankTier, player.rankDivision, player.rankLeaguePoints ?? 0, this.i18n.locale());
   }
 
-  protected itemTooltip(itemId: number | null): string | null {
-    return this.itemData.tooltip(itemId);
+  protected championIconSrc(url: string | null): string | null {
+    return url ? apiUrl(url) : null;
+  }
+
+  protected itemDetails(itemId: number | null): { name: string; description: string } | null {
+    return this.itemData.details(itemId);
+  }
+
+  protected onItemHoverStart(event: MouseEvent | FocusEvent, item: MatchItem): void {
+    if (!item.itemId || !item.iconUrl) {
+      return;
+    }
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const tooltipHalfWidth = 128;
+    const estimatedTooltipHeight = 160;
+    const placement: 'above' | 'below' = rect.top > estimatedTooltipHeight ? 'above' : 'below';
+    const left = Math.min(
+      Math.max(rect.left + rect.width / 2, tooltipHalfWidth + 8),
+      window.innerWidth - tooltipHalfWidth - 8,
+    );
+    this.hoveredItem.set({
+      itemId: item.itemId,
+      iconUrl: item.iconUrl,
+      top: placement === 'above' ? rect.top - 8 : rect.bottom + 8,
+      left,
+      placement,
+    });
+  }
+
+  protected onItemHoverEnd(): void {
+    this.hoveredItem.set(null);
+  }
+
+  protected durationAria(seconds: number): string {
+    return this.i18n.t('gameDetail.durationAria', { duration: this.formatDuration(seconds) });
+  }
+
+  protected matchDateLabel(playedAt: string): string {
+    const date = new Date(playedAt);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return this.i18n.locale() === 'en' ? `${month}/${day}` : `${day}/${month}`;
   }
 
   private playerKey(player: MatchParticipant): string {
@@ -166,7 +224,7 @@ export class GameDetailModalComponent {
   }
 
   protected copyNameAria(player: MatchParticipant): string {
-    return this.i18n.t('player.copyNameAria', { name: player.gameName });
+    return this.i18n.t('player.copyRiotIdAria', { riotId: this.playerKey(player) });
   }
 
   protected copyName(player: MatchParticipant, event: Event): void {
@@ -177,7 +235,7 @@ export class GameDetailModalComponent {
 
   private async performCopy(player: MatchParticipant): Promise<void> {
     try {
-      await navigator.clipboard.writeText(player.gameName);
+      await navigator.clipboard.writeText(this.playerKey(player));
       this.copiedKey.set(this.playerKey(player));
       if (this.copyResetTimer) {
         clearTimeout(this.copyResetTimer);

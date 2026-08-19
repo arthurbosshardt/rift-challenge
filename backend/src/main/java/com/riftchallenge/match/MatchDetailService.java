@@ -3,6 +3,7 @@ package com.riftchallenge.match;
 import com.riftchallenge.match.dto.MatchDetailResponse;
 import com.riftchallenge.match.dto.MatchItemResponse;
 import com.riftchallenge.match.dto.MatchParticipantResponse;
+import com.riftchallenge.match.dto.MatchTeamObjectivesResponse;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.ProfileIconLoader;
 import com.riftchallenge.riot.RiotLeagueClient;
@@ -70,8 +71,34 @@ public class MatchDetailService {
                 match.info().gameDuration(),
                 focus.win(),
                 myTeam,
-                enemyTeam
+                enemyTeam,
+                buildTeamObjectives(match, focus.teamId()),
+                buildTeamObjectives(match, focus.teamId() == 100 ? 200 : 100)
         );
+    }
+
+    private MatchTeamObjectivesResponse buildTeamObjectives(RiotMatchDetailDto match, int teamId) {
+        RiotMatchDetailDto.Objectives objectives = match.info().teams() == null
+                ? null
+                : match.info().teams().stream()
+                        .filter(team -> team.teamId() == teamId)
+                        .map(RiotMatchDetailDto.Team::objectives)
+                        .findFirst()
+                        .orElse(null);
+        if (objectives == null) {
+            return new MatchTeamObjectivesResponse(0, 0, 0, 0, 0);
+        }
+        return new MatchTeamObjectivesResponse(
+                objectiveKills(objectives.tower()),
+                objectiveKills(objectives.dragon()),
+                objectiveKills(objectives.baron()),
+                objectiveKills(objectives.riftHerald()),
+                objectiveKills(objectives.inhibitor())
+        );
+    }
+
+    private int objectiveKills(RiotMatchDetailDto.Objective objective) {
+        return objective == null ? 0 : objective.kills();
     }
 
     private Map<String, RiotLeagueEntryDto> fetchRanks(List<RiotMatchDetailDto.Participant> participants) {

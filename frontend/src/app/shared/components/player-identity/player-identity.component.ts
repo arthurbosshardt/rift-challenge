@@ -31,7 +31,7 @@ export class PlayerIdentityComponent {
   }
 
   protected copyNameAria(): string {
-    return this.i18n.t('player.copyNameAria', { name: this.gameName() });
+    return this.i18n.t('player.copyRiotIdAria', { riotId: this.riotId() });
   }
 
   protected copyRiotIdAria(): string {

@@ -9,6 +9,8 @@ public record MatchDetailResponse(
         long durationSeconds,
         boolean win,
         List<MatchParticipantResponse> myTeam,
-        List<MatchParticipantResponse> enemyTeam
+        List<MatchParticipantResponse> enemyTeam,
+        MatchTeamObjectivesResponse myTeamObjectives,
+        MatchTeamObjectivesResponse enemyTeamObjectives
 ) {
 }

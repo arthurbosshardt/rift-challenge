@@ -1,35 +1,70 @@
 @if (modalService.isOpen()) {
   <div class="modal-overlay" role="dialog" aria-modal="true" [attr.aria-label]="'gameDetail.title' | t">
     <section class="modal-panel game-detail-modal" (click)="$event.stopPropagation()">
-      <header class="game-detail-modal__header">
+      <button type="button" class="game-detail-modal__close" [attr.aria-label]="'auth.close' | t" (click)="close()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      @if (detail(); as headerMatch) {
         <div class="game-detail-modal__header-info">
-          @if (detail(); as match) {
-            <span
-              class="game-detail-modal__result"
-              [class.game-detail-modal__result--win]="match.win"
-              [class.game-detail-modal__result--loss]="!match.win"
-            >
-              {{ (match.win ? 'gameDetail.victory' : 'gameDetail.defeat') | t }}
-            </span>
-            <span class="game-detail-modal__meta">
-              {{ 'gameDetail.rankedSolo' | t }} · {{ formatDuration(match.durationSeconds) }}
-            </span>
-          } @else {
-            <span class="game-detail-modal__result">{{ 'gameDetail.title' | t }}</span>
-          }
+          <span class="game-detail-modal__header-stat" [title]="matchDateLabel(headerMatch.playedAt)">
+            <svg class="game-detail-modal__header-stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.75" />
+              <path
+                d="M4 9.5h16M8 3.5v4M16 3.5v4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>{{ matchDateLabel(headerMatch.playedAt) }}</span>
+          </span>
+          <span class="game-detail-modal__header-stat" [title]="durationAria(headerMatch.durationSeconds)">
+            <svg class="game-detail-modal__header-stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.25" fill="none" stroke="currentColor" stroke-width="1.75" />
+              <path
+                d="M12 7.5v4.7l3 2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>{{ formatDuration(headerMatch.durationSeconds) }}</span>
+          </span>
         </div>
-        <button type="button" class="game-detail-modal__close" [attr.aria-label]="'auth.close' | t" (click)="close()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M6 6l12 12M18 6L6 18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-      </header>
+
+        <div class="game-detail-modal__top-banners">
+          <span class="game-detail-modal__mini-banner game-detail-modal__mini-banner--desktop" [class.game-detail-modal__mini-banner--blue]="teamSide(headerMatch.myTeam) === 'blue'" [class.game-detail-modal__mini-banner--red]="teamSide(headerMatch.myTeam) === 'red'">
+            {{ (teamSide(headerMatch.myTeam) === 'blue' ? 'gameDetail.blueTeam' : 'gameDetail.redTeam') | t }}
+            <span class="game-detail-modal__team-result" [class.game-detail-modal__team-result--win]="headerMatch.win" [class.game-detail-modal__team-result--loss]="!headerMatch.win">
+              {{ (headerMatch.win ? 'gameDetail.victory' : 'gameDetail.defeat') | t }}
+            </span>
+          </span>
+          <span class="game-detail-modal__mini-banner game-detail-modal__mini-banner--desktop" [class.game-detail-modal__mini-banner--blue]="teamSide(headerMatch.enemyTeam) === 'blue'" [class.game-detail-modal__mini-banner--red]="teamSide(headerMatch.enemyTeam) === 'red'">
+            {{ (teamSide(headerMatch.enemyTeam) === 'blue' ? 'gameDetail.blueTeam' : 'gameDetail.redTeam') | t }}
+            <span class="game-detail-modal__team-result" [class.game-detail-modal__team-result--win]="!headerMatch.win" [class.game-detail-modal__team-result--loss]="headerMatch.win">
+              {{ (!headerMatch.win ? 'gameDetail.victory' : 'gameDetail.defeat') | t }}
+            </span>
+          </span>
+          <span class="game-detail-modal__mini-banner game-detail-modal__mini-banner--mobile" [class.game-detail-modal__mini-banner--blue]="teamSide(selectedTeam() === 'mine' ? headerMatch.myTeam : headerMatch.enemyTeam) === 'blue'" [class.game-detail-modal__mini-banner--red]="teamSide(selectedTeam() === 'mine' ? headerMatch.myTeam : headerMatch.enemyTeam) === 'red'">
+            {{ (teamSide(selectedTeam() === 'mine' ? headerMatch.myTeam : headerMatch.enemyTeam) === 'blue' ? 'gameDetail.blueTeam' : 'gameDetail.redTeam') | t }}
+            <span class="game-detail-modal__team-result" [class.game-detail-modal__team-result--win]="selectedTeam() === 'mine' ? headerMatch.win : !headerMatch.win" [class.game-detail-modal__team-result--loss]="selectedTeam() === 'mine' ? !headerMatch.win : headerMatch.win">
+              {{ ((selectedTeam() === 'mine' ? headerMatch.win : !headerMatch.win) ? 'gameDetail.victory' : 'gameDetail.defeat') | t }}
+            </span>
+          </span>
+        </div>
+      }
 
       <div class="game-detail-modal__body">
         @if (loading()) {
@@ -63,42 +98,10 @@
           </div>
 
           <div class="game-detail-modal__matchup">
-            <div class="game-detail-modal__matchup-header">
-              <div
-                class="game-detail-modal__team-banner"
-                [class.game-detail-modal__team-banner--blue]="teamSide(match.myTeam) === 'blue'"
-                [class.game-detail-modal__team-banner--red]="teamSide(match.myTeam) === 'red'"
-              >
-                <span class="game-detail-modal__team-label">{{ 'gameDetail.yourTeam' | t }}</span>
-                <span class="game-detail-modal__team-badges">
-                  <span class="game-detail-modal__badge" [class.game-detail-modal__badge--blue]="teamSide(match.myTeam) === 'blue'" [class.game-detail-modal__badge--red]="teamSide(match.myTeam) === 'red'">
-                    <span class="game-detail-modal__badge-value">{{ teamKills(match.myTeam) }}</span>
-                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
-                  </span>
-                  <span class="game-detail-modal__badge game-detail-modal__badge--gold">
-                    <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(match.myTeam)) }}</span>
-                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
-                  </span>
-                </span>
-              </div>
+            <div class="game-detail-modal__stats-row">
+              <ng-container *ngTemplateOutlet="teamStats; context: { team: match.myTeam, objectives: match.myTeamObjectives, side: teamSide(match.myTeam) }" />
               <span class="game-detail-modal__matchup-header-spacer" aria-hidden="true"></span>
-              <div
-                class="game-detail-modal__team-banner game-detail-modal__team-banner--enemy"
-                [class.game-detail-modal__team-banner--blue]="teamSide(match.enemyTeam) === 'blue'"
-                [class.game-detail-modal__team-banner--red]="teamSide(match.enemyTeam) === 'red'"
-              >
-                <span class="game-detail-modal__team-label">{{ 'gameDetail.enemyTeam' | t }}</span>
-                <span class="game-detail-modal__team-badges">
-                  <span class="game-detail-modal__badge" [class.game-detail-modal__badge--blue]="teamSide(match.enemyTeam) === 'blue'" [class.game-detail-modal__badge--red]="teamSide(match.enemyTeam) === 'red'">
-                    <span class="game-detail-modal__badge-value">{{ teamKills(match.enemyTeam) }}</span>
-                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
-                  </span>
-                  <span class="game-detail-modal__badge game-detail-modal__badge--gold">
-                    <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(match.enemyTeam)) }}</span>
-                    <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
-                  </span>
-                </span>
-              </div>
+              <ng-container *ngTemplateOutlet="teamStats; context: { team: match.enemyTeam, objectives: match.enemyTeamObjectives, side: teamSide(match.enemyTeam), enemy: true }" />
             </div>
 
             @for (row of rows(); track $index) {
@@ -106,6 +109,7 @@
                 <div
                   class="game-detail-modal__side game-detail-modal__side--mine"
                   [class.game-detail-modal__side--empty]="!row.mine"
+                  [class.game-detail-modal__side--focus]="row.mine?.isFocusPlayer"
                 >
                   @if (row.mine) {
                     <ng-container *ngTemplateOutlet="playerFields; context: { player: row.mine }" />
@@ -123,6 +127,7 @@
                 <div
                   class="game-detail-modal__side game-detail-modal__side--enemy"
                   [class.game-detail-modal__side--empty]="!row.enemy"
+                  [class.game-detail-modal__side--focus]="row.enemy?.isFocusPlayer"
                 >
                   @if (row.enemy) {
                     <ng-container *ngTemplateOutlet="playerFields; context: { player: row.enemy }" />
@@ -133,28 +138,8 @@
           </div>
 
           <div class="game-detail-modal__mobile">
-            <div
-              class="game-detail-modal__team-banner"
-              [class.game-detail-modal__team-banner--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
-              [class.game-detail-modal__team-banner--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
-            >
-              <span class="game-detail-modal__team-label">
-                {{ (selectedTeam() === 'mine' ? 'gameDetail.yourTeam' : 'gameDetail.enemyTeam') | t }}
-              </span>
-              <span class="game-detail-modal__team-badges">
-                <span
-                  class="game-detail-modal__badge"
-                  [class.game-detail-modal__badge--blue]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'blue'"
-                  [class.game-detail-modal__badge--red]="teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) === 'red'"
-                >
-                  <span class="game-detail-modal__badge-value">{{ teamKills(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) }}</span>
-                  <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
-                </span>
-                <span class="game-detail-modal__badge game-detail-modal__badge--gold">
-                  <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam)) }}</span>
-                  <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
-                </span>
-              </span>
+            <div class="game-detail-modal__stats-row game-detail-modal__stats-row--mobile">
+              <ng-container *ngTemplateOutlet="teamStats; context: { team: selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam, objectives: selectedTeam() === 'mine' ? match.myTeamObjectives : match.enemyTeamObjectives, side: teamSide(selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam) }" />
             </div>
             <div class="game-detail-modal__mobile-rows">
               @for (player of selectedTeam() === 'mine' ? match.myTeam : match.enemyTeam; track $index) {
@@ -184,23 +169,61 @@
   </div>
 
   <ng-template #playerFields let-player="player">
-    <div class="game-detail-modal__rank" [title]="rankTitle(player)" [attr.aria-label]="rankTitle(player)">
+    <div class="game-detail-modal__avatar-rank">
+      @if (player.profileIconUrl) {
+        <img class="game-detail-modal__avatar" [src]="player.profileIconUrl" alt="" loading="lazy" decoding="async" />
+      } @else {
+        <span class="game-detail-modal__avatar game-detail-modal__avatar--fallback" aria-hidden="true"></span>
+      }
       @if (rankEmblemUrl(player); as emblem) {
-        <img class="game-detail-modal__rank-icon" [src]="emblem" alt="" loading="lazy" decoding="async" />
-        @if (rankShortLabel(player); as short) {
-          <span class="game-detail-modal__rank-label">{{ short }}</span>
-        }
+        <img
+          class="game-detail-modal__rank-badge"
+          [src]="emblem"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          [title]="rankTitle(player)"
+        />
+      }
+    </div>
+
+    <div class="game-detail-modal__rank-text" [attr.aria-label]="rankTitle(player)">
+      @if (player.rankTier) {
+        <span class="game-detail-modal__rank-tier">{{ rankTierWithDivision(player) }}</span>
+        <span class="game-detail-modal__rank-label">{{ rankLpOnly(player) }}</span>
       } @else {
         <span class="game-detail-modal__rank-unranked" aria-hidden="true">—</span>
       }
     </div>
 
+    <div class="game-detail-modal__identity-names">
+      <span class="game-detail-modal__player-name">{{ player.gameName }}</span>
+      <span
+        class="game-detail-modal__name"
+        role="button"
+        tabindex="0"
+        [class.game-detail-modal__name--copied]="isCopied(player)"
+        [attr.aria-label]="copyNameAria(player)"
+        (click)="copyName(player, $event)"
+        (keydown.enter)="copyName(player, $event)"
+        (keydown.space)="copyName(player, $event)"
+      >
+        @if (isCopied(player)) {
+          {{ 'player.copied' | t }}
+        } @else {
+          {{ player.gameName }}<span class="game-detail-modal__tag">#{{ player.tagLine }}</span>
+        }
+      </span>
+    </div>
+
     <div class="game-detail-modal__champion">
-      @if (player.championIconUrl) {
-        <img class="game-detail-modal__champion-icon" [src]="player.championIconUrl" alt="" loading="lazy" decoding="async" />
-      } @else {
-        <span class="game-detail-modal__champion-icon game-detail-modal__champion-icon--fallback">?</span>
-      }
+      <span class="game-detail-modal__champion-icon-wrap">
+        @if (championIconSrc(player.championIconUrl); as championSrc) {
+          <img class="game-detail-modal__champion-icon" [src]="championSrc" alt="" loading="lazy" decoding="async" />
+        } @else {
+          <span class="game-detail-modal__champion-icon game-detail-modal__champion-icon--fallback">?</span>
+        }
+      </span>
       <span class="game-detail-modal__champion-level">{{ player.champLevel }}</span>
     </div>
 
@@ -227,28 +250,6 @@
       }
     </div>
 
-    <div class="game-detail-modal__identity">
-      @if (player.profileIconUrl) {
-        <img class="game-detail-modal__avatar" [src]="player.profileIconUrl" alt="" loading="lazy" decoding="async" />
-      }
-      <span
-        class="game-detail-modal__name"
-        role="button"
-        tabindex="0"
-        [class.game-detail-modal__name--copied]="isCopied(player)"
-        [attr.aria-label]="copyNameAria(player)"
-        (click)="copyName(player, $event)"
-        (keydown.enter)="copyName(player, $event)"
-        (keydown.space)="copyName(player, $event)"
-      >
-        @if (isCopied(player)) {
-          {{ 'player.copied' | t }}
-        } @else {
-          {{ player.gameName }}<span class="game-detail-modal__tag">#{{ player.tagLine }}</span>
-        }
-      </span>
-    </div>
-
     <div class="game-detail-modal__kda">
       <span class="game-detail-modal__kda-numbers">{{ kda(player) }}</span>
       <span class="game-detail-modal__stat-label">{{ 'gameDetail.kda' | t }}</span>
@@ -256,16 +257,16 @@
 
     <div class="game-detail-modal__cgw">
       <span class="game-detail-modal__cgw-row">
-        <span class="game-detail-modal__cgw-value">{{ player.cs }}</span>
-        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.cs' | t }} ({{ csPerMinute(player) }}/min)</span>
+        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.cs' | t }}</span>
+        <span class="game-detail-modal__cgw-value">{{ player.cs }} ({{ csPerMinute(player) }}/min)</span>
       </span>
       <span class="game-detail-modal__cgw-row">
-        <span class="game-detail-modal__cgw-value">{{ formatNumber(player.goldEarned) }}</span>
         <span class="game-detail-modal__cgw-label">{{ 'gameDetail.gold' | t }}</span>
+        <span class="game-detail-modal__cgw-value">{{ formatNumber(player.goldEarned) }}</span>
       </span>
       <span class="game-detail-modal__cgw-row">
-        <span class="game-detail-modal__cgw-value">{{ player.wardsPlaced }}</span>
         <span class="game-detail-modal__cgw-label">{{ 'gameDetail.wards' | t }}</span>
+        <span class="game-detail-modal__cgw-value">{{ player.wardsPlaced }}</span>
       </span>
     </div>
 
@@ -281,10 +282,80 @@
 
     <div class="game-detail-modal__items">
       @for (item of player.items; track $index) {
-        <span class="game-detail-modal__item" [class.game-detail-modal__item--empty]="!item.iconUrl" [title]="itemTooltip(item.itemId)">
+        <span
+          class="game-detail-modal__item"
+          [class.game-detail-modal__item--empty]="!item.iconUrl"
+          [attr.tabindex]="item.iconUrl ? 0 : null"
+          [attr.aria-label]="itemDetails(item.itemId)?.name ?? null"
+          (mouseenter)="onItemHoverStart($event, item)"
+          (mouseleave)="onItemHoverEnd()"
+          (focus)="onItemHoverStart($event, item)"
+          (blur)="onItemHoverEnd()"
+        >
           @if (item.iconUrl) {
             <img [src]="item.iconUrl" alt="" loading="lazy" decoding="async" />
           }
+        </span>
+      }
+    </div>
+  </ng-template>
+
+  @if (hoveredItem(); as hovered) {
+    @if (itemDetails(hovered.itemId); as info) {
+      <div
+        class="game-detail-modal__item-tooltip"
+        [class.game-detail-modal__item-tooltip--below]="hovered.placement === 'below'"
+        [style.top.px]="hovered.top"
+        [style.left.px]="hovered.left"
+        role="tooltip"
+      >
+        <span class="game-detail-modal__item-tooltip-header">
+          <img [src]="hovered.iconUrl" alt="" />
+          <span class="game-detail-modal__item-tooltip-name">{{ info.name }}</span>
+        </span>
+        @if (info.description) {
+          <span class="game-detail-modal__item-tooltip-desc">{{ info.description }}</span>
+        }
+      </div>
+    }
+  }
+
+  <ng-template #teamStats let-team="team" let-objectives="objectives" let-side="side" let-enemy="enemy">
+    <div class="game-detail-modal__team-stats" [class.game-detail-modal__team-stats--enemy]="enemy">
+      <span
+        class="game-detail-modal__badge"
+        [class.game-detail-modal__badge--blue]="side === 'blue'"
+        [class.game-detail-modal__badge--red]="side === 'red'"
+      >
+        <span class="game-detail-modal__badge-value">{{ teamKills(team) }}</span>
+        <span class="game-detail-modal__badge-label">{{ 'gameDetail.kills' | t }}</span>
+      </span>
+      <span class="game-detail-modal__badge game-detail-modal__badge--gold">
+        <span class="game-detail-modal__badge-value">{{ formatNumber(teamGold(team)) }}</span>
+        <span class="game-detail-modal__badge-label">{{ 'gameDetail.gold' | t }}</span>
+      </span>
+      @if (objectives.towerKills) {
+        <span class="game-detail-modal__badge">
+          <span class="game-detail-modal__badge-value">{{ objectives.towerKills }}</span>
+          <span class="game-detail-modal__badge-label">{{ 'gameDetail.towers' | t }}</span>
+        </span>
+      }
+      @if (objectives.dragonKills) {
+        <span class="game-detail-modal__badge">
+          <span class="game-detail-modal__badge-value">{{ objectives.dragonKills }}</span>
+          <span class="game-detail-modal__badge-label">{{ 'gameDetail.dragons' | t }}</span>
+        </span>
+      }
+      @if (objectives.baronKills) {
+        <span class="game-detail-modal__badge">
+          <span class="game-detail-modal__badge-value">{{ objectives.baronKills }}</span>
+          <span class="game-detail-modal__badge-label">{{ 'gameDetail.barons' | t }}</span>
+        </span>
+      }
+      @if (objectives.riftHeraldKills) {
+        <span class="game-detail-modal__badge">
+          <span class="game-detail-modal__badge-value">{{ objectives.riftHeraldKills }}</span>
+          <span class="game-detail-modal__badge-label">{{ 'gameDetail.heralds' | t }}</span>
         </span>
       }
     </div>

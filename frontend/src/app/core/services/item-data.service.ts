@@ -31,7 +31,7 @@ export class ItemDataService {
 
   readonly ready = computed(() => Object.keys(this.items()).length > 0);
 
-  tooltip(itemId: number | null): string | null {
+  details(itemId: number | null): { name: string; description: string } | null {
     if (!itemId) {
       return null;
     }
@@ -39,8 +39,8 @@ export class ItemDataService {
     if (!entry) {
       return null;
     }
-    const description = entry.plaintext?.trim() || this.stripHtml(entry.description);
-    return description ? `${entry.name} — ${description}` : entry.name;
+    const description = this.stripHtml(entry.description) || entry.plaintext?.trim() || '';
+    return { name: entry.name, description };
   }
 
   private load(ddragonLocale: string): void {
@@ -76,9 +76,14 @@ export class ItemDataService {
       return '';
     }
     return html
-      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<[^>]*>/g, '')
-      .replace(/\s+/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{2,}/g, '\n')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join('\n')
       .trim();
   }
 }

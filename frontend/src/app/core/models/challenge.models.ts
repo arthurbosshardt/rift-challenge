@@ -244,6 +244,14 @@ export interface MatchParticipant {
   isFocusPlayer: boolean;
 }
 
+export interface MatchTeamObjectives {
+  towerKills: number;
+  dragonKills: number;
+  baronKills: number;
+  riftHeraldKills: number;
+  inhibitorKills: number;
+}
+
 export interface MatchDetail {
   matchId: string;
   playedAt: string;
@@ -251,4 +259,6 @@ export interface MatchDetail {
   win: boolean;
   myTeam: MatchParticipant[];
   enemyTeam: MatchParticipant[];
+  myTeamObjectives: MatchTeamObjectives;
+  enemyTeamObjectives: MatchTeamObjectives;
 }

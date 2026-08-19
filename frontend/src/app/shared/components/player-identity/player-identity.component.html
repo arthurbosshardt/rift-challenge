@@ -13,9 +13,9 @@
       role="button"
       tabindex="0"
       [attr.aria-label]="copyNameAria()"
-      (click)="copyField('name', gameName(), $event)"
-      (keydown.enter)="copyField('name', gameName(), $event)"
-      (keydown.space)="copyField('name', gameName(), $event)"
+      (click)="copyField('name', riotId(), $event)"
+      (keydown.enter)="copyField('name', riotId(), $event)"
+      (keydown.space)="copyField('name', riotId(), $event)"
     >
       @if (copiedField() === 'name') {
         {{ 'player.copied' | t }}

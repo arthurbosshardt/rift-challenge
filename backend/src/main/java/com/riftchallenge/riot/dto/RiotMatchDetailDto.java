@@ -16,11 +16,30 @@ public record RiotMatchDetailDto(
             long gameStartTimestamp,
             long gameDuration,
             int queueId,
-            List<Participant> participants
+            List<Participant> participants,
+            List<Team> teams
     ) {
         public Info(long gameStartTimestamp, int queueId, List<Participant> participants) {
-            this(gameStartTimestamp, 0L, queueId, participants);
+            this(gameStartTimestamp, 0L, queueId, participants, List.of());
         }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Team(int teamId, Objectives objectives) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Objectives(
+            Objective baron,
+            Objective dragon,
+            Objective inhibitor,
+            Objective riftHerald,
+            Objective tower
+    ) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Objective(boolean first, int kills) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

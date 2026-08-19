@@ -254,7 +254,7 @@ Ne jamais modifier le schéma prod à la main : nouvelle migration uniquement.
 - FR et EN doivent avoir **les mêmes clés** (test `translations.spec.ts`).
 - Thème : `ThemeService` pose `data-theme="dark|light"` sur le document. Variables CSS dans `styles.scss`.
 - Dates challenges : `core/utils/challenge-date.ts` + pipe `challenge-date`.
-- Footer : `LAST_UPDATED_AT` dans `core/version.ts` (`YYYY-MM-DD`). Texte « Dernière mise à jour le : JJ/MM/AAAA ». **À bump à chaque release visible.**
+- Footer : `LAST_UPDATED_AT` dans `core/version.ts` (`YYYY-MM-DDTHH:mm`). Texte « Dernière mise à jour le : JJ/MM/AAAA à HHhmm ». **À bump à chaque release visible.**
 
 ---
 
