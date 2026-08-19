@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, effect, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChallengeApiService } from '../../../core/services/challenge-api.service';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
@@ -21,11 +21,25 @@ export class GameDetailModalComponent {
   protected readonly detail = signal<MatchDetail | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly selectedTeam = signal<'mine' | 'enemy'>('mine');
+
+  protected readonly rows = computed(() => {
+    const match = this.detail();
+    if (!match) {
+      return [];
+    }
+    const length = Math.max(match.myTeam.length, match.enemyTeam.length);
+    return Array.from({ length }, (_, index) => ({
+      mine: match.myTeam[index] ?? null,
+      enemy: match.enemyTeam[index] ?? null,
+    }));
+  });
 
   constructor() {
     effect(() => {
       if (this.modalService.isOpen()) {
         document.body.style.overflow = 'hidden';
+        this.selectedTeam.set('mine');
         this.load();
         return;
       }
@@ -34,6 +48,10 @@ export class GameDetailModalComponent {
       this.detail.set(null);
       this.error.set(null);
     });
+  }
+
+  protected setSelectedTeam(team: 'mine' | 'enemy'): void {
+    this.selectedTeam.set(team);
   }
 
   protected close(): void {
