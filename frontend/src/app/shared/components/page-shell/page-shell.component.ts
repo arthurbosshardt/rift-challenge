@@ -21,11 +21,10 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { NavIconComponent } from '../nav-icon/nav-icon.component';
 import { SiteFooterComponent } from '../site-footer/site-footer.component';
-import { ClampTooltipDirective } from '../../directives/clamp-tooltip.directive';
 
 @Component({
   selector: 'app-page-shell',
-  imports: [RouterLink, RouterLinkActive, TranslatePipe, BrandLogoComponent, SkeletonComponent, PlayerAvatarComponent, NavIconComponent, SiteFooterComponent, ClampTooltipDirective],
+  imports: [RouterLink, RouterLinkActive, TranslatePipe, BrandLogoComponent, SkeletonComponent, PlayerAvatarComponent, NavIconComponent, SiteFooterComponent],
   templateUrl: './page-shell.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './page-shell.component.scss',

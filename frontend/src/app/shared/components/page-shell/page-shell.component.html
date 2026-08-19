@@ -26,19 +26,7 @@
       </nav>
 
       <div class="shell__actions">
-        @if (auth.isAuthenticated()) {
-          <button
-            type="button"
-            class="shell__nav-create shell__nav-create-desktop"
-            appClampTooltip
-            [attr.aria-label]="'nav.createChallenge' | t"
-            [attr.title]="'nav.createChallenge' | t"
-            (click)="createChallengeModal.open()"
-          >
-            <app-nav-icon name="create-challenge" />
-            <span class="shell__nav-create-tooltip" role="tooltip">{{ 'nav.createChallenge' | t }}</span>
-          </button>
-        } @else {
+        @if (!auth.isAuthenticated()) {
           <button type="button" class="linkish shell__login-desktop" (click)="authModal.open()">
             <app-nav-icon name="login" />
             <span>{{ 'nav.login' | t }}</span>
@@ -112,7 +100,7 @@
                 <button
                   type="button"
                   role="menuitem"
-                  class="user-menu__item user-menu__item--mobile-nav"
+                  class="user-menu__item"
                   (click)="openCreateFromMenu()"
                 >
                   <app-nav-icon name="create-challenge" />
