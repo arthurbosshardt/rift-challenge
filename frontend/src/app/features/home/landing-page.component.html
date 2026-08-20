@@ -45,9 +45,6 @@
 
         <div class="landing__body">
           @if (!auth.isAuthenticated()) {
-            @if (!backend.ready()) {
-              <p class="landing__warmup" role="status">{{ 'landing.warming' | t }}</p>
-            }
             <app-landing-guest-actions class="landing__guest-actions--inline" />
           }
 

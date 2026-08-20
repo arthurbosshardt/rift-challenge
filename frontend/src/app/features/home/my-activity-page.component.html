@@ -31,8 +31,9 @@
         type="button"
         class="refresh-action-btn activity-refresh-btn activity-refresh-btn--mobile"
         (click)="refreshActivity()"
-        [disabled]="activityLoading() || refreshCooldownSeconds() > 0"
+        [disabled]="activityLoading() || refreshCooldownSeconds() > 0 || !backend.ready()"
         [attr.aria-label]="'activity.refreshAria' | t"
+        [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
       >
         <svg
           class="refresh-action-btn__icon"
@@ -63,9 +64,9 @@
           type="button"
           class="refresh-action-btn activity-refresh-btn activity-refresh-btn--desktop"
           (click)="refreshActivity()"
-          [disabled]="activityLoading() || refreshCooldownSeconds() > 0"
+          [disabled]="activityLoading() || refreshCooldownSeconds() > 0 || !backend.ready()"
           [attr.aria-label]="'activity.refreshAria' | t"
-          [attr.title]="'activity.refreshAria' | t"
+          [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('activity.refreshAria' | t)"
         >
           <svg
             class="refresh-action-btn__icon"
@@ -198,9 +199,9 @@
           type="button"
           class="refresh-action-btn activity-refresh-btn activity-refresh-btn--desktop"
           (click)="refreshMyChallenges()"
-          [disabled]="challengesLoading() || challengesRefreshCooldownSeconds() > 0"
+          [disabled]="challengesLoading() || challengesRefreshCooldownSeconds() > 0 || !backend.ready()"
           [attr.aria-label]="'home.myChallengesRefreshAria' | t"
-          [attr.title]="'home.myChallengesRefreshAria' | t"
+          [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('home.myChallengesRefreshAria' | t)"
         >
           <svg
             class="refresh-action-btn__icon"

@@ -3,6 +3,7 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { ActivityCacheService } from '../../core/services/activity-cache.service';
+import { BackendStatusService } from '../../core/services/backend-status.service';
 import { AccountRecentGames } from '../../core/models/challenge.models';
 import { formatRankLabel, tierColor } from '../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../core/utils/record-display';
@@ -46,6 +47,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
   private readonly cache = inject(ActivityCacheService);
+  protected readonly backend = inject(BackendStatusService);
 
   protected readonly view = signal<ActivityView>('activity');
 

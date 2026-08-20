@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
-import { BackendStatusService } from '../../core/services/backend-status.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { RankEmblemComponent } from '../../shared/components/rank-emblem/rank-emblem.component';
@@ -25,7 +24,6 @@ type LandingInspiration = {
 })
 export class LandingPageComponent {
   protected readonly auth = inject(AuthService);
-  protected readonly backend = inject(BackendStatusService);
 
   protected readonly inspirations: LandingInspiration[] = [
     {

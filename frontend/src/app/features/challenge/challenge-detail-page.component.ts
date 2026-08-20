@@ -28,6 +28,7 @@ import { LeaderboardSkeletonComponent } from '../../shared/components/leaderboar
 import { LeaderboardSortControlsComponent } from '../../shared/components/leaderboard-sort-controls/leaderboard-sort-controls.component';
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
+import { BackendStatusService } from '../../core/services/backend-status.service';
 import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
@@ -53,6 +54,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
   private readonly seo = inject(SeoService);
+  protected readonly backend = inject(BackendStatusService);
 
   private shareSlug = '';
   private countdownTimer: number | null = null;

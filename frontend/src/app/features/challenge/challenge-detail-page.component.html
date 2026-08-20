@@ -168,8 +168,11 @@
               type="button"
               class="refresh-action-btn"
               (click)="refreshChallenge()"
-              [disabled]="!currentChallenge.refreshAvailable || refreshing() || currentChallenge.entryCount === 0"
+              [disabled]="
+                !currentChallenge.refreshAvailable || refreshing() || currentChallenge.entryCount === 0 || !backend.ready()
+              "
               [attr.aria-label]="refreshing() ? ('challenge.refreshing' | t) : ('challenge.refreshData' | t)"
+              [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
             >
               <svg
                 class="refresh-action-btn__icon"

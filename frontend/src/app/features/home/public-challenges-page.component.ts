@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
+import { BackendStatusService } from '../../core/services/backend-status.service';
 import { RefreshCooldown } from '../../core/utils/refresh-cooldown';
 
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
@@ -51,6 +52,7 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
   protected readonly authModal = inject(AuthModalService);
   protected readonly settingsModal = inject(SettingsModalService);
+  protected readonly backend = inject(BackendStatusService);
   private readonly cache = inject(PublicChallengesCacheService);
 
   private readonly i18n = inject(I18nService);

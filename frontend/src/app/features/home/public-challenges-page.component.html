@@ -121,8 +121,9 @@
           type="button"
           class="refresh-action-btn"
           (click)="refreshChallenges()"
-          [disabled]="loading() || refreshing() || refreshCooldownSeconds() > 0"
+          [disabled]="loading() || refreshing() || refreshCooldownSeconds() > 0 || !backend.ready()"
           [attr.aria-label]="'home.searchRefreshAria' | t"
+          [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
         >
           <svg
             class="refresh-action-btn__icon"
