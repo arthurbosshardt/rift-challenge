@@ -37,9 +37,9 @@ export class BrandLogoComponent {
       case 'sm':
         return 28;
       case 'lg':
-        return 56;
+        return 112;
       default:
-        return 36;
+        return 72;
     }
   }
 }
