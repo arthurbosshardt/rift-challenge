@@ -1,20 +1,30 @@
 import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 import { brandLogoUrl } from '../../../core/brand/brand-logo';
 
-/** The frame 'xl' reserves in normal layout — it renders larger than this
- * but is absolutely centered inside a frame pinned to this size, so it
- * overflows visually above/below the header instead of growing it. */
-const HEADER_ROW_BASELINE = 36;
+/** 'xl' and 'modal-lg' render larger than this but reserve only this much
+ * height in normal layout (full width is still reserved, so nothing
+ * overlaps horizontally) — the image overflows above/below instead of
+ * growing its container. */
+const PINNED_HEIGHT = 36;
+
+export type BrandLogoSize = 'md' | 'sm' | 'lg' | 'xl' | 'modal-lg';
 
 @Component({
   selector: 'app-brand-logo',
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <span class="brand-logo-frame" [class.brand-logo-frame--pinned]="size() === 'xl'">
+    <span
+      class="brand-logo-frame"
+      [class.brand-logo-frame--pinned]="isPinned()"
+      [style.width.px]="isPinned() ? dimension() : null"
+    >
+      @if (size() === 'xl') {
+        <span class="brand-logo-mask" [style.width.px]="dimension()" [style.height.px]="dimension()"></span>
+      }
       <img
         class="brand-logo"
         [class.brand-logo--sm]="size() === 'sm'"
-        [class.brand-logo--overflow]="size() === 'xl'"
+        [class.brand-logo--pinned]="isPinned()"
         [src]="logoSrc"
         [width]="dimension()"
         [height]="dimension()"
@@ -37,8 +47,7 @@ const HEADER_ROW_BASELINE = 36;
     }
 
     .brand-logo-frame--pinned {
-      width: ${HEADER_ROW_BASELINE}px;
-      height: ${HEADER_ROW_BASELINE}px;
+      height: ${PINNED_HEIGHT}px;
     }
 
     .brand-logo {
@@ -46,17 +55,34 @@ const HEADER_ROW_BASELINE = 36;
       display: block;
     }
 
-    .brand-logo--overflow {
+    .brand-logo--pinned {
       position: absolute;
+      left: 0;
       top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translateY(-50%);
+    }
+
+    /* Sits behind the (possibly transparent) logo artwork so the header's
+       border-bottom doesn't show through wherever the oversized logo
+       overflows past it — only the segment the logo actually covers. */
+    .brand-logo-mask {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--bg);
+      border-radius: var(--radius-sm, 8px);
     }
   `,
 })
 export class BrandLogoComponent {
-  readonly size = input<'md' | 'sm' | 'lg' | 'xl'>('md');
+  readonly size = input<BrandLogoSize>('md');
   protected readonly logoSrc = brandLogoUrl();
+
+  protected isPinned(): boolean {
+    const size = this.size();
+    return size === 'xl' || size === 'modal-lg';
+  }
 
   protected dimension(): number {
     switch (this.size()) {
@@ -66,8 +92,10 @@ export class BrandLogoComponent {
         return 224;
       case 'xl':
         return 144;
+      case 'modal-lg':
+        return 72;
       default:
-        return HEADER_ROW_BASELINE;
+        return PINNED_HEIGHT;
     }
   }
 }
