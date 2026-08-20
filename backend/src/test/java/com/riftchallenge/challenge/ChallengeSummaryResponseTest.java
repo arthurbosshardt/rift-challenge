@@ -40,4 +40,20 @@ class ChallengeSummaryResponseTest {
 
         assertThat(ChallengeSummaryResponse.resolveStatus(startAt, endAt, endAt)).isEqualTo("FINISHED");
     }
+
+    @Test
+    void resolveStatus_maxGamesMode_notAllReached_isActive() {
+        Instant startAt = Instant.parse("2026-01-01T18:00:00Z");
+        Instant now = Instant.parse("2026-01-08T18:00:00Z");
+
+        assertThat(ChallengeSummaryResponse.resolveStatus(startAt, null, 10, false, now)).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void resolveStatus_maxGamesMode_allReached_isFinished() {
+        Instant startAt = Instant.parse("2026-01-01T18:00:00Z");
+        Instant now = Instant.parse("2026-01-08T18:00:00Z");
+
+        assertThat(ChallengeSummaryResponse.resolveStatus(startAt, null, 10, true, now)).isEqualTo("FINISHED");
+    }
 }

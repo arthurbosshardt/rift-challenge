@@ -1,5 +1,7 @@
 package com.riftchallenge.riot;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,5 +23,11 @@ public class RiotConfig {
                 .requestInterceptor(new RiotRateLimitRetryInterceptor())
                 .defaultHeader("X-Riot-Token", properties.apiKey())
                 .build();
+    }
+
+    @Bean(destroyMethod = "shutdown")
+    ExecutorService riotSyncExecutor(RiotProperties properties) {
+        int concurrency = Math.max(1, properties.syncConcurrency());
+        return Executors.newFixedThreadPool(concurrency);
     }
 }

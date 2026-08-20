@@ -42,3 +42,4 @@ riftchallenge:
     app-id: ${RIOT_APP_ID:}
     regional-routing: ${RIOT_REGIONAL_ROUTING:europe}
     platform: ${RIOT_PLATFORM:euw1}
+    sync-concurrency: ${RIOT_SYNC_CONCURRENCY:4}

@@ -4,6 +4,7 @@ export function normalizeChallengeDetail(challenge: ChallengeDetail): ChallengeD
   return {
     ...challenge,
     endAt: challenge.endAt ?? null,
+    maxGames: challenge.maxGames ?? null,
     participants: (challenge.participants ?? []).map((participant) => ({
       ...participant,
       rankScore: participant.rankScore ?? 0,
@@ -41,6 +42,7 @@ export function mergeChallengeMetadataUpdate(
     ...updated,
     startAt: updated.startAt,
     endAt: updated.endAt,
+    maxGames: updated.maxGames,
     status: updated.status,
     entryCount: previous.entryCount,
     participantGameNames: previous.participantGameNames,

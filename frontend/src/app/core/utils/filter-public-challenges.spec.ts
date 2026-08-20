@@ -14,6 +14,7 @@ function challenge(overrides: Partial<ChallengeSummary> = {}): ChallengeSummary 
     type: 'SOLOQ',
     startAt: '2026-01-01T00:00:00Z',
     endAt: '2026-02-01T00:00:00Z',
+    maxGames: null,
     isPublic: true,
     status: 'ACTIVE',
     entryCount: 2,

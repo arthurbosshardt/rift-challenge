@@ -156,11 +156,11 @@ public class ChallengeService {
     }
 
     private ChallengeSummaryResponse toSummaryResponse(Challenge challenge, Instant now) {
-        String status = ChallengeSummaryResponse.resolveStatus(challenge.getStartAt(), challenge.getEndAt(), now);
-        boolean started = !"NOT_STARTED".equals(status);
+        boolean started = !now.isBefore(challenge.getStartAt());
 
         if (challenge.getType() == ChallengeType.DUOQ) {
-            List<DuoProgressResponse> duos = duoProgressService.buildPreview(challenge.getId());
+            List<DuoProgressResponse> duos = duoProgressService.buildPreview(challenge);
+            boolean allReachedMaxGames = allDuosReachedMaxGames(challenge, started, duos);
             List<String> participantGameNames = duos.stream()
                     .flatMap(duo -> java.util.stream.Stream.of(
                             duo.player1().gameName(),
@@ -171,7 +171,7 @@ public class ChallengeService {
                     .map(DuoPreviewResponse::from)
                     .toList();
             return ChallengeSummaryResponse.from(
-                    challenge, now, duos.size(), participantGameNames, List.of(), previewDuos);
+                    challenge, now, duos.size(), participantGameNames, List.of(), previewDuos, allReachedMaxGames);
         }
 
         List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
@@ -179,12 +179,15 @@ public class ChallengeService {
                 .map(ChallengeParticipant::getRiotGameName)
                 .toList();
         List<ParticipantPreviewResponse> previewParticipants;
+        boolean allReachedMaxGames = false;
 
         if (started) {
-            previewParticipants = progressService.buildPreviewProgress(participants).stream()
+            List<ParticipantProgressResponse> fullProgress = progressService.buildPreviewProgress(challenge, participants);
+            previewParticipants = fullProgress.stream()
                     .limit(PREVIEW_LIMIT)
                     .map(ParticipantPreviewResponse::from)
                     .toList();
+            allReachedMaxGames = allParticipantsReachedMaxGames(challenge, fullProgress);
         } else {
             previewParticipants = new java.util.ArrayList<>();
             for (int index = 0; index < Math.min(PREVIEW_LIMIT, participants.size()); index++) {
@@ -195,7 +198,20 @@ public class ChallengeService {
         }
 
         return ChallengeSummaryResponse.from(
-                challenge, now, participants.size(), participantGameNames, previewParticipants, List.of());
+                challenge, now, participants.size(), participantGameNames, previewParticipants, List.of(), allReachedMaxGames);
+    }
+
+    private static boolean allParticipantsReachedMaxGames(Challenge challenge, List<ParticipantProgressResponse> progress) {
+        return challenge.getMaxGames() != null
+                && !progress.isEmpty()
+                && progress.stream().allMatch(p -> p.wins() + p.losses() >= challenge.getMaxGames());
+    }
+
+    private static boolean allDuosReachedMaxGames(Challenge challenge, boolean started, List<DuoProgressResponse> duos) {
+        return started
+                && challenge.getMaxGames() != null
+                && !duos.isEmpty()
+                && duos.stream().allMatch(d -> d.wins() + d.losses() >= challenge.getMaxGames());
     }
 
     @Transactional(readOnly = true)
@@ -223,7 +239,7 @@ public class ChallengeService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown owner");
         }
 
-        requireEndAfterStart(request.startAt(), request.endAt());
+        requireValidEndMode(request.startAt(), request.endAt(), request.maxGames());
 
         String name = request.name().trim();
         requireUniqueChallengeName(name, null);
@@ -234,6 +250,7 @@ public class ChallengeService {
                 request.type(),
                 request.startAt(),
                 request.endAt(),
+                request.maxGames(),
                 request.isPublic()
         );
         return toDetailResponse(challengeRepository.save(challenge), ownerId, false);
@@ -291,12 +308,29 @@ public class ChallengeService {
             challenge.updateName(name);
         }
 
-        Instant startAt = request.startAt() != null ? request.startAt() : challenge.getStartAt();
-        Instant endAt = request.endAt() != null ? request.endAt() : challenge.getEndAt();
-        if (request.startAt() != null || request.endAt() != null) {
-            requireEndAfterStart(startAt, endAt);
+        if (request.endAt() != null && request.maxGames() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only one of end date or max games can be set");
+        }
+
+        boolean scheduleChanged = request.startAt() != null || request.endAt() != null || request.maxGames() != null;
+        if (scheduleChanged) {
+            Instant startAt = request.startAt() != null ? request.startAt() : challenge.getStartAt();
+            Instant endAt;
+            Integer maxGames;
+            if (request.endAt() != null) {
+                endAt = request.endAt();
+                maxGames = null;
+            } else if (request.maxGames() != null) {
+                endAt = null;
+                maxGames = request.maxGames();
+            } else {
+                endAt = challenge.getEndAt();
+                maxGames = challenge.getMaxGames();
+            }
+            requireValidEndMode(startAt, endAt, maxGames);
             challenge.updateStartAt(startAt);
             challenge.updateEndAt(endAt);
+            challenge.updateMaxGames(maxGames);
         }
 
         if (request.isPublic() != null) {
@@ -341,6 +375,21 @@ public class ChallengeService {
         }
     }
 
+    private static void requireValidEndMode(Instant startAt, Instant endAt, Integer maxGames) {
+        if (endAt != null && maxGames != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only one of end date or max games can be set");
+        }
+        if (endAt == null && maxGames == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date or max games is required");
+        }
+        if (endAt != null && !endAt.isAfter(startAt)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after start date");
+        }
+        if (maxGames != null && maxGames <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Max games must be greater than zero");
+        }
+    }
+
     private void requireUniqueChallengeName(String name, UUID excludeChallengeId) {
         boolean nameTaken = excludeChallengeId == null
                 ? challengeRepository.existsByNameIgnoreCase(name)
@@ -374,7 +423,8 @@ public class ChallengeService {
                 callerId,
                 refreshTiming.lastRefreshedAt(),
                 refreshTiming.refreshAvailable(),
-                refreshTiming.nextRefreshAvailableAt()
+                refreshTiming.nextRefreshAvailableAt(),
+                false
         );
     }
 
@@ -398,16 +448,21 @@ public class ChallengeService {
         if (challenge.getType() == ChallengeType.DUOQ) {
             participants = List.of();
             duos = includeMatchHistory
-                    ? duoProgressService.buildProgress(challenge.getId())
-                    : duoProgressService.buildPreview(challenge.getId());
+                    ? duoProgressService.buildProgress(challenge)
+                    : duoProgressService.buildPreview(challenge);
         } else {
             participants = includeMatchHistory
-                    ? progressService.buildProgress(challengeParticipants)
-                    : progressService.buildPreviewProgress(challengeParticipants);
+                    ? progressService.buildProgress(challenge, challengeParticipants)
+                    : progressService.buildPreviewProgress(challenge, challengeParticipants);
             duos = List.of();
         }
 
         RefreshTiming refreshTiming = resolveRefreshTiming(challenge, now);
+
+        boolean started = !now.isBefore(challenge.getStartAt());
+        boolean allReachedMaxGames = challenge.getType() == ChallengeType.DUOQ
+                ? allDuosReachedMaxGames(challenge, started, duos)
+                : started && allParticipantsReachedMaxGames(challenge, participants);
 
         return ChallengeDetailResponse.from(
                 challenge,
@@ -417,7 +472,8 @@ public class ChallengeService {
                 callerId,
                 refreshTiming.lastRefreshedAt(),
                 refreshTiming.refreshAvailable(),
-                refreshTiming.nextRefreshAvailableAt()
+                refreshTiming.nextRefreshAvailableAt(),
+                allReachedMaxGames
         );
     }
 

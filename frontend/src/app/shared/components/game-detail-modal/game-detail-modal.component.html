@@ -66,7 +66,7 @@
         </div>
       }
 
-      <div class="game-detail-modal__body">
+      <div class="game-detail-modal__body" (click)="onModalBodyClick($event)">
         @if (loading()) {
           <app-game-detail-skeleton />
         } @else if (error()) {
@@ -291,6 +291,7 @@
           (mouseleave)="onItemHoverEnd()"
           (focus)="onItemHoverStart($event, item)"
           (blur)="onItemHoverEnd()"
+          (click)="onItemTap($event, item)"
         >
           @if (item.iconUrl) {
             <img [src]="item.iconUrl" alt="" loading="lazy" decoding="async" />

@@ -40,7 +40,7 @@ class ChallengeProgressServiceTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        when(matchHistoryService.buildForParticipant(any(), any())).thenReturn(List.of());
+        when(matchHistoryService.buildForParticipant(any(), any(), any())).thenReturn(List.of());
         when(challengeRepository.findById(any())).thenReturn(Optional.empty());
     }
 
@@ -388,6 +388,56 @@ class ChallengeProgressServiceTest {
 
         assertThat(progress.rankEstimated()).isTrue();
         assertThat(progress.currentTier()).isNotEqualTo("DIAMOND");
+    }
+
+    @Test
+    void buildForParticipant_maxGamesMode_capsWinsAndLossesToOldestGames() {
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(),
+                "Games challenge",
+                ChallengeType.SOLOQ,
+                java.time.Instant.parse("2026-08-01T00:00:00Z"),
+                null,
+                3,
+                true
+        );
+        ChallengeParticipant participant = ChallengeParticipant.create(
+                challenge.getId(),
+                new RiotAccountDto("puuid-cap", "Capped", "GMS")
+        );
+
+        // Newest first, as the window query naturally returns them. Only the 3 oldest games count
+        // once capped to maxGames=3: 2 wins, 1 loss. The 2 newest are dropped, so their outcome
+        // (win/loss) never gets read.
+        List<ParticipantMatchOutcomeInWindow> outcomes = List.of(
+                outcomeAtUncountedGameStart(java.time.Instant.parse("2026-08-05T00:00:00Z")),
+                outcomeAtUncountedGameStart(java.time.Instant.parse("2026-08-04T00:00:00Z")),
+                outcomeAt(false, java.time.Instant.parse("2026-08-03T00:00:00Z")),
+                outcomeAt(true, java.time.Instant.parse("2026-08-02T00:00:00Z")),
+                outcomeAt(true, java.time.Instant.parse("2026-08-01T01:00:00Z"))
+        );
+
+        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
+        when(participantMatchRepository.findOutcomesInChallengeWindow(participant.getId(), challenge.getId()))
+                .thenReturn(outcomes);
+
+        ParticipantProgressResponse progress = challengeProgressService.buildForParticipant(participant);
+
+        assertThat(progress.wins()).isEqualTo(2);
+        assertThat(progress.losses()).isEqualTo(1);
+    }
+
+    private static ParticipantMatchOutcomeInWindow outcomeAt(boolean win, java.time.Instant gameStart) {
+        ParticipantMatchOutcomeInWindow outcome = mock(ParticipantMatchOutcomeInWindow.class);
+        when(outcome.isWin()).thenReturn(win);
+        when(outcome.getGameStart()).thenReturn(gameStart);
+        return outcome;
+    }
+
+    private static ParticipantMatchOutcomeInWindow outcomeAtUncountedGameStart(java.time.Instant gameStart) {
+        ParticipantMatchOutcomeInWindow outcome = mock(ParticipantMatchOutcomeInWindow.class);
+        when(outcome.getGameStart()).thenReturn(gameStart);
+        return outcome;
     }
 
     private static ParticipantMatchOutcomeInWindow outcome(boolean win) {

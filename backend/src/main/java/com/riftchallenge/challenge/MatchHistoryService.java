@@ -23,16 +23,13 @@ public class MatchHistoryService {
 
     static final int MAX_MATCHES = 40;
 
-    private final ChallengeRepository challengeRepository;
     private final ChallengeParticipantMatchRepository participantMatchRepository;
     private final ChampionIconUrlService championIconUrlService;
 
     public MatchHistoryService(
-            ChallengeRepository challengeRepository,
             ChallengeParticipantMatchRepository participantMatchRepository,
             ChampionIconUrlService championIconUrlService
     ) {
-        this.challengeRepository = challengeRepository;
         this.participantMatchRepository = participantMatchRepository;
         this.championIconUrlService = championIconUrlService;
     }
@@ -40,18 +37,21 @@ public class MatchHistoryService {
     @Transactional(readOnly = true)
     public List<ParticipantMatchHistoryResponse> buildForParticipant(
             ChallengeParticipant participant,
-            ParticipantProgressResponse progress
+            ParticipantProgressResponse progress,
+            Challenge challenge
     ) {
-        Challenge challenge = challengeRepository.findById(participant.getChallengeId()).orElse(null);
         if (challenge == null) {
             return List.of();
         }
 
-        List<ParticipantMatchHistoryRow> rows =
+        List<ParticipantMatchHistoryRow> rows = MaxGamesCap.capToOldest(
                 participantMatchRepository.findHistoryByParticipantIdAndChallengeId(
                         participant.getId(),
                         participant.getChallengeId()
-                );
+                ),
+                challenge.getMaxGames(),
+                ParticipantMatchHistoryRow::getGameStart
+        );
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -87,18 +87,18 @@ public class MatchHistoryService {
 
     @Transactional(readOnly = true)
     public List<DuoMatchHistoryResponse> buildForDuo(
-            UUID challengeId,
+            Challenge challenge,
             ChallengeParticipant player1,
             ChallengeParticipant player2,
             ParticipantProgressResponse progress1,
             ParticipantProgressResponse progress2,
             Set<String> togetherMatchIds
     ) {
-        Challenge challenge = challengeRepository.findById(challengeId).orElse(null);
         if (challenge == null || togetherMatchIds.isEmpty()) {
             return List.of();
         }
 
+        UUID challengeId = challenge.getId();
         Set<String> inWindowTogetherMatchIds = filterTogetherMatchesInChallengeWindow(
                 challengeId,
                 togetherMatchIds
@@ -107,13 +107,16 @@ public class MatchHistoryService {
             return List.of();
         }
 
-        List<ChallengeParticipantMatchRepository.DuoMatchHistoryRow> rows =
+        List<ChallengeParticipantMatchRepository.DuoMatchHistoryRow> rows = MaxGamesCap.capToOldest(
                 participantMatchRepository.findDuoHistoryByParticipantIdsAndChallengeId(
                         player1.getId(),
                         player2.getId(),
                         challengeId,
                         inWindowTogetherMatchIds
-                );
+                ),
+                challenge.getMaxGames(),
+                ChallengeParticipantMatchRepository.DuoMatchHistoryRow::getGameStart
+        );
         if (rows.isEmpty()) {
             return List.of();
         }

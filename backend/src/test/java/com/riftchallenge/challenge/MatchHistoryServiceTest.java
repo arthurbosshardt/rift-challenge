@@ -10,7 +10,6 @@ import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
 import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository.ParticipantMatchHistoryRow;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,9 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class MatchHistoryServiceTest {
-
-    @Mock
-    private ChallengeRepository challengeRepository;
 
     @Mock
     private ChallengeParticipantMatchRepository participantMatchRepository;
@@ -61,14 +57,13 @@ class MatchHistoryServiceTest {
                 false
         );
 
-        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantMatchRepository.findHistoryByParticipantIdAndChallengeId(participant.getId(), challengeId))
                 .thenReturn(List.of(
                         row("m-new", true, 103, Instant.parse("2026-08-17T12:00:00Z")),
                         row("m-old", false, 86, Instant.parse("2026-08-16T12:00:00Z"))
                 ));
 
-        var history = matchHistoryService.buildForParticipant(participant, progress);
+        var history = matchHistoryService.buildForParticipant(participant, progress, challenge);
 
         assertThat(history).hasSize(2);
         assertThat(history.get(0).win()).isTrue();
@@ -94,7 +89,6 @@ class MatchHistoryServiceTest {
         ChallengeParticipant participant = participant(challengeId, "Tanor");
         ParticipantProgressResponse progress = ParticipantProgressResponse.withoutRankData(participant, 0, 0);
 
-        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantMatchRepository.findHistoryByParticipantIdAndChallengeId(participant.getId(), challengeId))
                 .thenReturn(List.of(
                         row("m-in", true, 103, Instant.parse("2026-08-17T12:00:00Z")),
@@ -102,7 +96,7 @@ class MatchHistoryServiceTest {
                         row("m-after", false, 64, Instant.parse("2026-08-18T12:00:00Z"))
                 ));
 
-        var history = matchHistoryService.buildForParticipant(participant, progress);
+        var history = matchHistoryService.buildForParticipant(participant, progress, challenge);
 
         assertThat(history).hasSize(1);
         assertThat(history.get(0).playedAt()).isEqualTo(Instant.parse("2026-08-17T12:00:00Z"));

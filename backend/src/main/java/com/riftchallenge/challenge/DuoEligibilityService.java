@@ -49,12 +49,16 @@ public class DuoEligibilityService {
         );
     }
 
-    public DuoMatchStats statsForTogetherMatches(ChallengeParticipant referencePlayer, Set<String> togetherMatches) {
+    public DuoMatchStats statsForTogetherMatches(
+            ChallengeParticipant referencePlayer,
+            Set<String> togetherMatches,
+            Integer maxGames
+    ) {
         if (togetherMatches.isEmpty()) {
             return new DuoMatchStats(0, 0);
         }
 
-        List<String> matchIds = List.copyOf(togetherMatches);
+        List<String> matchIds = cappedMatchIds(togetherMatches, maxGames);
         int wins = (int) participantMatchRepository.countWinsByParticipantIdAndMatchIds(
                 referencePlayer.getId(),
                 matchIds
@@ -64,6 +68,19 @@ public class DuoEligibilityService {
                 matchIds
         );
         return new DuoMatchStats(wins, losses);
+    }
+
+    private List<String> cappedMatchIds(Set<String> matchIds, Integer maxGames) {
+        if (maxGames == null || matchIds.size() <= maxGames) {
+            return List.copyOf(matchIds);
+        }
+
+        List<ChallengeParticipantMatchRepository.MatchIdAndGameStart> capped = MaxGamesCap.capToOldest(
+                participantMatchRepository.findGameStartsForMatchIds(matchIds),
+                maxGames,
+                ChallengeParticipantMatchRepository.MatchIdAndGameStart::getGameStart
+        );
+        return capped.stream().map(ChallengeParticipantMatchRepository.MatchIdAndGameStart::getMatchId).toList();
     }
 
     private static String formatRiotId(ChallengeParticipant participant) {

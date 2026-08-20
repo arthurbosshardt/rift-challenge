@@ -116,7 +116,7 @@
           type="button"
           class="refresh-action-btn"
           (click)="refreshChallenges()"
-          [disabled]="loading() || refreshing()"
+          [disabled]="loading() || refreshing() || refreshCooldownSeconds() > 0"
           [attr.aria-label]="'home.searchRefreshAria' | t"
         >
           <svg
@@ -129,7 +129,7 @@
               d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
             />
           </svg>
-          <span class="refresh-action-btn__label refresh-action-btn__label--short">{{ 'home.searchRefreshLabel' | t }}</span>
+          <span class="refresh-action-btn__label refresh-action-btn__label--short">{{ refreshButtonLabel() }}</span>
         </button>
       </div>
     </div>

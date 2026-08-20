@@ -151,13 +151,14 @@ public class ChallengeOpenGraphService {
         }
 
         if (challenge.getType() == ChallengeType.DUOQ) {
-            return duoProgressService.buildPreview(challenge.getId()).stream()
+            return duoProgressService.buildPreview(challenge).stream()
                     .limit(3)
                     .map(this::toDuoPodiumEntry)
                     .toList();
         }
 
         return progressService.buildPreviewProgress(
+                        challenge,
                         participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())
                 ).stream()
                 .limit(3)

@@ -47,6 +47,7 @@ export class GameDetailModalComponent {
     left: number;
     placement: 'above' | 'below';
   } | null>(null);
+  private pinnedItemTarget: HTMLElement | null = null;
 
   protected readonly rows = computed(() => {
     const match = this.detail();
@@ -72,11 +73,15 @@ export class GameDetailModalComponent {
       document.body.style.overflow = '';
       this.detail.set(null);
       this.error.set(null);
+      this.pinnedItemTarget = null;
+      this.hoveredItem.set(null);
     });
   }
 
   protected setSelectedTeam(team: 'mine' | 'enemy'): void {
     this.selectedTeam.set(team);
+    this.pinnedItemTarget = null;
+    this.hoveredItem.set(null);
   }
 
   protected close(): void {
@@ -198,7 +203,37 @@ export class GameDetailModalComponent {
   }
 
   protected onItemHoverEnd(): void {
+    if (this.pinnedItemTarget) {
+      return;
+    }
     this.hoveredItem.set(null);
+  }
+
+  /** Touch devices never fire mouseenter, so tapping an item toggles a
+   * "pinned" tooltip instead — tap again, or tap elsewhere, to dismiss it. */
+  protected onItemTap(event: MouseEvent, item: MatchItem): void {
+    if (!item.itemId || !item.iconUrl) {
+      return;
+    }
+    const target = event.currentTarget as HTMLElement;
+    if (this.pinnedItemTarget === target) {
+      this.pinnedItemTarget = null;
+      this.hoveredItem.set(null);
+      return;
+    }
+    this.pinnedItemTarget = target;
+    this.onItemHoverStart(event, item);
+  }
+
+  protected onModalBodyClick(event: MouseEvent): void {
+    if (!this.pinnedItemTarget) {
+      return;
+    }
+    const target = event.target as HTMLElement;
+    if (!target.closest('.game-detail-modal__item')) {
+      this.pinnedItemTarget = null;
+      this.hoveredItem.set(null);
+    }
   }
 
   protected durationAria(seconds: number): string {

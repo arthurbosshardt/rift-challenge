@@ -47,6 +47,7 @@ export function normalizeChallengeSummary(raw: RawChallengeSummary): ChallengeSu
   return {
     ...raw,
     endAt: raw.endAt ?? null,
+    maxGames: raw.maxGames ?? null,
     entryCount: raw.entryCount ?? 0,
     participantGameNames: normalizeParticipantGameNames(raw),
     previewParticipants: normalizeParticipants(raw.previewParticipants),

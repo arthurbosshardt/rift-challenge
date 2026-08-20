@@ -1,8 +1,8 @@
 package com.riftchallenge.riot;
 
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,10 +16,23 @@ public class RiotMatchLookupService {
     }
 
     public void beginRefreshScope() {
-        refreshScopeCache.set(new HashMap<>());
+        refreshScopeCache.set(new ConcurrentHashMap<>());
     }
 
     public void endRefreshScope() {
+        refreshScopeCache.remove();
+    }
+
+    /** Lets a refresh fan out its cache to worker threads via {@link #bindScope}. */
+    public Map<String, RiotMatchDetailDto> currentScopeCache() {
+        return refreshScopeCache.get();
+    }
+
+    public void bindScope(Map<String, RiotMatchDetailDto> cache) {
+        refreshScopeCache.set(cache);
+    }
+
+    public void unbindScope() {
         refreshScopeCache.remove();
     }
 

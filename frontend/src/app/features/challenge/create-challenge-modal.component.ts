@@ -14,7 +14,7 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { CreateChallengeModalService } from '../../core/services/create-challenge-modal.service';
 import { SummonerSearchService, SummonerSuggestion } from '../../core/services/summoner-search.service';
 import { ChallengeType, DuoProgress, ParticipantProgress } from '../../core/models/challenge.models';
-import { buildLocalStartAtIso } from '../../core/utils/challenge-date';
+import { buildLocalStartAtIso, splitLocalDateHour } from '../../core/utils/challenge-date';
 import { mapParticipantError } from '../../core/utils/challenge-participant-errors';
 import { isChallengeNameTakenError } from '../../core/utils/challenge-name-errors';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
@@ -25,15 +25,17 @@ import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typ
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 
-type ScheduleInvalidField = 'startDate' | 'endDate';
+type ScheduleInvalidField = 'startDate' | 'endDate' | 'maxGames';
 type NameInvalidField = 'name';
 type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId';
+export type EndMode = 'DATE' | 'GAMES';
 
 type ScheduleValidationResult =
   | {
       valid: true;
       startAt: string;
-      endAt: string;
+      endAt: string | null;
+      maxGames: number | null;
     }
   | {
       valid: false;
@@ -67,8 +69,10 @@ export class CreateChallengeModalComponent {
   protected type: ChallengeType = 'SOLOQ';
   protected startDateInput = '';
   protected startHourInput = 12;
+  protected endMode: EndMode = 'DATE';
   protected endDateInput = '';
   protected endHourInput = 12;
+  protected maxGamesInput: number | null = null;
   protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
   protected isPublicInput = false;
 
@@ -178,6 +182,16 @@ export class CreateChallengeModalComponent {
 
     this.isPublicInput = !this.isPublicInput;
     this.formError.set(null);
+  }
+
+  protected toggleEndMode(): void {
+    if (this.loading()) {
+      return;
+    }
+
+    this.endMode = this.endMode === 'DATE' ? 'GAMES' : 'DATE';
+    this.clearScheduleInvalid('endDate');
+    this.clearScheduleInvalid('maxGames');
   }
 
   protected isNameInvalid(field: NameInvalidField): boolean {
@@ -425,7 +439,8 @@ export class CreateChallengeModalComponent {
           name: trimmedName,
           type: this.type,
           startAt: scheduleValidation.startAt,
-          endAt: scheduleValidation.endAt,
+          ...(scheduleValidation.endAt ? { endAt: scheduleValidation.endAt } : {}),
+          ...(scheduleValidation.maxGames ? { maxGames: scheduleValidation.maxGames } : {}),
           isPublic: this.isPublicInput,
         }),
       );
@@ -592,9 +607,14 @@ export class CreateChallengeModalComponent {
       fieldErrors.startDate = requiredMessage;
     }
 
-    if (!this.endDateInput.trim()) {
+    if (this.endMode === 'DATE' && !this.endDateInput.trim()) {
       invalidFields.add('endDate');
       fieldErrors.endDate = requiredMessage;
+    }
+
+    if (this.endMode === 'GAMES' && (this.maxGamesInput === null || this.maxGamesInput === undefined)) {
+      invalidFields.add('maxGames');
+      fieldErrors.maxGames = requiredMessage;
     }
 
     if (invalidFields.size > 0) {
@@ -616,6 +636,20 @@ export class CreateChallengeModalComponent {
       };
     }
 
+    if (this.endMode === 'GAMES') {
+      const maxGames = Math.trunc(this.maxGamesInput as number);
+      if (!Number.isFinite(maxGames) || maxGames <= 0) {
+        return {
+          valid: false,
+          invalidFields: new Set(['maxGames']),
+          fieldErrors: { maxGames: this.i18n.t('create.invalidMaxGames') },
+          formError: this.i18n.t('create.invalidMaxGames'),
+        };
+      }
+
+      return { valid: true, startAt, endAt: null, maxGames };
+    }
+
     const endAt = buildLocalStartAtIso(this.endDateInput, this.endHourInput);
     if (!endAt) {
       return {
@@ -635,7 +669,7 @@ export class CreateChallengeModalComponent {
       };
     }
 
-    return { valid: true, startAt, endAt };
+    return { valid: true, startAt, endAt, maxGames: null };
   }
 
   private validateSoloParticipantFields(): boolean {
@@ -703,10 +737,13 @@ export class CreateChallengeModalComponent {
   private resetForm(): void {
     this.nameInput = '';
     this.type = 'SOLOQ';
-    this.startDateInput = '';
-    this.startHourInput = 12;
+    const now = splitLocalDateHour(new Date().toISOString());
+    this.startDateInput = now?.date ?? '';
+    this.startHourInput = now?.hour ?? 12;
+    this.endMode = 'DATE';
     this.endDateInput = '';
     this.endHourInput = 12;
+    this.maxGamesInput = 30;
     this.isPublicInput = false;
     this.draftParticipants.set([]);
     this.draftDuos.set([]);

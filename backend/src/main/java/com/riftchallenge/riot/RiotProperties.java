@@ -9,6 +9,7 @@ public record RiotProperties(
         String apiKey,
         String appId,
         String regionalRouting,
-        String platform
+        String platform,
+        int syncConcurrency
 ) {
 }

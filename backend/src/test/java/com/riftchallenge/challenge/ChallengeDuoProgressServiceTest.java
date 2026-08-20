@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.riot.dto.RiotAccountDto;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,10 @@ class ChallengeDuoProgressServiceTest {
 
     @Test
     void buildProgress_whenEligibleWithoutSyncedTogetherMatches_usesIndividualStatsFallback() {
-        UUID challengeId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(), "Test", ChallengeType.DUOQ, Instant.now(), true
+        );
+        UUID challengeId = challenge.getId();
         ChallengeDuo duo = ChallengeDuo.create(challengeId);
         ChallengeParticipant player1 = ChallengeParticipant.create(
                 challengeId,
@@ -84,14 +88,14 @@ class ChallengeDuoProgressServiceTest {
         when(challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(duo));
         when(participantRepository.findByDuoIdOrderByCreatedAtAsc(duo.getId()))
                 .thenReturn(List.of(player1, player2));
-        when(progressService.buildForParticipant(player1, true)).thenReturn(progress1);
-        when(progressService.buildForParticipant(player2, true)).thenReturn(progress2);
+        when(progressService.buildForParticipant(player1, true, challenge)).thenReturn(progress1);
+        when(progressService.buildForParticipant(player2, true, challenge)).thenReturn(progress2);
         when(duoEligibilityService.evaluate(challengeId, player1, player2))
                 .thenReturn(new DuoEligibilityService.DuoEligibility(true, null, java.util.Set.of()));
-        when(duoEligibilityService.statsForTogetherMatches(player1, java.util.Set.of()))
+        when(duoEligibilityService.statsForTogetherMatches(player1, java.util.Set.of(), null))
                 .thenReturn(new DuoEligibilityService.DuoMatchStats(0, 0));
 
-        var duos = challengeDuoProgressService.buildProgress(challengeId);
+        var duos = challengeDuoProgressService.buildProgress(challenge);
 
         assertThat(duos).hasSize(1);
         assertThat(duos.getFirst().wins()).isEqualTo(5);
@@ -102,7 +106,10 @@ class ChallengeDuoProgressServiceTest {
 
     @Test
     void buildProgress_whenIneligibleWithoutTogetherMatches_keepsZeroStats() {
-        UUID challengeId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(), "Test", ChallengeType.DUOQ, Instant.now(), true
+        );
+        UUID challengeId = challenge.getId();
         ChallengeDuo duo = ChallengeDuo.create(challengeId);
         ChallengeParticipant player1 = ChallengeParticipant.create(
                 challengeId,
@@ -125,17 +132,17 @@ class ChallengeDuoProgressServiceTest {
         when(challengeDuoRepository.findByChallengeIdOrderByCreatedAtAsc(challengeId)).thenReturn(List.of(duo));
         when(participantRepository.findByDuoIdOrderByCreatedAtAsc(duo.getId()))
                 .thenReturn(List.of(player1, player2));
-        when(progressService.buildForParticipant(any(), anyBoolean())).thenReturn(progress1, progress2);
+        when(progressService.buildForParticipant(any(), anyBoolean(), any())).thenReturn(progress1, progress2);
         when(duoEligibilityService.evaluate(challengeId, player1, player2))
                 .thenReturn(new DuoEligibilityService.DuoEligibility(
                         false,
                         "SOLOQ_WITHOUT_PARTNER|Catherine#FEUR",
                         java.util.Set.of("match-1")
                 ));
-        when(duoEligibilityService.statsForTogetherMatches(player1, java.util.Set.of("match-1")))
+        when(duoEligibilityService.statsForTogetherMatches(player1, java.util.Set.of("match-1"), null))
                 .thenReturn(new DuoEligibilityService.DuoMatchStats(0, 0));
 
-        var duos = challengeDuoProgressService.buildProgress(challengeId);
+        var duos = challengeDuoProgressService.buildProgress(challenge);
 
         assertThat(duos.getFirst().wins()).isZero();
         assertThat(duos.getFirst().losses()).isZero();

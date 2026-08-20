@@ -10,7 +10,8 @@ public record CreateChallengeRequest(
         @NotBlank @Size(max = 120) String name,
         @NotNull ChallengeType type,
         @NotNull Instant startAt,
-        @NotNull Instant endAt,
+        Instant endAt,
+        Integer maxGames,
         boolean isPublic
 ) {
 }

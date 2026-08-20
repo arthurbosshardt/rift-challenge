@@ -22,6 +22,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -60,6 +62,7 @@ class ChallengeSyncServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-08-16T10:00:00Z");
         Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        ExecutorService riotSyncExecutor = Executors.newFixedThreadPool(2);
         challengeSyncService = new ChallengeSyncService(
                 challengeRepository,
                 participantRepository,
@@ -67,6 +70,7 @@ class ChallengeSyncServiceTest {
                 participantSyncService,
                 refreshRecordService,
                 riotMatchLookupService,
+                riotSyncExecutor,
                 clock
         );
 
@@ -89,6 +93,7 @@ class ChallengeSyncServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-08-16T09:00:00Z");
         Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        ExecutorService riotSyncExecutor = Executors.newFixedThreadPool(2);
         challengeSyncService = new ChallengeSyncService(
                 challengeRepository,
                 participantRepository,
@@ -96,6 +101,7 @@ class ChallengeSyncServiceTest {
                 participantSyncService,
                 refreshRecordService,
                 riotMatchLookupService,
+                riotSyncExecutor,
                 clock
         );
 
@@ -113,6 +119,7 @@ class ChallengeSyncServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-08-16T10:00:00Z");
         Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        ExecutorService riotSyncExecutor = Executors.newFixedThreadPool(2);
         challengeSyncService = new ChallengeSyncService(
                 challengeRepository,
                 participantRepository,
@@ -120,6 +127,7 @@ class ChallengeSyncServiceTest {
                 participantSyncService,
                 refreshRecordService,
                 riotMatchLookupService,
+                riotSyncExecutor,
                 clock
         );
 
@@ -140,6 +148,7 @@ class ChallengeSyncServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-08-16T10:00:00Z");
         Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+        ExecutorService riotSyncExecutor = Executors.newFixedThreadPool(2);
         challengeSyncService = new ChallengeSyncService(
                 challengeRepository,
                 participantRepository,
@@ -147,6 +156,7 @@ class ChallengeSyncServiceTest {
                 participantSyncService,
                 refreshRecordService,
                 riotMatchLookupService,
+                riotSyncExecutor,
                 clock
         );
 

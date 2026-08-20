@@ -1,12 +1,12 @@
-import { Component, computed, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 
 import { AuthService } from '../../core/services/auth.service';
 
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
-
-import { ChallengeSummary } from '../../core/models/challenge.models';
+import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
+import { RefreshCooldown } from '../../core/utils/refresh-cooldown';
 
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 
@@ -30,8 +30,6 @@ import {
 
 } from '../../core/utils/filter-public-challenges';
 
-
-
 @Component({
 
   selector: 'app-public-challenges-page',
@@ -45,8 +43,7 @@ import {
   styleUrl: './public-challenges-page.component.scss',
 
 })
-
-export class PublicChallengesPageComponent implements OnInit {
+export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
   private readonly challengeApi = inject(ChallengeApiService);
 
@@ -54,16 +51,20 @@ export class PublicChallengesPageComponent implements OnInit {
 
   protected readonly authModal = inject(AuthModalService);
   protected readonly settingsModal = inject(SettingsModalService);
+  private readonly cache = inject(PublicChallengesCacheService);
 
   private readonly i18n = inject(I18nService);
 
 
 
-  protected readonly allChallenges = signal<ChallengeSummary[]>([]);
+  protected readonly allChallenges = this.cache.challenges;
 
-  protected readonly loading = signal(true);
+  protected readonly loading = signal(this.cache.lastLoadedAt() === null);
 
   protected readonly refreshing = signal(false);
+
+  private readonly cooldown = new RefreshCooldown();
+  protected readonly refreshCooldownSeconds = this.cooldown.seconds;
 
   protected readonly error = signal<string | null>(null);
 
@@ -115,6 +116,10 @@ export class PublicChallengesPageComponent implements OnInit {
 
   }
 
+  ngOnDestroy(): void {
+    this.cooldown.clear();
+  }
+
 
 
   protected onChallengeNameInput(event: Event): void {
@@ -155,8 +160,21 @@ export class PublicChallengesPageComponent implements OnInit {
 
   protected refreshChallenges(): void {
 
-    this.loadChallenges(true);
+    if (this.cooldown.active) {
+      return;
+    }
 
+    this.loadChallenges(true);
+    this.cooldown.start();
+
+  }
+
+  protected refreshButtonLabel(): string {
+    const seconds = this.refreshCooldownSeconds();
+    if (seconds > 0) {
+      return this.i18n.locale() === 'en' ? `${seconds}seconds` : `${seconds} secondes`;
+    }
+    return this.i18n.t('home.searchRefreshLabel');
   }
 
 
@@ -192,6 +210,7 @@ export class PublicChallengesPageComponent implements OnInit {
       next: (challenges) => {
 
         this.allChallenges.set(challenges);
+        this.cache.lastLoadedAt.set(Date.now());
 
         this.loading.set(false);
 
@@ -231,7 +250,11 @@ export class PublicChallengesPageComponent implements OnInit {
 
     );
 
-    this.loadChallenges();
+    if (this.cache.lastLoadedAt() === null) {
+      this.loadChallenges();
+    } else {
+      this.loading.set(false);
+    }
 
   }
 

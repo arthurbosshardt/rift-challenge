@@ -101,7 +101,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(matchingChallenge, otherChallenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(matchingChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(matchingChallenge, List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", null, null);
 
@@ -123,7 +123,7 @@ class ChallengeServiceTest {
         when(participantRepository.findDistinctPublicChallengeIdsByParticipantSearch(NOW, "tanor"))
                 .thenReturn(List.of(challenge.getId()));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(challenge, List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, "tanor", null);
 
@@ -143,7 +143,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(challenge, List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("so", "ta", null);
 
@@ -169,7 +169,7 @@ class ChallengeServiceTest {
         );
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(soloChallenge, duoChallenge));
-        when(duoProgressService.buildPreview(duoChallenge.getId())).thenReturn(List.of());
+        when(duoProgressService.buildPreview(duoChallenge)).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, ChallengeType.DUOQ);
 
@@ -198,7 +198,7 @@ class ChallengeServiceTest {
         when(participantRepository.findDistinctPublicChallengeIdsByParticipantSearch(NOW, "tanor"))
                 .thenReturn(List.of(matchingChallenge.getId()));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(matchingChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(matchingChallenge, List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", "tanor", null);
 
@@ -218,7 +218,7 @@ class ChallengeServiceTest {
         when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(activeChallenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(activeChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(activeChallenge, List.of())).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges();
 
@@ -238,6 +238,47 @@ class ChallengeServiceTest {
                         ChallengeType.SOLOQ,
                         NOW,
                         NOW.minusSeconds(60),
+                        null,
+                        false
+                )
+        ))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+    }
+
+    @Test
+    void createChallenge_rejectsBothEndAtAndMaxGames() {
+        UUID ownerId = UUID.randomUUID();
+        when(appUserRepository.existsById(ownerId)).thenReturn(true);
+
+        assertThatThrownBy(() -> challengeService.createChallenge(
+                ownerId,
+                new CreateChallengeRequest(
+                        "Challenge",
+                        ChallengeType.SOLOQ,
+                        NOW,
+                        NOW.plusSeconds(3600),
+                        10,
+                        false
+                )
+        ))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+    }
+
+    @Test
+    void createChallenge_rejectsMissingEndAtAndMaxGames() {
+        UUID ownerId = UUID.randomUUID();
+        when(appUserRepository.existsById(ownerId)).thenReturn(true);
+
+        assertThatThrownBy(() -> challengeService.createChallenge(
+                ownerId,
+                new CreateChallengeRequest(
+                        "Challenge",
+                        ChallengeType.SOLOQ,
+                        NOW,
+                        null,
+                        null,
                         false
                 )
         ))
@@ -258,6 +299,7 @@ class ChallengeServiceTest {
                         ChallengeType.SOLOQ,
                         NOW,
                         NOW.plusSeconds(3600),
+                        null,
                         false
                 )
         ))
@@ -398,7 +440,7 @@ class ChallengeServiceTest {
         var response = challengeService.updateChallenge(
                 challengeId,
                 ownerId,
-                new UpdateChallengeRequest("New name", newStart, newEnd, true)
+                new UpdateChallengeRequest("New name", newStart, newEnd, null, true)
         );
 
         assertThat(response.name()).isEqualTo("New name");
@@ -688,7 +730,7 @@ class ChallengeServiceTest {
                 .thenReturn(List.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
                 .thenReturn(List.of(tanor, kaori));
-        when(progressService.buildPreviewProgress(List.of(tanor, kaori))).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(challenge, List.of(tanor, kaori))).thenReturn(List.of());
 
         List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, null);
 
@@ -745,7 +787,7 @@ class ChallengeServiceTest {
         );
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildProgress(challenge, List.of())).thenReturn(List.of());
         when(challengeRefreshRepository.findByChallengeId(challenge.getId())).thenReturn(Optional.empty());
 
         var response = challengeService.getByShareSlug(challenge.getShareSlug(), ownerId);

@@ -14,6 +14,7 @@ public record ChallengeDetailResponse(
         ChallengeType type,
         Instant startAt,
         Instant endAt,
+        Integer maxGames,
         boolean isPublic,
         String status,
         String sharePath,
@@ -33,10 +34,17 @@ public record ChallengeDetailResponse(
             UUID callerId,
             Instant lastRefreshedAt,
             boolean refreshAvailable,
-            Instant nextRefreshAvailableAt
+            Instant nextRefreshAvailableAt,
+            boolean allParticipantsReachedMaxGames
     ) {
         boolean isOwner = callerId != null && callerId.equals(challenge.getOwnerId());
-        String status = ChallengeSummaryResponse.resolveStatus(challenge.getStartAt(), challenge.getEndAt(), now);
+        String status = ChallengeSummaryResponse.resolveStatus(
+                challenge.getStartAt(),
+                challenge.getEndAt(),
+                challenge.getMaxGames(),
+                allParticipantsReachedMaxGames,
+                now
+        );
         boolean refreshAllowed = !"NOT_STARTED".equals(status);
 
         return new ChallengeDetailResponse(
@@ -46,6 +54,7 @@ public record ChallengeDetailResponse(
                 challenge.getType(),
                 challenge.getStartAt(),
                 challenge.getEndAt(),
+                challenge.getMaxGames(),
                 challenge.isPublic(),
                 status,
                 ChallengeSharePaths.buildSharePath(challenge.getShareSlug()),

@@ -189,38 +189,148 @@
 
             <section
               class="challenge-form__schedule-block"
-              [class.challenge-form__schedule-block--invalid]="isScheduleInvalid('endDate')"
+              [class.challenge-form__schedule-block--invalid]="isScheduleInvalid('endDate') || isScheduleInvalid('maxGames')"
               aria-labelledby="edit-challenge-end-title"
             >
-              <h3 id="edit-challenge-end-title" class="challenge-form__schedule-title">
-                {{ 'create.endLegend' | t }}
-                <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
-              </h3>
-              <div class="challenge-form__datetime-row">
-                <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isScheduleInvalid('endDate')">
-                  {{ 'create.date' | t }}
+              <div class="challenge-form__schedule-header">
+                <h3 id="edit-challenge-end-title" class="challenge-form__schedule-title">
+                  {{ 'create.endLegend' | t }}
+                  <span class="field-label__required" [attr.aria-label]="'create.requiredMark' | t">*</span>
+                </h3>
+
+                <div class="type-switch type-switch--compact" role="group" [attr.aria-label]="'create.endModeAria' | t">
+                  <div class="type-switch__label" [class.type-switch__label--active]="endMode === 'DATE'">
+                    <svg class="type-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M7 2v3M17 2v3M4 8h16M5 4.5h14a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span>{{ 'create.endModeDate' | t }}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="type-switch__toggle"
+                    role="switch"
+                    [attr.aria-checked]="endMode === 'GAMES'"
+                    [class.type-switch__toggle--duoq]="endMode === 'GAMES'"
+                    [disabled]="saving()"
+                    (click)="toggleEndMode()"
+                  >
+                    @if (endMode === 'DATE') {
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M7 2v3M17 2v3M4 8h16M5 4.5h14a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="m3 8 4-4 4 4M7 4v16"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <rect x="15" y="4" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                        <path
+                          d="M17 20v-6h-2M15 20h4"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    }
+                  </button>
+
+                  <div class="type-switch__label" [class.type-switch__label--active]="endMode === 'GAMES'">
+                    <svg class="type-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="m3 8 4-4 4 4M7 4v16"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <rect x="15" y="4" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                      <path
+                        d="M17 20v-6h-2M15 20h4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span>{{ 'create.endModeGames' | t }}</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (endMode === 'DATE') {
+                <div class="challenge-form__datetime-row">
+                  <label class="challenge-form__datetime-field" [class.challenge-form__field--invalid]="isScheduleInvalid('endDate')">
+                    {{ 'create.date' | t }}
+                    <input
+                      name="endDateInput"
+                      type="date"
+                      [(ngModel)]="endDateInput"
+                      required
+                      [disabled]="saving()"
+                      [class.challenge-form__control--invalid]="isScheduleInvalid('endDate')"
+                      [attr.aria-invalid]="isScheduleInvalid('endDate')"
+                      (ngModelChange)="clearScheduleInvalid('endDate')"
+                    />
+                  </label>
+                  <label class="challenge-form__datetime-field">
+                    {{ 'create.hour' | t }}
+                    <select name="endHourInput" [(ngModel)]="endHourInput" required [disabled]="saving()">
+                      @for (hour of hourOptions; track hour) {
+                        <option [ngValue]="hour">{{ hour }}h</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                @if (scheduleFieldError('endDate'); as message) {
+                  <span class="field-error" role="alert">{{ message }}</span>
+                }
+              } @else {
+                <label
+                  class="challenge-form__datetime-field"
+                  [class.challenge-form__field--invalid]="isScheduleInvalid('maxGames')"
+                >
+                  {{ 'create.maxGamesLabel' | t }}
                   <input
-                    name="endDateInput"
-                    type="date"
-                    [(ngModel)]="endDateInput"
+                    name="maxGamesInput"
+                    type="number"
+                    min="1"
+                    step="1"
+                    [(ngModel)]="maxGamesInput"
                     required
                     [disabled]="saving()"
-                    [class.challenge-form__control--invalid]="isScheduleInvalid('endDate')"
-                    [attr.aria-invalid]="isScheduleInvalid('endDate')"
-                    (ngModelChange)="clearScheduleInvalid('endDate')"
+                    [placeholder]="'create.maxGamesPlaceholder' | t"
+                    [class.challenge-form__control--invalid]="isScheduleInvalid('maxGames')"
+                    [attr.aria-invalid]="isScheduleInvalid('maxGames')"
+                    (ngModelChange)="clearScheduleInvalid('maxGames')"
                   />
                 </label>
-                <label class="challenge-form__datetime-field">
-                  {{ 'create.hour' | t }}
-                  <select name="endHourInput" [(ngModel)]="endHourInput" required [disabled]="saving()">
-                    @for (hour of hourOptions; track hour) {
-                      <option [ngValue]="hour">{{ hour }}h</option>
-                    }
-                  </select>
-                </label>
-              </div>
-              @if (scheduleFieldError('endDate'); as message) {
-                <span class="field-error" role="alert">{{ message }}</span>
+                @if (scheduleFieldError('maxGames'); as message) {
+                  <span class="field-error" role="alert">{{ message }}</span>
+                }
               }
             </section>
           </div>

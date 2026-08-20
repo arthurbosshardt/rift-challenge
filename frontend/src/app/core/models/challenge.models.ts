@@ -37,6 +37,7 @@ export interface ChallengeSummary {
   type: ChallengeType;
   startAt: string;
   endAt: string | null;
+  maxGames: number | null;
   isPublic: boolean;
   status: ChallengeStatus;
   entryCount: number;
@@ -115,7 +116,8 @@ export interface CreateChallengeRequest {
   name: string;
   type: ChallengeType;
   startAt: string;
-  endAt: string;
+  endAt?: string;
+  maxGames?: number;
   isPublic: boolean;
 }
 
@@ -144,6 +146,7 @@ export interface UpdateChallengeRequest {
   name?: string;
   startAt?: string;
   endAt?: string;
+  maxGames?: number;
   isPublic?: boolean;
 }
 

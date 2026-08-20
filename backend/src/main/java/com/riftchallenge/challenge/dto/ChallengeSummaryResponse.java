@@ -13,6 +13,7 @@ public record ChallengeSummaryResponse(
         ChallengeType type,
         Instant startAt,
         Instant endAt,
+        Integer maxGames,
         boolean isPublic,
         String status,
         int entryCount,
@@ -27,7 +28,8 @@ public record ChallengeSummaryResponse(
             int entryCount,
             List<String> participantGameNames,
             List<ParticipantPreviewResponse> previewParticipants,
-            List<DuoPreviewResponse> previewDuos
+            List<DuoPreviewResponse> previewDuos,
+            boolean allParticipantsReachedMaxGames
     ) {
         return new ChallengeSummaryResponse(
                 challenge.getId(),
@@ -36,8 +38,15 @@ public record ChallengeSummaryResponse(
                 challenge.getType(),
                 challenge.getStartAt(),
                 challenge.getEndAt(),
+                challenge.getMaxGames(),
                 challenge.isPublic(),
-                resolveStatus(challenge.getStartAt(), challenge.getEndAt(), now),
+                resolveStatus(
+                        challenge.getStartAt(),
+                        challenge.getEndAt(),
+                        challenge.getMaxGames(),
+                        allParticipantsReachedMaxGames,
+                        now
+                ),
                 entryCount,
                 participantGameNames,
                 previewParticipants,
@@ -54,6 +63,25 @@ public record ChallengeSummaryResponse(
             return "NOT_STARTED";
         }
         if (endAt != null && !now.isBefore(endAt)) {
+            return "FINISHED";
+        }
+        return "ACTIVE";
+    }
+
+    public static String resolveStatus(
+            Instant startAt,
+            Instant endAt,
+            Integer maxGames,
+            boolean allParticipantsReachedMaxGames,
+            Instant now
+    ) {
+        if (now.isBefore(startAt)) {
+            return "NOT_STARTED";
+        }
+        if (endAt != null && !now.isBefore(endAt)) {
+            return "FINISHED";
+        }
+        if (maxGames != null && allParticipantsReachedMaxGames) {
             return "FINISHED";
         }
         return "ACTIVE";

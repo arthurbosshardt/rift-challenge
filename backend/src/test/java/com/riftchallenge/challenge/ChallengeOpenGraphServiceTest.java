@@ -79,7 +79,7 @@ class ChallengeOpenGraphServiceTest {
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(8L);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(List.of())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(challenge, List.of())).thenReturn(List.of());
 
         String html = openGraphService.renderPreviewHtml(challenge.getShareSlug());
 
@@ -111,7 +111,7 @@ class ChallengeOpenGraphServiceTest {
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(3L);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
                 .thenReturn(List.of(first, second, third));
-        when(progressService.buildPreviewProgress(List.of(first, second, third))).thenReturn(List.of(
+        when(progressService.buildPreviewProgress(challenge, List.of(first, second, third))).thenReturn(List.of(
                 progress(first, 1, "Nikos", 42, "DIAMOND", "IV"),
                 progress(second, 2, "Pascal", 28, "EMERALD", "IV"),
                 progress(third, 3, "Jungle", 15, "EMERALD", "IV")
@@ -142,7 +142,7 @@ class ChallengeOpenGraphServiceTest {
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(1L);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
                 .thenReturn(List.of(first));
-        when(progressService.buildPreviewProgress(List.of(first))).thenReturn(List.of(
+        when(progressService.buildPreviewProgress(challenge, List.of(first))).thenReturn(List.of(
                 progress(first, 1, "Nikos", 42, "DIAMOND", "IV")
         ));
 

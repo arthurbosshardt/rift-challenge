@@ -31,8 +31,11 @@ public class Challenge {
     @Column(name = "start_at", nullable = false)
     private Instant startAt;
 
-    @Column(name = "end_at", nullable = false)
+    @Column(name = "end_at")
     private Instant endAt;
+
+    @Column(name = "max_games")
+    private Integer maxGames;
 
     @Column(name = "is_public", nullable = false)
     private boolean isPublic;
@@ -53,7 +56,7 @@ public class Challenge {
     }
 
     public static Challenge create(UUID ownerId, String name, ChallengeType type, Instant startAt, boolean isPublic) {
-        return create(ownerId, name, type, startAt, null, isPublic);
+        return create(ownerId, name, type, startAt, null, null, isPublic);
     }
 
     public static Challenge create(
@@ -64,6 +67,18 @@ public class Challenge {
             Instant endAt,
             boolean isPublic
     ) {
+        return create(ownerId, name, type, startAt, endAt, null, isPublic);
+    }
+
+    public static Challenge create(
+            UUID ownerId,
+            String name,
+            ChallengeType type,
+            Instant startAt,
+            Instant endAt,
+            Integer maxGames,
+            boolean isPublic
+    ) {
         Challenge challenge = new Challenge();
         challenge.id = UUID.randomUUID();
         challenge.ownerId = ownerId;
@@ -71,6 +86,7 @@ public class Challenge {
         challenge.type = type;
         challenge.startAt = startAt;
         challenge.endAt = endAt;
+        challenge.maxGames = maxGames;
         challenge.isPublic = isPublic;
         challenge.shareSlug = challenge.id.toString();
         return challenge;
@@ -112,6 +128,10 @@ public class Challenge {
         return endAt;
     }
 
+    public Integer getMaxGames() {
+        return maxGames;
+    }
+
     public boolean isPublic() {
         return isPublic;
     }
@@ -142,6 +162,10 @@ public class Challenge {
 
     public void updateEndAt(Instant endAt) {
         this.endAt = endAt;
+    }
+
+    public void updateMaxGames(Integer maxGames) {
+        this.maxGames = maxGames;
     }
 
     public void updateStartAt(Instant startAt) {

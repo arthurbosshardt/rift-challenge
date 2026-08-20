@@ -136,6 +136,73 @@ public interface ChallengeParticipantMatchRepository extends JpaRepository<Chall
     );
 
     @Query("""
+            SELECT rpm.participantId AS participantId,
+                   SUM(CASE WHEN rpm.win = true THEN 1L ELSE 0L END) AS wins,
+                   SUM(CASE WHEN rpm.win = false THEN 1L ELSE 0L END) AS losses
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
+            WHERE rpm.participantId IN :participantIds
+              AND rpm.challengeId = :challengeId
+              AND c.id = :challengeId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= c.startAt
+              AND (c.endAt IS NULL OR rm.gameStart < c.endAt)
+            GROUP BY rpm.participantId
+            """)
+    List<ParticipantWinLossCount> countWinsAndLossesInChallengeWindowForParticipants(
+            @Param("participantIds") List<UUID> participantIds,
+            @Param("challengeId") UUID challengeId
+    );
+
+    interface ParticipantWinLossCount {
+        UUID getParticipantId();
+
+        long getWins();
+
+        long getLosses();
+    }
+
+    @Query("""
+            SELECT rpm.participantId AS participantId,
+                   rpm.riotMatchId AS matchId,
+                   rpm.win AS win,
+                   rm.gameStart AS gameStart
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
+            WHERE rpm.participantId IN :participantIds
+              AND rpm.challengeId = :challengeId
+              AND c.id = :challengeId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= c.startAt
+              AND (c.endAt IS NULL OR rm.gameStart < c.endAt)
+            """)
+    List<ParticipantMatchOutcomeInWindowForParticipant> findOutcomesInChallengeWindowForParticipants(
+            @Param("participantIds") List<UUID> participantIds,
+            @Param("challengeId") UUID challengeId
+    );
+
+    interface ParticipantMatchOutcomeInWindowForParticipant {
+        UUID getParticipantId();
+
+        String getMatchId();
+
+        boolean isWin();
+
+        java.time.Instant getGameStart();
+    }
+
+    @Query("""
+            SELECT rm.riotMatchId AS matchId, rm.gameStart AS gameStart
+            FROM RiotMatch rm
+            WHERE rm.riotMatchId IN :matchIds
+            """)
+    List<MatchIdAndGameStart> findGameStartsForMatchIds(@Param("matchIds") Set<String> matchIds);
+
+    interface MatchIdAndGameStart {
+        String getMatchId();
+
+        java.time.Instant getGameStart();
+    }
+
+    @Query("""
             SELECT COUNT(rpm)
             FROM ChallengeParticipantMatch rpm
             WHERE rpm.participantId = :participantId AND rpm.win = true

@@ -11,7 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, timeout } from 'rxjs';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { EditChallengeModalService } from '../../core/services/edit-challenge-modal.service';
-import { DuoProgress, ParticipantProgress, ChallengeDetail } from '../../core/models/challenge.models';
+import { DuoProgress, ParticipantProgress, ChallengeDetail, UpdateChallengeRequest } from '../../core/models/challenge.models';
 import { buildLocalStartAtIso, challengeInstantsEqual, splitLocalDateHour } from '../../core/utils/challenge-date';
 import { normalizeChallengeDetail, mergeChallengeMetadataUpdate } from '../../core/utils/challenge-detail';
 import { mapParticipantError } from '../../core/utils/challenge-participant-errors';
@@ -29,8 +29,9 @@ import {
 import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
 
-type ScheduleInvalidField = 'startDate' | 'endDate';
+type ScheduleInvalidField = 'startDate' | 'endDate' | 'maxGames';
 type NameInvalidField = 'name';
+type EndMode = 'DATE' | 'GAMES';
 
 type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId';
 
@@ -38,7 +39,8 @@ type ScheduleValidationResult =
   | {
       valid: true;
       startAt: string;
-      endAt: string;
+      endAt: string | null;
+      maxGames: number | null;
     }
   | {
       valid: false;
@@ -62,8 +64,10 @@ export class EditChallengeModalComponent {
 
   protected startDateInput = '';
   protected startHourInput = 12;
+  protected endMode: EndMode = 'DATE';
   protected endDateInput = '';
   protected endHourInput = 12;
+  protected maxGamesInput: number | null = null;
   protected nameInput = '';
   protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -235,6 +239,16 @@ export class EditChallengeModalComponent {
     this.formError.set(null);
   }
 
+  protected toggleEndMode(): void {
+    if (this.saving()) {
+      return;
+    }
+
+    this.endMode = this.endMode === 'DATE' ? 'GAMES' : 'DATE';
+    this.clearScheduleInvalid('endDate');
+    this.clearScheduleInvalid('maxGames');
+  }
+
   protected async saveChallenge(): Promise<void> {
     const challenge = this.editChallengeModal.challenge();
     if (!challenge?.isOwner || this.saving()) {
@@ -261,7 +275,12 @@ export class EditChallengeModalComponent {
 
     const nameChanged = trimmedName !== challenge.name;
     const visibilityChanged = this.isPublicInput !== challenge.isPublic;
-    const scheduleChanged = this.hasScheduleChanges(challenge, scheduleValidation.startAt, scheduleValidation.endAt);
+    const scheduleChanged = this.hasScheduleChanges(
+      challenge,
+      scheduleValidation.startAt,
+      scheduleValidation.endAt,
+      scheduleValidation.maxGames,
+    );
     const metadataChanged = nameChanged || visibilityChanged || scheduleChanged;
 
     const hasCommittedRosterChanges =
@@ -314,9 +333,7 @@ export class EditChallengeModalComponent {
         updated = await firstValueFrom(
           this.challengeApi.updateChallenge(updated.id, {
             ...(nameChanged ? { name: trimmedName } : {}),
-            ...(scheduleChanged
-              ? { startAt: scheduleValidation.startAt, endAt: scheduleValidation.endAt }
-              : {}),
+            ...(scheduleChanged ? this.scheduleUpdatePayload(scheduleValidation) : {}),
             ...(visibilityChanged ? { isPublic: this.isPublicInput } : {}),
           }),
         );
@@ -369,12 +386,7 @@ export class EditChallengeModalComponent {
       const updated = await firstValueFrom(
         this.challengeApi.updateChallenge(challenge.id, {
           ...(options.nameChanged ? { name: options.trimmedName } : {}),
-          ...(options.scheduleChanged
-            ? {
-                startAt: options.scheduleValidation.startAt,
-                endAt: options.scheduleValidation.endAt,
-              }
-            : {}),
+          ...(options.scheduleChanged ? this.scheduleUpdatePayload(options.scheduleValidation) : {}),
           ...(options.visibilityChanged ? { isPublic: this.isPublicInput } : {}),
         }).pipe(timeout(15_000)),
       );
@@ -579,6 +591,9 @@ export class EditChallengeModalComponent {
       this.endDateInput = endParts.date;
       this.endHourInput = endParts.hour;
     }
+
+    this.endMode = challenge.maxGames != null ? 'GAMES' : 'DATE';
+    this.maxGamesInput = challenge.maxGames;
   }
 
   private resetParticipantInputs(): void {
@@ -768,9 +783,14 @@ export class EditChallengeModalComponent {
       fieldErrors.startDate = requiredMessage;
     }
 
-    if (!this.endDateInput.trim()) {
+    if (this.endMode === 'DATE' && !this.endDateInput.trim()) {
       invalidFields.add('endDate');
       fieldErrors.endDate = requiredMessage;
+    }
+
+    if (this.endMode === 'GAMES' && (this.maxGamesInput === null || this.maxGamesInput === undefined)) {
+      invalidFields.add('maxGames');
+      fieldErrors.maxGames = requiredMessage;
     }
 
     if (invalidFields.size > 0) {
@@ -792,6 +812,20 @@ export class EditChallengeModalComponent {
       };
     }
 
+    if (this.endMode === 'GAMES') {
+      const maxGames = Math.trunc(this.maxGamesInput as number);
+      if (!Number.isFinite(maxGames) || maxGames <= 0) {
+        return {
+          valid: false,
+          invalidFields: new Set(['maxGames']),
+          fieldErrors: { maxGames: this.i18n.t('create.invalidMaxGames') },
+          formError: this.i18n.t('create.invalidMaxGames'),
+        };
+      }
+
+      return { valid: true, startAt, endAt: null, maxGames };
+    }
+
     const endAt = buildLocalStartAtIso(this.endDateInput, this.endHourInput);
     if (!endAt) {
       return {
@@ -811,12 +845,28 @@ export class EditChallengeModalComponent {
       };
     }
 
-    return { valid: true, startAt, endAt };
+    return { valid: true, startAt, endAt, maxGames: null };
   }
 
-  private hasScheduleChanges(challenge: ChallengeDetail, startAt: string, endAt: string): boolean {
+  private scheduleUpdatePayload(
+    validation: Extract<ScheduleValidationResult, { valid: true }>,
+  ): Pick<UpdateChallengeRequest, 'startAt' | 'endAt' | 'maxGames'> {
+    return {
+      startAt: validation.startAt,
+      ...(validation.endAt ? { endAt: validation.endAt } : {}),
+      ...(validation.maxGames ? { maxGames: validation.maxGames } : {}),
+    };
+  }
+
+  private hasScheduleChanges(
+    challenge: ChallengeDetail,
+    startAt: string,
+    endAt: string | null,
+    maxGames: number | null,
+  ): boolean {
     return !challengeInstantsEqual(challenge.startAt, startAt)
-      || !challengeInstantsEqual(challenge.endAt, endAt);
+      || !challengeInstantsEqual(challenge.endAt, endAt)
+      || (challenge.maxGames ?? null) !== maxGames;
   }
 
   private validateSoloParticipantFields(): boolean {

@@ -2,10 +2,12 @@ import { Component, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy }
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
-import { AccountRecentGames, ChallengeSummary, ParticipantMatchHistory } from '../../core/models/challenge.models';
+import { ActivityCacheService } from '../../core/services/activity-cache.service';
+import { AccountRecentGames } from '../../core/models/challenge.models';
 import { formatRankLabel, tierColor } from '../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../core/utils/record-display';
 import { formatTimeSince } from '../../core/utils/relative-time';
+import { RefreshCooldown } from '../../core/utils/refresh-cooldown';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { ChallengeCardComponent } from '../../shared/components/challenge-card/challenge-card.component';
 import { ChallengeListSkeletonComponent } from '../../shared/components/challenge-list-skeleton/challenge-list-skeleton.component';
@@ -19,12 +21,6 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 
 type ActivityView = 'activity' | 'challenges';
-
-const REFRESH_COOLDOWN_MS = 5000;
-
-interface ActivityAccount extends AccountRecentGames {
-  matches: ParticipantMatchHistory[];
-}
 
 @Component({
   selector: 'app-my-activity-page',
@@ -49,19 +45,22 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   protected readonly settingsModal = inject(SettingsModalService);
   private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
+  private readonly cache = inject(ActivityCacheService);
 
   protected readonly view = signal<ActivityView>('activity');
 
-  protected readonly challenges = signal<ChallengeSummary[]>([]);
-  protected readonly challengesLoading = signal(true);
+  protected readonly challenges = this.cache.challenges;
+  protected readonly challengesLoading = signal(this.cache.challengesLastLoadedAt() === null);
   protected readonly challengesError = signal<string | null>(null);
+  private readonly challengesCooldown = new RefreshCooldown();
+  protected readonly challengesRefreshCooldownSeconds = this.challengesCooldown.seconds;
 
-  protected readonly activityAccounts = signal<ActivityAccount[]>([]);
-  protected readonly activityLoading = signal(true);
+  protected readonly activityAccounts = this.cache.activityAccounts;
+  protected readonly activityLoading = signal(this.cache.activityLastLoadedAt() === null);
   protected readonly activityError = signal<string | null>(null);
-  protected readonly refreshCooldownSeconds = signal(0);
-  protected readonly lastRefreshedAt = signal<string | null>(null);
-  private refreshCooldownInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly activityCooldown = new RefreshCooldown();
+  protected readonly refreshCooldownSeconds = this.activityCooldown.seconds;
+  protected readonly lastRefreshedAt = this.cache.lastRefreshedAt;
 
   protected readonly activitySkeletonRows = [0, 1];
 
@@ -70,9 +69,8 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.refreshCooldownInterval) {
-      clearInterval(this.refreshCooldownInterval);
-    }
+    this.activityCooldown.clear();
+    this.challengesCooldown.clear();
   }
 
   protected setView(view: ActivityView): void {
@@ -124,38 +122,34 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   }
 
   protected refreshButtonLabel(): string {
-    const seconds = this.refreshCooldownSeconds();
+    return this.cooldownLabel(this.refreshCooldownSeconds(), 'activity.refreshLabel');
+  }
+
+  protected challengesRefreshButtonLabel(): string {
+    return this.cooldownLabel(this.challengesRefreshCooldownSeconds(), 'home.searchRefreshLabel');
+  }
+
+  private cooldownLabel(seconds: number, idleKey: string): string {
     if (seconds > 0) {
       return this.i18n.locale() === 'en' ? `${seconds}seconds` : `${seconds} secondes`;
     }
-    return this.i18n.t('activity.refreshLabel');
+    return this.i18n.t(idleKey);
   }
 
   protected refreshActivity(): void {
-    if (this.refreshCooldownSeconds() > 0 || this.activityLoading()) {
+    if (this.activityCooldown.active || this.activityLoading()) {
       return;
     }
     this.loadActivity();
-    this.startRefreshCooldown();
+    this.activityCooldown.start();
   }
 
-  private startRefreshCooldown(): void {
-    if (this.refreshCooldownInterval) {
-      clearInterval(this.refreshCooldownInterval);
+  protected refreshMyChallenges(): void {
+    if (this.challengesCooldown.active || this.challengesLoading()) {
+      return;
     }
-    this.refreshCooldownSeconds.set(Math.round(REFRESH_COOLDOWN_MS / 1000));
-    this.refreshCooldownInterval = setInterval(() => {
-      const next = this.refreshCooldownSeconds() - 1;
-      if (next <= 0) {
-        this.refreshCooldownSeconds.set(0);
-        if (this.refreshCooldownInterval) {
-          clearInterval(this.refreshCooldownInterval);
-          this.refreshCooldownInterval = null;
-        }
-        return;
-      }
-      this.refreshCooldownSeconds.set(next);
-    }, 1000);
+    this.loadChallenges();
+    this.challengesCooldown.start();
   }
 
   private async loadPage(): Promise<void> {
@@ -180,8 +174,17 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    void this.loadChallenges();
-    void this.loadActivity();
+    if (this.cache.challengesLastLoadedAt() === null) {
+      void this.loadChallenges();
+    } else {
+      this.challengesLoading.set(false);
+    }
+
+    if (this.cache.activityLastLoadedAt() === null) {
+      void this.loadActivity();
+    } else {
+      this.activityLoading.set(false);
+    }
   }
 
   private loadChallenges(): void {
@@ -189,6 +192,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     this.challengeApi.listParticipatingChallenges().subscribe({
       next: (challenges) => {
         this.challenges.set(challenges);
+        this.cache.challengesLastLoadedAt.set(Date.now());
         this.challengesLoading.set(false);
       },
       error: (err: { status?: number }) => {
@@ -217,6 +221,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
             })),
           })),
         );
+        this.cache.activityLastLoadedAt.set(Date.now());
         this.activityLoading.set(false);
         this.lastRefreshedAt.set(new Date().toISOString());
       },

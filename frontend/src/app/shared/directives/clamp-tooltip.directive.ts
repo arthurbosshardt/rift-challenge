@@ -7,9 +7,7 @@ import {
   OnInit,
 } from '@angular/core';
 
-const MOBILE_QUERY = '(max-width: 1023px)';
 const VIEWPORT_MARGIN = 12;
-const GAP = 8;
 
 @Directive({
   selector: '[appClampTooltip]',
@@ -17,7 +15,7 @@ const GAP = 8;
 export class ClampTooltipDirective implements OnInit, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
   private tooltip: HTMLElement | null = null;
-  private readonly mediaQuery = window.matchMedia(MOBILE_QUERY);
+  private readonly mediaQuery = window.matchMedia('(max-width: 1023px)');
   private rafId: number | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -70,7 +68,7 @@ export class ClampTooltipDirective implements OnInit, OnDestroy {
   }
 
   private queueClamp(delayMs = 0): void {
-    if (!this.tooltip || !this.mediaQuery.matches) {
+    if (!this.tooltip) {
       return;
     }
 
@@ -97,46 +95,45 @@ export class ClampTooltipDirective implements OnInit, OnDestroy {
       return;
     }
 
-    const hostRect = this.host.nativeElement.getBoundingClientRect();
+    // Measure the tooltip exactly where CSS naturally places it (undo any
+    // previous clamp first, so we don't measure our own past correction).
+    this.resetPosition();
+    const naturalMaxWidth = Math.max(0, window.innerWidth - VIEWPORT_MARGIN * 2);
+    const natural = tooltip.getBoundingClientRect();
+
+    const overflowsLeft = natural.left < VIEWPORT_MARGIN;
+    const overflowsRight = natural.right > window.innerWidth - VIEWPORT_MARGIN;
+    const overflowsTop = natural.top < VIEWPORT_MARGIN;
+    const overflowsBottom = natural.bottom > window.innerHeight - VIEWPORT_MARGIN;
+
+    if (!overflowsLeft && !overflowsRight && !overflowsTop && !overflowsBottom) {
+      return;
+    }
+
     tooltip.classList.add('tooltip--viewport-clamped');
     tooltip.style.position = 'fixed';
     tooltip.style.right = 'auto';
     tooltip.style.bottom = 'auto';
     tooltip.style.transform = 'none';
     tooltip.style.zIndex = getComputedStyle(document.documentElement).getPropertyValue('--z-tooltip').trim() || '2400';
-    tooltip.style.maxWidth = `${Math.max(0, window.innerWidth - VIEWPORT_MARGIN * 2)}px`;
+    tooltip.style.maxWidth = `${naturalMaxWidth}px`;
 
-    tooltip.style.top = `${hostRect.bottom + GAP}px`;
-    tooltip.style.left = `${hostRect.left}px`;
-
-    let rect = tooltip.getBoundingClientRect();
-
-    if (rect.bottom > window.innerHeight - VIEWPORT_MARGIN) {
-      const aboveTop = hostRect.top - GAP - rect.height;
-      if (aboveTop >= VIEWPORT_MARGIN) {
-        tooltip.style.top = `${aboveTop}px`;
-        rect = tooltip.getBoundingClientRect();
-      }
+    let left = natural.left;
+    if (left < VIEWPORT_MARGIN) {
+      left = VIEWPORT_MARGIN;
+    } else if (left + natural.width > window.innerWidth - VIEWPORT_MARGIN) {
+      left = Math.max(VIEWPORT_MARGIN, window.innerWidth - VIEWPORT_MARGIN - natural.width);
     }
 
-    if (rect.top < VIEWPORT_MARGIN) {
-      tooltip.style.top = `${VIEWPORT_MARGIN}px`;
-      rect = tooltip.getBoundingClientRect();
+    let top = natural.top;
+    if (top < VIEWPORT_MARGIN) {
+      top = VIEWPORT_MARGIN;
+    } else if (top + natural.height > window.innerHeight - VIEWPORT_MARGIN) {
+      top = Math.max(VIEWPORT_MARGIN, window.innerHeight - VIEWPORT_MARGIN - natural.height);
     }
 
-    if (rect.bottom > window.innerHeight - VIEWPORT_MARGIN) {
-      tooltip.style.top = `${Math.max(VIEWPORT_MARGIN, window.innerHeight - VIEWPORT_MARGIN - rect.height)}px`;
-      rect = tooltip.getBoundingClientRect();
-    }
-
-    if (rect.right > window.innerWidth - VIEWPORT_MARGIN) {
-      tooltip.style.left = `${window.innerWidth - VIEWPORT_MARGIN - rect.width}px`;
-      rect = tooltip.getBoundingClientRect();
-    }
-
-    if (rect.left < VIEWPORT_MARGIN) {
-      tooltip.style.left = `${VIEWPORT_MARGIN}px`;
-    }
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
   }
 
   private isVisible(tooltip: HTMLElement): boolean {

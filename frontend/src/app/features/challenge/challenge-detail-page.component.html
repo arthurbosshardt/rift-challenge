@@ -27,14 +27,19 @@
             <dd>{{ preview.startAt | challengeDate:'full' }}</dd>
           </div>
           <div>
-            <dt>{{ 'challenge.end' | t }}</dt>
-            <dd>
-              @if (preview.endAt) {
-                {{ preview.endAt | challengeDate:'full' }}
-              } @else {
-                —
-              }
-            </dd>
+            @if (preview.maxGames) {
+              <dt>{{ 'challenge.maxGames' | t }}</dt>
+              <dd>{{ preview.maxGames }}</dd>
+            } @else {
+              <dt>{{ 'challenge.end' | t }}</dt>
+              <dd>
+                @if (preview.endAt) {
+                  {{ preview.endAt | challengeDate:'full' }}
+                } @else {
+                  —
+                }
+              </dd>
+            }
           </div>
         </dl>
       </header>
@@ -229,14 +234,19 @@
             <dd>{{ currentChallenge.startAt | challengeDate:'full' }}</dd>
           </div>
           <div>
-            <dt>{{ 'challenge.end' | t }}</dt>
-            <dd>
-              @if (currentChallenge.endAt) {
-                {{ currentChallenge.endAt | challengeDate:'full' }}
-              } @else {
-                —
-              }
-            </dd>
+            @if (currentChallenge.maxGames) {
+              <dt>{{ 'challenge.maxGames' | t }}</dt>
+              <dd>{{ currentChallenge.maxGames }}</dd>
+            } @else {
+              <dt>{{ 'challenge.end' | t }}</dt>
+              <dd>
+                @if (currentChallenge.endAt) {
+                  {{ currentChallenge.endAt | challengeDate:'full' }}
+                } @else {
+                  —
+                }
+              </dd>
+            }
           </div>
         </dl>
 
@@ -287,7 +297,17 @@
             <ol class="leaderboard">
               @for (participant of sortedParticipants(); track leaderboardRowTrack(participant.id)) {
                 <li [class]="'leaderboard__item ' + (podiumTierForParticipant(participant.position) ?? '')">
-                  <span class="leaderboard__rank">#{{ participant.position }}</span>
+                  <span class="leaderboard__rank">
+                    #{{ participant.position }}
+                    @if (currentChallenge.maxGames; as maxGames) {
+                      <span
+                        class="leaderboard__games-counter"
+                        [attr.aria-label]="'challenge.gamesPlayedAria' | t:{ played: participant.wins + participant.losses, max: maxGames }"
+                      >
+                        {{ participant.wins + participant.losses }}/{{ maxGames }}
+                      </span>
+                    }
+                  </span>
                   <app-player-identity
                     class="leaderboard__identity"
                     [compact]="true"
@@ -348,7 +368,17 @@
                   [class]="'leaderboard__item leaderboard__item--duo ' + (podiumTierForDuo(duo) ?? '')"
                   [class.leaderboard__item--ineligible]="!duo.eligible"
                 >
-                  <span class="leaderboard__rank">#{{ duo.position }}</span>
+                  <span class="leaderboard__rank">
+                    #{{ duo.position }}
+                    @if (currentChallenge.maxGames; as maxGames) {
+                      <span
+                        class="leaderboard__games-counter"
+                        [attr.aria-label]="'challenge.gamesPlayedAria' | t:{ played: duo.wins + duo.losses, max: maxGames }"
+                      >
+                        {{ duo.wins + duo.losses }}/{{ maxGames }}
+                      </span>
+                    }
+                  </span>
                   <div class="leaderboard__identity leaderboard__identity--duo">
                     <div class="leaderboard__duo-player-slot">
                       <app-player-identity

@@ -7,11 +7,17 @@ import com.riftchallenge.challenge.ChallengeRefreshRecordService;
 import com.riftchallenge.challenge.ChallengeRefreshRepository;
 import com.riftchallenge.challenge.ChallengeRepository;
 import com.riftchallenge.riot.RiotMatchLookupService;
+import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,6 +33,7 @@ public class ChallengeSyncService {
     private final ChallengeParticipantSyncService participantSyncService;
     private final ChallengeRefreshRecordService refreshRecordService;
     private final RiotMatchLookupService riotMatchLookupService;
+    private final ExecutorService riotSyncExecutor;
     private final Clock clock;
 
     public ChallengeSyncService(
@@ -36,6 +43,7 @@ public class ChallengeSyncService {
             ChallengeParticipantSyncService participantSyncService,
             ChallengeRefreshRecordService refreshRecordService,
             RiotMatchLookupService riotMatchLookupService,
+            ExecutorService riotSyncExecutor,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
@@ -44,6 +52,7 @@ public class ChallengeSyncService {
         this.participantSyncService = participantSyncService;
         this.refreshRecordService = refreshRecordService;
         this.riotMatchLookupService = riotMatchLookupService;
+        this.riotSyncExecutor = riotSyncExecutor;
         this.clock = clock;
     }
 
@@ -64,18 +73,33 @@ public class ChallengeSyncService {
         }
 
         boolean rateLimited = false;
+        ResponseStatusException failure = null;
 
         riotMatchLookupService.beginRefreshScope();
         try {
+            Map<String, RiotMatchDetailDto> sharedMatchCache =
+                    riotMatchLookupService.currentScopeCache();
+
+            List<Future<Boolean>> futures = new ArrayList<>();
             for (ChallengeParticipant participant : participants) {
+                futures.add(riotSyncExecutor.submit(() -> syncParticipantInWorker(
+                        challenge, participant, now, sharedMatchCache
+                )));
+            }
+
+            for (Future<Boolean> future : futures) {
                 try {
-                    participantSyncService.syncParticipant(challenge, participant, now);
-                } catch (ResponseStatusException exception) {
-                    if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                        rateLimited = true;
-                        continue;
+                    boolean participantRateLimited = future.get();
+                    rateLimited = rateLimited || participantRateLimited;
+                } catch (ExecutionException exception) {
+                    if (failure == null && exception.getCause() instanceof ResponseStatusException statusException) {
+                        failure = statusException;
+                    } else if (failure == null) {
+                        throw new RuntimeException(exception.getCause());
                     }
-                    throw exception;
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(exception);
                 }
             }
         } finally {
@@ -83,6 +107,10 @@ public class ChallengeSyncService {
         }
 
         refreshRecordService.recordRefresh(challengeId, now);
+
+        if (failure != null) {
+            throw failure;
+        }
 
         if (rateLimited) {
             throw new ResponseStatusException(
@@ -92,6 +120,26 @@ public class ChallengeSyncService {
         }
 
         return now;
+    }
+
+    private boolean syncParticipantInWorker(
+            Challenge challenge,
+            ChallengeParticipant participant,
+            Instant now,
+            Map<String, RiotMatchDetailDto> sharedMatchCache
+    ) {
+        riotMatchLookupService.bindScope(sharedMatchCache);
+        try {
+            participantSyncService.syncParticipant(challenge, participant, now);
+            return false;
+        } catch (ResponseStatusException exception) {
+            if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                return true;
+            }
+            throw exception;
+        } finally {
+            riotMatchLookupService.unbindScope();
+        }
     }
 
     private void enforceCooldown(UUID challengeId, Instant now) {
