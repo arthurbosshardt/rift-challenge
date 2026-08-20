@@ -9,8 +9,16 @@ function isPublicApiRequest(url: string): boolean {
   return url.includes('/api/challenges/public') || url.includes('/api/health');
 }
 
+function isExternalAssetRequest(url: string): boolean {
+  return (
+    url.includes('ddragon.leagueoflegends.com') ||
+    url.includes('communitydragon.org') ||
+    url.includes('communitydragon.net')
+  );
+}
+
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
-  if (request.method === 'OPTIONS' || isPublicApiRequest(request.url)) {
+  if (request.method === 'OPTIONS' || isPublicApiRequest(request.url) || isExternalAssetRequest(request.url)) {
     return next(request);
   }
 

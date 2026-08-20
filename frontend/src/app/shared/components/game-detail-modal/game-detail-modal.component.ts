@@ -66,6 +66,7 @@ export class GameDetailModalComponent {
       if (this.modalService.isOpen()) {
         document.body.style.overflow = 'hidden';
         this.selectedTeam.set('mine');
+        void this.itemData.ensureLoaded();
         this.load();
         return;
       }
@@ -184,21 +185,33 @@ export class GameDetailModalComponent {
     if (!item.itemId || !item.iconUrl) {
       return;
     }
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const tooltipHalfWidth = 128;
-    const estimatedTooltipHeight = 160;
-    const placement: 'above' | 'below' = rect.top > estimatedTooltipHeight ? 'above' : 'below';
-    const left = Math.min(
-      Math.max(rect.left + rect.width / 2, tooltipHalfWidth + 8),
-      window.innerWidth - tooltipHalfWidth - 8,
-    );
-    this.hoveredItem.set({
-      itemId: item.itemId,
-      iconUrl: item.iconUrl,
-      top: placement === 'above' ? rect.top - 8 : rect.bottom + 8,
-      left,
-      placement,
+    void this.itemData.ensureLoaded().then(() => {
+      if (!this.itemData.details(item.itemId)) {
+        return;
+      }
+      const target = event.currentTarget as HTMLElement | null;
+      if (!target || (this.pinnedItemTarget && this.pinnedItemTarget !== target)) {
+        return;
+      }
+      // Hover may have ended while the catalog was still loading.
+      if (!this.pinnedItemTarget && !target.matches(':hover') && document.activeElement !== target) {
+        return;
+      }
+      const rect = target.getBoundingClientRect();
+      const tooltipHalfWidth = 128;
+      const estimatedTooltipHeight = 160;
+      const placement: 'above' | 'below' = rect.top > estimatedTooltipHeight ? 'above' : 'below';
+      const left = Math.min(
+        Math.max(rect.left + rect.width / 2, tooltipHalfWidth + 8),
+        window.innerWidth - tooltipHalfWidth - 8,
+      );
+      this.hoveredItem.set({
+        itemId: item.itemId!,
+        iconUrl: item.iconUrl!,
+        top: placement === 'above' ? rect.top - 8 : rect.bottom + 8,
+        left,
+        placement,
+      });
     });
   }
 
@@ -215,6 +228,7 @@ export class GameDetailModalComponent {
     if (!item.itemId || !item.iconUrl) {
       return;
     }
+    event.stopPropagation();
     const target = event.currentTarget as HTMLElement;
     if (this.pinnedItemTarget === target) {
       this.pinnedItemTarget = null;

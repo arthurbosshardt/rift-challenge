@@ -166,6 +166,26 @@
         }
       </div>
     </section>
+
+    @if (hoveredItem(); as hovered) {
+      @if (itemDetails(hovered.itemId); as info) {
+        <div
+          class="game-detail-modal__item-tooltip"
+          [class.game-detail-modal__item-tooltip--below]="hovered.placement === 'below'"
+          [style.top.px]="hovered.top"
+          [style.left.px]="hovered.left"
+          role="tooltip"
+        >
+          <span class="game-detail-modal__item-tooltip-header">
+            <img [src]="hovered.iconUrl" alt="" />
+            <span class="game-detail-modal__item-tooltip-name">{{ info.name }}</span>
+          </span>
+          @if (info.description) {
+            <span class="game-detail-modal__item-tooltip-desc">{{ info.description }}</span>
+          }
+        </div>
+      }
+    }
   </div>
 
   <ng-template #playerFields let-player="player">
@@ -250,34 +270,36 @@
       }
     </div>
 
-    <div class="game-detail-modal__kda">
-      <span class="game-detail-modal__kda-numbers">{{ kda(player) }}</span>
-      <span class="game-detail-modal__stat-label">{{ 'gameDetail.kda' | t }}</span>
-    </div>
+    <div class="game-detail-modal__player-stats">
+      <div class="game-detail-modal__kda">
+        <span class="game-detail-modal__kda-numbers">{{ kda(player) }}</span>
+        <span class="game-detail-modal__stat-label">{{ 'gameDetail.kda' | t }}</span>
+      </div>
 
-    <div class="game-detail-modal__cgw">
-      <span class="game-detail-modal__cgw-row">
-        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.cs' | t }}</span>
-        <span class="game-detail-modal__cgw-value">{{ player.cs }} ({{ csPerMinute(player) }}/min)</span>
-      </span>
-      <span class="game-detail-modal__cgw-row">
-        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.gold' | t }}</span>
-        <span class="game-detail-modal__cgw-value">{{ formatNumber(player.goldEarned) }}</span>
-      </span>
-      <span class="game-detail-modal__cgw-row">
-        <span class="game-detail-modal__cgw-label">{{ 'gameDetail.wards' | t }}</span>
-        <span class="game-detail-modal__cgw-value">{{ player.wardsPlaced }}</span>
-      </span>
-    </div>
+      <div class="game-detail-modal__cgw">
+        <span class="game-detail-modal__cgw-row">
+          <span class="game-detail-modal__cgw-label">{{ 'gameDetail.cs' | t }}</span>
+          <span class="game-detail-modal__cgw-value">{{ player.cs }} ({{ csPerMinute(player) }}/min)</span>
+        </span>
+        <span class="game-detail-modal__cgw-row">
+          <span class="game-detail-modal__cgw-label">{{ 'gameDetail.gold' | t }}</span>
+          <span class="game-detail-modal__cgw-value">{{ formatNumber(player.goldEarned) }}</span>
+        </span>
+        <span class="game-detail-modal__cgw-row">
+          <span class="game-detail-modal__cgw-label">{{ 'gameDetail.wards' | t }}</span>
+          <span class="game-detail-modal__cgw-value">{{ player.wardsPlaced }}</span>
+        </span>
+      </div>
 
-    <div class="game-detail-modal__damage">
-      <span class="game-detail-modal__damage-top">
-        <span class="game-detail-modal__stat-value">{{ formatNumber(player.damageDealt) }}</span>
-        <span class="game-detail-modal__stat-label">{{ 'gameDetail.damage' | t }}</span>
-      </span>
-      <span class="game-detail-modal__damage-bar-track">
-        <span class="game-detail-modal__damage-bar-fill" [style.width.%]="damageBarWidth(player)"></span>
-      </span>
+      <div class="game-detail-modal__damage">
+        <span class="game-detail-modal__damage-top">
+          <span class="game-detail-modal__stat-value">{{ formatNumber(player.damageDealt) }}</span>
+          <span class="game-detail-modal__stat-label">{{ 'gameDetail.damage' | t }}</span>
+        </span>
+        <span class="game-detail-modal__damage-bar-track">
+          <span class="game-detail-modal__damage-bar-fill" [style.width.%]="damageBarWidth(player)"></span>
+        </span>
+      </div>
     </div>
 
     <div class="game-detail-modal__items">
@@ -300,26 +322,6 @@
       }
     </div>
   </ng-template>
-
-  @if (hoveredItem(); as hovered) {
-    @if (itemDetails(hovered.itemId); as info) {
-      <div
-        class="game-detail-modal__item-tooltip"
-        [class.game-detail-modal__item-tooltip--below]="hovered.placement === 'below'"
-        [style.top.px]="hovered.top"
-        [style.left.px]="hovered.left"
-        role="tooltip"
-      >
-        <span class="game-detail-modal__item-tooltip-header">
-          <img [src]="hovered.iconUrl" alt="" />
-          <span class="game-detail-modal__item-tooltip-name">{{ info.name }}</span>
-        </span>
-        @if (info.description) {
-          <span class="game-detail-modal__item-tooltip-desc">{{ info.description }}</span>
-        }
-      </div>
-    }
-  }
 
   <ng-template #teamStats let-team="team" let-objectives="objectives" let-side="side" let-enemy="enemy">
     <div class="game-detail-modal__team-stats" [class.game-detail-modal__team-stats--enemy]="enemy">

@@ -1,8 +1,6 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { I18nService } from '../i18n/i18n.service';
-
-const DDRAGON_VERSION = '16.16.1';
+import { DATA_DRAGON_VERSION, DDRAGON_API_BASE, DDRAGON_CDN_BASE } from '../constants/ddragon-constants';
 
 interface DataDragonItem {
   name: string;
@@ -16,16 +14,16 @@ interface DataDragonItemPayload {
 
 @Injectable({ providedIn: 'root' })
 export class ItemDataService {
-  private readonly http = inject(HttpClient);
   private readonly i18n = inject(I18nService);
 
   private readonly cache = new Map<string, Record<string, DataDragonItem>>();
-  private readonly pending = new Set<string>();
+  private readonly pending = new Map<string, Promise<void>>();
   private readonly items = signal<Record<string, DataDragonItem>>({});
+  private resolvedVersion: string | null = null;
 
   constructor() {
     effect(() => {
-      this.load(this.i18n.locale() === 'en' ? 'en_US' : 'fr_FR');
+      void this.ensureLoaded(this.i18n.locale() === 'en' ? 'en_US' : 'fr_FR');
     });
   }
 
@@ -43,32 +41,64 @@ export class ItemDataService {
     return { name: entry.name, description };
   }
 
-  private load(ddragonLocale: string): void {
+  ensureLoaded(ddragonLocale = this.i18n.locale() === 'en' ? 'en_US' : 'fr_FR'): Promise<void> {
     const cached = this.cache.get(ddragonLocale);
     if (cached) {
       this.items.set(cached);
-      return;
+      return Promise.resolve();
     }
-    if (this.pending.has(ddragonLocale)) {
-      return;
-    }
-    this.pending.add(ddragonLocale);
 
-    this.http
-      .get<DataDragonItemPayload>(
-        `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/data/${ddragonLocale}/item.json`,
-      )
-      .subscribe({
-        next: (payload) => {
-          const data = payload.data ?? {};
-          this.cache.set(ddragonLocale, data);
-          this.items.set(data);
-          this.pending.delete(ddragonLocale);
-        },
-        error: () => {
-          this.pending.delete(ddragonLocale);
-        },
-      });
+    const inFlight = this.pending.get(ddragonLocale);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const loadPromise = this.load(ddragonLocale).finally(() => {
+      this.pending.delete(ddragonLocale);
+    });
+    this.pending.set(ddragonLocale, loadPromise);
+    return loadPromise;
+  }
+
+  private async load(ddragonLocale: string): Promise<void> {
+    try {
+      const version = await this.resolveVersion();
+      // Use fetch (not HttpClient) so the auth interceptor never attaches a
+      // Bearer token — that would force a CORS preflight Data Dragon rejects.
+      const response = await fetch(`${DDRAGON_CDN_BASE}/cdn/${version}/data/${ddragonLocale}/item.json`);
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = (await response.json()) as DataDragonItemPayload;
+      const data = payload.data ?? {};
+      this.cache.set(ddragonLocale, data);
+      this.items.set(data);
+    } catch {
+      // Tooltips stay unavailable until a later retry.
+    }
+  }
+
+  private async resolveVersion(): Promise<string> {
+    if (this.resolvedVersion) {
+      return this.resolvedVersion;
+    }
+
+    try {
+      const response = await fetch(`${DDRAGON_API_BASE}/versions.json`);
+      if (response.ok) {
+        const versions = (await response.json()) as string[];
+        if (versions[0]) {
+          this.resolvedVersion = versions[0];
+          return this.resolvedVersion;
+        }
+      }
+    } catch {
+      // Fall back to the pinned constant below.
+    }
+
+    this.resolvedVersion = DATA_DRAGON_VERSION;
+    return this.resolvedVersion;
   }
 
   private stripHtml(html: string | undefined): string {
