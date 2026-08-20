@@ -5,11 +5,13 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -25,6 +27,10 @@ public final class ChallengeOpenGraphImageRenderer {
     private static final Color NAME_COLOR = new Color(232, 236, 241);
     private static final Color META_COLOR = new Color(140, 148, 163);
     private static final Color PLACEHOLDER_FILL = new Color(36, 44, 56);
+    private static final Color BRAND_COLOR = new Color(197, 160, 89, 220);
+
+    private static final Font BRAND_FONT = loadBrandFont();
+    private static final BufferedImage BRAND_LOGO = loadBrandLogo();
 
     private ChallengeOpenGraphImageRenderer() {
     }
@@ -62,8 +68,8 @@ public final class ChallengeOpenGraphImageRenderer {
     }
 
     private static void drawHeader(Graphics2D graphics, String title, String subtitle) {
-        Font titleFont = new Font(Font.SANS_SERIF, Font.BOLD, 52);
-        Font subtitleFont = new Font(Font.SANS_SERIF, Font.PLAIN, 28);
+        Font titleFont = brandFont(52f);
+        Font subtitleFont = uiFont(Font.PLAIN, 28);
 
         graphics.setFont(titleFont);
         graphics.setColor(TITLE_COLOR);
@@ -97,12 +103,12 @@ public final class ChallengeOpenGraphImageRenderer {
 
         int textX = x + 24 + iconBlockWidth + 20;
         graphics.setColor(NAME_COLOR);
-        graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 34));
+        graphics.setFont(uiFont(Font.BOLD, 34));
         drawTruncatedText(graphics, entry.label(), textX, y + 48, width - (textX - x) - 24);
 
         if (entry.detail() != null && !entry.detail().isBlank()) {
             graphics.setColor(META_COLOR);
-            graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 24));
+            graphics.setFont(uiFont(Font.PLAIN, 24));
             int detailX = textX;
             if (entry.rankEmblem() != null) {
                 int emblemSize = 34;
@@ -153,7 +159,7 @@ public final class ChallengeOpenGraphImageRenderer {
         graphics.setStroke(new BasicStroke(2f));
         graphics.drawOval(x, y, badgeSize, badgeSize);
         graphics.setColor(palette.badgeText());
-        graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        graphics.setFont(uiFont(Font.BOLD, 18));
         FontMetrics metrics = graphics.getFontMetrics();
         String rankLabel = String.valueOf(position);
         int rankWidth = metrics.stringWidth(rankLabel);
@@ -197,7 +203,7 @@ public final class ChallengeOpenGraphImageRenderer {
 
         String initial = initialFromLabel(label);
         graphics.setColor(NAME_COLOR);
-        graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, size / 2));
+        graphics.setFont(uiFont(Font.BOLD, size / 2));
         FontMetrics metrics = graphics.getFontMetrics();
         int initialWidth = metrics.stringWidth(initial);
         graphics.drawString(initial, x + (size - initialWidth) / 2, y + (size + metrics.getAscent()) / 2 - 4);
@@ -216,9 +222,27 @@ public final class ChallengeOpenGraphImageRenderer {
     }
 
     private static void drawBrandMark(Graphics2D graphics) {
-        graphics.setColor(new Color(197, 160, 89, 180));
-        graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 22));
-        graphics.drawString("Rift Challenge", WIDTH - 220, HEIGHT - 42);
+        String brandLabel = "Rift Challenge";
+        Font labelFont = brandFont(24f);
+        graphics.setFont(labelFont);
+        FontMetrics metrics = graphics.getFontMetrics();
+
+        int logoSize = 44;
+        int gap = 14;
+        int textWidth = metrics.stringWidth(brandLabel);
+        int blockWidth = (BRAND_LOGO != null ? logoSize + gap : 0) + textWidth;
+        int right = WIDTH - 56;
+        int left = right - blockWidth;
+        int baseline = HEIGHT - 42;
+        int logoY = baseline - logoSize + 8;
+
+        if (BRAND_LOGO != null) {
+            graphics.drawImage(BRAND_LOGO, left, logoY, logoSize, logoSize, null);
+            left += logoSize + gap;
+        }
+
+        graphics.setColor(BRAND_COLOR);
+        graphics.drawString(brandLabel, left, baseline);
     }
 
     private static void drawTruncatedText(Graphics2D graphics, String text, int x, int y, int maxWidth) {
@@ -258,6 +282,43 @@ public final class ChallengeOpenGraphImageRenderer {
                     new Color(26, 18, 12)
             );
         };
+    }
+
+    private static Font brandFont(float size) {
+        if (BRAND_FONT != null) {
+            return BRAND_FONT.deriveFont(Font.PLAIN, size);
+        }
+        return uiFont(Font.BOLD, Math.round(size));
+    }
+
+    private static Font uiFont(int style, int size) {
+        return new Font(Font.SANS_SERIF, style, size);
+    }
+
+    private static Font loadBrandFont() {
+        try (InputStream stream = ChallengeOpenGraphImageRenderer.class.getResourceAsStream(
+                "/brand/LemonMilk-Regular.ttf"
+        )) {
+            if (stream == null) {
+                return null;
+            }
+            Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+            return font;
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    private static BufferedImage loadBrandLogo() {
+        try (InputStream stream = ChallengeOpenGraphImageRenderer.class.getResourceAsStream("/brand/logo.png")) {
+            if (stream == null) {
+                return null;
+            }
+            return ImageIO.read(stream);
+        } catch (IOException exception) {
+            return null;
+        }
     }
 
     record ChallengeOpenGraphPreview(String challengeName, String subtitle, List<PodiumEntry> podium) {

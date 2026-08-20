@@ -32,7 +32,6 @@ export class I18nService {
       return;
     }
     document.documentElement.lang = locale;
-    document.title = TRANSLATIONS[locale]['landing.introBrand'] ?? 'Rift Challenge';
   }
 
   private readInitialLocale(): AppLocale {

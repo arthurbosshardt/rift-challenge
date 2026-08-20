@@ -33,7 +33,11 @@ public class SecurityConfig {
                         "/actuator/health",
                         "/api/health",
                         "/api/challenges/public",
-                        "/api/champion-icons/**"
+                        "/api/champion-icons/**",
+                        "/api/challenge-preview",
+                        "/api/challenge-preview-image",
+                        "/api/sitemap.xml",
+                        "/api/challenges/share/**"
                 )
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
@@ -67,6 +71,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/share/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/challenge-preview").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/challenge-preview-image").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/sitemap.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/*/participants/*/matches/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenges/*/duos/*/matches/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/champion-icons/**").permitAll()

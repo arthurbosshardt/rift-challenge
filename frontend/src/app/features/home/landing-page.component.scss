@@ -90,6 +90,25 @@
   line-height: 1.55;
 }
 
+.landing__hero-title {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .landing__guest-actions--inline {
   display: block;
 }
@@ -174,11 +193,12 @@
   min-width: 0;
 }
 
-.landing__step strong {
+.landing__step h2 {
   display: block;
-  margin-bottom: 0.3125rem;
+  margin: 0 0 0.3125rem;
   color: var(--step-shine);
   font-size: var(--landing-block-title-size);
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -248,11 +268,12 @@
   overflow: hidden;
 }
 
-.landing__type strong {
+.landing__type h3 {
   display: block;
-  margin-bottom: 0.1875rem;
+  margin: 0 0 0.1875rem;
   color: var(--type-accent);
   font-size: var(--landing-block-title-size);
+  font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }

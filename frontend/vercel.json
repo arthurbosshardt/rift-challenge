@@ -13,12 +13,16 @@
   ],
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap.xml"
+    },
+    {
       "source": "/challenges/:slug",
       "has": [
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot).*"
+          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot|bingbot|Bingbot|Slurp|DuckDuckBot|Applebot).*"
         }
       ],
       "destination": "/api/challenge-preview?slug=:slug"
@@ -29,11 +33,21 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot).*"
+          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot|bingbot|Bingbot|Slurp|DuckDuckBot|Applebot).*"
         }
       ],
       "destination": "/api/challenge-preview?slug=:slug"
     },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/robots.txt",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=900" }]
+    }
   ]
 }

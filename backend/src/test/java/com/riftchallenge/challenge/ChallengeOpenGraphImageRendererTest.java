@@ -8,6 +8,12 @@ import org.junit.jupiter.api.Test;
 class ChallengeOpenGraphImageRendererTest {
 
     @Test
+    void brandAssets_areAvailableOnClasspath() {
+        assertThat(ChallengeOpenGraphImageRenderer.class.getResource("/brand/logo.png")).isNotNull();
+        assertThat(ChallengeOpenGraphImageRenderer.class.getResource("/brand/LemonMilk-Regular.ttf")).isNotNull();
+    }
+
+    @Test
     void renderPng_producesValidPngBytes() {
         byte[] png = ChallengeOpenGraphImageRenderer.renderPng(
                 new ChallengeOpenGraphImageRenderer.ChallengeOpenGraphPreview(

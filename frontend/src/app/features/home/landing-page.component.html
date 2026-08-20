@@ -7,16 +7,19 @@
             <span class="landing__intro-brand">{{ 'landing.introBrand' | t }}</span>
             <span class="landing__intro-question">{{ 'landing.introQuestion' | t }}</span>
           </h1>
-          <p class="landing__subtitle">{{ 'landing.heroSubtitle' | t }}</p>
+          <p class="landing__subtitle">
+            <span class="landing__hero-title">{{ 'landing.heroTitle' | t }}</span>
+            {{ 'landing.heroSubtitle' | t }}
+          </p>
         </div>
 
-        <ol class="landing__steps">
+        <ol class="landing__steps" [attr.aria-label]="'landing.introBrand' | t">
           <li class="landing__step landing__step--bronze">
             <span class="landing__step-emblem" aria-hidden="true">
               <app-rank-emblem tier="BRONZE" size="md" />
             </span>
             <div class="landing__step-copy">
-              <strong>{{ 'landing.step1Title' | t }}</strong>
+              <h2>{{ 'landing.step1Title' | t }}</h2>
               <p class="landing__step-desc">{{ 'landing.step1Text' | t }}</p>
             </div>
           </li>
@@ -25,7 +28,7 @@
               <app-rank-emblem tier="SILVER" size="md" />
             </span>
             <div class="landing__step-copy">
-              <strong>{{ 'landing.step2Title' | t }}</strong>
+              <h2>{{ 'landing.step2Title' | t }}</h2>
               <p class="landing__step-desc">{{ 'landing.step2Text' | t }}</p>
             </div>
           </li>
@@ -34,7 +37,7 @@
               <app-rank-emblem tier="GOLD" size="md" />
             </span>
             <div class="landing__step-copy">
-              <strong>{{ 'landing.step3Title' | t }}</strong>
+              <h2>{{ 'landing.step3Title' | t }}</h2>
               <p class="landing__step-desc">{{ 'landing.step3Text' | t }}</p>
             </div>
           </li>
@@ -48,7 +51,8 @@
             <app-landing-guest-actions class="landing__guest-actions--inline" />
           }
 
-          <div class="landing__types">
+          <section class="landing__types" [attr.aria-label]="'landing.typesTitle' | t">
+            <h2 class="visually-hidden">{{ 'landing.typesTitle' | t }}</h2>
             <article class="landing__type landing__type--soloq">
               <span class="landing__type-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -59,7 +63,7 @@
                 </svg>
               </span>
               <div class="landing__type-copy">
-                <strong>{{ 'landing.soloqTitle' | t }}</strong>
+                <h3>{{ 'landing.soloqTitle' | t }}</h3>
                 <p class="landing__type-desc">{{ 'landing.soloqText' | t }}</p>
               </div>
             </article>
@@ -73,11 +77,11 @@
                 </svg>
               </span>
               <div class="landing__type-copy">
-                <strong>{{ 'landing.duoqTitle' | t }}</strong>
+                <h3>{{ 'landing.duoqTitle' | t }}</h3>
                 <p class="landing__type-desc">{{ 'landing.duoqText' | t }}</p>
               </div>
             </article>
-          </div>
+          </section>
         </div>
 
         @if (!auth.isAuthenticated()) {
@@ -86,7 +90,8 @@
       </div>
 
       <div class="landing__right">
-        <div class="landing__cards">
+        <section class="landing__cards" [attr.aria-label]="'landing.inspiredTitle' | t">
+          <h2 class="visually-hidden">{{ 'landing.inspiredTitle' | t }}</h2>
           @for (item of inspirations; track item.id) {
             <a
               class="landing-card landing-card--{{ item.id }}"
@@ -126,7 +131,7 @@
               </div>
             </a>
           }
-        </div>
+        </section>
       </div>
     </div>
   </div>

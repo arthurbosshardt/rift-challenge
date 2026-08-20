@@ -70,8 +70,10 @@ public class ChallengeOpenGraphService {
                   <meta charset="utf-8" />
                   <title>%s</title>
                   <meta name="description" content="%s" />
+                  <meta name="robots" content="index,follow,max-image-preview:large" />
                   <meta property="og:type" content="website" />
                   <meta property="og:site_name" content="Rift Challenge" />
+                  <meta property="og:locale" content="fr_FR" />
                   <meta property="og:title" content="%s" />
                   <meta property="og:description" content="%s" />
                   <meta property="og:url" content="%s" />
@@ -86,6 +88,8 @@ public class ChallengeOpenGraphService {
                   <meta http-equiv="refresh" content="0;url=%s" />
                 </head>
                 <body>
+                  <h1>%s</h1>
+                  <p>%s</p>
                   <p><a href="%s">%s</a></p>
                 </body>
                 </html>
@@ -101,6 +105,8 @@ public class ChallengeOpenGraphService {
                 escapeHtml(context.imageUrl()),
                 escapeHtml(context.pageUrl()),
                 escapeHtml(context.pageUrl()),
+                escapeHtml(challenge.getName()),
+                escapeHtml(context.description()),
                 escapeHtml(context.pageUrl()),
                 escapeHtml(challenge.getName())
         );

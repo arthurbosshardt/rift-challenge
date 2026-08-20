@@ -33,6 +33,7 @@ import {
 } from '../../shared/components/challenge-badge/challenge-badge.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { SeoService } from '../../core/seo/seo.service';
 
 @Component({
   selector: 'app-challenge-detail-page',
@@ -50,6 +51,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   private readonly deleteChallengeConfirm = inject(DeleteChallengeConfirmService);
   private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
+  private readonly seo = inject(SeoService);
 
   private shareSlug = '';
   private countdownTimer: number | null = null;
@@ -123,13 +125,37 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
         const normalized = normalizeChallengeDetail(challenge);
         this.challenge.set(normalized);
         this.loading.set(false);
+        this.applyChallengeSeo(normalized);
         this.startTimersIfNeeded();
         this.openEditIfRequested(normalized);
       },
       error: () => {
         this.error.set(this.i18n.t('challenge.notFound'));
         this.loading.set(false);
+        this.seo.apply({
+          title: `${this.i18n.t('seo.challenge.notFound.title')} | Rift Challenge`,
+          description: this.i18n.t('seo.challenge.notFound.description'),
+          path: `/challenges/${encodeURIComponent(this.shareSlug)}`,
+          noindex: true,
+        });
       },
+    });
+  }
+
+  private applyChallengeSeo(challenge: ChallengeDetail): void {
+    const typeLabel = challenge.type === 'DUOQ'
+      ? this.i18n.t('challenge.typeDuoq')
+      : this.i18n.t('challenge.typeSoloq');
+    const path = challenge.sharePath || `/challenges/${encodeURIComponent(challenge.shareSlug)}`;
+    this.seo.apply({
+      title: `${this.i18n.t('seo.challenge.title', { name: challenge.name, type: typeLabel })} | Rift Challenge`,
+      description: this.i18n.t('seo.challenge.description', { name: challenge.name, type: typeLabel }),
+      path,
+      image: challenge.isPublic
+        ? `https://rift-challenge.com/api/challenge-preview-image?slug=${encodeURIComponent(challenge.shareSlug)}`
+        : undefined,
+      noindex: !challenge.isPublic,
+      type: 'website',
     });
   }
 

@@ -1,0 +1,15 @@
+# https://rift-challenge.com/robots.txt
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /public-challenges
+Allow: /challenges/
+
+Disallow: /login
+Disallow: /settings
+Disallow: /auth/
+Disallow: /my-challenges
+Disallow: /challenges/new
+Disallow: /dashboard
+
+Sitemap: https://rift-challenge.com/sitemap.xml
