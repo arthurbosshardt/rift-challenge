@@ -273,7 +273,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
 
     this.challengeApi.deleteChallenge(challengeId).subscribe({
       next: () => {
-        this.activityCache.challenges.update((challenges) => challenges.filter((c) => c.id !== challengeId));
+        this.activityCache.removeChallenge(challengeId);
         this.publicChallengesCache.challenges.update((challenges) => challenges.filter((c) => c.id !== challengeId));
         void this.router.navigate(['/my-challenges']);
       },

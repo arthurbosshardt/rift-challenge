@@ -12,10 +12,12 @@ import {
   parseLastSeen,
 } from '../auth/session-ttl';
 import { authErrorToKey } from '../utils/auth-errors';
+import { ActivityCacheService } from './activity-cache.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly activityCache = inject(ActivityCacheService);
 
   private readonly supabase: SupabaseClient = createClient(
     environment.supabaseUrl,
@@ -43,6 +45,7 @@ export class AuthService {
   private activityBound = false;
 
   readonly isAuthenticated = computed(() => this.session() !== null);
+  readonly userId = computed(() => this.session()?.user?.id ?? null);
   readonly displayName = computed(() => this.profileUsername());
   readonly email = computed(() => this.session()?.user?.email ?? null);
   readonly linkedAccount = computed(() => this.linkedRiotAccount());
@@ -348,6 +351,7 @@ export class AuthService {
     this.linkedRiotAccount.set(null);
     this.profileLoading.set(false);
     this.clearLastSeen();
+    this.activityCache.clear();
   }
 
   private sessionWithinTtl(session: Session | null, ignoreMissingLastSeen = false): boolean {

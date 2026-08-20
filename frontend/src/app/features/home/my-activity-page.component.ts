@@ -224,6 +224,13 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const ownerKey = this.auth.userId();
+    if (ownerKey) {
+      this.cache.hydrateForOwner(ownerKey);
+      this.challengesLoading.set(this.cache.challengesLastLoadedAt() === null);
+      this.activityLoading.set(this.cache.activityLastLoadedAt() === null);
+    }
+
     if (!this.auth.linkedAccount()) {
       await this.auth.refreshProfile();
     }
@@ -258,9 +265,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     }
     this.challengeApi.listParticipatingChallenges().subscribe({
       next: (response: ChallengeListResponse) => {
-        this.challenges.set(response.challenges);
-        this.cache.challengesLastLoadedAt.set(Date.now());
-        this.cache.challengesGeneratedAt.set(response.generatedAt);
+        this.cache.setChallenges(response.challenges, response.generatedAt);
         this.publicCache.refreshAvailable.set(response.refreshAvailable);
         this.publicCache.nextRefreshAvailableAt.set(response.nextRefreshAvailableAt);
         this.challengesLoading.set(false);
@@ -290,7 +295,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     this.activityLoading.set(true);
     this.challengeApi.listRecentGames().subscribe({
       next: (accounts) => {
-        this.activityAccounts.set(
+        this.cache.setActivity(
           accounts.map((account) => ({
             ...account,
             matches: account.games.map((game) => ({
@@ -302,10 +307,9 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
               playedAt: game.playedAt,
             })),
           })),
+          new Date().toISOString(),
         );
-        this.cache.activityLastLoadedAt.set(Date.now());
         this.activityLoading.set(false);
-        this.lastRefreshedAt.set(new Date().toISOString());
       },
       error: (err: { status?: number }) => {
         this.activityLoading.set(false);
