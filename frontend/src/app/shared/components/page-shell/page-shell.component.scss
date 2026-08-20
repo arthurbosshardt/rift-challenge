@@ -205,7 +205,10 @@ button.linkish:focus-visible .nav-icon {
 .shell__header {
   position: relative;
   z-index: 40;
-  margin-bottom: 2rem;
+  /* Clears the oversized logo, which overflows down past the header's
+     own box on desktop — every page's content needs this gap, not just
+     the ones that happened to be checked so far. */
+  margin-bottom: 5.5rem;
   padding-bottom: 1.25rem;
   border-bottom: none;
   /* Same visual line as a 1px border-bottom, except it stops short of the
