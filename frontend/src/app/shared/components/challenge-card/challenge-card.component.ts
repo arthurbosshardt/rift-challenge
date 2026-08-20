@@ -165,6 +165,10 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   dateRangeCompact(): string {
     const locale = this.i18n.locale();
     const start = formatChallengeDateCompact(this.challenge().startAt, locale);
+    const maxGames = this.challenge().maxGames;
+    if (maxGames) {
+      return `${start} → ${this.i18n.t('challenge.maxGamesCompact', { count: maxGames })}`;
+    }
     const end = this.challenge().endAt
       ? formatChallengeDateCompact(this.challenge().endAt, locale)
       : null;

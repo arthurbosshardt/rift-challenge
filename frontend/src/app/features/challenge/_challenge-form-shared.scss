@@ -36,12 +36,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem 0.75rem;
 }
 
 .challenge-form__schedule-header .challenge-form__schedule-title {
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.challenge-form__schedule-header .type-switch--compact {
+  flex-shrink: 1;
+  min-width: 0;
+  grid-template-columns: auto;
+  margin-left: auto;
 }
 
 h4.challenge-form__schedule-title {
@@ -322,10 +333,15 @@ h4.challenge-form__schedule-title {
 
 .type-switch--compact {
   width: auto;
+  min-width: 0;
   gap: 0.5rem;
   padding: 0;
   border: none;
   background: none;
+}
+
+.type-switch--compact .type-switch__label {
+  display: none;
 }
 
 .type-switch__label {

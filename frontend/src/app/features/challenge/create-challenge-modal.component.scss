@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: stretch;
   width: fit-content;
-  max-width: 90vw;
+  max-width: min(90vw, 42rem);
   max-height: 90vh;
   min-height: 0;
   overflow: hidden;
@@ -187,6 +187,7 @@
   overflow-y: auto;
   margin-bottom: 0.75rem;
   padding-right: 0.125rem;
+  padding-bottom: 0.625rem;
 }
 
 .create-challenge-modal__section:last-child {
@@ -430,7 +431,9 @@
     max-height: calc(100dvh - 1rem);
     min-height: 0;
     margin-inline: auto;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .create-challenge-modal__header {
@@ -441,11 +444,8 @@
   .create-challenge-modal__main-form {
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
   }
 
   .create-challenge-modal__meta,
@@ -454,22 +454,12 @@
     width: 100%;
   }
 
-  .create-challenge-modal__meta,
-  .create-challenge-modal__section--schedule {
-    flex-shrink: 0;
-  }
-
   .create-challenge-modal__section--participants {
-    flex: 1 1 auto;
-    min-height: 0;
     width: 100%;
-    overflow: hidden;
   }
 
   .create-challenge-modal__participants-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: none;
+    max-height: 40vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;

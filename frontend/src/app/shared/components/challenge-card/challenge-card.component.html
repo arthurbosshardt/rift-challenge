@@ -81,7 +81,33 @@
               </dt>
               <dd>{{ challenge().startAt | challengeDate }}</dd>
             </div>
-            @if (challenge().endAt) {
+            @if (challenge().maxGames; as maxGames) {
+              <div>
+                <dt>
+                  <svg class="challenge-card__meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="m3 8 4-4 4 4M7 4v16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <rect x="15" y="4" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="1.75" />
+                    <path
+                      d="M17 20v-6h-2M15 20h4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  {{ 'challenge.maxGames' | t }}
+                </dt>
+                <dd>{{ maxGames }}</dd>
+              </div>
+            } @else if (challenge().endAt) {
               <div>
                 <dt>
                   <svg class="challenge-card__meta-icon" viewBox="0 0 24 24" aria-hidden="true">

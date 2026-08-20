@@ -107,7 +107,10 @@
       } @else if (!auth.linkedAccount()) {
         <p class="state">
           {{ 'activity.linkAccountFirst' | t }}
-          <button type="button" class="state-link" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
+          <button type="button" class="state-link" (click)="settingsModal.open()">
+            <app-nav-icon name="settings" />
+            <span>{{ 'home.openSettings' | t }}</span>
+          </button>
         </p>
       } @else if (activityLoading()) {
         <div class="activity-accounts" role="status" [attr.aria-label]="'activity.loading' | t" aria-live="polite">
@@ -217,7 +220,10 @@
       } @else if (!auth.linkedAccount()) {
         <p class="state">
           {{ 'home.linkAccountFirst' | t }}
-          <button type="button" class="state-link" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
+          <button type="button" class="state-link" (click)="settingsModal.open()">
+            <app-nav-icon name="settings" />
+            <span>{{ 'home.openSettings' | t }}</span>
+          </button>
         </p>
       } @else if (challengesLoading()) {
         <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />

@@ -9,7 +9,10 @@
         }
       </p>
       @if (auth.isAuthenticated()) {
-        <button type="button" class="link-banner__action" (click)="settingsModal.open()">{{ 'home.openSettings' | t }}</button>
+        <button type="button" class="link-banner__action" (click)="settingsModal.open()">
+          <app-nav-icon name="settings" />
+          <span>{{ 'home.openSettings' | t }}</span>
+        </button>
       } @else {
         <button type="button" class="link-banner__action" (click)="authModal.open()">
           <app-nav-icon name="login" />
