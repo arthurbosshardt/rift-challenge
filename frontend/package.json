@@ -3,9 +3,9 @@
   "version": "1.0.7",
   "scripts": {
     "ng": "ng",
-    "start": "node scripts/write-local-env.mjs && ng serve --proxy-config proxy.conf.json",
-    "build": "node scripts/write-production-env.mjs && ng build",
-    "watch": "ng build --watch --configuration development",
+    "start": "node scripts/write-last-updated.mjs && node scripts/write-local-env.mjs && ng serve --proxy-config proxy.conf.json",
+    "build": "node scripts/write-last-updated.mjs && node scripts/write-production-env.mjs && ng build",
+    "watch": "node scripts/write-last-updated.mjs && ng build --watch --configuration development",
     "test": "ng test"
   },
   "prettier": {

@@ -19,6 +19,18 @@
     box-shadow 0.2s ease;
 }
 
+@media (min-width: 1024px) {
+  /* The card's own columns already cap out (30rem summary + a
+     leaderboard preview) — stretching it across a full, single-card
+     row just adds empty space past that. Capping max-width (instead of
+     switching to content-based sizing) keeps the grid's stretch
+     behavior, which the ellipsis/min-width:0 truncation inside the
+     preview rows depends on to size correctly. */
+  .challenge-card {
+    max-width: 60rem;
+  }
+}
+
 .challenge-card:hover {
   border-color: var(--gold-a35);
   transform: translateY(-1px);

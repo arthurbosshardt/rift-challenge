@@ -1,5 +1,4 @@
-/** Date and time of the last production update (YYYY-MM-DDTHH:mm). */
-export const LAST_UPDATED_AT = '2026-08-19T20:11';
+export { LAST_UPDATED_AT } from './last-updated.generated';
 
 export function formatLastUpdatedDate(isoDateTime: string, locale: 'fr' | 'en'): string {
   const [datePart, timePart] = isoDateTime.split('T');

@@ -6,6 +6,14 @@
   box-shadow: var(--shadow-card);
 }
 
+@media (min-width: 1024px) {
+  /* Matches the real card's max-width so the loading placeholder
+     doesn't flash full-width and then shrink once content arrives. */
+  .challenge-card-skeleton {
+    max-width: 60rem;
+  }
+}
+
 .challenge-card-skeleton__layout {
   display: grid;
   grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);

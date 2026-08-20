@@ -15,6 +15,9 @@ frontend/.angular/
 **/application-local.yml
 frontend/src/environments/environment.ts
 
+# Generated at build time from the last git commit
+frontend/src/app/core/last-updated.generated.ts
+
 # OS / IDE
 .DS_Store
 Thumbs.db
