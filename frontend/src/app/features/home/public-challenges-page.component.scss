@@ -1,1 +1,8 @@
 @use './challenge-list-shared' as *;
+
+@media (min-width: 1024px) {
+  .public-challenges-content {
+    max-width: 68rem;
+    margin-inline: auto;
+  }
+}
