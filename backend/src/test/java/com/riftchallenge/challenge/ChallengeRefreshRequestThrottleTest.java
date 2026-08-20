@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -62,11 +63,39 @@ class ChallengeRefreshRequestThrottleTest {
     }
 
     @Test
-    void resolveClientKey_usesFirstForwardedForValue() {
+    void resolveClientKey_whenAuthenticated_usesUserId() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        UUID callerId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        when(request.getHeader("X-Forwarded-For")).thenReturn("203.0.113.1, 10.0.0.1");
+
+        assertThat(ChallengeRefreshRequestThrottle.resolveClientKey(request, callerId))
+                .isEqualTo("user:11111111-1111-1111-1111-111111111111");
+    }
+
+    @Test
+    void resolveClientKey_usesRightmostForwardedForValue() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("X-Forwarded-For")).thenReturn("203.0.113.1, 10.0.0.1");
 
-        assertThat(ChallengeRefreshRequestThrottle.resolveClientKey(request)).isEqualTo("203.0.113.1");
+        assertThat(ChallengeRefreshRequestThrottle.resolveClientKey(request, null)).isEqualTo("10.0.0.1");
+    }
+
+    @Test
+    void resolveClientKey_ignoresSpoofedLeftmostForwardedFor() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("X-Forwarded-For")).thenReturn("198.51.100.9, 203.0.113.50");
+        when(request.getRemoteAddr()).thenReturn("10.0.0.1");
+
+        assertThat(ChallengeRefreshRequestThrottle.resolveClientKey(request, null)).isEqualTo("203.0.113.50");
+    }
+
+    @Test
+    void resolveClientKey_fallsBackToRemoteAddr() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+
+        assertThat(ChallengeRefreshRequestThrottle.resolveClientKey(request, null)).isEqualTo("127.0.0.1");
     }
 
     private static final class MutableClock extends Clock {

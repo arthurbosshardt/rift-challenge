@@ -796,4 +796,62 @@ class ChallengeServiceTest {
         assertThat(response.isOwner()).isTrue();
         assertThat(response.shareSlug()).isEqualTo(challenge.getId().toString());
     }
+
+    @Test
+    void refreshChallenge_whenPrivateAndAnonymous_throwsNotFoundWithoutSync() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Private race",
+                ChallengeType.SOLOQ,
+                NOW.minusSeconds(60),
+                false
+        );
+        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
+
+        assertThatThrownBy(() -> challengeService.refreshChallenge(challenge.getId(), null))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+
+        verify(challengeSyncService, never()).refreshChallenge(challenge.getId());
+    }
+
+    @Test
+    void refreshChallenge_whenPrivateAndNotOwner_throwsNotFoundWithoutSync() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Private race",
+                ChallengeType.SOLOQ,
+                NOW.minusSeconds(60),
+                false
+        );
+        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
+
+        assertThatThrownBy(() -> challengeService.refreshChallenge(challenge.getId(), UUID.randomUUID()))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+
+        verify(challengeSyncService, never()).refreshChallenge(challenge.getId());
+    }
+
+    @Test
+    void requireShareAccessById_whenPrivateAndAnonymous_throwsNotFound() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Private race",
+                ChallengeType.SOLOQ,
+                NOW.minusSeconds(60),
+                false
+        );
+        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
+
+        assertThatThrownBy(() -> challengeService.requireShareAccessById(challenge.getId(), null))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+    }
 }

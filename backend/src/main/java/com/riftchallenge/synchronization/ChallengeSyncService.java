@@ -69,6 +69,7 @@ public class ChallengeSyncService {
 
         List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
         if (participants.isEmpty()) {
+            refreshRecordService.recordRefresh(challengeId, now);
             return now;
         }
 

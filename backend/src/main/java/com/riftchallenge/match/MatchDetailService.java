@@ -9,6 +9,7 @@ import com.riftchallenge.riot.DDragonVersions;
 import com.riftchallenge.riot.ProfileIconLoader;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
+import com.riftchallenge.riot.RiotMatchIds;
 import com.riftchallenge.riot.RuneIconUrlService;
 import com.riftchallenge.riot.SummonerSpellIconUrlService;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
@@ -52,6 +53,7 @@ public class MatchDetailService {
     }
 
     public MatchDetailResponse buildMatchDetail(String matchId, String focusPuuid) {
+        RiotMatchIds.requireValid(matchId);
         RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
 
         RiotMatchDetailDto.Participant focus = match.info().participants().stream()

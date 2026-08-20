@@ -365,8 +365,18 @@ public class ChallengeService {
     }
 
     public ChallengeDetailResponse refreshChallenge(UUID challengeId, UUID callerId) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
+        requireShareAccess(challenge, callerId);
         challengeSyncService.refreshChallenge(challengeId);
         return getById(challengeId, callerId);
+    }
+
+    @Transactional(readOnly = true)
+    public void requireShareAccessById(UUID challengeId, UUID callerId) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
+        requireShareAccess(challenge, callerId);
     }
 
     private static void requireEndAfterStart(Instant startAt, Instant endAt) {

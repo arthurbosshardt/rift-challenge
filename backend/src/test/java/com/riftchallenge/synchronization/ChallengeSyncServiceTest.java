@@ -1,6 +1,7 @@
 package com.riftchallenge.synchronization;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -114,7 +115,7 @@ class ChallengeSyncServiceTest {
     }
 
     @Test
-    void refreshChallenge_withoutParticipants_skipsSyncAndCooldown() {
+    void refreshChallenge_withoutParticipants_recordsCooldownWithoutSync() {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         Instant now = Instant.parse("2026-08-16T10:00:00Z");
@@ -138,7 +139,7 @@ class ChallengeSyncServiceTest {
         challengeSyncService.refreshChallenge(challengeId);
 
         verify(participantSyncService, never()).syncParticipant(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
-        verify(refreshRecordService, never()).recordRefresh(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        verify(refreshRecordService).recordRefresh(challengeId, now);
         verify(riotMatchLookupService, never()).beginRefreshScope();
     }
 
@@ -175,6 +176,9 @@ class ChallengeSyncServiceTest {
         doThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached"))
                 .when(participantSyncService)
                 .syncParticipant(challenge, first, now);
+        doNothing()
+                .when(participantSyncService)
+                .syncParticipant(challenge, second, now);
 
         assertThatThrownBy(() -> challengeSyncService.refreshChallenge(challengeId))
                 .isInstanceOf(ResponseStatusException.class)

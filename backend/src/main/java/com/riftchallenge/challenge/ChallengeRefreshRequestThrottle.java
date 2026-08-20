@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.springframework.http.HttpStatus;
@@ -22,8 +23,8 @@ public class ChallengeRefreshRequestThrottle {
         this.clock = clock;
     }
 
-    public void enforce(HttpServletRequest request) {
-        enforce(resolveClientKey(request));
+    public void enforce(HttpServletRequest request, UUID callerId) {
+        enforce(resolveClientKey(request, callerId));
     }
 
     void enforce(String clientKey) {
@@ -43,17 +44,20 @@ public class ChallengeRefreshRequestThrottle {
         }
     }
 
-    static String resolveClientKey(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            int commaIndex = forwardedFor.indexOf(',');
-            String client = commaIndex >= 0 ? forwardedFor.substring(0, commaIndex) : forwardedFor;
-            return client.trim();
+    /**
+     * Authenticated callers are keyed by stable user id (not spoofable via headers).
+     * Anonymous callers use the rightmost X-Forwarded-For hop (added by the edge proxy)
+     * rather than the leftmost client-controlled value.
+     */
+    static String resolveClientKey(HttpServletRequest request, UUID callerId) {
+        if (callerId != null) {
+            return "user:" + callerId;
         }
 
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp.trim();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            String[] hops = forwardedFor.split(",");
+            return hops[hops.length - 1].trim();
         }
 
         return request.getRemoteAddr();
