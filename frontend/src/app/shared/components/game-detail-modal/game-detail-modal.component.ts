@@ -186,12 +186,18 @@ export class GameDetailModalComponent {
     if (!item.itemId || !item.iconUrl) {
       return;
     }
+    // Captured synchronously: currentTarget is cleared by the browser once
+    // event dispatch finishes, which has already happened by the time the
+    // promise below resolves.
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) {
+      return;
+    }
     void this.itemData.ensureLoaded().then(() => {
       if (!this.itemData.details(item.itemId)) {
         return;
       }
-      const target = event.currentTarget as HTMLElement | null;
-      if (!target || (this.pinnedItemTarget && this.pinnedItemTarget !== target)) {
+      if (this.pinnedItemTarget && this.pinnedItemTarget !== target) {
         return;
       }
       // Hover may have ended while the catalog was still loading.
