@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .headers(SecurityConfig::applySecurityHeaders)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .addFilterBefore(supabaseBearerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
@@ -71,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/challenges/*/duos/*/matches/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/champion-icons/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/challenges/*/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/challenges/public/refresh").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -261,7 +261,7 @@ textarea:focus {
 }
 
 .modal-panel--settings {
-  max-width: 34rem;
+  max-width: 50rem;
 }
 
 .modal-panel--edit,
@@ -424,11 +424,7 @@ textarea:focus {
 
 @media (max-width: 1023px) {
   .detail__title {
-    font-size: clamp(
-      1.125rem,
-      calc((100vw - 3rem) / max(var(--title-chars, 12), 1) * 1.72),
-      1.875rem
-    );
+    font-size: 1.875rem;
   }
 
   .detail__title .detail__type-badge {
@@ -517,18 +513,6 @@ textarea:focus {
 .badge--type {
   color: var(--gold);
   background: var(--gold-a12);
-  border: 1px solid var(--border);
-}
-
-.badge--public {
-  color: var(--gold);
-  background: var(--gold-a12);
-  border: 1px solid rgba(197, 160, 89, 0.28);
-}
-
-.badge--private {
-  color: var(--text-muted);
-  background: var(--surface-tint-strong);
   border: 1px solid var(--border);
 }
 
@@ -653,9 +637,15 @@ textarea:focus {
     box-sizing: border-box;
   }
 
+  // Sized via `width/max-width: 100%` of the fixed, inset:0 `.modal-overlay`
+  // rather than `100vw`, since `vw` reflects the layout viewport — it can
+  // read wider than what's actually visible (e.g. if anything on the page
+  // behind the modal causes horizontal overflow), pushing the modal off
+  // the edge of the screen. The overlay's own box is always the true
+  // visible viewport, so percentages against it can't drift that way.
   .modal-panel {
     width: 100%;
-    max-width: calc(100vw - 1rem);
+    max-width: 100%;
     max-height: calc(100dvh - 1rem);
     overflow: auto;
     box-sizing: border-box;
@@ -665,7 +655,7 @@ textarea:focus {
 
   .modal-panel--wide,
   .modal-panel--settings {
-    max-width: calc(100vw - 1rem);
+    max-width: 100%;
     max-height: calc(100dvh - 1rem);
   }
 
@@ -674,7 +664,7 @@ textarea:focus {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: calc(100vw - 1rem);
+    max-width: 100%;
     max-height: calc(100dvh - 1rem);
     margin-inline: auto;
     overflow: hidden;
@@ -698,7 +688,6 @@ textarea:focus {
   .refresh__info-btn,
   .sort-controls__ranking-help,
   .challenge-search__type-btn,
-  .visibility-switch__info,
   .challenge-card__lp--hint {
     overflow: visible;
   }

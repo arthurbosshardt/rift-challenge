@@ -53,9 +53,9 @@ export class AuthCallbackPageComponent implements OnInit {
     const error = await this.auth.completeOAuthOrEmailCallback();
     if (error) {
       this.authModal.open({ error });
-      await this.router.navigateByUrl('/public-challenges');
+      await this.router.navigateByUrl('/challenges');
       return;
     }
-    await this.router.navigateByUrl(this.auth.isAuthenticated() ? '/my-challenges' : '/public-challenges');
+    await this.router.navigateByUrl(this.auth.isAuthenticated() ? '/my-challenges' : '/challenges');
   }
 }

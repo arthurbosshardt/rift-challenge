@@ -7,13 +7,12 @@ import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.CreateChallengeRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
 import com.riftchallenge.challenge.dto.ChallengeDetailResponse;
-import com.riftchallenge.challenge.dto.ChallengeSummaryResponse;
+import com.riftchallenge.challenge.dto.ChallengeListResponse;
 import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
-import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
 import com.riftchallenge.match.MatchDetailService;
 import com.riftchallenge.match.dto.MatchDetailResponse;
 import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
@@ -43,6 +42,7 @@ public class ChallengeController {
     private final ChallengeParticipantService participantService;
     private final ChallengeDuoService duoService;
     private final ChallengeRefreshRequestThrottle refreshRequestThrottle;
+    private final ChallengeListRefreshRequestThrottle listRefreshRequestThrottle;
     private final RecentActivityService recentActivityService;
     private final RecentActivityRequestThrottle recentActivityRequestThrottle;
     private final ChallengeParticipantRepository participantRepository;
@@ -55,6 +55,7 @@ public class ChallengeController {
             ChallengeParticipantService participantService,
             ChallengeDuoService duoService,
             ChallengeRefreshRequestThrottle refreshRequestThrottle,
+            ChallengeListRefreshRequestThrottle listRefreshRequestThrottle,
             RecentActivityService recentActivityService,
             RecentActivityRequestThrottle recentActivityRequestThrottle,
             ChallengeParticipantRepository participantRepository,
@@ -66,6 +67,7 @@ public class ChallengeController {
         this.participantService = participantService;
         this.duoService = duoService;
         this.refreshRequestThrottle = refreshRequestThrottle;
+        this.listRefreshRequestThrottle = listRefreshRequestThrottle;
         this.recentActivityService = recentActivityService;
         this.recentActivityRequestThrottle = recentActivityRequestThrottle;
         this.participantRepository = participantRepository;
@@ -75,7 +77,7 @@ public class ChallengeController {
     }
 
     @GetMapping("/public")
-    public List<ChallengeSummaryResponse> listPublicChallenges(
+    public ChallengeListResponse listPublicChallenges(
             @RequestParam(required = false) String challengeName,
             @RequestParam(required = false) String summoner,
             @RequestParam(required = false) ChallengeType type
@@ -83,22 +85,17 @@ public class ChallengeController {
         return challengeService.listPublicChallenges(challengeName, summoner, type);
     }
 
-    @GetMapping("/owned")
-    public List<ChallengeSummaryResponse> listOwnedChallenges(Authentication authentication) {
-        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
-        return challengeService.listOwnedChallenges(ownerId);
+    @PostMapping("/public/refresh")
+    public ChallengeListResponse refreshPublicChallenges(HttpServletRequest request, Authentication authentication) {
+        UUID callerId = AuthenticatedUserIds.optionalOwnerId(authentication);
+        listRefreshRequestThrottle.enforce(request, callerId);
+        return challengeService.refreshPublicChallenges();
     }
 
     @GetMapping("/participating")
-    public List<ChallengeSummaryResponse> listParticipatingChallenges(Authentication authentication) {
+    public ChallengeListResponse listParticipatingChallenges(Authentication authentication) {
         UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
         return challengeService.listParticipatingChallenges(userId);
-    }
-
-    @GetMapping("/mine")
-    public List<ChallengeSummaryResponse> listMyChallenges(Authentication authentication) {
-        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
-        return challengeService.listOwnedChallenges(ownerId);
     }
 
     @GetMapping("/share/{shareSlug}")
@@ -158,16 +155,6 @@ public class ChallengeController {
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
         return challengeService.updateEndAt(challengeId, ownerId, request);
-    }
-
-    @PatchMapping("/{challengeId}/visibility")
-    public ChallengeDetailResponse updateVisibility(
-            Authentication authentication,
-            @PathVariable UUID challengeId,
-            @Valid @RequestBody UpdateChallengeVisibilityRequest request
-    ) {
-        UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
-        return challengeService.updateVisibility(challengeId, ownerId, request);
     }
 
     @PatchMapping("/{challengeId}/name")
@@ -256,11 +243,8 @@ public class ChallengeController {
     public MatchDetailResponse getParticipantMatchDetail(
             @PathVariable UUID challengeId,
             @PathVariable UUID participantId,
-            @PathVariable String matchId,
-            Authentication authentication
+            @PathVariable String matchId
     ) {
-        UUID callerId = AuthenticatedUserIds.optionalOwnerId(authentication);
-        challengeService.requireShareAccessById(challengeId, callerId);
         ChallengeParticipant participant = participantRepository.findByIdAndChallengeId(participantId, challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
         if (!participantMatchRepository.existsByParticipantIdAndRiotMatchId(participantId, matchId)) {
@@ -273,11 +257,8 @@ public class ChallengeController {
     public MatchDetailResponse getDuoMatchDetail(
             @PathVariable UUID challengeId,
             @PathVariable UUID duoId,
-            @PathVariable String matchId,
-            Authentication authentication
+            @PathVariable String matchId
     ) {
-        UUID callerId = AuthenticatedUserIds.optionalOwnerId(authentication);
-        challengeService.requireShareAccessById(challengeId, callerId);
         duoRepository.findByIdAndChallengeId(duoId, challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duo not found"));
         List<ChallengeParticipant> duoPlayers = participantRepository.findByDuoIdOrderByCreatedAtAsc(duoId);

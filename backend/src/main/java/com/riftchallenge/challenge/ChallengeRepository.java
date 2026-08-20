@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ChallengeRepository extends JpaRepository<Challenge, UUID> {
 
-    List<Challenge> findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(Instant startAt);
+    List<Challenge> findByStartAtLessThanEqualOrderByStartAtDesc(Instant startAt);
 
     List<Challenge> findByOwnerIdOrderByStartAtDesc(UUID ownerId);
 

@@ -29,7 +29,6 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
-import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 
 type NameInvalidField = 'name';
 type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId';
@@ -43,7 +42,6 @@ type EndMode = ChallengeEndMode;
     PlayerIdentityComponent,
     SummonerTypeaheadComponent,
     LoaderComponent,
-    ClampTooltipDirective,
   ],
   templateUrl: './create-challenge-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -65,7 +63,6 @@ export class CreateChallengeModalComponent {
   protected endHourInput = 12;
   protected maxGamesInput: number | null = null;
   protected readonly hourOptions = Array.from({ length: 24 }, (_, hour) => hour);
-  protected isPublicInput = false;
 
   protected riotIdInput = '';
   protected duoPlayer1RiotIdInput = '';
@@ -164,15 +161,6 @@ export class CreateChallengeModalComponent {
 
     this.type = this.type === 'SOLOQ' ? 'DUOQ' : 'SOLOQ';
     this.onTypeChange();
-  }
-
-  protected toggleVisibility(): void {
-    if (this.loading()) {
-      return;
-    }
-
-    this.isPublicInput = !this.isPublicInput;
-    this.formError.set(null);
   }
 
   protected toggleEndMode(): void {
@@ -432,7 +420,6 @@ export class CreateChallengeModalComponent {
           startAt: scheduleValidation.startAt,
           ...(scheduleValidation.endAt ? { endAt: scheduleValidation.endAt } : {}),
           ...(scheduleValidation.maxGames ? { maxGames: scheduleValidation.maxGames } : {}),
-          isPublic: this.isPublicInput,
         }),
       );
 
@@ -679,7 +666,6 @@ export class CreateChallengeModalComponent {
     this.endDateInput = '';
     this.endHourInput = 12;
     this.maxGamesInput = 30;
-    this.isPublicInput = false;
     this.draftParticipants.set([]);
     this.draftDuos.set([]);
     this.resetParticipantInputs();

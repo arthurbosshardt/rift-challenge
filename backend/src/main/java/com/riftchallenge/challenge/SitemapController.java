@@ -33,7 +33,7 @@ public class SitemapController {
     public String sitemap() {
         Instant now = clock.instant();
         List<Challenge> publicChallenges =
-                challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(now);
+                challengeRepository.findByStartAtLessThanEqualOrderByStartAtDesc(now);
 
         StringBuilder xml = new StringBuilder(2048);
         xml.append("""
@@ -50,7 +50,7 @@ public class SitemapController {
                     <priority>0.9</priority>
                   </url>
                   <url>
-                    <loc>%s/public-challenges</loc>
+                    <loc>%s/challenges</loc>
                     <changefreq>hourly</changefreq>
                     <priority>0.9</priority>
                   </url>

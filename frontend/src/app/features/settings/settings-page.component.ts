@@ -15,7 +15,7 @@ export class SettingsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.settingsModal.open();
-    const target = this.auth.linkedAccount() ? '/my-challenges' : '/public-challenges';
+    const target = this.auth.linkedAccount() ? '/my-challenges' : '/challenges';
     void this.router.navigateByUrl(target, { replaceUrl: true });
   }
 }

@@ -53,7 +53,7 @@ export class ResetPasswordPageComponent implements OnInit {
 
   protected openLogin(): void {
     this.authModal.open({ mode: 'forgot-password' });
-    void this.router.navigateByUrl('/public-challenges');
+    void this.router.navigateByUrl('/challenges');
   }
 
   protected async submit(): Promise<void> {
@@ -77,7 +77,7 @@ export class ResetPasswordPageComponent implements OnInit {
     this.success.set(this.i18n.t('auth.resetPasswordOk'));
     await this.auth.refreshProfile();
 
-    const destination = this.auth.linkedAccount() ? '/my-challenges' : '/public-challenges';
+    const destination = this.auth.linkedAccount() ? '/my-challenges' : '/challenges';
     window.setTimeout(() => {
       void this.router.navigateByUrl(destination);
     }, 1200);

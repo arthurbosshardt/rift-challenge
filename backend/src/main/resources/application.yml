@@ -1,6 +1,10 @@
 spring:
   application:
     name: riftchallenge-backend
+  main:
+    # Defers bean creation until first use so the process reaches a listening state faster after
+    # a Render free-tier cold start; /api/health forces the DB-touching beans to warm up anyway.
+    lazy-initialization: true
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:riftchallenge}?sslmode=${DB_SSLMODE:disable}}
     username: ${DB_USER:}

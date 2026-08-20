@@ -3,11 +3,13 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { ActivityCacheService } from '../../core/services/activity-cache.service';
+import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
-import { AccountRecentGames } from '../../core/models/challenge.models';
+import { AccountRecentGames, ChallengeListResponse } from '../../core/models/challenge.models';
 import { formatRankLabel, tierColor } from '../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../core/utils/record-display';
 import { formatTimeSince } from '../../core/utils/relative-time';
+import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { RefreshCooldown } from '../../core/utils/refresh-cooldown';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { ChallengeCardComponent } from '../../shared/components/challenge-card/challenge-card.component';
@@ -47,15 +49,18 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
   private readonly cache = inject(ActivityCacheService);
+  private readonly publicCache = inject(PublicChallengesCacheService);
   protected readonly backend = inject(BackendStatusService);
 
   protected readonly view = signal<ActivityView>('activity');
 
   protected readonly challenges = this.cache.challenges;
   protected readonly challengesLoading = signal(this.cache.challengesLastLoadedAt() === null);
+  protected readonly challengesRefreshing = signal(false);
+  protected readonly challengesRefreshAvailable = this.publicCache.refreshAvailable;
   protected readonly challengesError = signal<string | null>(null);
-  private readonly challengesCooldown = new RefreshCooldown();
-  protected readonly challengesRefreshCooldownSeconds = this.challengesCooldown.seconds;
+  private challengesTickInterval: ReturnType<typeof setInterval> | null = null;
+  protected readonly challengesNowMs = signal(Date.now());
 
   protected readonly activityAccounts = this.cache.activityAccounts;
   protected readonly activityLoading = signal(this.cache.activityLastLoadedAt() === null);
@@ -72,7 +77,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.activityCooldown.clear();
-    this.challengesCooldown.clear();
+    this.stopChallengesCountdownTick();
   }
 
   protected setView(view: ActivityView): void {
@@ -127,8 +132,16 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     return this.cooldownLabel(this.refreshCooldownSeconds(), 'activity.refreshLabel');
   }
 
-  protected challengesRefreshButtonLabel(): string {
-    return this.cooldownLabel(this.challengesRefreshCooldownSeconds(), 'home.searchRefreshLabel');
+  protected challengesLastUpdatedLabel(): string | null {
+    const generatedAt = this.cache.challengesGeneratedAt();
+    if (!generatedAt) {
+      return null;
+    }
+    const time = formatTimeSince(generatedAt, Date.now(), this.i18n.locale());
+    if (!time) {
+      return null;
+    }
+    return this.i18n.t('activity.lastRefreshed', { time });
   }
 
   private cooldownLabel(seconds: number, idleKey: string): string {
@@ -146,12 +159,57 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     this.activityCooldown.start();
   }
 
-  protected refreshMyChallenges(): void {
-    if (this.challengesCooldown.active || this.challengesLoading()) {
+  protected challengesRefreshButtonLabel(): string {
+    const nextAvailable = this.publicCache.nextRefreshAvailableAt();
+    if (!this.challengesRefreshAvailable() && nextAvailable) {
+      const countdown = formatRefreshCountdown(nextAvailable, this.challengesNowMs());
+      if (countdown) {
+        return countdown;
+      }
+    }
+    return this.i18n.t('home.searchRefreshLabel');
+  }
+
+  protected refreshChallenges(): void {
+    if (!this.challengesRefreshAvailable() || this.challengesRefreshing() || this.challengesLoading()) {
       return;
     }
-    this.loadChallenges();
-    this.challengesCooldown.start();
+
+    this.challengesRefreshing.set(true);
+    this.challengesError.set(null);
+
+    this.challengeApi.refreshPublicChallenges().subscribe({
+      next: () => this.loadChallenges(true),
+      error: (err: { status?: number }) => {
+        this.challengesError.set(
+          err.status === 429 ? this.i18n.t('home.refreshOnCooldown') : this.i18n.t('home.loadParticipatingError'),
+        );
+        this.challengesRefreshing.set(false);
+      },
+    });
+  }
+
+  private startChallengesCountdownTick(): void {
+    this.stopChallengesCountdownTick();
+    this.challengesTickInterval = setInterval(() => {
+      this.challengesNowMs.set(Date.now());
+      const nextAvailable = this.publicCache.nextRefreshAvailableAt();
+      if (
+        this.challengesRefreshAvailable() ||
+        !nextAvailable ||
+        !formatRefreshCountdown(nextAvailable, this.challengesNowMs())
+      ) {
+        this.publicCache.refreshAvailable.set(true);
+        this.stopChallengesCountdownTick();
+      }
+    }, 1000);
+  }
+
+  private stopChallengesCountdownTick(): void {
+    if (this.challengesTickInterval) {
+      clearInterval(this.challengesTickInterval);
+      this.challengesTickInterval = null;
+    }
   }
 
   private async loadPage(): Promise<void> {
@@ -180,6 +238,9 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
       void this.loadChallenges();
     } else {
       this.challengesLoading.set(false);
+      if (!this.challengesRefreshAvailable()) {
+        this.startChallengesCountdownTick();
+      }
     }
 
     if (this.cache.activityLastLoadedAt() === null) {
@@ -189,19 +250,38 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadChallenges(): void {
-    this.challengesLoading.set(true);
+  private loadChallenges(isRefresh = false): void {
+    if (isRefresh) {
+      this.challengesRefreshing.set(true);
+    } else {
+      this.challengesLoading.set(true);
+    }
     this.challengeApi.listParticipatingChallenges().subscribe({
-      next: (challenges) => {
-        this.challenges.set(challenges);
+      next: (response: ChallengeListResponse) => {
+        this.challenges.set(response.challenges);
         this.cache.challengesLastLoadedAt.set(Date.now());
+        this.cache.challengesGeneratedAt.set(response.generatedAt);
+        this.publicCache.refreshAvailable.set(response.refreshAvailable);
+        this.publicCache.nextRefreshAvailableAt.set(response.nextRefreshAvailableAt);
         this.challengesLoading.set(false);
+        this.challengesRefreshing.set(false);
+        if (response.refreshAvailable) {
+          this.stopChallengesCountdownTick();
+        } else {
+          this.startChallengesCountdownTick();
+        }
       },
       error: (err: { status?: number }) => {
-        this.challengesError.set(
-          err.status === 401 ? this.i18n.t('home.sessionExpired') : this.i18n.t('home.loadParticipatingError'),
-        );
         this.challengesLoading.set(false);
+        this.challengesRefreshing.set(false);
+        if (err.status === 401) {
+          this.challengesError.set(this.i18n.t('home.sessionExpired'));
+        } else if (this.backend.ready()) {
+          this.challengesError.set(this.i18n.t('home.loadParticipatingError'));
+        } else {
+          this.challengesError.set(this.i18n.t('backend.wakingUpMessage'));
+          this.backend.onReady(() => this.loadChallenges());
+        }
       },
     });
   }
@@ -228,14 +308,17 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
         this.lastRefreshedAt.set(new Date().toISOString());
       },
       error: (err: { status?: number }) => {
+        this.activityLoading.set(false);
         if (err.status === 401) {
           this.activityError.set(this.i18n.t('home.sessionExpired'));
         } else if (err.status === 429) {
           this.activityError.set(this.i18n.t('errors.riotRateLimit'));
-        } else {
+        } else if (this.backend.ready()) {
           this.activityError.set(this.i18n.t('activity.loadError'));
+        } else {
+          this.activityError.set(this.i18n.t('backend.wakingUpMessage'));
+          this.backend.onReady(() => this.loadActivity());
         }
-        this.activityLoading.set(false);
       },
     });
   }

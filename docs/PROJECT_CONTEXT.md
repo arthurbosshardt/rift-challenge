@@ -139,19 +139,19 @@ Fichier : `backend/.../DuoEligibilityService.java`.
 
 | Route | Qui | Rôle |
 |---|---|---|
-| `/` | Guest → `/home`. Auth + Riot lié → **`/dashboard` (reliquat)**. Auth sans Riot → `/public-challenges` | Redirect |
+| `/` | Guest → `/home`. Auth + Riot lié → **`/dashboard` (reliquat)**. Auth sans Riot → `/challenges` | Redirect |
 | `/home` | Tous | Landing marketing |
-| `/public-challenges` | Tous | Liste + recherche nom / invocateur / type |
+| `/challenges` | Tous | Liste (cache BDD) + recherche nom / invocateur / type |
 | `/my-challenges` | Auth + Riot lié | Challenges rejoints |
-| `/challenges/:shareSlug` | Tous (privé = owner ou 404) | Détail / classement |
+| `/challenges/:shareSlug` | Tous | Détail / classement — tout challenge est public |
 | `/challenges/new` | Auth | Ouvre la modale de création |
 | `/settings` | Auth | Page qui ouvre la modale settings |
 | `/dashboard` | Auth + Riot lié | Games récentes — **cachée dans la nav** |
 | `/login`, `/auth/callback`, `/auth/reset-password` | Auth flow | |
 
-Nav principale (`page-shell`) : Challenges publics, Mes challenges (si lié), bouton créer, menu user (challenges créés, settings, logout). Lien dashboard **commenté** (`TODO: Uncomment when dashboard is ready`).
+Nav principale (`page-shell`) : Les challenges, Mes challenges (si lié), bouton créer, menu user (settings, logout). Lien dashboard **commenté** (`TODO: Uncomment when dashboard is ready`).
 
-Les **modales sont globales** : montées dans `app.ts` (login, logout, create, edit, delete, settings, created-challenges, game-detail). Ne pas recréer un overlay local si une modale globale existe.
+Les **modales sont globales** : montées dans `app.ts` (login, logout, create, edit, delete, settings, game-detail). Ne pas recréer un overlay local si une modale globale existe.
 
 ---
 

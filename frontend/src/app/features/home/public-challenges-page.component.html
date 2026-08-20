@@ -26,7 +26,7 @@
 
   <section class="challenge-search">
     <div class="challenge-search__filters">
-      <label class="challenge-search__field challenge-search__field--text">
+      <label class="challenge-search__field challenge-search__field--text challenge-search__field--name">
         <span class="challenge-search__label">{{ 'home.searchChallengeNameLabel' | t }}</span>
         <div class="challenge-search__input-wrap">
           <svg class="challenge-search__icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -47,7 +47,7 @@
         </div>
       </label>
 
-      <label class="challenge-search__field challenge-search__field--text">
+      <label class="challenge-search__field challenge-search__field--text challenge-search__field--summoner">
         <span class="challenge-search__label">{{ 'home.searchSummonerLabel' | t }}</span>
         <div class="challenge-search__input-wrap">
           <svg class="challenge-search__icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -79,7 +79,7 @@
             (click)="setTypeFilter('ALL')"
             [attr.aria-label]="'home.searchTypeAllAria' | t"
           >
-            {{ 'home.searchTypeAll' | t }}
+            <span class="challenge-search__type-btn-surface">{{ 'home.searchTypeAll' | t }}</span>
             <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchTypeAllHint' | t }}</span>
           </button>
           <button
@@ -90,11 +90,13 @@
             (click)="setTypeFilter('SOLOQ')"
             [attr.aria-label]="'home.searchTypeSoloqAria' | t"
           >
-            <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-              />
-            </svg>
+            <span class="challenge-search__type-btn-surface">
+              <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                />
+              </svg>
+            </span>
             <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchTypeSoloqHint' | t }}</span>
           </button>
           <button
@@ -105,11 +107,13 @@
             (click)="setTypeFilter('DUOQ')"
             [attr.aria-label]="'home.searchTypeDuoqAria' | t"
           >
-            <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-              />
-            </svg>
+            <span class="challenge-search__type-btn-surface">
+              <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                />
+              </svg>
+            </span>
             <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchTypeDuoqHint' | t }}</span>
           </button>
         </div>
@@ -121,7 +125,7 @@
           type="button"
           class="refresh-action-btn"
           (click)="refreshChallenges()"
-          [disabled]="loading() || refreshing() || refreshCooldownSeconds() > 0 || !backend.ready()"
+          [disabled]="loading() || refreshing() || !refreshAvailable() || !backend.ready()"
           [attr.aria-label]="'home.searchRefreshAria' | t"
           [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
         >
@@ -140,14 +144,24 @@
       </div>
     </div>
 
-    @if (hasActiveFilters()) {
-      <button type="button" class="challenge-search__reset" (click)="clearSearch()">
-        {{ 'home.searchPublicClear' | t }}
-      </button>
+    @if (hasActiveFilters() || lastUpdatedLabel()) {
+      <div class="challenge-search__meta">
+        @if (hasActiveFilters()) {
+          <button type="button" class="challenge-search__reset" (click)="clearSearch()">
+            {{ 'home.searchPublicClear' | t }}
+          </button>
+        }
+        @if (lastUpdatedLabel(); as label) {
+          <span class="challenge-search__last-updated">{{ label }}</span>
+        }
+      </div>
     }
   </section>
 
   @if (loading() || refreshing()) {
+    @if (!backend.ready()) {
+      <p class="state">{{ 'backend.wakingUpMessage' | t }}</p>
+    }
     <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
   } @else if (error()) {
     <p class="state state--error">{{ error() }}</p>
@@ -164,7 +178,7 @@
       } @else {
         <div class="challenge-grid">
           @for (challenge of filteredChallenges(); track challenge.id) {
-            <app-challenge-card [challenge]="challenge" [hidePublicBadge]="true" />
+            <app-challenge-card [challenge]="challenge" />
           }
         </div>
       }

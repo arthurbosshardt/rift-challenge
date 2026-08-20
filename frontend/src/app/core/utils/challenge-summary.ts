@@ -4,6 +4,7 @@ import {
   ParticipantPreview,
   ParticipantProgress,
   ChallengeDetail,
+  ChallengeListResponse,
   ChallengeSummary,
 } from '../models/challenge.models';
 
@@ -41,7 +42,7 @@ export function summaryChallengeNeedsStatsRefresh(challenge: Pick<ChallengeSumma
 }
 
 export type RawChallengeSummary = Partial<ChallengeSummary> &
-  Pick<ChallengeSummary, 'id' | 'shareSlug' | 'name' | 'type' | 'startAt' | 'isPublic' | 'status'>;
+  Pick<ChallengeSummary, 'id' | 'shareSlug' | 'name' | 'type' | 'startAt' | 'status'>;
 
 export function normalizeChallengeSummary(raw: RawChallengeSummary): ChallengeSummary {
   return {
@@ -72,6 +73,22 @@ function normalizeParticipantGameNames(raw: Partial<ChallengeSummary>): string[]
 
 export function normalizeChallengeSummaries(raw: RawChallengeSummary[]): ChallengeSummary[] {
   return raw.map(normalizeChallengeSummary);
+}
+
+export interface RawChallengeListResponse {
+  challenges: RawChallengeSummary[];
+  generatedAt: string | null;
+  refreshAvailable: boolean;
+  nextRefreshAvailableAt: string | null;
+}
+
+export function normalizeChallengeListResponse(raw: RawChallengeListResponse): ChallengeListResponse {
+  return {
+    challenges: normalizeChallengeSummaries(raw.challenges),
+    generatedAt: raw.generatedAt,
+    refreshAvailable: raw.refreshAvailable,
+    nextRefreshAvailableAt: raw.nextRefreshAvailableAt,
+  };
 }
 
 export function enrichSummaryFromDetail(summary: ChallengeSummary, detail: ChallengeDetail): ChallengeSummary {

@@ -7,7 +7,9 @@ import { AuthModalService } from '../../core/services/auth-modal.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
-import { RefreshCooldown } from '../../core/utils/refresh-cooldown';
+import { ChallengeListResponse } from '../../core/models/challenge.models';
+import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
+import { formatTimeSince } from '../../core/utils/relative-time';
 
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 
@@ -65,8 +67,10 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
   protected readonly refreshing = signal(false);
 
-  private readonly cooldown = new RefreshCooldown();
-  protected readonly refreshCooldownSeconds = this.cooldown.seconds;
+  protected readonly refreshAvailable = this.cache.refreshAvailable;
+
+  private tickInterval: ReturnType<typeof setInterval> | null = null;
+  protected readonly nowMs = signal(Date.now());
 
   protected readonly error = signal<string | null>(null);
 
@@ -119,7 +123,7 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.cooldown.clear();
+    this.stopCountdownTick();
   }
 
 
@@ -161,35 +165,50 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
 
   protected refreshChallenges(): void {
-
-    if (this.cooldown.active) {
+    if (!this.refreshAvailable() || this.refreshing()) {
       return;
     }
 
-    this.loadChallenges(true);
-    this.cooldown.start();
+    this.refreshing.set(true);
+    this.error.set(null);
 
+    this.challengeApi.refreshPublicChallenges().subscribe({
+      next: (response) => this.applyResponse(response),
+      error: (err: { status?: number }) => {
+        this.error.set(
+          err.status === 429 ? this.i18n.t('home.refreshOnCooldown') : this.i18n.t('home.loadPublicError'),
+        );
+        this.refreshing.set(false);
+      },
+    });
   }
 
   protected refreshButtonLabel(): string {
-    const seconds = this.refreshCooldownSeconds();
-    if (seconds > 0) {
-      return this.i18n.locale() === 'en' ? `${seconds}seconds` : `${seconds} secondes`;
+    const nextAvailable = this.cache.nextRefreshAvailableAt();
+    if (!this.refreshAvailable() && nextAvailable) {
+      const countdown = formatRefreshCountdown(nextAvailable, this.nowMs());
+      if (countdown) {
+        return countdown;
+      }
     }
     return this.i18n.t('home.searchRefreshLabel');
   }
 
-
-
-  private loadChallenges(forceRefresh = false): void {
-
-    if (this.refreshing() && !forceRefresh) {
-
-      return;
-
+  protected lastUpdatedLabel(): string | null {
+    const generatedAt = this.cache.generatedAt();
+    if (!generatedAt) {
+      return null;
     }
+    const time = formatTimeSince(generatedAt, this.nowMs(), this.i18n.locale());
+    if (!time) {
+      return null;
+    }
+    return this.i18n.t('activity.lastRefreshed', { time });
+  }
 
 
+
+  private loadChallenges(): void {
 
     const showFullScreenLoader = this.allChallenges().length === 0;
 
@@ -207,31 +226,62 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
 
 
-    this.challengeApi.listPublicChallenges(forceRefresh).subscribe({
+    this.challengeApi.listPublicChallenges().subscribe({
 
-      next: (challenges) => {
-
-        this.allChallenges.set(challenges);
-        this.cache.lastLoadedAt.set(Date.now());
-
-        this.loading.set(false);
-
-        this.refreshing.set(false);
-
-      },
+      next: (response) => this.applyResponse(response),
 
       error: () => {
 
-        this.error.set(this.i18n.t('home.loadPublicError'));
-
         this.loading.set(false);
 
         this.refreshing.set(false);
+
+        if (this.backend.ready()) {
+          this.error.set(this.i18n.t('home.loadPublicError'));
+        } else {
+          this.error.set(this.i18n.t('backend.wakingUpMessage'));
+          this.backend.onReady(() => this.loadChallenges());
+        }
 
       },
 
     });
 
+  }
+
+  private applyResponse(response: ChallengeListResponse): void {
+    this.allChallenges.set(response.challenges);
+    this.cache.lastLoadedAt.set(Date.now());
+    this.cache.generatedAt.set(response.generatedAt);
+    this.cache.refreshAvailable.set(response.refreshAvailable);
+    this.cache.nextRefreshAvailableAt.set(response.nextRefreshAvailableAt);
+    this.loading.set(false);
+    this.refreshing.set(false);
+
+    if (response.refreshAvailable) {
+      this.stopCountdownTick();
+    } else {
+      this.startCountdownTick();
+    }
+  }
+
+  private startCountdownTick(): void {
+    this.stopCountdownTick();
+    this.tickInterval = setInterval(() => {
+      this.nowMs.set(Date.now());
+      const nextAvailable = this.cache.nextRefreshAvailableAt();
+      if (this.cache.refreshAvailable() || !nextAvailable || !formatRefreshCountdown(nextAvailable, this.nowMs())) {
+        this.cache.refreshAvailable.set(true);
+        this.stopCountdownTick();
+      }
+    }, 1000);
+  }
+
+  private stopCountdownTick(): void {
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
+      this.tickInterval = null;
+    }
   }
 
 
@@ -256,6 +306,9 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
       this.loadChallenges();
     } else {
       this.loading.set(false);
+      if (!this.cache.refreshAvailable()) {
+        this.startCountdownTick();
+      }
     }
 
   }

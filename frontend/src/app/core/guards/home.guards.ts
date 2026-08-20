@@ -7,7 +7,7 @@ async function defaultAuthenticatedRoute(auth: AuthService): Promise<string[]> {
   if (!auth.linkedAccount()) {
     await auth.refreshProfile();
   }
-  return auth.linkedAccount() ? ['/my-challenges'] : ['/public-challenges'];
+  return auth.linkedAccount() ? ['/my-challenges'] : ['/challenges'];
 }
 
 export const rootRedirectGuard: CanActivateFn = async () => {
@@ -50,7 +50,7 @@ export const linkedAccountGuard: CanActivateFn = async (_route, state) => {
   }
 
   if (!auth.linkedAccount()) {
-    return router.createUrlTree(['/public-challenges']);
+    return router.createUrlTree(['/challenges']);
   }
 
   return true;

@@ -37,9 +37,7 @@ class MatchHistoryServiceTest {
                 "Challenge",
                 ChallengeType.SOLOQ,
                 Instant.parse("2026-08-16T00:00:00Z"),
-                Instant.parse("2026-08-18T00:00:00Z"),
-                true
-        );
+                Instant.parse("2026-08-18T00:00:00Z"));
         UUID challengeId = challenge.getId();
         when(championIconUrlService.buildApiPath(eq(103))).thenReturn("/api/champion-icons/103.png");
         when(championIconUrlService.buildApiPath(eq(86))).thenReturn("/api/champion-icons/86.png");
@@ -82,9 +80,7 @@ class MatchHistoryServiceTest {
                 "Challenge",
                 ChallengeType.SOLOQ,
                 Instant.parse("2026-08-16T00:00:00Z"),
-                Instant.parse("2026-08-18T00:00:00Z"),
-                true
-        );
+                Instant.parse("2026-08-18T00:00:00Z"));
         UUID challengeId = challenge.getId();
         ChallengeParticipant participant = participant(challengeId, "Tanor");
         ParticipantProgressResponse progress = ParticipantProgressResponse.withoutRankData(participant, 0, 0);

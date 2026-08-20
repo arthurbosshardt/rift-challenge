@@ -44,6 +44,7 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => this.session() !== null);
   readonly displayName = computed(() => this.profileUsername());
+  readonly email = computed(() => this.session()?.user?.email ?? null);
   readonly linkedAccount = computed(() => this.linkedRiotAccount());
   readonly headerIdentity = computed(() => {
     const linked = this.linkedRiotAccount();
@@ -293,6 +294,25 @@ export class AuthService {
       await this.loadProfile();
     }
     return authErrorToKey(error) ?? error?.message ?? null;
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<string | null> {
+    const email = this.session()?.user?.email;
+    if (!email) {
+      return 'auth.genericError';
+    }
+
+    const { error: reauthError } = await this.supabase.auth.signInWithPassword({
+      email,
+      password: currentPassword,
+    });
+    if (reauthError) {
+      return reauthError.code === 'invalid_credentials'
+        ? 'settings.currentPasswordInvalid'
+        : (authErrorToKey(reauthError) ?? reauthError.message);
+    }
+
+    return this.updatePassword(newPassword);
   }
 
   async signInWithGoogle(): Promise<string | null> {

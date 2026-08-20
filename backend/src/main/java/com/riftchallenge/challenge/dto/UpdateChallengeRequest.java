@@ -7,7 +7,6 @@ public record UpdateChallengeRequest(
         @Size(max = 120) String name,
         Instant startAt,
         Instant endAt,
-        Integer maxGames,
-        Boolean isPublic
+        Integer maxGames
 ) {
 }

@@ -45,8 +45,7 @@ class ChallengeDuoProgressServiceTest {
     @Test
     void buildProgress_whenEligibleWithoutSyncedTogetherMatches_usesIndividualStatsFallback() {
         Challenge challenge = Challenge.create(
-                UUID.randomUUID(), "Test", ChallengeType.DUOQ, Instant.now(), true
-        );
+                UUID.randomUUID(), "Test", ChallengeType.DUOQ, Instant.now());
         UUID challengeId = challenge.getId();
         ChallengeDuo duo = ChallengeDuo.create(challengeId);
         ChallengeParticipant player1 = ChallengeParticipant.create(
@@ -107,8 +106,7 @@ class ChallengeDuoProgressServiceTest {
     @Test
     void buildProgress_whenIneligibleWithoutTogetherMatches_keepsZeroStats() {
         Challenge challenge = Challenge.create(
-                UUID.randomUUID(), "Test", ChallengeType.DUOQ, Instant.now(), true
-        );
+                UUID.randomUUID(), "Test", ChallengeType.DUOQ, Instant.now());
         UUID challengeId = challenge.getId();
         ChallengeDuo duo = ChallengeDuo.create(challengeId);
         ChallengeParticipant player1 = ChallengeParticipant.create(

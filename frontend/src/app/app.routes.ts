@@ -124,19 +124,23 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'public-challenges',
+    path: 'challenges',
     component: PublicChallengesPageComponent,
     data: {
       seo: {
         titleKey: 'seo.publicChallenges.title',
         descriptionKey: 'seo.publicChallenges.description',
-        path: '/public-challenges',
+        path: '/challenges',
       } satisfies RouteSeoData,
     },
   },
   {
+    path: 'public-challenges',
+    redirectTo: 'challenges',
+  },
+  {
     path: 'public-races',
-    redirectTo: 'public-challenges',
+    redirectTo: 'challenges',
   },
   {
     path: 'challenges/new',

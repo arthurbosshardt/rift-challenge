@@ -75,7 +75,7 @@ class ChallengeSyncServiceTest {
                 clock
         );
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRefreshRepository.findByChallengeId(challengeId)).thenReturn(Optional.of(
                 ChallengeRefresh.create(challengeId, Instant.parse("2026-08-16T09:59:30Z"))
@@ -106,7 +106,7 @@ class ChallengeSyncServiceTest {
                 clock
         );
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T10:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T10:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
         assertThatThrownBy(() -> challengeSyncService.refreshChallenge(challengeId))
@@ -132,7 +132,7 @@ class ChallengeSyncServiceTest {
                 clock
         );
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
 
@@ -161,7 +161,7 @@ class ChallengeSyncServiceTest {
                 clock
         );
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"));
         ChallengeParticipant first = ChallengeParticipant.create(
                 challenge.getId(),
                 new RiotAccountDto("puuid-1", "PlayerOne", "EUW")

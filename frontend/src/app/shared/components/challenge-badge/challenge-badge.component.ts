@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { ChallengeStatus, ChallengeType } from '../../../core/models/challenge.models';
 
-export type ChallengeBadgeKind = 'soloq' | 'duoq' | 'not-started' | 'active' | 'finished' | 'public' | 'private';
+export type ChallengeBadgeKind = 'soloq' | 'duoq' | 'not-started' | 'active' | 'finished';
 
 export function challengeTypeBadgeKind(type: ChallengeType): ChallengeBadgeKind {
   return type === 'SOLOQ' ? 'soloq' : 'duoq';
@@ -43,10 +43,6 @@ export class ChallengeBadgeComponent {
         return `badge badge--status-active${sizeClass}${iconOnlyClass}`;
       case 'finished':
         return `badge badge--status-finished${sizeClass}${iconOnlyClass}`;
-      case 'public':
-        return `badge badge--public${sizeClass}${iconOnlyClass}`;
-      case 'private':
-        return `badge badge--private${sizeClass}${iconOnlyClass}`;
     }
   });
 }

@@ -34,7 +34,6 @@ import {
   ChallengeBadgeComponent,
   challengeStatusBadgeKind,
   challengeTypeBadgeKind,
-  ChallengeBadgeKind,
 } from '../challenge-badge/challenge-badge.component';
 
 import { ClampTooltipDirective } from '../../directives/clamp-tooltip.directive';
@@ -49,7 +48,6 @@ import { HideIfTruncatedDirective } from '../../directives/hide-if-truncated.dir
 })
 export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   readonly challenge = input.required<ChallengeSummary>();
-  readonly hidePublicBadge = input(false);
   readonly hidePreview = input(false);
   private readonly i18n = inject(I18nService);
   private readonly previewViewport = viewChild<ElementRef<HTMLElement>>('previewViewport');
@@ -175,20 +173,9 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     return end ? `${start} → ${end}` : start;
   }
 
-  visibilityBadgeKind(): ChallengeBadgeKind {
-    return this.challenge().isPublic ? 'public' : 'private';
-  }
-
-  visibilityLabel(): string {
-    return this.challenge().isPublic
-      ? this.i18n.t('challenge.public')
-      : this.i18n.t('challenge.private');
-  }
-
   metaCompactAriaLabel(): string {
     const parts = [
       this.statusLabel(this.challenge().status),
-      !this.hidePublicBadge() ? this.visibilityLabel() : null,
       this.dateRangeCompact(),
       this.entryCountCompact(),
     ].filter(Boolean);

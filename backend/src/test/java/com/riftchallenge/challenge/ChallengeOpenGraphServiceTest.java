@@ -72,9 +72,7 @@ class ChallengeOpenGraphServiceTest {
                 "Les solo petits soldats 2025",
                 ChallengeType.SOLOQ,
                 Instant.parse("2025-02-17T00:00:00Z"),
-                Instant.parse("2025-05-03T00:00:00Z"),
-                true
-        );
+                Instant.parse("2025-05-03T00:00:00Z"));
 
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(8L);
@@ -100,9 +98,7 @@ class ChallengeOpenGraphServiceTest {
                 "Race active",
                 ChallengeType.SOLOQ,
                 Instant.parse("2026-08-01T00:00:00Z"),
-                Instant.parse("2026-09-01T00:00:00Z"),
-                true
-        );
+                Instant.parse("2026-09-01T00:00:00Z"));
         ChallengeParticipant first = participant(challenge.getId(), "Nikos", "EUW");
         ChallengeParticipant second = participant(challenge.getId(), "Pascal", "EUW");
         ChallengeParticipant third = participant(challenge.getId(), "Jungle", "EUW");
@@ -133,9 +129,7 @@ class ChallengeOpenGraphServiceTest {
                 "Race active",
                 ChallengeType.SOLOQ,
                 Instant.parse("2026-08-01T00:00:00Z"),
-                Instant.parse("2026-09-01T00:00:00Z"),
-                true
-        );
+                Instant.parse("2026-09-01T00:00:00Z"));
         ChallengeParticipant first = participant(challenge.getId(), "Nikos", "EUW");
 
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
@@ -190,9 +184,7 @@ class ChallengeOpenGraphServiceTest {
                 ChallengeType.SOLOQ,
                 Instant.parse("2026-08-01T00:00:00Z"),
                 null,
-                20,
-                true
-        );
+                20);
         ChallengeParticipant first = participant(challenge.getId(), "Nikos", "EUW");
 
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
@@ -211,18 +203,25 @@ class ChallengeOpenGraphServiceTest {
     }
 
     @Test
-    void renderPreviewHtml_whenPrivate_throwsNotFound() {
+    void renderPreviewHtml_rendersForAnyChallenge() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
                 ownerId,
-                "Private race",
+                "Any race",
                 ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                false
-        );
+                NOW.plusSeconds(3600));
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
 
-        assertThatThrownBy(() -> openGraphService.renderPreviewHtml(challenge.getShareSlug()))
+        String html = openGraphService.renderPreviewHtml(challenge.getShareSlug());
+
+        assertThat(html).contains("Any race");
+    }
+
+    @Test
+    void renderPreviewHtml_whenChallengeMissing_throwsNotFound() {
+        when(challengeRepository.findByShareSlug("missing")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> openGraphService.renderPreviewHtml("missing"))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);

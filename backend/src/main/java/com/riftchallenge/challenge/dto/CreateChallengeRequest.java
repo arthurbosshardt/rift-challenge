@@ -11,7 +11,6 @@ public record CreateChallengeRequest(
         @NotNull ChallengeType type,
         @NotNull Instant startAt,
         Instant endAt,
-        Integer maxGames,
-        boolean isPublic
+        Integer maxGames
 ) {
 }

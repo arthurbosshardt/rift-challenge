@@ -80,7 +80,6 @@
 }
 
 .create-challenge-modal__meta .challenge-form__schedule-block,
-.create-challenge-modal__meta .visibility-switch,
 .create-challenge-modal__meta .type-switch {
   width: 100%;
   max-width: 100%;
@@ -427,7 +426,7 @@
     flex-direction: column;
     align-items: stretch;
     width: 100%;
-    max-width: calc(100vw - 1rem);
+    max-width: 100%;
     max-height: calc(100dvh - 1rem);
     min-height: 0;
     margin-inline: auto;
@@ -547,18 +546,15 @@
     padding: 0.5rem 0.625rem;
   }
 
-  .create-challenge-modal .visibility-switch,
   .create-challenge-modal .type-switch {
     padding: 0.5rem 0.625rem;
     gap: 0.5rem;
   }
 
-  .create-challenge-modal .visibility-switch__label,
   .create-challenge-modal .type-switch__label {
     font-size: 0.8125rem;
   }
 
-  .create-challenge-modal .visibility-switch__toggle,
   .create-challenge-modal .type-switch__toggle {
     width: 2.75rem;
     height: 1.75rem;

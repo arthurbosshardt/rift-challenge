@@ -53,6 +53,34 @@
     </div>
   }
 
+  @if (view() === 'challenges') {
+    <div class="activity-refresh-row activity-refresh-row--mobile">
+      <button
+        type="button"
+        class="refresh-action-btn activity-refresh-btn activity-refresh-btn--mobile"
+        (click)="refreshChallenges()"
+        [disabled]="challengesLoading() || challengesRefreshing() || !challengesRefreshAvailable() || !backend.ready()"
+        [attr.aria-label]="'home.searchRefreshAria' | t"
+        [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
+      >
+        <svg
+          class="refresh-action-btn__icon"
+          [class.refresh-action-btn__icon--spinning]="challengesRefreshing()"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+          />
+        </svg>
+        <span class="refresh-action-btn__label">{{ challengesRefreshButtonLabel() }}</span>
+      </button>
+      @if (challengesLastUpdatedLabel(); as label) {
+        <span class="activity-refresh-lastupdate">{{ label }}</span>
+      }
+    </div>
+  }
+
   <div class="activity-layout">
     <section class="activity-column" [class.activity-column--hidden-mobile]="view() !== 'activity'">
       <div class="activity-column__header">
@@ -115,6 +143,9 @@
           </button>
         </p>
       } @else if (activityLoading()) {
+        @if (!backend.ready()) {
+          <p class="state">{{ 'backend.wakingUpMessage' | t }}</p>
+        }
         <div class="activity-accounts" role="status" [attr.aria-label]="'activity.loading' | t" aria-live="polite">
           @for (_ of activitySkeletonRows; track _) {
             <div class="activity-account-skeleton">
@@ -198,14 +229,14 @@
         <button
           type="button"
           class="refresh-action-btn activity-refresh-btn activity-refresh-btn--desktop"
-          (click)="refreshMyChallenges()"
-          [disabled]="challengesLoading() || challengesRefreshCooldownSeconds() > 0 || !backend.ready()"
-          [attr.aria-label]="'home.myChallengesRefreshAria' | t"
-          [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('home.myChallengesRefreshAria' | t)"
+          (click)="refreshChallenges()"
+          [disabled]="challengesLoading() || challengesRefreshing() || !challengesRefreshAvailable() || !backend.ready()"
+          [attr.aria-label]="'home.searchRefreshAria' | t"
+          [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('home.searchRefreshAria' | t)"
         >
           <svg
             class="refresh-action-btn__icon"
-            [class.refresh-action-btn__icon--spinning]="challengesLoading()"
+            [class.refresh-action-btn__icon--spinning]="challengesRefreshing()"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
@@ -215,6 +246,9 @@
           </svg>
           <span class="refresh-action-btn__label">{{ challengesRefreshButtonLabel() }}</span>
         </button>
+        @if (challengesLastUpdatedLabel(); as label) {
+          <span class="activity-refresh-lastupdate">{{ label }}</span>
+        }
       </div>
 
       @if (auth.isProfileLoading()) {
@@ -228,6 +262,9 @@
           </button>
         </p>
       } @else if (challengesLoading()) {
+        @if (!backend.ready()) {
+          <p class="state">{{ 'backend.wakingUpMessage' | t }}</p>
+        }
         <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
       } @else if (challengesError()) {
         <p class="state state--error">{{ challengesError() }}</p>

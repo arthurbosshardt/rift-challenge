@@ -2,7 +2,7 @@
 User-agent: *
 Allow: /
 Allow: /home
-Allow: /public-challenges
+Allow: /challenges
 Allow: /challenges/
 
 Disallow: /login

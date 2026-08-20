@@ -41,33 +41,6 @@
               </dt>
               <dd>{{ statusLabel(challenge().status) }}</dd>
             </div>
-            @if (!hidePublicBadge()) {
-              <div>
-                <dt>
-                  <svg class="challenge-card__meta-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    @if (challenge().isPublic) {
-                      <path
-                        d="M12 5C7 5 2.73 8.11 1 12.5c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"
-                        fill="currentColor"
-                      />
-                    } @else {
-                      <path
-                        d="M12 6.5c2.5 0 4.74 1.17 6.32 3.01l1.42-1.42A10.96 10.96 0 0 0 12 4.5C7 4.5 2.73 7.61 1 12c.67 1.69 1.76 3.15 3.12 4.23l1.53-1.53A5.987 5.987 0 0 1 12 6.5zM2.71 3.16 1.29 4.58l2.54 2.54C2.46 8.72 1.44 10.5 1 12.5 2.73 16.89 7 20 12 20c1.58 0 3.08-.35 4.43-.97l2.83 2.83 1.42-1.42L2.71 3.16zM12 17.5a5.5 5.5 0 0 1-4.58-2.45l6.03-6.03A5.487 5.487 0 0 1 12 17.5z"
-                        fill="currentColor"
-                      />
-                    }
-                  </svg>
-                  {{ 'challenge.visibility' | t }}
-                </dt>
-                <dd>
-                  @if (challenge().isPublic) {
-                    {{ 'challenge.public' | t }}
-                  } @else {
-                    {{ 'challenge.private' | t }}
-                  }
-                </dd>
-              </div>
-            }
           </dl>
 
           <dl class="challenge-card__meta">
@@ -147,13 +120,6 @@
             [kind]="challengeStatusBadgeKind(challenge().status)"
             [label]="statusLabel(challenge().status)"
           />
-          @if (!hidePublicBadge()) {
-            <app-challenge-badge
-              [iconOnly]="true"
-              [kind]="visibilityBadgeKind()"
-              [label]="visibilityLabel()"
-            />
-          }
           <span class="challenge-card__meta-compact-dates">{{ dateRangeCompact() }}</span>
           <span class="challenge-card__meta-compact-count">{{ entryCountCompact() }}</span>
         </div>

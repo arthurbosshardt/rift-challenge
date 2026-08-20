@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -21,6 +21,7 @@ import { normalizeChallengeDetail } from '../../core/utils/challenge-detail';
 import { copyTextToClipboard } from '../../core/utils/clipboard';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
+import { FitTitleWidthDirective } from '../../shared/directives/fit-title-width.directive';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { ChallengeDatePipe } from '../../shared/pipes/challenge-date.pipe';
 import { ChallengeDetailSkeletonComponent } from '../../shared/components/challenge-detail-skeleton/challenge-detail-skeleton.component';
@@ -29,6 +30,9 @@ import { LeaderboardSortControlsComponent } from '../../shared/components/leader
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
+import { NavigationHistoryService } from '../../core/services/navigation-history.service';
+import { ActivityCacheService } from '../../core/services/activity-cache.service';
+import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
@@ -39,7 +43,7 @@ import { SeoService } from '../../core/seo/seo.service';
 
 @Component({
   selector: 'app-challenge-detail-page',
-  imports: [PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent, ClampTooltipDirective],
+  imports: [RouterLink, PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent, ClampTooltipDirective, FitTitleWidthDirective],
   templateUrl: './challenge-detail-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './challenge-detail-page.component.scss',
@@ -54,6 +58,9 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   private readonly gameDetailModal = inject(GameDetailModalService);
   private readonly i18n = inject(I18nService);
   private readonly seo = inject(SeoService);
+  private readonly navigationHistory = inject(NavigationHistoryService);
+  private readonly activityCache = inject(ActivityCacheService);
+  private readonly publicChallengesCache = inject(PublicChallengesCacheService);
   protected readonly backend = inject(BackendStatusService);
 
   private shareSlug = '';
@@ -133,8 +140,15 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
         this.openEditIfRequested(normalized);
       },
       error: () => {
-        this.error.set(this.i18n.t('challenge.notFound'));
         this.loading.set(false);
+
+        if (!this.backend.ready()) {
+          this.error.set(this.i18n.t('backend.wakingUpMessage'));
+          this.backend.onReady(() => this.loadChallenge());
+          return;
+        }
+
+        this.error.set(this.i18n.t('challenge.notFound'));
         this.seo.apply({
           title: `${this.i18n.t('seo.challenge.notFound.title')} | Rift Challenge`,
           description: this.i18n.t('seo.challenge.notFound.description'),
@@ -154,13 +168,15 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
       title: `${this.i18n.t('seo.challenge.title', { name: challenge.name, type: typeLabel })} | Rift Challenge`,
       description: this.i18n.t('seo.challenge.description', { name: challenge.name, type: typeLabel }),
       path,
-      image: challenge.isPublic
-        ? `https://rift-challenge.com/api/challenge-preview-image?slug=${encodeURIComponent(challenge.shareSlug)}`
-        : undefined,
-      noindex: !challenge.isPublic,
+      image: `https://rift-challenge.com/api/challenge-preview-image?slug=${encodeURIComponent(challenge.shareSlug)}`,
       type: 'website',
     });
   }
+
+  protected readonly backTarget = computed<string>(() => {
+    const previous = this.navigationHistory.previousUrl();
+    return previous?.startsWith('/my-challenges') ? '/my-challenges' : '/challenges';
+  });
 
   protected async copyShareLink(): Promise<void> {
     const challenge = this.challenge();
@@ -257,6 +273,8 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
 
     this.challengeApi.deleteChallenge(challengeId).subscribe({
       next: () => {
+        this.activityCache.challenges.update((challenges) => challenges.filter((c) => c.id !== challengeId));
+        this.publicChallengesCache.challenges.update((challenges) => challenges.filter((c) => c.id !== challengeId));
         void this.router.navigate(['/my-challenges']);
       },
       error: (err: HttpErrorResponse) => {

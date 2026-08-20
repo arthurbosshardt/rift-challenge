@@ -19,7 +19,7 @@
             <span>{{ 'nav.myActivity' | t }}</span>
           </a>
         }
-        <a routerLink="/public-challenges" routerLinkActive="active" (click)="closeUserMenu()">
+        <a routerLink="/challenges" routerLinkActive="active" (click)="closeUserMenu()">
           <app-nav-icon name="public-challenges" />
           <span>{{ 'nav.publicChallenges' | t }}</span>
         </a>
@@ -87,7 +87,7 @@
                 </a>
               }
               <a
-                routerLink="/public-challenges"
+                routerLink="/challenges"
                 routerLinkActive="active"
                 role="menuitem"
                 class="user-menu__item user-menu__item--mobile-nav"
@@ -105,10 +105,6 @@
                 >
                   <app-nav-icon name="create-challenge" />
                   <span>{{ 'nav.createChallenge' | t }}</span>
-                </button>
-                <button type="button" role="menuitem" class="user-menu__item" (click)="openCreatedChallenges()">
-                  <app-nav-icon name="created-challenges" />
-                  <span>{{ 'nav.createdChallenges' | t }}</span>
                 </button>
                 <button type="button" role="menuitem" class="user-menu__item" (click)="openSettings()">
                   <app-nav-icon name="settings" />

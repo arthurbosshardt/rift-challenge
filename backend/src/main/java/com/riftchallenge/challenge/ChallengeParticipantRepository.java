@@ -44,8 +44,7 @@ public interface ChallengeParticipantRepository extends JpaRepository<ChallengeP
             SELECT DISTINCT rp.challengeId
             FROM ChallengeParticipant rp
             JOIN Challenge r ON r.id = rp.challengeId
-            WHERE r.isPublic = true
-              AND r.startAt <= :now
+            WHERE r.startAt <= :now
               AND LOWER(REPLACE(rp.riotGameName, ' ', '')) LIKE CONCAT('%', :query, '%')
             """)
     List<UUID> findDistinctPublicChallengeIdsByParticipantSearch(@Param("now") Instant now, @Param("query") String query);

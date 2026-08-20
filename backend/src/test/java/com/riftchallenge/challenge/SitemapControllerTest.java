@@ -40,16 +40,14 @@ class SitemapControllerTest {
                 "Public challenge",
                 ChallengeType.SOLOQ,
                 NOW.minusSeconds(3600),
-                NOW.plusSeconds(86_400),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
+                NOW.plusSeconds(86_400));
+        when(challengeRepository.findByStartAtLessThanEqualOrderByStartAtDesc(NOW))
                 .thenReturn(List.of(challenge));
 
         String xml = sitemapController.sitemap();
 
         assertThat(xml).contains("<loc>https://rift-challenge.com/</loc>");
-        assertThat(xml).contains("<loc>https://rift-challenge.com/public-challenges</loc>");
+        assertThat(xml).contains("<loc>https://rift-challenge.com/challenges</loc>");
         assertThat(xml).contains("<loc>https://rift-challenge.com/challenges/" + challenge.getId() + "</loc>");
         assertThat(xml).doesNotContain("Public challenge");
     }

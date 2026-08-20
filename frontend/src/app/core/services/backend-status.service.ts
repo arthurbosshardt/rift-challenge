@@ -14,6 +14,7 @@ export class BackendStatusService {
   private readonly checkingState = signal(true);
   private pollId: number | null = null;
   private firstCheck = true;
+  private readonly pendingRetries: Array<() => void> = [];
 
   readonly ready = this.readyState.asReadonly();
   readonly checking = this.checkingState.asReadonly();
@@ -25,6 +26,15 @@ export class BackendStatusService {
       return;
     }
     this.tick();
+  }
+
+  /** Runs `callback` now if the backend is already ready, otherwise once on the next time it becomes ready. */
+  onReady(callback: () => void): void {
+    if (this.readyState()) {
+      callback();
+      return;
+    }
+    this.pendingRetries.push(callback);
   }
 
   private tick(): void {
@@ -41,6 +51,9 @@ export class BackendStatusService {
         this.readyState.set(up);
         this.checkingState.set(false);
         this.scheduleNext(up ? POLL_UP_MS : POLL_DOWN_MS);
+        if (up && this.pendingRetries.length > 0) {
+          this.pendingRetries.splice(0).forEach((callback) => callback());
+        }
       });
   }
 

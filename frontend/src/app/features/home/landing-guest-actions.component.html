@@ -2,7 +2,7 @@
   <a
     class="landing-btn landing-btn--primary"
     [class.landing-btn--disabled]="!backend.ready()"
-    [routerLink]="backend.ready() ? '/public-challenges' : null"
+    [routerLink]="backend.ready() ? '/challenges' : null"
     [attr.aria-disabled]="!backend.ready()"
     [attr.tabindex]="backend.ready() ? 0 : -1"
     (click)="backend.ready() || $event.preventDefault()"

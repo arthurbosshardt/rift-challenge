@@ -15,6 +15,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { UserRiotAccount } from '../../core/models/challenge.models';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
+import { translateAuthError } from '../../core/utils/auth-errors';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { SettingsAccountsSkeletonComponent } from '../../shared/components/settings-accounts-skeleton/settings-accounts-skeleton.component';
@@ -67,6 +68,13 @@ export class SettingsModalComponent {
 
   protected primaryRiotIdInput = '';
   protected smurfRiotIdInput = '';
+
+  protected currentPasswordInput = '';
+  protected newPasswordInput = '';
+  protected newPasswordConfirmInput = '';
+  protected readonly changingPassword = signal(false);
+  protected readonly passwordError = signal<string | null>(null);
+  protected readonly passwordSuccess = signal(false);
 
   constructor() {
     effect(() => {
@@ -228,6 +236,40 @@ export class SettingsModalComponent {
     });
   }
 
+  protected async changePassword(): Promise<void> {
+    this.passwordError.set(null);
+    this.passwordSuccess.set(false);
+
+    if (this.changingPassword()) {
+      return;
+    }
+
+    if (!this.currentPasswordInput) {
+      this.passwordError.set(this.i18n.t('settings.currentPasswordRequired'));
+      return;
+    }
+
+    if (this.newPasswordInput !== this.newPasswordConfirmInput) {
+      this.passwordError.set(this.i18n.t('auth.resetPasswordMismatch'));
+      return;
+    }
+
+    this.changingPassword.set(true);
+    const message = await this.auth.changePassword(this.currentPasswordInput, this.newPasswordInput);
+    this.changingPassword.set(false);
+
+    if (message) {
+      this.passwordError.set(translateAuthError(this.i18n, message));
+      return;
+    }
+
+    this.passwordSuccess.set(true);
+    this.currentPasswordInput = '';
+    this.newPasswordInput = '';
+    this.newPasswordConfirmInput = '';
+    window.setTimeout(() => this.passwordSuccess.set(false), 2500);
+  }
+
   private resetState(): void {
     this.accounts.set([]);
     this.accountsLoading.set(true);
@@ -240,6 +282,12 @@ export class SettingsModalComponent {
     this.pendingPrimaryAccountChange.set(null);
     this.primaryRiotIdInput = '';
     this.smurfRiotIdInput = '';
+    this.currentPasswordInput = '';
+    this.newPasswordInput = '';
+    this.newPasswordConfirmInput = '';
+    this.changingPassword.set(false);
+    this.passwordError.set(null);
+    this.passwordSuccess.set(false);
   }
 
   private mapAccountError(err: HttpErrorResponse): string {

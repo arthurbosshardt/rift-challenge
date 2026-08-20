@@ -37,9 +37,6 @@ public class Challenge {
     @Column(name = "max_games")
     private Integer maxGames;
 
-    @Column(name = "is_public", nullable = false)
-    private boolean isPublic;
-
     @Column(name = "share_slug", nullable = false, unique = true, length = 120)
     private String shareSlug;
 
@@ -55,8 +52,8 @@ public class Challenge {
     protected Challenge() {
     }
 
-    public static Challenge create(UUID ownerId, String name, ChallengeType type, Instant startAt, boolean isPublic) {
-        return create(ownerId, name, type, startAt, null, null, isPublic);
+    public static Challenge create(UUID ownerId, String name, ChallengeType type, Instant startAt) {
+        return create(ownerId, name, type, startAt, null, null);
     }
 
     public static Challenge create(
@@ -64,10 +61,9 @@ public class Challenge {
             String name,
             ChallengeType type,
             Instant startAt,
-            Instant endAt,
-            boolean isPublic
+            Instant endAt
     ) {
-        return create(ownerId, name, type, startAt, endAt, null, isPublic);
+        return create(ownerId, name, type, startAt, endAt, null);
     }
 
     public static Challenge create(
@@ -76,8 +72,7 @@ public class Challenge {
             ChallengeType type,
             Instant startAt,
             Instant endAt,
-            Integer maxGames,
-            boolean isPublic
+            Integer maxGames
     ) {
         Challenge challenge = new Challenge();
         challenge.id = UUID.randomUUID();
@@ -87,7 +82,6 @@ public class Challenge {
         challenge.startAt = startAt;
         challenge.endAt = endAt;
         challenge.maxGames = maxGames;
-        challenge.isPublic = isPublic;
         challenge.shareSlug = challenge.id.toString();
         return challenge;
     }
@@ -132,10 +126,6 @@ public class Challenge {
         return maxGames;
     }
 
-    public boolean isPublic() {
-        return isPublic;
-    }
-
     public String getShareSlug() {
         return shareSlug;
     }
@@ -154,10 +144,6 @@ public class Challenge {
 
     public void updateDataSyncedAt(Instant dataSyncedAt) {
         this.dataSyncedAt = dataSyncedAt;
-    }
-
-    public void updateVisibility(boolean isPublic) {
-        this.isPublic = isPublic;
     }
 
     public void updateEndAt(Instant endAt) {

@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import com.riftchallenge.account.AppUserRepository;
 import com.riftchallenge.account.UserRiotAccountService;
+import com.riftchallenge.challenge.ChallengeSummaryCacheService.ChallengeListSnapshot;
+import com.riftchallenge.challenge.ChallengeSummaryCacheService.RefreshEligibility;
 import com.riftchallenge.challenge.dto.CreateChallengeRequest;
 import com.riftchallenge.challenge.dto.ChallengeSummaryResponse;
 import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
@@ -16,8 +18,6 @@ import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
-import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
-import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.synchronization.ChallengeSyncService;
 import java.time.Clock;
 import java.time.Instant;
@@ -62,6 +62,9 @@ class ChallengeServiceTest {
     private ChallengeSyncService challengeSyncService;
 
     @Mock
+    private ChallengeSummaryCacheService summaryCacheService;
+
+    @Mock
     private UserRiotAccountService userRiotAccountService;
 
     private ChallengeService challengeService;
@@ -77,33 +80,31 @@ class ChallengeServiceTest {
                 participantProfileService,
                 challengeRefreshRepository,
                 challengeSyncService,
+                summaryCacheService,
                 userRiotAccountService,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
 
+    private static ChallengeSummaryResponse summaryOf(Challenge challenge) {
+        return ChallengeSummaryResponse.from(challenge, NOW, 0, List.of(), List.of(), List.of(), false);
+    }
+
+    private static RefreshEligibility availableEligibility() {
+        return new RefreshEligibility(true, null);
+    }
+
     @Test
     void listPublicChallenges_withSearch_filtersByChallengeName() {
         Challenge matchingChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Les petits soldats",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
+                UUID.randomUUID(), "Les petits soldats", ChallengeType.SOLOQ, NOW.minusSeconds(60));
         Challenge otherChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Autre challenge",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(120),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(matchingChallenge, otherChallenge));
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(matchingChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(matchingChallenge, List.of())).thenReturn(List.of());
+                UUID.randomUUID(), "Autre challenge", ChallengeType.SOLOQ, NOW.minusSeconds(120));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(
+                new ChallengeListSnapshot(List.of(summaryOf(matchingChallenge), summaryOf(otherChallenge)), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", null, null);
+        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", null, null).challenges();
 
         assertThat(challenges).hasSize(1);
         assertThat(challenges.getFirst().name()).isEqualTo("Les petits soldats");
@@ -112,20 +113,14 @@ class ChallengeServiceTest {
     @Test
     void listPublicChallenges_withSearch_filtersByParticipant() {
         Challenge challenge = Challenge.create(
-                UUID.randomUUID(),
-                "Duo challenge",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(challenge));
+                UUID.randomUUID(), "Duo challenge", ChallengeType.SOLOQ, NOW.minusSeconds(60));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(
+                new ChallengeListSnapshot(List.of(summaryOf(challenge)), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
         when(participantRepository.findDistinctPublicChallengeIdsByParticipantSearch(NOW, "tanor"))
                 .thenReturn(List.of(challenge.getId()));
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(challenge, List.of())).thenReturn(List.of());
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, "tanor", null);
+        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, "tanor", null).challenges();
 
         assertThat(challenges).hasSize(1);
         assertThat(challenges.getFirst().name()).isEqualTo("Duo challenge");
@@ -134,18 +129,12 @@ class ChallengeServiceTest {
     @Test
     void listPublicChallenges_withShortSearch_ignoresSearchFilters() {
         Challenge challenge = Challenge.create(
-                UUID.randomUUID(),
-                "Les petits soldats",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(challenge));
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(challenge, List.of())).thenReturn(List.of());
+                UUID.randomUUID(), "Les petits soldats", ChallengeType.SOLOQ, NOW.minusSeconds(60));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(
+                new ChallengeListSnapshot(List.of(summaryOf(challenge)), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("so", "ta", null);
+        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("so", "ta", null).challenges();
 
         assertThat(challenges).hasSize(1);
         verify(participantRepository, never()).findDistinctPublicChallengeIdsByParticipantSearch(any(), any());
@@ -154,24 +143,15 @@ class ChallengeServiceTest {
     @Test
     void listPublicChallenges_withTypeFilter_returnsOnlyMatchingType() {
         Challenge soloChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Solo challenge",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
+                UUID.randomUUID(), "Solo challenge", ChallengeType.SOLOQ, NOW.minusSeconds(60));
         Challenge duoChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Duo challenge",
-                ChallengeType.DUOQ,
-                NOW.minusSeconds(120),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(soloChallenge, duoChallenge));
-        when(duoProgressService.buildPreview(duoChallenge)).thenReturn(List.of());
+                UUID.randomUUID(), "Duo challenge", ChallengeType.DUOQ, NOW.minusSeconds(120));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(
+                new ChallengeListSnapshot(List.of(summaryOf(soloChallenge), summaryOf(duoChallenge)), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, ChallengeType.DUOQ);
+        List<ChallengeSummaryResponse> challenges =
+                challengeService.listPublicChallenges(null, null, ChallengeType.DUOQ).challenges();
 
         assertThat(challenges).hasSize(1);
         assertThat(challenges.getFirst().type()).isEqualTo(ChallengeType.DUOQ);
@@ -180,50 +160,68 @@ class ChallengeServiceTest {
     @Test
     void listPublicChallenges_withChallengeNameAndSummoner_appliesBothFilters() {
         Challenge matchingChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Les petits soldats",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
+                UUID.randomUUID(), "Les petits soldats", ChallengeType.SOLOQ, NOW.minusSeconds(60));
         Challenge otherChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Les petits soldats bis",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(120),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(matchingChallenge, otherChallenge));
+                UUID.randomUUID(), "Les petits soldats bis", ChallengeType.SOLOQ, NOW.minusSeconds(120));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(new ChallengeListSnapshot(
+                List.of(summaryOf(matchingChallenge), summaryOf(otherChallenge)), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
         when(participantRepository.findDistinctPublicChallengeIdsByParticipantSearch(NOW, "tanor"))
                 .thenReturn(List.of(matchingChallenge.getId()));
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(matchingChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(matchingChallenge, List.of())).thenReturn(List.of());
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges("soldats", "tanor", null);
+        List<ChallengeSummaryResponse> challenges =
+                challengeService.listPublicChallenges("soldats", "tanor", null).challenges();
 
         assertThat(challenges).hasSize(1);
         assertThat(challenges.getFirst().id()).isEqualTo(matchingChallenge.getId());
     }
 
     @Test
-    void listPublicChallenges_returnsOnlyStartedPublicChallenges() {
+    void listPublicChallenges_excludesChallengesNotYetStarted() {
         Challenge activeChallenge = Challenge.create(
-                UUID.randomUUID(),
-                "Active",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(activeChallenge));
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(activeChallenge.getId())).thenReturn(List.of());
-        when(progressService.buildPreviewProgress(activeChallenge, List.of())).thenReturn(List.of());
+                UUID.randomUUID(), "Active", ChallengeType.SOLOQ, NOW.minusSeconds(60));
+        Challenge notStartedChallenge = Challenge.create(
+                UUID.randomUUID(), "Not started", ChallengeType.SOLOQ, NOW.plusSeconds(60));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(new ChallengeListSnapshot(
+                List.of(summaryOf(activeChallenge), summaryOf(notStartedChallenge)), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges();
+        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, null).challenges();
 
         assertThat(challenges).hasSize(1);
-        assertThat(challenges.getFirst().status()).isEqualTo("ACTIVE");
+        assertThat(challenges.getFirst().name()).isEqualTo("Active");
+    }
+
+    @Test
+    void listPublicChallenges_includesParticipantGameNamesForSoloChallenge() {
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(), "Les petits soldats", ChallengeType.SOLOQ, NOW.minusSeconds(60));
+        ChallengeSummaryResponse summary = ChallengeSummaryResponse.from(
+                challenge, NOW, 2, List.of("Tanor", "Kaori"), List.of(), List.of(), false);
+        when(summaryCacheService.readOrBootstrap()).thenReturn(new ChallengeListSnapshot(List.of(summary), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
+
+        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, null).challenges();
+
+        assertThat(challenges).hasSize(1);
+        assertThat(challenges.getFirst().entryCount()).isEqualTo(2);
+        assertThat(challenges.getFirst().participantGameNames()).containsExactly("Tanor", "Kaori");
+    }
+
+    @Test
+    void refreshPublicChallenges_recomputesAndReturnsFreshSnapshot() {
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(), "Refreshed", ChallengeType.SOLOQ, NOW.minusSeconds(60));
+        ChallengeListSnapshot freshSnapshot = new ChallengeListSnapshot(List.of(summaryOf(challenge)), NOW);
+        when(summaryCacheService.refreshAll(NOW)).thenReturn(freshSnapshot);
+        when(summaryCacheService.eligibility()).thenReturn(new RefreshEligibility(false, NOW.plusSeconds(60)));
+
+        var response = challengeService.refreshPublicChallenges();
+
+        verify(summaryCacheService).enforceCooldown();
+        assertThat(response.challenges()).hasSize(1);
+        assertThat(response.generatedAt()).isEqualTo(NOW);
+        assertThat(response.refreshAvailable()).isFalse();
     }
 
     @Test
@@ -238,8 +236,7 @@ class ChallengeServiceTest {
                         ChallengeType.SOLOQ,
                         NOW,
                         NOW.minusSeconds(60),
-                        null,
-                        false
+                        null
                 )
         ))
                 .isInstanceOf(ResponseStatusException.class)
@@ -258,8 +255,7 @@ class ChallengeServiceTest {
                         ChallengeType.SOLOQ,
                         NOW,
                         NOW.plusSeconds(3600),
-                        10,
-                        false
+                        10
                 )
         ))
                 .isInstanceOf(ResponseStatusException.class)
@@ -278,8 +274,7 @@ class ChallengeServiceTest {
                         ChallengeType.SOLOQ,
                         NOW,
                         null,
-                        null,
-                        false
+                        null
                 )
         ))
                 .isInstanceOf(ResponseStatusException.class)
@@ -299,8 +294,7 @@ class ChallengeServiceTest {
                         ChallengeType.SOLOQ,
                         NOW,
                         NOW.plusSeconds(3600),
-                        null,
-                        false
+                        null
                 )
         ))
                 .isInstanceOf(ResponseStatusException.class)
@@ -311,18 +305,30 @@ class ChallengeServiceTest {
     }
 
     @Test
+    void createChallenge_whenValid_upsertsCacheEntry() {
+        UUID ownerId = UUID.randomUUID();
+        when(appUserRepository.existsById(ownerId)).thenReturn(true);
+        when(challengeRepository.save(any(Challenge.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
+        when(progressService.buildPreviewProgress(any(), any())).thenReturn(List.of());
+        when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
+
+        var response = challengeService.createChallenge(
+                ownerId,
+                new CreateChallengeRequest("New challenge", ChallengeType.SOLOQ, NOW, NOW.plusSeconds(3600), null)
+        );
+
+        assertThat(response.name()).isEqualTo("New challenge");
+        verify(summaryCacheService).upsertOne(any(Challenge.class), org.mockito.ArgumentMatchers.eq(NOW));
+    }
+
+    @Test
     void updateSchedule_whenOwner_updatesBothDatesWithSingleRefresh() {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(7200);
         Instant newEnd = NOW.plusSeconds(86_400);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -345,13 +351,7 @@ class ChallengeServiceTest {
         Instant newStart = NOW.minusSeconds(7200);
         Instant newEnd = NOW.plusSeconds(86_400);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -369,43 +369,10 @@ class ChallengeServiceTest {
     }
 
     @Test
-    void updateVisibility_whenOwner_updatesIsPublic() {
-        UUID ownerId = UUID.randomUUID();
-        Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
-        UUID challengeId = challenge.getId();
-        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
-        when(challengeRepository.save(challenge)).thenReturn(challenge);
-        when(challengeRefreshRepository.findByChallengeId(any())).thenReturn(Optional.empty());
-
-        var response = challengeService.updateVisibility(
-                challengeId,
-                ownerId,
-                new UpdateChallengeVisibilityRequest(true)
-        );
-
-        assertThat(challenge.isPublic()).isTrue();
-        assertThat(response.isPublic()).isTrue();
-        verify(challengeRepository).save(challenge);
-    }
-
-    @Test
     void updateName_whenOwner_updatesName() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Old name",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Old name", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -420,18 +387,12 @@ class ChallengeServiceTest {
     }
 
     @Test
-    void updateChallenge_whenOwner_updatesNameScheduleAndVisibilityTogether() {
+    void updateChallenge_whenOwner_updatesNameAndSchedule() {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(7200);
         Instant newEnd = NOW.plusSeconds(86_400);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Old name",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Old name", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -440,13 +401,12 @@ class ChallengeServiceTest {
         var response = challengeService.updateChallenge(
                 challengeId,
                 ownerId,
-                new UpdateChallengeRequest("New name", newStart, newEnd, null, true)
+                new UpdateChallengeRequest("New name", newStart, newEnd, null)
         );
 
         assertThat(response.name()).isEqualTo("New name");
         assertThat(response.startAt()).isEqualTo(newStart);
         assertThat(response.endAt()).isEqualTo(newEnd);
-        assertThat(response.isPublic()).isTrue();
         verify(challengeRepository).save(challenge);
         verify(challengeSyncService, never()).refreshChallenge(challengeId);
     }
@@ -455,13 +415,7 @@ class ChallengeServiceTest {
     void updateName_rejectsDuplicateName() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Old name",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Old name", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.existsByNameIgnoreCaseAndIdNot("Taken name", challengeId)).thenReturn(true);
@@ -478,13 +432,7 @@ class ChallengeServiceTest {
     void deleteChallenge_whenOwner_deletesChallenge() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "To delete",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "To delete", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
@@ -498,13 +446,7 @@ class ChallengeServiceTest {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                NOW.plusSeconds(7200),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.plusSeconds(3600), NOW.plusSeconds(7200));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
         assertThatThrownBy(() -> challengeService.deleteChallenge(challengeId, UUID.randomUUID()))
@@ -520,13 +462,7 @@ class ChallengeServiceTest {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                NOW.plusSeconds(7200),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.plusSeconds(3600), NOW.plusSeconds(7200));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
         assertThatThrownBy(() -> challengeService.updateStartAt(
@@ -543,13 +479,7 @@ class ChallengeServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(7200);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -567,13 +497,7 @@ class ChallengeServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.plusSeconds(7200);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                NOW.plusSeconds(86_400),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.plusSeconds(3600), NOW.plusSeconds(86_400));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -591,13 +515,7 @@ class ChallengeServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant newStart = NOW.minusSeconds(60);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                NOW.plusSeconds(86_400),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.plusSeconds(3600), NOW.plusSeconds(86_400));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -615,13 +533,7 @@ class ChallengeServiceTest {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
         assertThatThrownBy(() -> challengeService.updateEndAt(
@@ -638,13 +550,7 @@ class ChallengeServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant newEnd = NOW.plusSeconds(86_400);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeRepository.save(challenge)).thenReturn(challenge);
@@ -662,13 +568,7 @@ class ChallengeServiceTest {
         UUID ownerId = UUID.randomUUID();
         Instant newEnd = NOW.plusSeconds(86_400);
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Test",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(3600),
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Test", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
         UUID challengeId = challenge.getId();
         ChallengeRefresh recentRefresh = ChallengeRefresh.create(challengeId, NOW.minusSeconds(30));
 
@@ -687,14 +587,15 @@ class ChallengeServiceTest {
     void listParticipatingChallenges_returnsChallengesForLinkedAccounts() {
         UUID userId = UUID.randomUUID();
         UUID challengeId = UUID.randomUUID();
-        Challenge challenge = Challenge.create(userId, "Joined", ChallengeType.DUOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600), false);
+        Challenge challenge = Challenge.create(userId, "Joined", ChallengeType.DUOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
 
         when(userRiotAccountService.listLinkedPuids(userId)).thenReturn(List.of("puuid-1"));
+        when(summaryCacheService.readOrBootstrap()).thenReturn(new ChallengeListSnapshot(List.of(), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
         when(participantRepository.findDistinctChallengeIdsByRiotPuuidIn(List.of("puuid-1"))).thenReturn(List.of(challengeId));
-        when(challengeRepository.findByIdInOrderByStartAtDesc(List.of(challengeId))).thenReturn(List.of(challenge));
-        when(duoProgressService.buildPreview(any())).thenReturn(List.of());
+        when(summaryCacheService.readByChallengeIds(List.of(challengeId))).thenReturn(List.of(summaryOf(challenge)));
 
-        List<ChallengeSummaryResponse> challenges = challengeService.listParticipatingChallenges(userId);
+        List<ChallengeSummaryResponse> challenges = challengeService.listParticipatingChallenges(userId).challenges();
 
         assertThat(challenges).hasSize(1);
         assertThat(challenges.getFirst().name()).isEqualTo("Joined");
@@ -704,87 +605,17 @@ class ChallengeServiceTest {
     void listParticipatingChallenges_withoutLinkedAccounts_returnsEmpty() {
         UUID userId = UUID.randomUUID();
         when(userRiotAccountService.listLinkedPuids(userId)).thenReturn(List.of());
+        when(summaryCacheService.readOrBootstrap()).thenReturn(new ChallengeListSnapshot(List.of(), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
 
-        assertThat(challengeService.listParticipatingChallenges(userId)).isEmpty();
+        assertThat(challengeService.listParticipatingChallenges(userId).challenges()).isEmpty();
     }
 
     @Test
-    void listPublicChallenges_includesParticipantGameNamesForSoloChallenge() {
-        Challenge challenge = Challenge.create(
-                UUID.randomUUID(),
-                "Les petits soldats",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                true
-        );
-        ChallengeParticipant tanor = ChallengeParticipant.create(
-                challenge.getId(),
-                new RiotAccountDto("puuid-1", "Tanor", "7154")
-        );
-        ChallengeParticipant kaori = ChallengeParticipant.create(
-                challenge.getId(),
-                new RiotAccountDto("puuid-2", "Kaori", "EUW33")
-        );
-
-        when(challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(NOW))
-                .thenReturn(List.of(challenge));
-        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
-                .thenReturn(List.of(tanor, kaori));
-        when(progressService.buildPreviewProgress(challenge, List.of(tanor, kaori))).thenReturn(List.of());
-
-        List<ChallengeSummaryResponse> challenges = challengeService.listPublicChallenges(null, null, null);
-
-        assertThat(challenges).hasSize(1);
-        assertThat(challenges.getFirst().entryCount()).isEqualTo(2);
-        assertThat(challenges.getFirst().participantGameNames()).containsExactly("Tanor", "Kaori");
-    }
-
-    @Test
-    void getByShareSlug_whenPrivateAndAnonymous_throwsNotFound() {
+    void getByShareSlug_returnsDetail() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Private race",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                false
-        );
-        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
-
-        assertThatThrownBy(() -> challengeService.getByShareSlug(challenge.getShareSlug(), null))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
-    }
-
-    @Test
-    void getByShareSlug_whenPrivateAndNotOwner_throwsNotFound() {
-        UUID ownerId = UUID.randomUUID();
-        Challenge challenge = Challenge.create(
-                ownerId,
-                "Private race",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                false
-        );
-        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
-
-        assertThatThrownBy(() -> challengeService.getByShareSlug(challenge.getShareSlug(), UUID.randomUUID()))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
-    }
-
-    @Test
-    void getByShareSlug_whenPrivateAndOwner_returnsDetail() {
-        UUID ownerId = UUID.randomUUID();
-        Challenge challenge = Challenge.create(
-                ownerId,
-                "Private race",
-                ChallengeType.SOLOQ,
-                NOW.plusSeconds(3600),
-                false
-        );
+                ownerId, "Some race", ChallengeType.SOLOQ, NOW.plusSeconds(3600));
         when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
         when(progressService.buildProgress(challenge, List.of())).thenReturn(List.of());
@@ -792,66 +623,37 @@ class ChallengeServiceTest {
 
         var response = challengeService.getByShareSlug(challenge.getShareSlug(), ownerId);
 
-        assertThat(response.name()).isEqualTo("Private race");
+        assertThat(response.name()).isEqualTo("Some race");
         assertThat(response.isOwner()).isTrue();
         assertThat(response.shareSlug()).isEqualTo(challenge.getId().toString());
     }
 
     @Test
-    void refreshChallenge_whenPrivateAndAnonymous_throwsNotFoundWithoutSync() {
+    void getByShareSlug_anonymousCallerCanAccessAnyChallenge() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId,
-                "Private race",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                false
-        );
-        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
+                ownerId, "Some race", ChallengeType.SOLOQ, NOW.plusSeconds(3600));
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
+        when(progressService.buildProgress(challenge, List.of())).thenReturn(List.of());
+        when(challengeRefreshRepository.findByChallengeId(challenge.getId())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> challengeService.refreshChallenge(challenge.getId(), null))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+        var response = challengeService.getByShareSlug(challenge.getShareSlug(), null);
 
-        verify(challengeSyncService, never()).refreshChallenge(challenge.getId());
+        assertThat(response.name()).isEqualTo("Some race");
+        assertThat(response.isOwner()).isFalse();
     }
 
     @Test
-    void refreshChallenge_whenPrivateAndNotOwner_throwsNotFoundWithoutSync() {
-        UUID ownerId = UUID.randomUUID();
-        Challenge challenge = Challenge.create(
-                ownerId,
-                "Private race",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                false
-        );
-        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
+    void refreshChallenge_whenChallengeMissing_throwsNotFound() {
+        UUID challengeId = UUID.randomUUID();
+        when(challengeRepository.existsById(challengeId)).thenReturn(false);
 
-        assertThatThrownBy(() -> challengeService.refreshChallenge(challenge.getId(), UUID.randomUUID()))
+        assertThatThrownBy(() -> challengeService.refreshChallenge(challengeId, null))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
                 .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
 
-        verify(challengeSyncService, never()).refreshChallenge(challenge.getId());
-    }
-
-    @Test
-    void requireShareAccessById_whenPrivateAndAnonymous_throwsNotFound() {
-        UUID ownerId = UUID.randomUUID();
-        Challenge challenge = Challenge.create(
-                ownerId,
-                "Private race",
-                ChallengeType.SOLOQ,
-                NOW.minusSeconds(60),
-                false
-        );
-        when(challengeRepository.findById(challenge.getId())).thenReturn(Optional.of(challenge));
-
-        assertThatThrownBy(() -> challengeService.requireShareAccessById(challenge.getId(), null))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
+        verify(challengeSyncService, never()).refreshChallenge(challengeId);
     }
 }

@@ -26,85 +26,182 @@
       </header>
 
       <div class="settings-modal__body">
-        <section class="settings-section">
-          <div class="settings-section__header">
-            <span class="settings-section__icon settings-section__icon--appearance" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 4V2M12 22v-2M4.93 4.93 3.52 3.52M20.48 20.48l-1.41-1.41M4 12H2M22 12h-2M4.93 19.07l-1.41 1.41M20.48 3.52l-1.41 1.41M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            <div class="settings-section__copy">
-              <h3>{{ 'settings.appearanceTitle' | t }}</h3>
-              <p class="settings-section__hint">{{ 'settings.appearanceHint' | t }}</p>
+        <div class="settings-row">
+          <section class="settings-section">
+            <div class="settings-section__header">
+              <span class="settings-section__icon settings-section__icon--account" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <div class="settings-section__copy">
+                <h3>{{ 'settings.accountTitle' | t }}</h3>
+                <p class="settings-section__hint">{{ 'settings.accountHint' | t }}</p>
+              </div>
             </div>
-          </div>
 
-          <div class="theme-switch" role="group" [attr.aria-label]="'settings.themeLabel' | t">
-            <button
-              type="button"
-              class="theme-switch__button"
-              [class.theme-switch__button--active]="theme.theme() === 'dark'"
-              (click)="theme.setTheme('dark')"
-            >
-              {{ 'settings.themeDark' | t }}
-            </button>
-            <button
-              type="button"
-              class="theme-switch__button"
-              [class.theme-switch__button--active]="theme.theme() === 'light'"
-              (click)="theme.setTheme('light')"
-            >
-              {{ 'settings.themeLight' | t }}
-            </button>
-          </div>
-        </section>
-
-        <section class="settings-section">
-          <div class="settings-section__header">
-            <span class="settings-section__icon settings-section__icon--language" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            <div class="settings-section__copy">
-              <h3>{{ 'settings.languageTitle' | t }}</h3>
-              <p class="settings-section__hint">{{ 'settings.languageHint' | t }}</p>
+            <div class="account-info">
+              <div class="account-info__row">
+                <span class="account-info__label">{{ 'settings.usernameLabel' | t }}</span>
+                <span class="account-info__value">{{ auth.displayName() ?? '—' }}</span>
+              </div>
+              <div class="account-info__row">
+                <span class="account-info__label">{{ 'settings.emailLabel' | t }}</span>
+                <span class="account-info__value">{{ auth.email() ?? '—' }}</span>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div class="theme-switch" role="group" [attr.aria-label]="'nav.language' | t">
-            <button
-              type="button"
-              class="theme-switch__button"
-              [class.theme-switch__button--active]="i18n.locale() === 'fr'"
-              (click)="i18n.setLocale('fr')"
-            >
-              {{ 'settings.languageFr' | t }}
-            </button>
-            <button
-              type="button"
-              class="theme-switch__button"
-              [class.theme-switch__button--active]="i18n.locale() === 'en'"
-              (click)="i18n.setLocale('en')"
-            >
-              {{ 'settings.languageEn' | t }}
-            </button>
-          </div>
-        </section>
+          <section class="settings-section">
+            <div class="settings-section__header">
+              <span class="settings-section__icon settings-section__icon--password" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm6-7h-1V7a5 5 0 0 0-10 0v3H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1zM9 7a3 3 0 0 1 6 0v3H9z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <div class="settings-section__copy">
+                <h3>{{ 'settings.passwordTitle' | t }}</h3>
+                <p class="settings-section__hint">{{ 'settings.passwordHint' | t }}</p>
+              </div>
+            </div>
+
+            <form class="settings-form" (ngSubmit)="changePassword()">
+              <div class="password-form-grid">
+                <label>
+                  {{ 'settings.currentPasswordLabel' | t }}
+                  <input
+                    name="currentPassword"
+                    type="password"
+                    [(ngModel)]="currentPasswordInput"
+                    autocomplete="current-password"
+                    [disabled]="changingPassword()"
+                  />
+                </label>
+                <div class="password-form-grid__col">
+                  <label>
+                    {{ 'settings.newPasswordLabel' | t }}
+                    <input
+                      name="newPassword"
+                      type="password"
+                      [(ngModel)]="newPasswordInput"
+                      autocomplete="new-password"
+                      [disabled]="changingPassword()"
+                    />
+                  </label>
+                  <label>
+                    {{ 'auth.passwordConfirm' | t }}
+                    <input
+                      name="newPasswordConfirm"
+                      type="password"
+                      [(ngModel)]="newPasswordConfirmInput"
+                      autocomplete="new-password"
+                      [disabled]="changingPassword()"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              @if (passwordError()) {
+                <p class="settings-section__error">{{ passwordError() }}</p>
+              }
+              @if (passwordSuccess()) {
+                <p class="settings-section__success">{{ 'settings.passwordSuccess' | t }}</p>
+              }
+
+              <button type="submit" [disabled]="changingPassword()">
+                {{ changingPassword() ? ('settings.passwordSubmitting' | t) : ('settings.passwordSubmit' | t) }}
+              </button>
+            </form>
+          </section>
+        </div>
+
+        <div class="settings-row">
+          <section class="settings-section">
+            <div class="settings-section__header">
+              <span class="settings-section__icon settings-section__icon--appearance" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 4V2M12 22v-2M4.93 4.93 3.52 3.52M20.48 20.48l-1.41-1.41M4 12H2M22 12h-2M4.93 19.07l-1.41 1.41M20.48 3.52l-1.41 1.41M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <div class="settings-section__copy">
+                <h3>{{ 'settings.appearanceTitle' | t }}</h3>
+                <p class="settings-section__hint">{{ 'settings.appearanceHint' | t }}</p>
+              </div>
+            </div>
+
+            <div class="theme-switch" role="group" [attr.aria-label]="'settings.themeLabel' | t">
+              <button
+                type="button"
+                class="theme-switch__button"
+                [class.theme-switch__button--active]="theme.theme() === 'dark'"
+                (click)="theme.setTheme('dark')"
+              >
+                {{ 'settings.themeDark' | t }}
+              </button>
+              <button
+                type="button"
+                class="theme-switch__button"
+                [class.theme-switch__button--active]="theme.theme() === 'light'"
+                (click)="theme.setTheme('light')"
+              >
+                {{ 'settings.themeLight' | t }}
+              </button>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <div class="settings-section__header">
+              <span class="settings-section__icon settings-section__icon--language" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <div class="settings-section__copy">
+                <h3>{{ 'settings.languageTitle' | t }}</h3>
+                <p class="settings-section__hint">{{ 'settings.languageHint' | t }}</p>
+              </div>
+            </div>
+
+            <div class="theme-switch" role="group" [attr.aria-label]="'nav.language' | t">
+              <button
+                type="button"
+                class="theme-switch__button"
+                [class.theme-switch__button--active]="i18n.locale() === 'fr'"
+                (click)="i18n.setLocale('fr')"
+              >
+                {{ 'settings.languageFr' | t }}
+              </button>
+              <button
+                type="button"
+                class="theme-switch__button"
+                [class.theme-switch__button--active]="i18n.locale() === 'en'"
+                (click)="i18n.setLocale('en')"
+              >
+                {{ 'settings.languageEn' | t }}
+              </button>
+            </div>
+          </section>
+        </div>
 
         <section class="settings-section">
           <div class="settings-section__header">
@@ -131,7 +228,6 @@
             } @else {
               <div class="accounts-block">
               <h4 class="accounts-block__title">{{ 'accounts.primaryTitle' | t }}</h4>
-              <p class="accounts-block__hint">{{ 'accounts.primaryHint' | t }}</p>
 
               <ng-template #primaryAccountForm>
                 <form
@@ -205,7 +301,6 @@
             @if (primaryAccount()) {
               <div class="accounts-block accounts-block--smurfs">
                 <h4 class="accounts-block__title">{{ 'accounts.smurfsTitle' | t }}</h4>
-                <p class="accounts-block__hint">{{ 'accounts.smurfsHint' | t }}</p>
 
                 @if (smurfAccounts().length === 0) {
                   <p class="settings-section__empty">{{ 'accounts.smurfsEmpty' | t }}</p>

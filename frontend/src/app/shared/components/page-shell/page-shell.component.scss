@@ -461,7 +461,11 @@ button.linkish:focus-visible .nav-icon {
   }
 
   .shell__header:not(.shell__header--floating) {
-    margin-bottom: 1.25rem;
+    // 2.125rem so every page's content starts at the same height below the
+    // header, regardless of what that page's first element happens to be
+    // (see public-challenges-page, which used to add its own top margin to
+    // hit this same value only when its link-banner was hidden).
+    margin-bottom: 2.125rem;
     padding-bottom: 0;
     border-bottom: none;
     background-image: none;

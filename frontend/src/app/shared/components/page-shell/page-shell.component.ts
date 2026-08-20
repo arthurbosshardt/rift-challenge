@@ -12,7 +12,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { CreateChallengeModalService } from '../../../core/services/create-challenge-modal.service';
-import { CreatedChallengesModalService } from '../../../core/services/created-challenges-modal.service';
 import { SettingsModalService } from '../../../core/services/settings-modal.service';
 import { LogoutConfirmService } from '../../../core/services/logout-confirm.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
@@ -39,7 +38,6 @@ export class PageShellComponent {
   protected readonly auth = inject(AuthService);
   protected readonly authModal = inject(AuthModalService);
   protected readonly createChallengeModal = inject(CreateChallengeModalService);
-  protected readonly createdChallengesModal = inject(CreatedChallengesModalService);
   protected readonly settingsModal = inject(SettingsModalService);
   protected readonly logoutConfirm = inject(LogoutConfirmService);
   protected readonly userMenuOpen = signal(false);
@@ -85,11 +83,6 @@ export class PageShellComponent {
   protected openSettings(): void {
     this.closeUserMenu();
     this.settingsModal.open();
-  }
-
-  protected openCreatedChallenges(): void {
-    this.closeUserMenu();
-    this.createdChallengesModal.open();
   }
 
   protected openLogoutConfirm(): void {

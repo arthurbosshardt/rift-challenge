@@ -8,4 +8,6 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/riftchallenge-backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Skip the C2 JIT tier and use the single-threaded GC: on Render's free-tier (shared, ~0.1 CPU),
+# fewer background compiler/GC threads competing for that sliver of CPU means a faster cold start.
+ENTRYPOINT ["java", "-XX:TieredStopAtLevel=1", "-XX:+UseSerialGC", "-Xss256k", "-jar", "app.jar"]

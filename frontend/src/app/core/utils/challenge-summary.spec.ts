@@ -16,7 +16,6 @@ describe('challenge-summary utils', () => {
       name: 'Test',
       type: 'SOLOQ',
       startAt: '2026-01-01T00:00:00Z',
-      isPublic: true,
       status: 'ACTIVE',
       entryCount: 1,
       previewParticipants: [
@@ -73,7 +72,6 @@ describe('challenge-summary utils', () => {
       startAt: '2026-01-01T00:00:00Z',
       endAt: null,
       maxGames: null,
-      isPublic: true,
       status: 'ACTIVE',
       entryCount: 1,
       participantGameNames: [],

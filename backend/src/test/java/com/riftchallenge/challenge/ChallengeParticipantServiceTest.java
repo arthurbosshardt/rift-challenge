@@ -72,7 +72,7 @@ class ChallengeParticipantServiceTest {
         UUID ownerId = UUID.randomUUID();
         UUID otherOwnerId = UUID.randomUUID();
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
         assertThatThrownBy(() -> participantService.addParticipant(
@@ -91,7 +91,7 @@ class ChallengeParticipantServiceTest {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challengeId)).thenReturn(16L);
 
@@ -112,7 +112,7 @@ class ChallengeParticipantServiceTest {
         UUID ownerId = UUID.randomUUID();
         RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challengeId)).thenReturn(1L);
         when(riotAccountClient.getAccountByRiotId("Tanor", "7154")).thenReturn(account);
@@ -133,7 +133,7 @@ class ChallengeParticipantServiceTest {
         UUID ownerId = UUID.randomUUID();
         RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challengeId)).thenReturn(0L);
         when(riotAccountClient.getAccountByRiotId(eq("Tanor"), eq("7154"))).thenReturn(account);
@@ -159,7 +159,7 @@ class ChallengeParticipantServiceTest {
         UUID ownerId = UUID.randomUUID();
         RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challengeId)).thenReturn(0L);
         when(riotAccountClient.getAccountByRiotId(eq("Tanor"), eq("7154"))).thenReturn(account);
@@ -186,7 +186,7 @@ class ChallengeParticipantServiceTest {
         UUID ownerId = UUID.randomUUID();
         UUID otherOwnerId = UUID.randomUUID();
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
 
         assertThatThrownBy(() -> participantService.removeParticipant(challengeId, participantId, otherOwnerId))
@@ -203,7 +203,7 @@ class ChallengeParticipantServiceTest {
         UUID ownerId = UUID.randomUUID();
         RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
-        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"), false);
+        Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
         ChallengeParticipant participant = ChallengeParticipant.create(challengeId, account);
 
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));

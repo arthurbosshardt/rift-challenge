@@ -300,9 +300,7 @@ class ChallengeProgressServiceTest {
                 "Retro duo",
                 ChallengeType.DUOQ,
                 java.time.Instant.parse("2025-05-10T00:00:00Z"),
-                java.time.Instant.parse("2025-10-09T00:00:00Z"),
-                true
-        );
+                java.time.Instant.parse("2025-10-09T00:00:00Z"));
 
         RankSnapshot refresh = RankSnapshot.create(
                 participant.getId(),
@@ -348,9 +346,7 @@ class ChallengeProgressServiceTest {
                 "Retro duo",
                 ChallengeType.DUOQ,
                 java.time.Instant.parse("2025-05-10T00:00:00Z"),
-                java.time.Instant.parse("2025-10-09T00:00:00Z"),
-                true
-        );
+                java.time.Instant.parse("2025-10-09T00:00:00Z"));
 
         RankSnapshot refresh = RankSnapshot.create(
                 participant.getId(),
@@ -398,9 +394,7 @@ class ChallengeProgressServiceTest {
                 ChallengeType.SOLOQ,
                 java.time.Instant.parse("2026-08-01T00:00:00Z"),
                 null,
-                3,
-                true
-        );
+                3);
         ChallengeParticipant participant = ChallengeParticipant.create(
                 challenge.getId(),
                 new RiotAccountDto("puuid-cap", "Capped", "GMS")

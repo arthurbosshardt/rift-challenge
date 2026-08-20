@@ -26,6 +26,6 @@ export class LoginRedirectComponent implements OnInit {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? undefined;
 
     this.authModal.open({ error, returnUrl });
-    await this.router.navigateByUrl('/public-challenges', { replaceUrl: true });
+    await this.router.navigateByUrl('/challenges', { replaceUrl: true });
   }
 }

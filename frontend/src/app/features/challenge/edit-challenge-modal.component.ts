@@ -32,7 +32,6 @@ import {
   ChallengeBadgeComponent,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
-import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
 
 type NameInvalidField = 'name';
@@ -42,7 +41,7 @@ type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId
 
 @Component({
   selector: 'app-edit-challenge-modal',
-  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent, LoaderComponent, ClampTooltipDirective],
+  imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent, LoaderComponent],
   templateUrl: './edit-challenge-modal.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './edit-challenge-modal.component.scss',
@@ -65,7 +64,6 @@ export class EditChallengeModalComponent {
   protected riotIdInput = '';
   protected duoPlayer1RiotIdInput = '';
   protected duoPlayer2RiotIdInput = '';
-  protected isPublicInput = false;
 
   protected readonly saving = signal(false);
   protected readonly blockingSave = signal(false);
@@ -97,7 +95,6 @@ export class EditChallengeModalComponent {
         this.hydratedChallengeId = challenge.id;
         this.syncScheduleInputs(challenge);
         this.nameInput = challenge.name;
-        this.isPublicInput = challenge.isPublic;
         this.resetParticipantInputs();
         this.hydrateDrafts(challenge);
         this.clearValidation();
@@ -221,15 +218,6 @@ export class EditChallengeModalComponent {
     }
   }
 
-  protected toggleVisibility(): void {
-    if (this.saving()) {
-      return;
-    }
-
-    this.isPublicInput = !this.isPublicInput;
-    this.formError.set(null);
-  }
-
   protected toggleEndMode(): void {
     if (this.saving()) {
       return;
@@ -265,14 +253,13 @@ export class EditChallengeModalComponent {
     }
 
     const nameChanged = trimmedName !== challenge.name;
-    const visibilityChanged = this.isPublicInput !== challenge.isPublic;
     const scheduleChanged = this.hasScheduleChanges(
       challenge,
       scheduleValidation.startAt,
       scheduleValidation.endAt,
       scheduleValidation.maxGames,
     );
-    const metadataChanged = nameChanged || visibilityChanged || scheduleChanged;
+    const metadataChanged = nameChanged || scheduleChanged;
 
     const hasCommittedRosterChanges =
       this.removedParticipantIds.size > 0 ||
@@ -289,7 +276,6 @@ export class EditChallengeModalComponent {
       await this.saveMetadataOnly(challenge, {
         trimmedName,
         nameChanged,
-        visibilityChanged,
         scheduleChanged,
         scheduleValidation,
       });
@@ -325,7 +311,6 @@ export class EditChallengeModalComponent {
           this.challengeApi.updateChallenge(updated.id, {
             ...(nameChanged ? { name: trimmedName } : {}),
             ...(scheduleChanged ? this.scheduleUpdatePayload(scheduleValidation) : {}),
-            ...(visibilityChanged ? { isPublic: this.isPublicInput } : {}),
           }),
         );
       }
@@ -365,7 +350,6 @@ export class EditChallengeModalComponent {
     options: {
       trimmedName: string;
       nameChanged: boolean;
-      visibilityChanged: boolean;
       scheduleChanged: boolean;
       scheduleValidation: Extract<ScheduleValidationResult, { valid: true }>;
     },
@@ -378,7 +362,6 @@ export class EditChallengeModalComponent {
         this.challengeApi.updateChallenge(challenge.id, {
           ...(options.nameChanged ? { name: options.trimmedName } : {}),
           ...(options.scheduleChanged ? this.scheduleUpdatePayload(options.scheduleValidation) : {}),
-          ...(options.visibilityChanged ? { isPublic: this.isPublicInput } : {}),
         }).pipe(timeout(15_000)),
       );
 

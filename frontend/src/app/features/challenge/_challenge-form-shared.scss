@@ -150,174 +150,6 @@ h4.challenge-form__schedule-title {
   justify-content: center;
 }
 
-.visibility-switch {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.visibility-switch__label {
-  display: inline-flex;
-  align-items: center;
-  justify-self: end;
-  min-width: 0;
-  gap: 0.375rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition:
-    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    font-weight 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.visibility-switch__label:last-child {
-  justify-self: start;
-}
-
-.visibility-switch__label-icon {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.visibility-switch__label--active {
-  color: var(--gold);
-  font-weight: 600;
-  transform: scale(1.02);
-}
-
-.visibility-switch__label--active .visibility-switch__label-icon {
-  transform: scale(1.08);
-}
-
-.visibility-switch__info {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1rem;
-  height: 1rem;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--text-subtle);
-  font-size: 0.625rem;
-  font-weight: 700;
-  font-style: italic;
-  line-height: 1;
-  cursor: help;
-}
-
-.visibility-switch__info:hover,
-.visibility-switch__info:focus-visible {
-  color: var(--text-muted);
-  border-color: var(--border-strong);
-  background: var(--gold-a06);
-}
-
-.visibility-switch__info:hover .visibility-switch__tooltip,
-.visibility-switch__info:focus-visible .visibility-switch__tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
-
-.visibility-switch__tooltip {
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
-  left: 50%;
-  z-index: var(--z-tooltip);
-  width: max-content;
-  max-width: 14rem;
-  padding: 0.5rem 0.625rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-elevated);
-  color: var(--text);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-  font-size: 0.75rem;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 1.4;
-  text-align: center;
-  white-space: normal;
-  overflow-wrap: break-word;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-50%) translateY(0.25rem);
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease,
-    visibility 0.15s ease;
-  pointer-events: none;
-}
-
-.visibility-switch__info--end .visibility-switch__tooltip {
-  left: auto;
-  right: 0;
-  transform: translateY(0.25rem);
-}
-
-.visibility-switch__info--end:hover .visibility-switch__tooltip,
-.visibility-switch__info--end:focus-visible .visibility-switch__tooltip {
-  transform: translateY(0);
-}
-
-.visibility-switch__toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  justify-self: center;
-  width: 3rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  background: var(--surface-hover);
-  color: var(--text-muted);
-  flex-shrink: 0;
-  transition:
-    background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.15s ease;
-}
-
-.visibility-switch__toggle--public {
-  color: var(--gold);
-  background: var(--gold-a12);
-  border-color: var(--gold-a35);
-}
-
-.visibility-switch__toggle svg {
-  width: 1.125rem;
-  height: 1.125rem;
-  animation: switch-icon-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-.visibility-switch__toggle:active:not(:disabled) {
-  transform: scale(0.94);
-}
-
-.visibility-switch__toggle:hover:not(:disabled) {
-  border-color: var(--gold);
-}
-
-.visibility-switch__toggle:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .type-switch {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -521,10 +353,6 @@ h4.challenge-form__schedule-title {
 }
 
 @media (max-width: 1023px) {
-  .visibility-switch {
-    gap: 0.625rem;
-  }
-
   .type-switch {
     gap: 0.625rem;
   }
@@ -545,15 +373,11 @@ h4.challenge-form__schedule-title {
 @media (prefers-reduced-motion: reduce) {
   .type-switch__label,
   .type-switch__label-icon,
-  .type-switch__toggle,
-  .visibility-switch__label,
-  .visibility-switch__label-icon,
-  .visibility-switch__toggle {
+  .type-switch__toggle {
     transition: none;
   }
 
-  .type-switch__toggle svg,
-  .visibility-switch__toggle svg {
+  .type-switch__toggle svg {
     animation: none;
   }
 }

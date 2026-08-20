@@ -2,19 +2,19 @@ package com.riftchallenge.challenge;
 
 import com.riftchallenge.account.AppUserRepository;
 import com.riftchallenge.account.UserRiotAccountService;
+import com.riftchallenge.challenge.ChallengeSummaryCacheService.ChallengeListSnapshot;
+import com.riftchallenge.challenge.ChallengeSummaryCacheService.RefreshEligibility;
 import com.riftchallenge.challenge.dto.CreateChallengeRequest;
-import com.riftchallenge.challenge.dto.DuoPreviewResponse;
-import com.riftchallenge.challenge.dto.DuoProgressResponse;
-import com.riftchallenge.challenge.dto.ParticipantPreviewResponse;
-import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.challenge.dto.ChallengeDetailResponse;
+import com.riftchallenge.challenge.dto.ChallengeListResponse;
 import com.riftchallenge.challenge.dto.ChallengeSummaryResponse;
+import com.riftchallenge.challenge.dto.DuoProgressResponse;
+import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.challenge.dto.UpdateChallengeEndRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
-import com.riftchallenge.challenge.dto.UpdateChallengeVisibilityRequest;
 import com.riftchallenge.synchronization.ChallengeSyncService;
 import java.time.Clock;
 import java.time.Instant;
@@ -40,6 +40,7 @@ public class ChallengeService {
     private final ParticipantProfileService participantProfileService;
     private final ChallengeRefreshRepository challengeRefreshRepository;
     private final ChallengeSyncService challengeSyncService;
+    private final ChallengeSummaryCacheService summaryCacheService;
     private final UserRiotAccountService userRiotAccountService;
     private final Clock clock;
 
@@ -52,6 +53,7 @@ public class ChallengeService {
             ParticipantProfileService participantProfileService,
             ChallengeRefreshRepository challengeRefreshRepository,
             ChallengeSyncService challengeSyncService,
+            ChallengeSummaryCacheService summaryCacheService,
             UserRiotAccountService userRiotAccountService,
             Clock clock
     ) {
@@ -63,46 +65,48 @@ public class ChallengeService {
         this.participantProfileService = participantProfileService;
         this.challengeRefreshRepository = challengeRefreshRepository;
         this.challengeSyncService = challengeSyncService;
+        this.summaryCacheService = summaryCacheService;
         this.userRiotAccountService = userRiotAccountService;
         this.clock = clock;
     }
 
-    private static final int PREVIEW_LIMIT = 10;
-
-    @Transactional(readOnly = true)
-    public List<ChallengeSummaryResponse> listPublicChallenges() {
-        return listPublicChallenges(null, null, null);
+    @Transactional
+    public ChallengeListResponse refreshPublicChallenges() {
+        summaryCacheService.enforceCooldown();
+        ChallengeListSnapshot snapshot = summaryCacheService.refreshAll(clock.instant());
+        RefreshEligibility eligibility = summaryCacheService.eligibility();
+        return toListResponse(snapshot.challenges(), snapshot.generatedAt(), eligibility);
     }
 
-    @Transactional(readOnly = true)
-    public List<ChallengeSummaryResponse> listPublicChallenges(String challengeName, String summoner, ChallengeType type) {
+    @Transactional
+    public ChallengeListResponse listPublicChallenges(String challengeName, String summoner, ChallengeType type) {
+        ChallengeListSnapshot snapshot = summaryCacheService.readOrBootstrap();
+        RefreshEligibility eligibility = summaryCacheService.eligibility();
         Instant now = clock.instant();
-        List<Challenge> publicChallenges = challengeRepository.findByIsPublicTrueAndStartAtLessThanEqualOrderByStartAtDesc(now);
 
-        List<Challenge> candidates = type == null
-                ? publicChallenges
-                : publicChallenges.stream().filter(challenge -> challenge.getType() == type).toList();
+        List<ChallengeSummaryResponse> candidates = snapshot.challenges().stream()
+                .filter(challenge -> !challenge.startAt().isAfter(now))
+                .filter(challenge -> type == null || challenge.type() == type)
+                .toList();
 
         String normalizedChallengeName = normalizeChallengeNameSearch(challengeName);
         String normalizedSummoner = normalizeSummonerSearch(summoner);
 
         if (normalizedChallengeName == null && normalizedSummoner == null) {
-            return candidates.stream()
-                    .map(challenge -> toSummaryResponse(challenge, now))
-                    .toList();
+            return toListResponse(candidates, snapshot.generatedAt(), eligibility);
         }
 
         Set<UUID> candidateIds = candidates.stream()
-                .map(Challenge::getId)
+                .map(ChallengeSummaryResponse::id)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
 
         Set<UUID> matchingChallengeIds = null;
 
         if (normalizedChallengeName != null) {
             Set<UUID> nameMatches = new LinkedHashSet<>();
-            for (Challenge challenge : candidates) {
-                if (matchesSearchTerm(challenge.getName(), normalizedChallengeName)) {
-                    nameMatches.add(challenge.getId());
+            for (ChallengeSummaryResponse challenge : candidates) {
+                if (matchesSearchTerm(challenge.name(), normalizedChallengeName)) {
+                    nameMatches.add(challenge.id());
                 }
             }
             matchingChallengeIds = nameMatches;
@@ -123,102 +127,48 @@ public class ChallengeService {
 
         final Set<UUID> finalMatchingChallengeIds = matchingChallengeIds == null ? Set.of() : matchingChallengeIds;
 
-        return candidates.stream()
-                .filter(challenge -> finalMatchingChallengeIds.contains(challenge.getId()))
-                .map(challenge -> toSummaryResponse(challenge, now))
+        List<ChallengeSummaryResponse> filtered = candidates.stream()
+                .filter(challenge -> finalMatchingChallengeIds.contains(challenge.id()))
                 .toList();
+        return toListResponse(filtered, snapshot.generatedAt(), eligibility);
     }
 
-    @Transactional(readOnly = true)
-    public List<ChallengeSummaryResponse> listOwnedChallenges(UUID ownerId) {
-        Instant now = clock.instant();
-        return challengeRepository.findByOwnerIdOrderByStartAtDesc(ownerId).stream()
-                .map(challenge -> toSummaryResponse(challenge, now))
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<ChallengeSummaryResponse> listParticipatingChallenges(UUID userId) {
+    @Transactional
+    public ChallengeListResponse listParticipatingChallenges(UUID userId) {
         List<String> linkedPuids = userRiotAccountService.listLinkedPuids(userId);
+        ChallengeListSnapshot snapshot = summaryCacheService.readOrBootstrap();
+        RefreshEligibility eligibility = summaryCacheService.eligibility();
+
         if (linkedPuids.isEmpty()) {
-            return List.of();
+            return toListResponse(List.of(), snapshot.generatedAt(), eligibility);
         }
 
         List<UUID> challengeIds = participantRepository.findDistinctChallengeIdsByRiotPuuidIn(linkedPuids);
         if (challengeIds.isEmpty()) {
-            return List.of();
+            return toListResponse(List.of(), snapshot.generatedAt(), eligibility);
         }
 
-        Instant now = clock.instant();
-        return challengeRepository.findByIdInOrderByStartAtDesc(challengeIds).stream()
-                .map(challenge -> toSummaryResponse(challenge, now))
-                .toList();
+        List<ChallengeSummaryResponse> summaries = summaryCacheService.readByChallengeIds(challengeIds);
+        return toListResponse(summaries, snapshot.generatedAt(), eligibility);
     }
 
-    private ChallengeSummaryResponse toSummaryResponse(Challenge challenge, Instant now) {
-        boolean started = !now.isBefore(challenge.getStartAt());
-
-        if (challenge.getType() == ChallengeType.DUOQ) {
-            List<DuoProgressResponse> duos = duoProgressService.buildPreview(challenge);
-            boolean allReachedMaxGames = allDuosReachedMaxGames(challenge, started, duos);
-            List<String> participantGameNames = duos.stream()
-                    .flatMap(duo -> java.util.stream.Stream.of(
-                            duo.player1().gameName(),
-                            duo.player2().gameName()))
-                    .toList();
-            List<DuoPreviewResponse> previewDuos = duos.stream()
-                    .limit(PREVIEW_LIMIT)
-                    .map(DuoPreviewResponse::from)
-                    .toList();
-            return ChallengeSummaryResponse.from(
-                    challenge, now, duos.size(), participantGameNames, List.of(), previewDuos, allReachedMaxGames);
-        }
-
-        List<ChallengeParticipant> participants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
-        List<String> participantGameNames = participants.stream()
-                .map(ChallengeParticipant::getRiotGameName)
-                .toList();
-        List<ParticipantPreviewResponse> previewParticipants;
-        boolean allReachedMaxGames = false;
-
-        if (started) {
-            List<ParticipantProgressResponse> fullProgress = progressService.buildPreviewProgress(challenge, participants);
-            previewParticipants = fullProgress.stream()
-                    .limit(PREVIEW_LIMIT)
-                    .map(ParticipantPreviewResponse::from)
-                    .toList();
-            allReachedMaxGames = allParticipantsReachedMaxGames(challenge, fullProgress);
-        } else {
-            previewParticipants = new java.util.ArrayList<>();
-            for (int index = 0; index < Math.min(PREVIEW_LIMIT, participants.size()); index++) {
-                previewParticipants.add(
-                        ParticipantPreviewResponse.fromParticipant(participants.get(index), index + 1)
-                );
-            }
-        }
-
-        return ChallengeSummaryResponse.from(
-                challenge, now, participants.size(), participantGameNames, previewParticipants, List.of(), allReachedMaxGames);
-    }
-
-    private static boolean allParticipantsReachedMaxGames(Challenge challenge, List<ParticipantProgressResponse> progress) {
-        return challenge.getMaxGames() != null
-                && !progress.isEmpty()
-                && progress.stream().allMatch(p -> p.wins() + p.losses() >= challenge.getMaxGames());
-    }
-
-    private static boolean allDuosReachedMaxGames(Challenge challenge, boolean started, List<DuoProgressResponse> duos) {
-        return started
-                && challenge.getMaxGames() != null
-                && !duos.isEmpty()
-                && duos.stream().allMatch(d -> d.wins() + d.losses() >= challenge.getMaxGames());
+    private static ChallengeListResponse toListResponse(
+            List<ChallengeSummaryResponse> challenges,
+            Instant generatedAt,
+            RefreshEligibility eligibility
+    ) {
+        return new ChallengeListResponse(
+                challenges,
+                generatedAt,
+                eligibility.refreshAvailable(),
+                eligibility.nextRefreshAvailableAt()
+        );
     }
 
     @Transactional(readOnly = true)
     public ChallengeDetailResponse getByShareSlug(String shareSlug, UUID callerId) {
         Challenge challenge = challengeRepository.findByShareSlug(shareSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
-        requireShareAccess(challenge, callerId);
         return toDetailResponse(challenge, callerId);
     }
 
@@ -250,10 +200,11 @@ public class ChallengeService {
                 request.type(),
                 request.startAt(),
                 request.endAt(),
-                request.maxGames(),
-                request.isPublic()
+                request.maxGames()
         );
-        return toDetailResponse(challengeRepository.save(challenge), ownerId, false);
+        Challenge saved = challengeRepository.save(challenge);
+        summaryCacheService.upsertOne(saved, clock.instant());
+        return toDetailResponse(saved, ownerId, false);
     }
 
     @Transactional
@@ -275,14 +226,6 @@ public class ChallengeService {
     public ChallengeDetailResponse updateEndAt(UUID challengeId, UUID ownerId, UpdateChallengeEndRequest request) {
         Challenge challenge = requireOwnedChallenge(challengeId, ownerId);
         return saveSchedule(challenge, challenge.getStartAt(), request.endAt(), ownerId);
-    }
-
-    @Transactional
-    public ChallengeDetailResponse updateVisibility(UUID challengeId, UUID ownerId, UpdateChallengeVisibilityRequest request) {
-        Challenge challenge = requireOwnedChallenge(challengeId, ownerId);
-        challenge.updateVisibility(request.isPublic());
-        challengeRepository.save(challenge);
-        return toMetadataDetailResponse(challenge, ownerId);
     }
 
     @Transactional
@@ -333,10 +276,6 @@ public class ChallengeService {
             challenge.updateMaxGames(maxGames);
         }
 
-        if (request.isPublic() != null) {
-            challenge.updateVisibility(request.isPublic());
-        }
-
         challengeRepository.save(challenge);
         return toMetadataDetailResponse(challenge, ownerId);
     }
@@ -365,18 +304,11 @@ public class ChallengeService {
     }
 
     public ChallengeDetailResponse refreshChallenge(UUID challengeId, UUID callerId) {
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
-        requireShareAccess(challenge, callerId);
+        if (!challengeRepository.existsById(challengeId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found");
+        }
         challengeSyncService.refreshChallenge(challengeId);
         return getById(challengeId, callerId);
-    }
-
-    @Transactional(readOnly = true)
-    public void requireShareAccessById(UUID challengeId, UUID callerId) {
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
-        requireShareAccess(challenge, callerId);
     }
 
     private static void requireEndAfterStart(Instant startAt, Instant endAt) {
@@ -406,15 +338,6 @@ public class ChallengeService {
                 : challengeRepository.existsByNameIgnoreCaseAndIdNot(name, excludeChallengeId);
         if (nameTaken) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Challenge name already taken");
-        }
-    }
-
-    private void requireShareAccess(Challenge challenge, UUID callerId) {
-        if (challenge.isPublic()) {
-            return;
-        }
-        if (callerId == null || !callerId.equals(challenge.getOwnerId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found");
         }
     }
 
@@ -514,6 +437,19 @@ public class ChallengeService {
             boolean refreshAvailable,
             Instant nextRefreshAvailableAt
     ) {
+    }
+
+    private static boolean allParticipantsReachedMaxGames(Challenge challenge, List<ParticipantProgressResponse> progress) {
+        return challenge.getMaxGames() != null
+                && !progress.isEmpty()
+                && progress.stream().allMatch(p -> p.wins() + p.losses() >= challenge.getMaxGames());
+    }
+
+    private static boolean allDuosReachedMaxGames(Challenge challenge, boolean started, List<DuoProgressResponse> duos) {
+        return started
+                && challenge.getMaxGames() != null
+                && !duos.isEmpty()
+                && duos.stream().allMatch(d -> d.wins() + d.losses() >= challenge.getMaxGames());
     }
 
     private static String normalizeChallengeNameSearch(String search) {

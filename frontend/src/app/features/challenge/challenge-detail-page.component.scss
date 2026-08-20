@@ -27,6 +27,10 @@
   gap: 0.375rem;
 }
 
+.detail__back-button {
+  flex-shrink: 0;
+}
+
 .detail__title-actions app-challenge-badge {
   flex-shrink: 0;
 }
@@ -123,13 +127,21 @@
 
 .participants__header {
   display: flex;
-  align-items: baseline;
-  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem 1rem;
 }
 
 .participants__count {
+  flex-shrink: 0;
   color: var(--text-muted);
   font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.participants__count-compact {
+  display: none;
 }
 
 .participants__empty {
@@ -826,22 +838,28 @@
 
 @media (max-width: 1023px) {
   .detail__heading {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.625rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'title title'
+      'refresh actions'
+      'meta meta'
+      'error error';
+    align-items: center;
+    row-gap: 0.625rem;
+    column-gap: 0.625rem;
   }
 
-  .detail__title-row {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.625rem;
-    width: 100%;
-    max-width: 100%;
-    padding: 0.5rem 0 0.75rem;
+  // Promote the title-row/info-bar children directly into the heading grid
+  // so the share/edit/delete icons can sit on the refresh row, right-aligned,
+  // instead of the source order's own title-row/info-bar stacking.
+  .detail__title-row,
+  .detail__info-bar {
+    display: contents;
   }
 
   .detail__title {
+    grid-area: title;
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -850,11 +868,7 @@
     max-width: 100%;
     min-width: 0;
     padding: 0.25rem 0;
-    font-size: clamp(
-      1.125rem,
-      calc((100vw - 3rem) / max(var(--title-chars, 12), 1) * 1.72),
-      1.875rem
-    );
+    font-size: 1.875rem;
   }
 
   .detail__type-badge {
@@ -871,16 +885,11 @@
   }
 
   .detail__title-actions {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-self: flex-start;
+    grid-area: actions;
+    justify-self: end;
+    align-self: center;
+    flex-wrap: nowrap;
     max-width: 100%;
-  }
-
-  .detail__info-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem 0.625rem;
   }
 
   .refresh__info-tooltip {
@@ -898,6 +907,8 @@
   }
 
   .detail__refresh {
+    grid-area: refresh;
+    display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
@@ -957,7 +968,21 @@
     font-size: 0.8125rem;
   }
 
+  .participants__header {
+    gap: 0.5rem;
+  }
+
+  .participants__count-full {
+    display: none;
+  }
+
+  .participants__count-compact {
+    display: inline;
+  }
+
   .detail__meta {
+    grid-area: meta;
+    display: flex;
     flex-wrap: nowrap;
     gap: 0.625rem;
   }
@@ -979,7 +1004,7 @@
   }
 
   .refresh__error {
-    flex: 1 1 100%;
+    grid-area: error;
     min-width: 100%;
   }
 }

@@ -38,12 +38,18 @@ export interface ChallengeSummary {
   startAt: string;
   endAt: string | null;
   maxGames: number | null;
-  isPublic: boolean;
   status: ChallengeStatus;
   entryCount: number;
   participantGameNames: string[];
   previewParticipants: ParticipantPreview[];
   previewDuos: DuoPreview[];
+}
+
+export interface ChallengeListResponse {
+  challenges: ChallengeSummary[];
+  generatedAt: string | null;
+  refreshAvailable: boolean;
+  nextRefreshAvailableAt: string | null;
 }
 
 export interface ParticipantMatchHistory {
@@ -118,7 +124,6 @@ export interface CreateChallengeRequest {
   startAt: string;
   endAt?: string;
   maxGames?: number;
-  isPublic: boolean;
 }
 
 export interface UpdateChallengeEndRequest {
@@ -134,10 +139,6 @@ export interface UpdateChallengeScheduleRequest {
   endAt: string;
 }
 
-export interface UpdateChallengeVisibilityRequest {
-  isPublic: boolean;
-}
-
 export interface UpdateChallengeNameRequest {
   name: string;
 }
@@ -147,7 +148,6 @@ export interface UpdateChallengeRequest {
   startAt?: string;
   endAt?: string;
   maxGames?: number;
-  isPublic?: boolean;
 }
 
 export interface AddParticipantRequest {

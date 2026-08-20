@@ -61,7 +61,7 @@ class ChallengeDuoServiceTest {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId, "Duo", ChallengeType.DUOQ, Instant.parse("2026-12-01T18:00:00Z"), false);
+                ownerId, "Duo", ChallengeType.DUOQ, Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeDuoRepository.countByChallengeId(challengeId)).thenReturn(0L);
         when(riotAccountClient.getAccountByRiotId("Missing", "EUW"))
@@ -81,7 +81,7 @@ class ChallengeDuoServiceTest {
         UUID challengeId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(
-                ownerId, "Duo", ChallengeType.DUOQ, Instant.parse("2026-12-01T18:00:00Z"), false);
+                ownerId, "Duo", ChallengeType.DUOQ, Instant.parse("2026-12-01T18:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(challengeDuoRepository.countByChallengeId(challengeId)).thenReturn(0L);
         when(riotAccountClient.getAccountByRiotId("Tanor", "7154"))

@@ -8,11 +8,10 @@ import {
   AuthMeResponse,
   CreateChallengeRequest,
   ChallengeDetail,
-  ChallengeSummary,
+  ChallengeListResponse,
   UpdateChallengeEndRequest,
   UpdateChallengeScheduleRequest,
   UpdateChallengeStartRequest,
-  UpdateChallengeVisibilityRequest,
   UpdateChallengeNameRequest,
   UpdateChallengeRequest,
   AccountRecentGames,
@@ -20,7 +19,7 @@ import {
 } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import { normalizeRiotId } from '../utils/riot-id';
-import { normalizeChallengeSummaries, type RawChallengeSummary } from '../utils/challenge-summary';
+import { normalizeChallengeListResponse, type RawChallengeListResponse } from '../utils/challenge-summary';
 
 @Injectable({ providedIn: 'root' })
 export class ChallengeApiService {
@@ -28,23 +27,24 @@ export class ChallengeApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  listPublicChallenges(forceRefresh = false): Observable<ChallengeSummary[]> {
-    const url = forceRefresh
-      ? `${this.baseUrl}/public?_=${Date.now()}`
-      : `${this.baseUrl}/public`;
-    return this.listChallenges(url);
+  listPublicChallenges(): Observable<ChallengeListResponse> {
+    return this.listChallenges(`${this.baseUrl}/public`);
   }
 
-  listOwnedChallenges(): Observable<ChallengeSummary[]> {
-    return this.listChallenges(`${this.baseUrl}/owned`);
+  refreshPublicChallenges(): Observable<ChallengeListResponse> {
+    return this.http
+      .post<RawChallengeListResponse>(`${this.baseUrl}/public/refresh`, {})
+      .pipe(map((raw) => normalizeChallengeListResponse(raw)));
   }
 
-  listParticipatingChallenges(): Observable<ChallengeSummary[]> {
+  listParticipatingChallenges(): Observable<ChallengeListResponse> {
     return this.listChallenges(`${this.baseUrl}/participating`);
   }
 
-  private listChallenges(url: string): Observable<ChallengeSummary[]> {
-    return this.http.get<RawChallengeSummary[]>(url).pipe(map((raw) => normalizeChallengeSummaries(raw)));
+  private listChallenges(url: string): Observable<ChallengeListResponse> {
+    return this.http
+      .get<RawChallengeListResponse>(url)
+      .pipe(map((raw) => normalizeChallengeListResponse(raw)));
   }
 
   getChallengeByShareSlug(shareSlug: string, bustCache = false): Observable<ChallengeDetail> {
@@ -71,10 +71,6 @@ export class ChallengeApiService {
 
   updateChallengeStart(challengeId: string, request: UpdateChallengeStartRequest): Observable<ChallengeDetail> {
     return this.http.patch<ChallengeDetail>(`${this.baseUrl}/${challengeId}/start`, request);
-  }
-
-  updateChallengeVisibility(challengeId: string, request: UpdateChallengeVisibilityRequest): Observable<ChallengeDetail> {
-    return this.http.patch<ChallengeDetail>(`${this.baseUrl}/${challengeId}/visibility`, request);
   }
 
   updateChallengeName(challengeId: string, request: UpdateChallengeNameRequest): Observable<ChallengeDetail> {

@@ -28,9 +28,7 @@ class ChallengeSharePathsTest {
                 "Original name",
                 ChallengeType.SOLOQ,
                 Instant.parse("2026-08-19T10:00:00Z"),
-                Instant.parse("2026-08-20T10:00:00Z"),
-                false
-        );
+                Instant.parse("2026-08-20T10:00:00Z"));
 
         assertThat(challenge.getShareSlug()).isEqualTo(challenge.getId().toString());
         challenge.updateName("Renamed challenge");

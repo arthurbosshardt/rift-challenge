@@ -119,12 +119,8 @@ public class ChallengeOpenGraphService {
     }
 
     private Challenge findChallenge(String shareSlug) {
-        Challenge challenge = challengeRepository.findByShareSlug(shareSlug)
+        return challengeRepository.findByShareSlug(shareSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
-        if (!challenge.isPublic()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found");
-        }
-        return challenge;
     }
 
     private PreviewContext buildPreviewContext(Challenge challenge) {

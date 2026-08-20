@@ -13,4 +13,5 @@ export class ActivityCacheService {
 
   readonly challenges = signal<ChallengeSummary[]>([]);
   readonly challengesLastLoadedAt = signal<number | null>(null);
+  readonly challengesGeneratedAt = signal<string | null>(null);
 }

@@ -5,4 +5,11 @@
     max-width: 68rem;
     margin-inline: auto;
   }
+
+  // Matches the challenge card's own max-width (see challenge-card.component.scss)
+  // so the filter row's right edge lines up with the cards below it instead of
+  // stretching past them to the wider content container.
+  .challenge-search {
+    max-width: 60rem;
+  }
 }

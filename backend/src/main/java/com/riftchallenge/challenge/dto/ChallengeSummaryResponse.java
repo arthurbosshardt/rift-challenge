@@ -14,7 +14,6 @@ public record ChallengeSummaryResponse(
         Instant startAt,
         Instant endAt,
         Integer maxGames,
-        boolean isPublic,
         String status,
         int entryCount,
         List<String> participantGameNames,
@@ -39,7 +38,6 @@ public record ChallengeSummaryResponse(
                 challenge.getStartAt(),
                 challenge.getEndAt(),
                 challenge.getMaxGames(),
-                challenge.isPublic(),
                 resolveStatus(
                         challenge.getStartAt(),
                         challenge.getEndAt(),

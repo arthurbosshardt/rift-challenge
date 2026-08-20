@@ -78,15 +78,16 @@ Les clés dev Riot expirent toutes les 24 h — regénérer sur le portail si be
 
 | Route | Visiteur | Connecté |
 |---|---|---|
-| `/` | Challenges publics | → `/my-challenges` |
+| `/` | Les challenges | → `/my-challenges` |
 | `/my-challenges` | — | Mes challenges |
-| `/public-challenges` | — | Challenges publics |
+| `/challenges` | — | Les challenges |
 | `/challenges/:shareSlug` | Détail + lien partageable | idem |
 
 ## API (MVP)
 
-- `GET /api/challenges/public`
-- `GET /api/challenges/mine` (auth)
+- `GET /api/challenges/public` — liste (lecture du cache BDD)
+- `POST /api/challenges/public/refresh` — recalcule le cache (cooldown 60s)
+- `GET /api/challenges/participating` (auth)
 - `GET /api/challenges/share/{shareSlug}`
 - `POST /api/challenges` (auth)
 
