@@ -13,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class SupabaseBearerAuthenticationFilter extends OncePerRequestFilter {
@@ -43,14 +44,19 @@ public class SupabaseBearerAuthenticationFilter extends OncePerRequestFilter {
             String accessToken = resolveBearerToken(request);
             if (accessToken != null) {
                 supabaseAuthClient.fetchUser(accessToken).ifPresent(supabaseUser -> {
-                    AppUser appUser = appUserService.findOrCreateFromSupabase(
-                            supabaseUser.id(),
-                            supabaseUser.email(),
-                            extractUsername(supabaseUser.userMetadata())
-                    );
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(appUser.getId(), null, List.of());
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    try {
+                        AppUser appUser = appUserService.findOrCreateFromSupabase(
+                                supabaseUser.id(),
+                                supabaseUser.email(),
+                                extractUsername(supabaseUser.userMetadata()),
+                                supabaseUser.hasConfirmedEmail()
+                        );
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(appUser.getId(), null, List.of());
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    } catch (ResponseStatusException ignored) {
+                        // Invalid/unconfirmed first sign-in: leave request unauthenticated.
+                    }
                 });
             }
         }

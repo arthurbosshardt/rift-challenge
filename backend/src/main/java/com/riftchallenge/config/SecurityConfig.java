@@ -19,6 +19,9 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 @EnableConfigurationProperties(SupabaseProperties.class)
 public class SecurityConfig {
 
+    private static final String API_CONTENT_SECURITY_POLICY =
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+
     private final SupabaseBearerAuthenticationFilter supabaseBearerAuthenticationFilter;
 
     public SecurityConfig(SupabaseBearerAuthenticationFilter supabaseBearerAuthenticationFilter) {
@@ -41,12 +44,7 @@ public class SecurityConfig {
                 )
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.deny())
-                        .referrerPolicy(referrer -> referrer.policy(
-                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
-                        ))
-                )
+                .headers(SecurityConfig::applySecurityHeaders)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .build();
@@ -58,12 +56,7 @@ public class SecurityConfig {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.deny())
-                        .referrerPolicy(referrer -> referrer.policy(
-                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
-                        ))
-                )
+                .headers(SecurityConfig::applySecurityHeaders)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
@@ -85,5 +78,22 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .build();
+    }
+
+    private static void applySecurityHeaders(
+            org.springframework.security.config.annotation.web.configurers.HeadersConfigurer<HttpSecurity> headers
+    ) {
+        headers
+                .contentTypeOptions(Customizer.withDefaults())
+                .frameOptions(frame -> frame.deny())
+                .httpStrictTransportSecurity(hsts -> hsts
+                        .includeSubDomains(true)
+                        .preload(true)
+                        .maxAgeInSeconds(31_536_000)
+                )
+                .referrerPolicy(referrer -> referrer.policy(
+                        ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                ))
+                .contentSecurityPolicy(csp -> csp.policyDirectives(API_CONTENT_SECURITY_POLICY));
     }
 }

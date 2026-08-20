@@ -37,9 +37,9 @@ if (supabaseUrl.includes('YOUR_PROJECT') || !supabasePublishableKey) {
 
 const content = `export const environment = {
   production: false,
-  supabaseUrl: '${supabaseUrl}',
-  supabasePublishableKey: '${supabasePublishableKey}',
-  apiBaseUrl: '${apiBaseUrl}',
+  supabaseUrl: ${JSON.stringify(supabaseUrl)},
+  supabasePublishableKey: ${JSON.stringify(supabasePublishableKey)},
+  apiBaseUrl: ${JSON.stringify(apiBaseUrl)},
 };
 `;
 

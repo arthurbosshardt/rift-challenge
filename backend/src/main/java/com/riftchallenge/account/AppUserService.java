@@ -17,12 +17,28 @@ public class AppUserService {
     }
 
     @Transactional
-    public AppUser findOrCreateFromSupabase(UUID supabaseId, String email, String preferredUsername) {
+    public AppUser findOrCreateFromSupabase(
+            UUID supabaseId,
+            String email,
+            String preferredUsername,
+            boolean emailConfirmed
+    ) {
         return appUserRepository.findBySupabaseId(supabaseId)
-                .orElseGet(() -> createFromSupabase(supabaseId, email, preferredUsername));
+                .orElseGet(() -> createFromSupabase(supabaseId, email, preferredUsername, emailConfirmed));
     }
 
-    private AppUser createFromSupabase(UUID supabaseId, String email, String preferredUsername) {
+    private AppUser createFromSupabase(
+            UUID supabaseId,
+            String email,
+            String preferredUsername,
+            boolean emailConfirmed
+    ) {
+        if (!emailConfirmed) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Email must be confirmed before first sign-in"
+            );
+        }
         if (email == null || email.isBlank()) {
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
@@ -44,8 +60,17 @@ public class AppUserService {
     }
 
     private AppUser linkSupabaseAccount(AppUser existing, UUID supabaseId) {
-        existing.linkSupabaseId(supabaseId);
-        return appUserRepository.save(existing);
+        if (existing.getSupabaseId() != null && !existing.getSupabaseId().equals(supabaseId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Email already linked to another account"
+            );
+        }
+        if (existing.getSupabaseId() == null) {
+            existing.linkSupabaseId(supabaseId);
+            return appUserRepository.save(existing);
+        }
+        return existing;
     }
 
     private String resolveUsername(String preferredUsername, String email) {

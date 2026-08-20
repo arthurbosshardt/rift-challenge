@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -16,18 +17,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChallengeOpenGraphAliasController {
 
     private final ChallengeOpenGraphService openGraphService;
+    private final OpenGraphRequestThrottle openGraphRequestThrottle;
 
-    public ChallengeOpenGraphAliasController(ChallengeOpenGraphService openGraphService) {
+    public ChallengeOpenGraphAliasController(
+            ChallengeOpenGraphService openGraphService,
+            OpenGraphRequestThrottle openGraphRequestThrottle
+    ) {
         this.openGraphService = openGraphService;
+        this.openGraphRequestThrottle = openGraphRequestThrottle;
     }
 
     @GetMapping(value = "/api/challenge-preview", produces = "text/html;charset=UTF-8")
-    public String preview(@RequestParam("slug") String slug) {
+    public String preview(@RequestParam("slug") String slug, HttpServletRequest request) {
+        openGraphRequestThrottle.enforce(request, "html");
         return openGraphService.renderPreviewHtml(slug);
     }
 
     @GetMapping(value = "/api/challenge-preview-image", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> previewImage(@RequestParam("slug") String slug) {
+    public ResponseEntity<byte[]> previewImage(@RequestParam("slug") String slug, HttpServletRequest request) {
+        openGraphRequestThrottle.enforce(request, "image");
         byte[] image = openGraphService.renderPreviewImage(slug);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
