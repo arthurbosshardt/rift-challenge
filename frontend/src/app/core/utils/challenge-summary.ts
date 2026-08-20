@@ -74,10 +74,6 @@ export function normalizeChallengeSummaries(raw: RawChallengeSummary[]): Challen
   return raw.map(normalizeChallengeSummary);
 }
 
-export function summaryNeedsPreviewEnrichment(raw: Partial<ChallengeSummary>[]): boolean {
-  return raw.some(summaryChallengeNeedsEnrichment);
-}
-
 export function enrichSummaryFromDetail(summary: ChallengeSummary, detail: ChallengeDetail): ChallengeSummary {
   const participantGameNames =
     detail.type === 'DUOQ'

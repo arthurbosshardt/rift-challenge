@@ -129,16 +129,21 @@ public class ChallengeOpenGraphService {
 
     private PreviewContext buildPreviewContext(Challenge challenge) {
         Instant now = clock.instant();
+        PreviewProgress previewProgress = loadPreviewProgress(challenge, now);
         String status = ChallengeSummaryResponse.resolveStatus(
                 challenge.getStartAt(),
                 challenge.getEndAt(),
+                challenge.getMaxGames(),
+                previewProgress.allReachedMaxGames(),
                 now
         );
         int entryCount = challenge.getType() == ChallengeType.DUOQ
                 ? (int) duoRepository.countByChallengeId(challenge.getId())
                 : (int) participantRepository.countByChallengeId(challenge.getId());
 
-        List<PodiumEntry> podium = buildPodium(challenge, status);
+        List<PodiumEntry> podium = "NOT_STARTED".equals(status)
+                ? List.of()
+                : previewProgress.podium();
         String title = challenge.getName() + " — Rift Challenge";
         String description = buildDescription(challenge, status, entryCount, podium);
         String pageUrl = frontendBaseUrl + ChallengeSharePaths.buildSharePath(challenge.getShareSlug());
@@ -151,25 +156,30 @@ public class ChallengeOpenGraphService {
         return new PreviewContext(title, description, pageUrl, imageUrl, imagePreview);
     }
 
-    private List<PodiumEntry> buildPodium(Challenge challenge, String status) {
-        if ("NOT_STARTED".equals(status)) {
-            return List.of();
+    private PreviewProgress loadPreviewProgress(Challenge challenge, Instant now) {
+        if (now.isBefore(challenge.getStartAt())) {
+            return new PreviewProgress(List.of(), false);
         }
 
         if (challenge.getType() == ChallengeType.DUOQ) {
-            return duoProgressService.buildPreview(challenge).stream()
-                    .limit(3)
-                    .map(this::toDuoPodiumEntry)
-                    .toList();
+            List<DuoProgressResponse> duos = duoProgressService.buildPreview(challenge);
+            boolean allReached = challenge.getMaxGames() != null
+                    && !duos.isEmpty()
+                    && duos.stream().allMatch(duo -> duo.wins() + duo.losses() >= challenge.getMaxGames());
+            List<PodiumEntry> podium = duos.stream().limit(3).map(this::toDuoPodiumEntry).toList();
+            return new PreviewProgress(podium, allReached);
         }
 
-        return progressService.buildPreviewProgress(
-                        challenge,
-                        participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())
-                ).stream()
-                .limit(3)
-                .map(this::toSoloPodiumEntry)
-                .toList();
+        List<ParticipantProgressResponse> participants = progressService.buildPreviewProgress(
+                challenge,
+                participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())
+        );
+        boolean allReached = challenge.getMaxGames() != null
+                && !participants.isEmpty()
+                && participants.stream()
+                        .allMatch(participant -> participant.wins() + participant.losses() >= challenge.getMaxGames());
+        List<PodiumEntry> podium = participants.stream().limit(3).map(this::toSoloPodiumEntry).toList();
+        return new PreviewProgress(podium, allReached);
     }
 
     private PodiumEntry toSoloPodiumEntry(ParticipantProgressResponse participant) {
@@ -233,11 +243,22 @@ public class ChallengeOpenGraphService {
 
     private String buildDescription(Challenge challenge, String status, int entryCount) {
         String typeLabel = challenge.getType() == ChallengeType.DUOQ ? "DuoQ" : "SoloQ";
-        String dates = DATE_FORMAT.format(challenge.getStartAt()) + " → " + DATE_FORMAT.format(challenge.getEndAt());
+        String dates = formatChallengeDates(challenge);
         String entries = challenge.getType() == ChallengeType.DUOQ
                 ? entryCount + (entryCount > 1 ? " duos" : " duo")
                 : entryCount + (entryCount > 1 ? " joueurs" : " joueur");
         return typeLabel + " · " + dates + " · " + entries + " · " + statusLabel(status);
+    }
+
+    private static String formatChallengeDates(Challenge challenge) {
+        String start = DATE_FORMAT.format(challenge.getStartAt());
+        if (challenge.getEndAt() != null) {
+            return start + " → " + DATE_FORMAT.format(challenge.getEndAt());
+        }
+        if (challenge.getMaxGames() != null) {
+            return start + " · " + challenge.getMaxGames() + " games";
+        }
+        return start;
     }
 
     private String buildImageSubtitle(Challenge challenge, String status, int entryCount) {
@@ -261,9 +282,6 @@ public class ChallengeOpenGraphService {
     }
 
     private String formatDuoDetail(DuoProgressResponse duo) {
-        if (duo.combinedLpGained() == 0 && !duo.player1().hasRankData() && !duo.player2().hasRankData()) {
-            return duo.wins() + "V · " + duo.losses() + "D";
-        }
         if (duo.combinedLpGained() == 0) {
             return duo.wins() + "V · " + duo.losses() + "D";
         }
@@ -329,5 +347,8 @@ public class ChallengeOpenGraphService {
             String imageUrl,
             ChallengeOpenGraphPreview imagePreview
     ) {
+    }
+
+    private record PreviewProgress(List<PodiumEntry> podium, boolean allReachedMaxGames) {
     }
 }

@@ -53,15 +53,8 @@ public final class RankReplayService {
     }
 
     /**
-     * @deprecated Prefer {@link #estimateFromMatches(List)} which anchors on the end rank.
+     * Prefer {@link #estimateFromMatches(List)} which anchors on the end rank.
      */
-    @Deprecated
-    public static RankState findBestBaselineAnchor(List<Boolean> winsOldestFirst) {
-        return estimateFromMatches(winsOldestFirst)
-                .map(MatchBasedRankEstimate::baseline)
-                .orElse(END_ANCHOR_CANDIDATES.getFirst());
-    }
-
     public static RankState findBestEndAnchor(List<Boolean> winsOldestFirst) {
         if (winsOldestFirst.isEmpty()) {
             return END_ANCHOR_CANDIDATES.getFirst();

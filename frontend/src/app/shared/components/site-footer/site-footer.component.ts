@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { LAST_UPDATED_AT, formatLastUpdatedDate } from '../../../core/version';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
+import { copyTextToClipboard } from '../../../core/utils/clipboard';
 
 @Component({
   selector: 'app-site-footer',
@@ -32,15 +33,13 @@ export class SiteFooterComponent {
   }
 
   private async performCopy(field: 'discord' | 'email', value: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(value);
-      this.copiedField.set(field);
-      if (this.copyResetTimer) {
-        clearTimeout(this.copyResetTimer);
-      }
-      this.copyResetTimer = setTimeout(() => this.copiedField.set(null), 1500);
-    } catch {
-      /* clipboard unavailable */
+    if (!(await copyTextToClipboard(value))) {
+      return;
     }
+    this.copiedField.set(field);
+    if (this.copyResetTimer) {
+      clearTimeout(this.copyResetTimer);
+    }
+    this.copyResetTimer = setTimeout(() => this.copiedField.set(null), 1500);
   }
 }

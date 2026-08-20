@@ -182,6 +182,35 @@ class ChallengeOpenGraphServiceTest {
     }
 
     @Test
+    void renderPreviewHtml_whenMaxGamesMode_avoidsNullEndDateAndUsesGamesLabel() {
+        UUID ownerId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                ownerId,
+                "Max games race",
+                ChallengeType.SOLOQ,
+                Instant.parse("2026-08-01T00:00:00Z"),
+                null,
+                20,
+                true
+        );
+        ChallengeParticipant first = participant(challenge.getId(), "Nikos", "EUW");
+
+        when(challengeRepository.findByShareSlug(challenge.getShareSlug())).thenReturn(Optional.of(challenge));
+        when(participantRepository.countByChallengeId(challenge.getId())).thenReturn(1L);
+        when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId()))
+                .thenReturn(List.of(first));
+        when(progressService.buildPreviewProgress(challenge, List.of(first))).thenReturn(List.of(
+                progress(first, 1, "Nikos", 12, "GOLD", "II")
+        ));
+
+        String html = openGraphService.renderPreviewHtml(challenge.getShareSlug());
+
+        assertThat(html).contains("20 games");
+        assertThat(html).contains("En cours");
+        assertThat(html).doesNotContain("null");
+    }
+
+    @Test
     void renderPreviewHtml_whenPrivate_throwsNotFound() {
         UUID ownerId = UUID.randomUUID();
         Challenge challenge = Challenge.create(

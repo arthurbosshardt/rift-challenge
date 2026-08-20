@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileIconLoader {
 
-    private static final String DDRAGON_VERSION = "16.16.1";
-
     private final RemoteImageLoader remoteImageLoader;
 
     public ProfileIconLoader(RemoteImageLoader remoteImageLoader) {
@@ -18,7 +16,7 @@ public class ProfileIconLoader {
 
     public String buildUrl(int profileIconId) {
         return "https://ddragon.leagueoflegends.com/cdn/%s/img/profileicon/%d.png"
-                .formatted(DDRAGON_VERSION, profileIconId);
+                .formatted(DDragonVersions.CURRENT, profileIconId);
     }
 
     public Optional<BufferedImage> load(Integer profileIconId) {

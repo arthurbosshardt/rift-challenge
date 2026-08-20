@@ -1,7 +1,8 @@
-import { winRateLabel as formatWinRateLabel } from './leaderboard-sort';
-
 export function winRateLabel(winRate: number, wins: number, losses: number): string {
-  return formatWinRateLabel(winRate, wins, losses);
+  if (wins + losses === 0) {
+    return '—';
+  }
+  return `${Math.round(winRate * 100)} %`;
 }
 
 export function hasPlayedRecord(wins: number, losses: number): boolean {

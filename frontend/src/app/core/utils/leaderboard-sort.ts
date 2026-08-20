@@ -131,12 +131,7 @@ function compareWinRate(
   return compareNumbers(leftWins, rightWins, direction);
 }
 
-export function winRateLabel(winRate: number, wins: number, losses: number): string {
-  if (wins + losses === 0) {
-    return '—';
-  }
-  return `${Math.round(winRate * 100)} %`;
-}
+export { winRateLabel } from './record-display';
 
 export function sortDirectionArrow(direction: SortDirection): string {
   return direction === 'desc' ? '↓' : '↑';

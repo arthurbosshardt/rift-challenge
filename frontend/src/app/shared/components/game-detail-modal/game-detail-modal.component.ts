@@ -9,6 +9,7 @@ import { rankEmblemUrl, formatRankLabel, tierLabel } from '../../../core/utils/r
 import { GameDetailSkeletonComponent } from '../game-detail-skeleton/game-detail-skeleton.component';
 import { ItemDataService } from '../../../core/services/item-data.service';
 import { apiUrl } from '../../../core/utils/api-url';
+import { copyTextToClipboard } from '../../../core/utils/clipboard';
 
 const HIGH_TIERS = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
 
@@ -283,16 +284,14 @@ export class GameDetailModalComponent {
   }
 
   private async performCopy(player: MatchParticipant): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(this.playerKey(player));
-      this.copiedKey.set(this.playerKey(player));
-      if (this.copyResetTimer) {
-        clearTimeout(this.copyResetTimer);
-      }
-      this.copyResetTimer = setTimeout(() => this.copiedKey.set(null), 1500);
-    } catch {
-      /* clipboard unavailable */
+    if (!(await copyTextToClipboard(this.playerKey(player)))) {
+      return;
     }
+    this.copiedKey.set(this.playerKey(player));
+    if (this.copyResetTimer) {
+      clearTimeout(this.copyResetTimer);
+    }
+    this.copyResetTimer = setTimeout(() => this.copiedKey.set(null), 1500);
   }
 
   private load(): void {

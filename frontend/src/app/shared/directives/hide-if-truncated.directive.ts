@@ -5,8 +5,8 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
+import { MOBILE_MEDIA_QUERY } from '../../core/layout/breakpoints';
 
-const MOBILE_QUERY = '(max-width: 1023px)';
 const HIDDEN_CLASS = 'truncated-hidden';
 
 /**
@@ -19,7 +19,7 @@ const HIDDEN_CLASS = 'truncated-hidden';
 })
 export class HideIfTruncatedDirective implements OnInit, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
-  private readonly mediaQuery = window.matchMedia(MOBILE_QUERY);
+  private readonly mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
   private resizeObserver: ResizeObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
   private rafId: number | null = null;

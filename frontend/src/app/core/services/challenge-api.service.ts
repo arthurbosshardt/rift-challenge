@@ -47,11 +47,6 @@ export class ChallengeApiService {
     return this.http.get<RawChallengeSummary[]>(url).pipe(map((raw) => normalizeChallengeSummaries(raw)));
   }
 
-  /** @deprecated Use listOwnedChallenges() */
-  listMyChallenges(): Observable<ChallengeSummary[]> {
-    return this.listOwnedChallenges();
-  }
-
   getChallengeByShareSlug(shareSlug: string, bustCache = false): Observable<ChallengeDetail> {
     const suffix = bustCache ? `?_=${Date.now()}` : '';
     const encodedSlug = encodeURIComponent(shareSlug);

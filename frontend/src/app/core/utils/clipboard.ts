@@ -1,0 +1,9 @@
+/** Copy text to the clipboard. Returns false when the Clipboard API is unavailable. */
+export async function copyTextToClipboard(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return false;
+  }
+}

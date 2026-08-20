@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 public class ChampionIconUrlService {
 
     private static final String API_ICON_PATH = "/api/champion-icons/";
-    private static final String DDRAGON_VERSION = "16.16.1";
 
     private final ObjectMapper objectMapper;
     private Map<Integer, String> championKeysById = Map.of();
@@ -53,7 +52,7 @@ public class ChampionIconUrlService {
         String championKey = championKeysById.get(championId);
         if (championKey != null) {
             return "https://ddragon.leagueoflegends.com/cdn/%s/img/champion/%s.png"
-                    .formatted(DDRAGON_VERSION, championKey);
+                    .formatted(DDragonVersions.CURRENT, championKey);
         }
 
         return "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/%d.png"

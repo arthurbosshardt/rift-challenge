@@ -1,6 +1,7 @@
 import { Component, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
+import { copyTextToClipboard } from '../../../core/utils/clipboard';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 
 @Component({
@@ -39,15 +40,13 @@ export class PlayerIdentityComponent {
   }
 
   private async performCopy(field: 'name' | 'riotId', value: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(value);
-      this.copiedField.set(field);
-      if (this.copyResetTimer) {
-        clearTimeout(this.copyResetTimer);
-      }
-      this.copyResetTimer = setTimeout(() => this.copiedField.set(null), 1500);
-    } catch {
-      /* clipboard unavailable */
+    if (!(await copyTextToClipboard(value))) {
+      return;
     }
+    this.copiedField.set(field);
+    if (this.copyResetTimer) {
+      clearTimeout(this.copyResetTimer);
+    }
+    this.copyResetTimer = setTimeout(() => this.copiedField.set(null), 1500);
   }
 }

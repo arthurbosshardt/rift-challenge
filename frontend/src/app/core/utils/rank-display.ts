@@ -57,10 +57,6 @@ export function tierLabel(
   return labels[tier.toUpperCase()] ?? tier;
 }
 
-export function tierLabelFr(tier: string | null | undefined): string {
-  return tierLabel(tier, 'fr');
-}
-
 export function rankEmblemUrl(tier: string | null | undefined): string | null {
   if (!tier) {
     return null;

@@ -7,6 +7,8 @@ import {
   OnInit,
 } from '@angular/core';
 
+import { MOBILE_MEDIA_QUERY } from '../../core/layout/breakpoints';
+
 const VIEWPORT_MARGIN = 12;
 
 @Directive({
@@ -15,7 +17,7 @@ const VIEWPORT_MARGIN = 12;
 export class ClampTooltipDirective implements OnInit, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
   private tooltip: HTMLElement | null = null;
-  private readonly mediaQuery = window.matchMedia('(max-width: 1023px)');
+  private readonly mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
   private rafId: number | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
 

@@ -18,6 +18,7 @@ import { formatDurationCountdown, formatFinishedRankLabel, formatRankLabel } fro
 import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { formatTimeSince } from '../../core/utils/relative-time';
 import { normalizeChallengeDetail } from '../../core/utils/challenge-detail';
+import { copyTextToClipboard } from '../../core/utils/clipboard';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
@@ -167,7 +168,9 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
 
     const path = challenge.sharePath || `/challenges/${encodeURIComponent(challenge.shareSlug)}`;
     const url = `${window.location.origin}${path}`;
-    await navigator.clipboard.writeText(url);
+    if (!(await copyTextToClipboard(url))) {
+      return;
+    }
     this.copied.set(true);
     window.setTimeout(() => this.copied.set(false), 2000);
   }

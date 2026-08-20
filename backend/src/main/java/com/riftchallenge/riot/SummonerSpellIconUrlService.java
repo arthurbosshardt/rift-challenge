@@ -6,8 +6,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class SummonerSpellIconUrlService {
 
-    private static final String DDRAGON_VERSION = "16.16.1";
-
     private static final Map<Integer, String> SPELL_NAMES = Map.ofEntries(
             Map.entry(1, "SummonerBoost"),
             Map.entry(3, "SummonerExhaust"),
@@ -27,6 +25,6 @@ public class SummonerSpellIconUrlService {
         if (name == null) {
             return null;
         }
-        return "https://ddragon.leagueoflegends.com/cdn/%s/img/spell/%s.png".formatted(DDRAGON_VERSION, name);
+        return "https://ddragon.leagueoflegends.com/cdn/%s/img/spell/%s.png".formatted(DDragonVersions.CURRENT, name);
     }
 }

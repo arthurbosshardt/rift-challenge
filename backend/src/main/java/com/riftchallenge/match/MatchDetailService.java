@@ -5,6 +5,7 @@ import com.riftchallenge.match.dto.MatchItemResponse;
 import com.riftchallenge.match.dto.MatchParticipantResponse;
 import com.riftchallenge.match.dto.MatchTeamObjectivesResponse;
 import com.riftchallenge.riot.ChampionIconUrlService;
+import com.riftchallenge.riot.DDragonVersions;
 import com.riftchallenge.riot.ProfileIconLoader;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
@@ -25,7 +26,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class MatchDetailService {
 
-    private static final String DDRAGON_VERSION = "16.16.1";
     private static final List<String> ROLE_ORDER = List.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
 
     private final RiotMatchClient riotMatchClient;
@@ -185,7 +185,7 @@ public class MatchDetailService {
         }
         return new MatchItemResponse(
                 itemId,
-                "https://ddragon.leagueoflegends.com/cdn/%s/img/item/%d.png".formatted(DDRAGON_VERSION, itemId)
+                "https://ddragon.leagueoflegends.com/cdn/%s/img/item/%d.png".formatted(DDragonVersions.CURRENT, itemId)
         );
     }
 }

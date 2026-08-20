@@ -21,17 +21,6 @@ export const rootRedirectGuard: CanActivateFn = async () => {
   return router.createUrlTree(['/home']);
 };
 
-export const guestHomeGuard: CanActivateFn = async () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  await auth.waitUntilReady();
-
-  if (auth.isAuthenticated()) {
-    return router.createUrlTree(await defaultAuthenticatedRoute(auth));
-  }
-  return true;
-};
-
 export const authHomeGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
   const authModal = inject(AuthModalService);

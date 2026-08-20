@@ -14,7 +14,13 @@ import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { CreateChallengeModalService } from '../../core/services/create-challenge-modal.service';
 import { SummonerSearchService, SummonerSuggestion } from '../../core/services/summoner-search.service';
 import { ChallengeType, DuoProgress, ParticipantProgress } from '../../core/models/challenge.models';
-import { buildLocalStartAtIso, splitLocalDateHour } from '../../core/utils/challenge-date';
+import { splitLocalDateHour } from '../../core/utils/challenge-date';
+import {
+  ChallengeEndMode,
+  ScheduleInvalidField,
+  ScheduleValidationResult,
+  validateChallengeSchedule,
+} from '../../core/utils/challenge-schedule';
 import { mapParticipantError } from '../../core/utils/challenge-participant-errors';
 import { isChallengeNameTakenError } from '../../core/utils/challenge-name-errors';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
@@ -25,24 +31,9 @@ import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typ
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
 
-type ScheduleInvalidField = 'startDate' | 'endDate' | 'maxGames';
 type NameInvalidField = 'name';
 type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId';
-export type EndMode = 'DATE' | 'GAMES';
-
-type ScheduleValidationResult =
-  | {
-      valid: true;
-      startAt: string;
-      endAt: string | null;
-      maxGames: number | null;
-    }
-  | {
-      valid: false;
-      invalidFields: Set<ScheduleInvalidField>;
-      fieldErrors: Partial<Record<ScheduleInvalidField, string>>;
-      formError: string;
-    };
+type EndMode = ChallengeEndMode;
 
 @Component({
   selector: 'app-create-challenge-modal',
@@ -598,78 +589,22 @@ export class CreateChallengeModalComponent {
   }
 
   private validateSchedule(): ScheduleValidationResult {
-    const invalidFields = new Set<ScheduleInvalidField>();
-    const fieldErrors: Partial<Record<ScheduleInvalidField, string>> = {};
-    const requiredMessage = this.i18n.t('create.fieldRequired');
-
-    if (!this.startDateInput.trim()) {
-      invalidFields.add('startDate');
-      fieldErrors.startDate = requiredMessage;
-    }
-
-    if (this.endMode === 'DATE' && !this.endDateInput.trim()) {
-      invalidFields.add('endDate');
-      fieldErrors.endDate = requiredMessage;
-    }
-
-    if (this.endMode === 'GAMES' && (this.maxGamesInput === null || this.maxGamesInput === undefined)) {
-      invalidFields.add('maxGames');
-      fieldErrors.maxGames = requiredMessage;
-    }
-
-    if (invalidFields.size > 0) {
-      return {
-        valid: false,
-        invalidFields,
-        fieldErrors,
-        formError: this.i18n.t('create.formIncomplete'),
-      };
-    }
-
-    const startAt = buildLocalStartAtIso(this.startDateInput, this.startHourInput);
-    if (!startAt) {
-      return {
-        valid: false,
-        invalidFields: new Set(['startDate']),
-        fieldErrors: { startDate: this.i18n.t('create.invalidStartDate') },
-        formError: this.i18n.t('create.invalidStartDate'),
-      };
-    }
-
-    if (this.endMode === 'GAMES') {
-      const maxGames = Math.trunc(this.maxGamesInput as number);
-      if (!Number.isFinite(maxGames) || maxGames <= 0) {
-        return {
-          valid: false,
-          invalidFields: new Set(['maxGames']),
-          fieldErrors: { maxGames: this.i18n.t('create.invalidMaxGames') },
-          formError: this.i18n.t('create.invalidMaxGames'),
-        };
-      }
-
-      return { valid: true, startAt, endAt: null, maxGames };
-    }
-
-    const endAt = buildLocalStartAtIso(this.endDateInput, this.endHourInput);
-    if (!endAt) {
-      return {
-        valid: false,
-        invalidFields: new Set(['endDate']),
-        fieldErrors: { endDate: this.i18n.t('create.invalidEndDate') },
-        formError: this.i18n.t('create.invalidEndDate'),
-      };
-    }
-
-    if (new Date(endAt).getTime() <= new Date(startAt).getTime()) {
-      return {
-        valid: false,
-        invalidFields: new Set(['endDate']),
-        fieldErrors: { endDate: this.i18n.t('create.endBeforeStart') },
-        formError: this.i18n.t('create.endBeforeStart'),
-      };
-    }
-
-    return { valid: true, startAt, endAt, maxGames: null };
+    return validateChallengeSchedule({
+      endMode: this.endMode,
+      startDateInput: this.startDateInput,
+      startHourInput: this.startHourInput,
+      endDateInput: this.endDateInput,
+      endHourInput: this.endHourInput,
+      maxGamesInput: this.maxGamesInput,
+      messages: {
+        required: this.i18n.t('create.fieldRequired'),
+        formIncomplete: this.i18n.t('create.formIncomplete'),
+        invalidStartDate: this.i18n.t('create.invalidStartDate'),
+        invalidEndDate: this.i18n.t('create.invalidEndDate'),
+        invalidMaxGames: this.i18n.t('create.invalidMaxGames'),
+        endBeforeStart: this.i18n.t('create.endBeforeStart'),
+      },
+    });
   }
 
   private validateSoloParticipantFields(): boolean {

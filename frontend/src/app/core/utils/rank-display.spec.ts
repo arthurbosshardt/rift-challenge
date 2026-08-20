@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatDurationCountdown, formatFinishedRankLabel, formatRankLabel, rankEmblemUrl, tierLabelFr } from './rank-display';
+import { formatDurationCountdown, formatFinishedRankLabel, formatRankLabel, rankEmblemUrl, tierLabel } from './rank-display';
 
 describe('rank-display', () => {
   it('maps tier to French label', () => {
-    expect(tierLabelFr('GOLD')).toBe('Or');
-    expect(tierLabelFr('EMERALD')).toBe('Émeraude');
+    expect(tierLabel('GOLD', 'fr')).toBe('Or');
+    expect(tierLabel('EMERALD', 'fr')).toBe('Émeraude');
   });
 
   it('builds rank emblem URL', () => {
