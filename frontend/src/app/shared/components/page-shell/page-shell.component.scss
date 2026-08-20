@@ -207,7 +207,15 @@ button.linkish:focus-visible .nav-icon {
   z-index: 40;
   margin-bottom: 2rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
+  /* Same visual line as a 1px border-bottom, except it stops short of the
+     oversized logo instead of drawing straight through it — a plain
+     border/overlay would need to match the page's background to hide
+     under the logo, which breaks against the gradient background. */
+  background-image: linear-gradient(to right, transparent 0 152px, var(--border) 152px 100%);
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: 100% 1px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
@@ -259,6 +267,7 @@ button.linkish:focus-visible .nav-icon {
   margin: 0;
   padding: 0;
   border: none;
+  background-image: none;
   justify-content: space-between;
   align-items: center;
 }
@@ -452,6 +461,7 @@ button.linkish:focus-visible .nav-icon {
     margin-bottom: 1.25rem;
     padding-bottom: 0;
     border-bottom: none;
+    background-image: none;
   }
 
   .shell__header {
@@ -465,7 +475,11 @@ button.linkish:focus-visible .nav-icon {
     align-items: center;
     gap: 0.5rem 0.625rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
+    background-image: linear-gradient(to right, transparent 0 104px, var(--border) 104px 100%);
+    background-repeat: no-repeat;
+    background-position: bottom;
+    background-size: 100% 1px;
   }
 
   .shell__header-start {
@@ -497,6 +511,7 @@ button.linkish:focus-visible .nav-icon {
   .shell--floating-nav .shell__header-bar {
     padding-bottom: 0;
     border-bottom: none;
+    background-image: none;
   }
 
   .brand {
