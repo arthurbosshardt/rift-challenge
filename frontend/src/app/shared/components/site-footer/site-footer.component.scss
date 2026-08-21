@@ -1,6 +1,16 @@
+:host-context(.shell--with-footer) .site-footer {
+  /* Top spacing comes from .shell__main padding-bottom so the watermark
+     reaches the footer border. */
+  margin-top: 0;
+}
+
 :host-context(.shell--floating-nav) .site-footer {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
+}
+
+:host-context(.shell--floating-nav.shell--with-footer) .site-footer {
+  margin-top: 0;
 }
 
 .site-footer {

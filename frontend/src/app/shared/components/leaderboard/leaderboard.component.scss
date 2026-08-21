@@ -566,6 +566,14 @@
     margin-inline: auto;
   }
 
+  .leaderboard__category-btn {
+    padding-inline: 0.625rem;
+  }
+
+  .leaderboard__category-btn:not(.leaderboard__category-btn--active) .leaderboard__category-label {
+    display: none;
+  }
+
   .leaderboard__toolbar-meta {
     margin-left: 0;
     justify-content: center;

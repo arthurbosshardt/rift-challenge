@@ -51,6 +51,7 @@
           type="button"
           class="leaderboard__category-btn"
           [class.leaderboard__category-btn--active]="category() === 'rank'"
+          [attr.aria-label]="'leaderboard.categoryRank' | t"
           (click)="setCategory('rank')"
         >
           <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -62,13 +63,14 @@
               stroke-linejoin="round"
             />
           </svg>
-          {{ 'leaderboard.categoryRank' | t }}
+          <span class="leaderboard__category-label">{{ 'leaderboard.categoryRank' | t }}</span>
         </button>
       }
       <button
         type="button"
         class="leaderboard__category-btn"
         [class.leaderboard__category-btn--active]="category() === 'winRate'"
+        [attr.aria-label]="'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() }"
         (click)="setCategory('winRate')"
       >
         <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -81,12 +83,13 @@
             stroke-linejoin="round"
           />
         </svg>
-        {{ 'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() } }}
+        <span class="leaderboard__category-label">{{ 'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() } }}</span>
       </button>
       <button
         type="button"
         class="leaderboard__category-btn"
         [class.leaderboard__category-btn--active]="category() === 'lpGained'"
+        [attr.aria-label]="'leaderboard.categoryLpGained' | t"
         (click)="setCategory('lpGained')"
       >
         <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -99,12 +102,13 @@
             stroke-linejoin="round"
           />
         </svg>
-        {{ 'leaderboard.categoryLpGained' | t }}
+        <span class="leaderboard__category-label">{{ 'leaderboard.categoryLpGained' | t }}</span>
       </button>
       <button
         type="button"
         class="leaderboard__category-btn"
         [class.leaderboard__category-btn--active]="category() === 'winStreak'"
+        [attr.aria-label]="'leaderboard.categoryWinStreak' | t"
         (click)="setCategory('winStreak')"
       >
         <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -113,7 +117,7 @@
             fill="currentColor"
           />
         </svg>
-        {{ 'leaderboard.categoryWinStreak' | t }}
+        <span class="leaderboard__category-label">{{ 'leaderboard.categoryWinStreak' | t }}</span>
       </button>
     </div>
 

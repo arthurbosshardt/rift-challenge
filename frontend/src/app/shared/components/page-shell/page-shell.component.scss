@@ -202,6 +202,17 @@ button.linkish:focus-visible .nav-icon {
   pointer-events: none;
 }
 
+/* Move the footer's top margin into main as padding so the watermark
+   fills that band and meets the footer border (negative bottom would be
+   clipped by overflow:hidden on floating-nav pages). */
+.shell--with-footer .shell__main {
+  padding-bottom: 2.5rem;
+}
+
+.shell--floating-nav.shell--with-footer .shell__main {
+  padding-bottom: 0.75rem;
+}
+
 .shell__main-bg::before {
   content: '';
   position: absolute;
