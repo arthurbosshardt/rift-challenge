@@ -35,7 +35,17 @@ import org.springframework.web.server.ResponseStatusException;
 public class LeaderboardAccountSyncService {
 
     static final int MAX_NEW_MATCHES_PER_SYNC = 10;
-    static final int MAX_CATCHUP_MATCHES = 25;
+    static final int MAX_CATCHUP_MATCHES = 10;
+    /**
+     * Hard ceiling on match-detail fetches for one whole {@link #syncAllAccounts} pass, regardless
+     * of how many accounts are linked. Each fetch can block for a while under sustained Riot rate
+     * limiting (the client retries with the server's own Retry-After, observed well past a minute
+     * under load) — without this, a large batch of newly linked accounts turns one pass into an
+     * effectively unbounded, single-threaded run. Bounding it here means a pass always finishes in
+     * bounded time; a large backlog just spreads across more scheduled passes instead of one giant
+     * one, the same tradeoff {@link #MAX_NEW_MATCHES_PER_SYNC} already makes per account.
+     */
+    static final int MAX_MATCH_IMPORTS_PER_PASS = 20;
 
     private static final Logger log = LoggerFactory.getLogger(LeaderboardAccountSyncService.class);
 
@@ -71,10 +81,18 @@ public class LeaderboardAccountSyncService {
     public void syncAllAccounts(Instant now) {
         List<UserRiotAccount> accounts = userRiotAccountRepository.findAll();
         riotMatchLookupService.beginRefreshScope();
+        int remainingBudget = MAX_MATCH_IMPORTS_PER_PASS;
         try {
             for (UserRiotAccount account : accounts) {
+                if (remainingBudget <= 0) {
+                    log.info(
+                            "Leaderboard sync pass hit its {}-match budget; remaining accounts continue next pass",
+                            MAX_MATCH_IMPORTS_PER_PASS
+                    );
+                    break;
+                }
                 try {
-                    syncAccount(account, now);
+                    remainingBudget -= syncAccount(account, now, remainingBudget);
                 } catch (ResponseStatusException exception) {
                     if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
                         log.warn("Riot API rate limit while syncing leaderboard accounts; stopping this pass");
@@ -88,13 +106,14 @@ public class LeaderboardAccountSyncService {
         }
     }
 
-    private void syncAccount(UserRiotAccount account, Instant now) {
+    /** @return how many new matches were imported for this account, so the caller can track its pass-wide budget. */
+    private int syncAccount(UserRiotAccount account, Instant now, int budget) {
         String puuid = account.getRiotPuuid();
 
         riotLeagueClient.findRankedSoloEntry(puuid, ChallengeRegion.EUW)
                 .ifPresent(entry -> upsertRank(puuid, now, entry));
 
-        syncMatches(account, now);
+        return syncMatches(account, now, budget);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -105,10 +124,10 @@ public class LeaderboardAccountSyncService {
         accountRankRepository.save(rank);
     }
 
-    private void syncMatches(UserRiotAccount account, Instant now) {
+    private int syncMatches(UserRiotAccount account, Instant now, int budget) {
         String puuid = account.getRiotPuuid();
         long existingMatches = accountMatchRepository.countByRiotPuuid(puuid);
-        int importLimit = existingMatches > 0 ? MAX_NEW_MATCHES_PER_SYNC : MAX_CATCHUP_MATCHES;
+        int importLimit = Math.min(existingMatches > 0 ? MAX_NEW_MATCHES_PER_SYNC : MAX_CATCHUP_MATCHES, budget);
         int fetchLimit = existingMatches == 0 ? importLimit : (int) Math.min(100, existingMatches + importLimit);
 
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
@@ -144,6 +163,7 @@ public class LeaderboardAccountSyncService {
                 throw exception;
             }
         }
+        return imported;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
