@@ -82,17 +82,25 @@ public class LeaderboardAccountSyncService {
         List<UserRiotAccount> accounts = userRiotAccountRepository.findAll();
         riotMatchLookupService.beginRefreshScope();
         int remainingBudget = MAX_MATCH_IMPORTS_PER_PASS;
+        boolean matchBudgetExhaustedLogged = false;
         try {
             for (UserRiotAccount account : accounts) {
-                if (remainingBudget <= 0) {
-                    log.info(
-                            "Leaderboard sync pass hit its {}-match budget; remaining accounts continue next pass",
-                            MAX_MATCH_IMPORTS_PER_PASS
-                    );
-                    break;
-                }
                 try {
-                    remainingBudget -= syncAccount(account, now, remainingBudget);
+                    riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid(), ChallengeRegion.EUW)
+                            .ifPresent(entry -> upsertRank(account.getRiotPuuid(), now, entry));
+
+                    if (remainingBudget <= 0) {
+                        if (!matchBudgetExhaustedLogged) {
+                            log.info(
+                                    "Leaderboard sync pass hit its {}-match budget; ranks continue, matches resume next pass",
+                                    MAX_MATCH_IMPORTS_PER_PASS
+                            );
+                            matchBudgetExhaustedLogged = true;
+                        }
+                        continue;
+                    }
+
+                    remainingBudget -= syncMatches(account, now, remainingBudget);
                 } catch (ResponseStatusException exception) {
                     if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
                         log.warn("Riot API rate limit while syncing leaderboard accounts; stopping this pass");
@@ -106,16 +114,6 @@ public class LeaderboardAccountSyncService {
         }
     }
 
-    /** @return how many new matches were imported for this account, so the caller can track its pass-wide budget. */
-    private int syncAccount(UserRiotAccount account, Instant now, int budget) {
-        String puuid = account.getRiotPuuid();
-
-        riotLeagueClient.findRankedSoloEntry(puuid, ChallengeRegion.EUW)
-                .ifPresent(entry -> upsertRank(puuid, now, entry));
-
-        return syncMatches(account, now, budget);
-    }
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     void upsertRank(String puuid, Instant now, RiotLeagueEntryDto entry) {
         LeaderboardAccountRank rank = accountRankRepository.findByRiotPuuid(puuid)
@@ -124,6 +122,7 @@ public class LeaderboardAccountSyncService {
         accountRankRepository.save(rank);
     }
 
+    /** @return how many new matches were imported for this account, so the caller can track its pass-wide budget. */
     private int syncMatches(UserRiotAccount account, Instant now, int budget) {
         String puuid = account.getRiotPuuid();
         long existingMatches = accountMatchRepository.countByRiotPuuid(puuid);
