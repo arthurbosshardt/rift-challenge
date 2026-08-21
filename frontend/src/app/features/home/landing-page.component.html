@@ -1,135 +1,28 @@
 <app-page-shell [title]="''">
   <div class="landing">
-    <div class="landing__content">
-      <div class="landing__left">
-        <div class="landing__brand">
-          <h1 class="landing__intro">
-            <span class="landing__intro-brand">{{ 'landing.introBrand' | t }}</span>
-            <span class="landing__intro-question">{{ 'landing.introQuestion' | t }}</span>
-          </h1>
-          <p class="landing__subtitle">
-            <span class="landing__hero-title">{{ 'landing.heroTitle' | t }}</span>
-            {{ 'landing.heroSubtitle' | t }}
-          </p>
-        </div>
-
-        <ol class="landing__steps" [attr.aria-label]="'landing.introBrand' | t">
-          <li class="landing__step landing__step--bronze">
-            <span class="landing__step-emblem" aria-hidden="true">
-              <app-rank-emblem tier="BRONZE" size="md" />
-            </span>
-            <div class="landing__step-copy">
-              <h2>{{ 'landing.step1Title' | t }}</h2>
-              <p class="landing__step-desc">{{ 'landing.step1Text' | t }}</p>
-            </div>
-          </li>
-          <li class="landing__step landing__step--silver">
-            <span class="landing__step-emblem" aria-hidden="true">
-              <app-rank-emblem tier="SILVER" size="md" />
-            </span>
-            <div class="landing__step-copy">
-              <h2>{{ 'landing.step2Title' | t }}</h2>
-              <p class="landing__step-desc">{{ 'landing.step2Text' | t }}</p>
-            </div>
-          </li>
-          <li class="landing__step landing__step--gold">
-            <span class="landing__step-emblem" aria-hidden="true">
-              <app-rank-emblem tier="GOLD" size="md" />
-            </span>
-            <div class="landing__step-copy">
-              <h2>{{ 'landing.step3Title' | t }}</h2>
-              <p class="landing__step-desc">{{ 'landing.step3Text' | t }}</p>
-            </div>
-          </li>
-        </ol>
-
-        <div class="landing__body">
-          @if (!auth.isAuthenticated()) {
-            <app-landing-guest-actions class="landing__guest-actions--inline" />
-          }
-
-          <section class="landing__types" [attr.aria-label]="'landing.typesTitle' | t">
-            <h2 class="visually-hidden">{{ 'landing.typesTitle' | t }}</h2>
-            <article class="landing__type landing__type--soloq">
-              <span class="landing__type-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              <div class="landing__type-copy">
-                <h3>{{ 'landing.soloqTitle' | t }}</h3>
-                <p class="landing__type-desc">{{ 'landing.soloqText' | t }}</p>
-              </div>
-            </article>
-            <article class="landing__type landing__type--duoq">
-              <span class="landing__type-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              <div class="landing__type-copy">
-                <h3>{{ 'landing.duoqTitle' | t }}</h3>
-                <p class="landing__type-desc">{{ 'landing.duoqText' | t }}</p>
-              </div>
-            </article>
-          </section>
-        </div>
-
-        @if (!auth.isAuthenticated()) {
-          <app-landing-guest-actions class="landing__guest-actions--before-cards" />
-        }
+    @if (aboutBubbleVisible()) {
+      <div class="about-bubble" role="note">
+        <button
+          type="button"
+          class="about-bubble__dismiss"
+          [attr.aria-label]="'landing.aboutDismiss' | t"
+          (click)="dismissAboutBubble()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
+        <h2 class="about-bubble__title">{{ 'landing.aboutTitle' | t }}</h2>
+        <p class="about-bubble__text">{{ 'landing.aboutTextBefore' | t }}<a href="https://soloqchallenge.fr/" target="_blank" rel="noopener noreferrer" class="about-bubble__link">{{ 'landing.aboutLinkLabel' | t }}</a>{{ 'landing.aboutTextMiddle' | t }}@if (auth.isAuthenticated()) {<button type="button" class="about-bubble__link about-bubble__link--button" (click)="createChallengeModal.open()">{{ 'landing.aboutCreateLinkLabel' | t }}</button>} @else {{{ 'landing.aboutCreateLinkLabel' | t }}}{{ 'landing.aboutTextAfterCreate' | t }}@if (auth.isAuthenticated()) {{{ 'landing.aboutPerformText' | t }}} @else {<a routerLink="/login" class="about-bubble__link">{{ 'landing.aboutLoginLinkLabel' | t }}</a>{{ 'landing.aboutLoginTextAfter' | t }}}</p>
       </div>
+    }
 
-      <div class="landing__right">
-        <section class="landing__cards" [attr.aria-label]="'landing.inspiredTitle' | t">
-          <h2 class="visually-hidden">{{ 'landing.inspiredTitle' | t }}</h2>
-          @for (item of inspirations; track item.id) {
-            <a
-              class="landing-card landing-card--{{ item.id }}"
-              [href]="item.url"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                [src]="item.imageSrc"
-                [alt]="item.imageAltKey | t"
-                loading="eager"
-                decoding="async"
-                (error)="onCardImageError($event, item.imageFallback)"
-              />
-              <div class="landing-card__body">
-                @if (item.id === 'duo') {
-                  <span class="landing-card__mode-icon landing-card__mode-icon--duoq" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </span>
-                } @else {
-                  <span class="landing-card__mode-icon landing-card__mode-icon--soloq" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </span>
-                }
-                <h3>{{ item.titleKey | t }}</h3>
-                <p>{{ item.textKey | t }}</p>
-              </div>
-            </a>
-          }
-        </section>
-      </div>
-    </div>
+    <section class="leaderboard-placeholder">
+      <h2 class="leaderboard-placeholder__title">{{ 'landing.leaderboardTitle' | t }}</h2>
+      <p class="leaderboard-placeholder__notice">{{ 'landing.leaderboardWip' | t }}</p>
+    </section>
   </div>
 </app-page-shell>
