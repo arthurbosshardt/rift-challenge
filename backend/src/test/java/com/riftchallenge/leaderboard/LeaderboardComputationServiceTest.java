@@ -4,17 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.challenge.ChallengeParticipant;
-import com.riftchallenge.challenge.ChallengeParticipantRepository;
+import com.riftchallenge.account.UserRiotAccount;
+import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.dto.RiotAccountDto;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository.ParticipantMatchHistorySince;
-import com.riftchallenge.synchronization.RankSnapshot;
-import com.riftchallenge.synchronization.RankSnapshot.SnapshotType;
-import com.riftchallenge.synchronization.RankSnapshotRepository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,17 +27,15 @@ class LeaderboardComputationServiceTest {
 
     private static final Instant SEASON_START = Instant.parse("2026-07-29T12:00:00Z");
     private static final Instant NOW = Instant.parse("2026-08-21T10:00:00Z");
-    private static final UUID CHALLENGE_A = UUID.randomUUID();
-    private static final UUID CHALLENGE_B = UUID.randomUUID();
 
     @Mock
-    private ChallengeParticipantRepository participantRepository;
+    private UserRiotAccountRepository userRiotAccountRepository;
 
     @Mock
-    private ChallengeParticipantMatchRepository matchRepository;
+    private LeaderboardAccountMatchRepository matchRepository;
 
     @Mock
-    private RankSnapshotRepository rankSnapshotRepository;
+    private LeaderboardAccountRankRepository rankRepository;
 
     @Mock
     private ChampionIconUrlService championIconUrlService;
@@ -51,25 +45,23 @@ class LeaderboardComputationServiceTest {
     @BeforeEach
     void setUp() {
         service = new LeaderboardComputationService(
-                participantRepository,
+                userRiotAccountRepository,
                 matchRepository,
-                rankSnapshotRepository,
+                rankRepository,
                 new LeaderboardProperties(SEASON_START, "admin@example.com"),
                 championIconUrlService
         );
-        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(any(), any()))
-                .thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient().when(rankRepository.findByRiotPuuid(any())).thenReturn(Optional.empty());
         org.mockito.Mockito.lenient().when(championIconUrlService.buildApiPath(any())).thenReturn(null);
     }
 
     @Test
     void belowMinGamesThreshold_excludedFromWinRateOnly() {
-        ChallengeParticipant belowThreshold = participant(CHALLENGE_A, "puuid-below", "Below", "EUW");
-        when(participantRepository.findAll()).thenReturn(List.of(belowThreshold));
+        UserRiotAccount account = account("puuid-below", "Below", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
         boolean[] wins = new boolean[19];
         java.util.Arrays.fill(wins, true);
-        when(matchRepository.findHistorySince(belowThreshold.getId(), SEASON_START))
-                .thenReturn(history(belowThreshold, wins));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(history(wins));
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -80,46 +72,47 @@ class LeaderboardComputationServiceTest {
     }
 
     @Test
-    void samePlayerAcrossTwoChallenges_mergesMatchHistoryIndependentOfChallenge() {
-        ChallengeParticipant runA = participant(CHALLENGE_A, "puuid-same", "Player", "EUW");
-        ChallengeParticipant runB = participant(CHALLENGE_B, "puuid-same", "Player", "EUW");
-        when(participantRepository.findAll()).thenReturn(List.of(runA, runB));
-
-        when(matchRepository.findHistorySince(runA.getId(), SEASON_START))
-                .thenReturn(history(
-                        runA,
-                        true, false, true, false, false, true, false, false, false, false,
-                        true, false, false, false, true, false, false, false, false, true
-                ));
-        when(matchRepository.findHistorySince(runB.getId(), SEASON_START))
-                .thenReturn(history(
-                        runB,
-                        true, true, true, true, false, true, true, true, false, true,
-                        true, true, true, true, false, true, true, true, false, true
-                ));
+    void accountWithEnoughGames_ranksByWinRate() {
+        UserRiotAccount account = account("puuid-active", "Active", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(history(
+                true, true, true, true, false, true, true, true, false, true,
+                true, true, true, true, false, true, true, true, false, true
+        ));
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
-        // One player, one leaderboard row — their solo queue games count the same regardless of
-        // which challenge(s) synced them: 20 games (6 wins) + 20 games (16 wins) = 40 games, 22 wins.
         assertThat(snapshot.season().byWinRate()).hasSize(1);
         LeaderboardEntryResponse entry = snapshot.season().byWinRate().get(0);
-        assertThat(entry.puuid()).isEqualTo("puuid-same");
-        assertThat(entry.gamesPlayed()).isEqualTo(40);
-        assertThat(entry.winRate()).isCloseTo(0.55, org.assertj.core.data.Offset.offset(0.001));
+        assertThat(entry.puuid()).isEqualTo("puuid-active");
+        assertThat(entry.gamesPlayed()).isEqualTo(20);
+        assertThat(entry.wins()).isEqualTo(16);
         assertThat(entry.position()).isEqualTo(1);
         assertThat(entry.recentMatches()).isNotEmpty();
     }
 
     @Test
-    void rollingSevenDayWindow_excludesOlderMatchesButSeasonKeepsThem() {
-        ChallengeParticipant p = participant(CHALLENGE_A, "puuid-rolling", "Rolling", "EUW");
-        when(participantRepository.findAll()).thenReturn(List.of(p));
+    void accountWithNoMatches_isExcludedEntirely() {
+        UserRiotAccount account = account("puuid-idle", "Idle", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(List.of());
 
-        List<ParticipantMatchHistorySince> allSeasonMatches = new ArrayList<>();
-        allSeasonMatches.addAll(historyAt(p, NOW.minusSeconds(30L * 24 * 3600), true, 25));
-        allSeasonMatches.addAll(historyAt(p, NOW.minusSeconds(2L * 24 * 3600), false, 20));
-        when(matchRepository.findHistorySince(p.getId(), SEASON_START)).thenReturn(allSeasonMatches);
+        LeaderboardSnapshot snapshot = service.compute(NOW);
+
+        assertThat(snapshot.season().byWinRate()).isEmpty();
+        assertThat(snapshot.season().byWinStreak()).isEmpty();
+        assertThat(snapshot.season().byLpGained()).isEmpty();
+    }
+
+    @Test
+    void rollingSevenDayWindow_excludesOlderMatchesButSeasonKeepsThem() {
+        UserRiotAccount account = account("puuid-rolling", "Rolling", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+
+        List<AccountMatchHistoryRow> allSeasonMatches = new ArrayList<>();
+        allSeasonMatches.addAll(historyAt(NOW.minusSeconds(30L * 24 * 3600), true, 25));
+        allSeasonMatches.addAll(historyAt(NOW.minusSeconds(2L * 24 * 3600), false, 20));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(allSeasonMatches);
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -134,16 +127,13 @@ class LeaderboardComputationServiceTest {
     }
 
     @Test
-    void rankList_fallsBackToBaselineSnapshotWhenNoRefreshExists() {
-        ChallengeParticipant p = participant(CHALLENGE_A, "puuid-rank", "Ranked", "EUW");
-        when(participantRepository.findAll()).thenReturn(List.of(p));
-        when(matchRepository.findHistorySince(p.getId(), SEASON_START)).thenReturn(List.of());
-        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(p.getId(), SnapshotType.REFRESH))
-                .thenReturn(Optional.empty());
-        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(p.getId(), SnapshotType.BASELINE))
-                .thenReturn(Optional.of(RankSnapshot.create(
-                        p.getId(), NOW, SnapshotType.BASELINE, "RANKED_SOLO_5x5", "DIAMOND", "II", 40, 10, 5
-                )));
+    void rankList_reflectsStoredAccountRank() {
+        UserRiotAccount account = account("puuid-rank", "Ranked", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(List.of());
+        when(rankRepository.findByRiotPuuid(account.getRiotPuuid())).thenReturn(Optional.of(
+                LeaderboardAccountRank.create(account.getRiotPuuid(), NOW, "DIAMOND", "II", 40)
+        ));
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -155,42 +145,23 @@ class LeaderboardComputationServiceTest {
         assertThat(snapshot.last7Days().byRank()).isEqualTo(snapshot.season().byRank());
     }
 
-    private static ChallengeParticipant participant(UUID challengeId, String puuid, String gameName, String tagLine) {
-        return ChallengeParticipant.create(challengeId, new RiotAccountDto(puuid, gameName, tagLine));
+    private static UserRiotAccount account(String puuid, String gameName, String tagLine) {
+        return UserRiotAccount.create(UUID.randomUUID(), new RiotAccountDto(puuid, gameName, tagLine));
     }
 
-    private static List<ParticipantMatchHistorySince> history(ChallengeParticipant participant, boolean... wins) {
-        List<ParticipantMatchHistorySince> result = new ArrayList<>();
+    private static List<AccountMatchHistoryRow> history(boolean... wins) {
         Instant start = SEASON_START.plusSeconds(3600);
+        List<AccountMatchHistoryRow> result = new ArrayList<>();
         for (int i = 0; i < wins.length; i++) {
-            // Riot match IDs are globally unique, so tests must give each participation its own
-            // to avoid a same-index game from a different challenge accidentally deduping away.
-            result.add(new TestHistory(
-                    "match-" + participant.getId() + "-" + i,
-                    wins[i],
-                    1,
-                    participant.getChallengeId(),
-                    start.plusSeconds(i * 3600L)
-            ));
+            result.add(new TestHistory("match-" + i, wins[i], 1, start.plusSeconds(i * 3600L)));
         }
         return result;
     }
 
-    private static List<ParticipantMatchHistorySince> historyAt(
-            ChallengeParticipant participant,
-            Instant gameStart,
-            boolean win,
-            int count
-    ) {
-        List<ParticipantMatchHistorySince> result = new ArrayList<>();
+    private static List<AccountMatchHistoryRow> historyAt(Instant gameStart, boolean win, int count) {
+        List<AccountMatchHistoryRow> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            result.add(new TestHistory(
-                    "match-at-" + gameStart + "-" + i,
-                    win,
-                    1,
-                    participant.getChallengeId(),
-                    gameStart.plusSeconds(i)
-            ));
+            result.add(new TestHistory("match-at-" + gameStart + "-" + i, win, 1, gameStart.plusSeconds(i)));
         }
         return result;
     }
@@ -199,8 +170,7 @@ class LeaderboardComputationServiceTest {
             String getMatchId,
             boolean isWin,
             Integer getChampionId,
-            UUID getChallengeId,
             Instant getGameStart
-    ) implements ParticipantMatchHistorySince {
+    ) implements AccountMatchHistoryRow {
     }
 }

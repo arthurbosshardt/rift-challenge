@@ -8,9 +8,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * The app's only passive/scheduled refresh: recomputes the leaderboard 4x/day, never on user
- * request. {@code @Lazy(false)} overrides {@code spring.main.lazy-initialization=true} — without
- * it this bean (and its cron trigger) would never be created since nothing else references it.
+ * The app's only passive/scheduled refresh: syncs every linked Riot account and recomputes the
+ * leaderboard 4x/day (see {@link LeaderboardCacheService#refresh}), never on user request.
+ * {@code @Lazy(false)} overrides {@code spring.main.lazy-initialization=true} — without it this
+ * bean (and its cron trigger) would never be created since nothing else references it.
  */
 @Component
 @Lazy(false)

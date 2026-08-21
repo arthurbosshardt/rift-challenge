@@ -5,8 +5,6 @@ export interface LeaderboardMatchHistory {
   win: boolean;
   lpDelta: number;
   playedAt: string;
-  challengeId: string;
-  participantId: string;
 }
 
 export interface LeaderboardEntry {
@@ -25,8 +23,6 @@ export interface LeaderboardEntry {
   winStreak: number;
   lpGained: number;
   position: number;
-  challengeId: string | null;
-  participantId: string | null;
   recentMatches: LeaderboardMatchHistory[];
 }
 

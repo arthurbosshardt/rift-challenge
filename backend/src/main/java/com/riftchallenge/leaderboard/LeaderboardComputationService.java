@@ -1,7 +1,8 @@
 package com.riftchallenge.leaderboard;
 
-import com.riftchallenge.challenge.ChallengeParticipant;
-import com.riftchallenge.challenge.ChallengeParticipantRepository;
+import com.riftchallenge.account.UserRiotAccount;
+import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardMatchHistoryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
@@ -10,29 +11,20 @@ import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.MatchLpEstimator;
 import com.riftchallenge.riot.RankReplayService;
 import com.riftchallenge.riot.RankScoreConverter;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository.ParticipantMatchHistorySince;
-import com.riftchallenge.synchronization.RankSnapshot;
-import com.riftchallenge.synchronization.RankSnapshot.SnapshotType;
-import com.riftchallenge.synchronization.RankSnapshotRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
- * Computes the global leaderboard. Stats are per-player (grouped by PUUID) and independent of
- * which challenge(s) a player is in — someone can join several challenges, and a match they played
- * is only ever counted once even if more than one of those challenges synced it. Only runs from
- * {@link LeaderboardRefreshScheduler} 4x/day — one query per challenge participation is an
- * acceptable simplicity/performance tradeoff at the current scale; batch it if it grows.
+ * Computes the global leaderboard from data synced independently of challenges (see
+ * {@link LeaderboardAccountSyncService}) — every linked Riot account counts, regardless of
+ * whether or which challenge(s) its owner has joined. Only runs from
+ * {@link LeaderboardCacheService#refresh}, right after the account sync.
  */
 @Service
 public class LeaderboardComputationService {
@@ -45,64 +37,55 @@ public class LeaderboardComputationService {
     static final int MIN_GAMES_FOR_WIN_RATE_ROLLING = 8;
     private static final Duration ROLLING_WINDOW = Duration.ofDays(7);
 
-    private final ChallengeParticipantRepository participantRepository;
-    private final ChallengeParticipantMatchRepository matchRepository;
-    private final RankSnapshotRepository rankSnapshotRepository;
+    private final UserRiotAccountRepository userRiotAccountRepository;
+    private final LeaderboardAccountMatchRepository matchRepository;
+    private final LeaderboardAccountRankRepository rankRepository;
     private final LeaderboardProperties properties;
     private final ChampionIconUrlService championIconUrlService;
 
     public LeaderboardComputationService(
-            ChallengeParticipantRepository participantRepository,
-            ChallengeParticipantMatchRepository matchRepository,
-            RankSnapshotRepository rankSnapshotRepository,
+            UserRiotAccountRepository userRiotAccountRepository,
+            LeaderboardAccountMatchRepository matchRepository,
+            LeaderboardAccountRankRepository rankRepository,
             LeaderboardProperties properties,
             ChampionIconUrlService championIconUrlService
     ) {
-        this.participantRepository = participantRepository;
+        this.userRiotAccountRepository = userRiotAccountRepository;
         this.matchRepository = matchRepository;
-        this.rankSnapshotRepository = rankSnapshotRepository;
+        this.rankRepository = rankRepository;
         this.properties = properties;
         this.championIconUrlService = championIconUrlService;
     }
 
     public LeaderboardSnapshot compute(Instant now) {
-        List<ChallengeParticipant> participants = participantRepository.findAll();
+        List<UserRiotAccount> accounts = userRiotAccountRepository.findAll();
         Instant seasonStart = properties.seasonStartAt();
         Instant rollingStart = laterOf(seasonStart, now.minus(ROLLING_WINDOW));
 
         Map<String, PlayerRank> ranks = new HashMap<>();
-        for (ChallengeParticipant participant : participants) {
-            recordLatestRank(ranks, participant);
+        for (UserRiotAccount account : accounts) {
+            recordLatestRank(ranks, account);
         }
-
-        Map<String, List<ChallengeParticipant>> membershipsByPuuid = participants.stream()
-                .collect(Collectors.groupingBy(ChallengeParticipant::getRiotPuuid));
 
         List<ParticipantWindowStats> seasonStats = new ArrayList<>();
         List<ParticipantWindowStats> rollingStats = new ArrayList<>();
 
-        for (Map.Entry<String, List<ChallengeParticipant>> group : membershipsByPuuid.entrySet()) {
-            List<TaggedMatch> history = mergeHistoryAcrossChallenges(group.getValue(), seasonStart);
+        for (UserRiotAccount account : accounts) {
+            List<TaggedMatch> history = accountHistorySince(account.getRiotPuuid(), seasonStart);
             if (history.isEmpty()) {
                 continue;
             }
 
-            UUID primaryParticipantId = mostCommonParticipantId(history);
-            ChallengeParticipant primaryMembership = group.getValue().stream()
-                    .filter(member -> member.getId().equals(primaryParticipantId))
-                    .findFirst()
-                    .orElseGet(() -> group.getValue().get(0));
-            PlayerIdentity identity = identityOf(primaryMembership);
-            UUID primaryChallengeId = primaryMembership.getChallengeId();
-            PlayerRank rank = ranks.get(group.getKey());
+            PlayerIdentity identity = identityOf(account);
+            PlayerRank rank = ranks.get(account.getRiotPuuid());
 
-            seasonStats.add(toStats(identity, primaryParticipantId, primaryChallengeId, history, rank));
+            seasonStats.add(toStats(identity, history, rank));
 
             List<TaggedMatch> rollingHistory = history.stream()
                     .filter(match -> !match.gameStart().isBefore(rollingStart))
                     .toList();
             if (!rollingHistory.isEmpty()) {
-                rollingStats.add(toStats(identity, primaryParticipantId, primaryChallengeId, rollingHistory, rank));
+                rollingStats.add(toStats(identity, rollingHistory, rank));
             }
         }
 
@@ -113,38 +96,11 @@ public class LeaderboardComputationService {
         );
     }
 
-    /**
-     * Merges a player's match history across every challenge they've joined into one deduped,
-     * chronological list — a match synced by more than one of their challenges is only kept once.
-     */
-    private List<TaggedMatch> mergeHistoryAcrossChallenges(List<ChallengeParticipant> memberships, Instant since) {
-        Map<String, TaggedMatch> byMatchId = new LinkedHashMap<>();
-        for (ChallengeParticipant member : memberships) {
-            List<ParticipantMatchHistorySince> history = matchRepository.findHistorySince(member.getId(), since);
-            for (ParticipantMatchHistorySince row : history) {
-                byMatchId.putIfAbsent(row.getMatchId(), new TaggedMatch(
-                        row.getMatchId(),
-                        row.isWin(),
-                        row.getChampionId(),
-                        row.getChallengeId(),
-                        member.getId(),
-                        row.getGameStart()
-                ));
-            }
-        }
-        return byMatchId.values().stream()
+    private List<TaggedMatch> accountHistorySince(String riotPuuid, Instant since) {
+        return matchRepository.findHistorySince(riotPuuid, since).stream()
+                .map(row -> new TaggedMatch(row.getMatchId(), row.isWin(), row.getChampionId(), row.getGameStart()))
                 .sorted(Comparator.comparing(TaggedMatch::gameStart))
                 .toList();
-    }
-
-    /** Which challenge participation contributed the most matches — used only as display metadata. */
-    private static UUID mostCommonParticipantId(List<TaggedMatch> history) {
-        return history.stream()
-                .collect(Collectors.groupingBy(TaggedMatch::participantId, Collectors.counting()))
-                .entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElseThrow();
     }
 
     private LeaderboardWindow buildWindow(
@@ -181,34 +137,21 @@ public class LeaderboardComputationService {
         );
     }
 
-    private void recordLatestRank(Map<String, PlayerRank> ranks, ChallengeParticipant participant) {
-        RankSnapshot snapshot = rankSnapshotRepository
-                .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(participant.getId(), SnapshotType.REFRESH)
-                .or(() -> rankSnapshotRepository
-                        .findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(participant.getId(), SnapshotType.BASELINE))
-                .orElse(null);
-        if (snapshot == null) {
-            return;
-        }
-
-        PlayerRank candidate = new PlayerRank(
-                identityOf(participant),
-                snapshot.getTier(),
-                snapshot.getRankDivision(),
-                snapshot.getLeaguePoints(),
-                snapshot.getCapturedAt()
-        );
-        ranks.merge(
-                participant.getRiotPuuid(),
-                candidate,
-                (existing, incoming) -> incoming.capturedAt().isAfter(existing.capturedAt()) ? incoming : existing
-        );
+    private void recordLatestRank(Map<String, PlayerRank> ranks, UserRiotAccount account) {
+        rankRepository.findByRiotPuuid(account.getRiotPuuid()).ifPresent(snapshot -> ranks.put(
+                account.getRiotPuuid(),
+                new PlayerRank(
+                        identityOf(account),
+                        snapshot.getTier(),
+                        snapshot.getRankDivision(),
+                        snapshot.getLeaguePoints(),
+                        snapshot.getCapturedAt()
+                )
+        ));
     }
 
     private ParticipantWindowStats toStats(
             PlayerIdentity identity,
-            UUID primaryParticipantId,
-            UUID primaryChallengeId,
             List<TaggedMatch> historyAsc,
             PlayerRank rank
     ) {
@@ -233,8 +176,6 @@ public class LeaderboardComputationService {
 
         return new ParticipantWindowStats(
                 identity,
-                primaryParticipantId,
-                primaryChallengeId,
                 wins,
                 losses,
                 gamesPlayed,
@@ -263,9 +204,7 @@ public class LeaderboardComputationService {
                     championIconUrlService.buildApiPath(row.championId()),
                     row.win(),
                     lpDelta,
-                    row.gameStart(),
-                    row.challengeId(),
-                    row.participantId()
+                    row.gameStart()
             ));
         }
         return List.copyOf(newestFirst);
@@ -340,8 +279,6 @@ public class LeaderboardComputationService {
                 stats.winStreak(),
                 stats.lpGained() != null ? stats.lpGained() : 0,
                 position,
-                stats.challengeId(),
-                stats.participantId(),
                 stats.recentMatches()
         );
     }
@@ -358,18 +295,16 @@ public class LeaderboardComputationService {
                 rank.leaguePoints(),
                 0, 0, 0, 0.0, 0, 0,
                 position,
-                stats != null ? stats.challengeId() : null,
-                stats != null ? stats.participantId() : null,
                 stats != null ? stats.recentMatches() : List.of()
         );
     }
 
-    private static PlayerIdentity identityOf(ChallengeParticipant participant) {
+    private static PlayerIdentity identityOf(UserRiotAccount account) {
         return new PlayerIdentity(
-                participant.getRiotPuuid(),
-                participant.getRiotGameName(),
-                participant.getRiotTagLine(),
-                participant.getProfileIconId()
+                account.getRiotPuuid(),
+                account.getRiotGameName(),
+                account.getRiotTagLine(),
+                account.getProfileIconId()
         );
     }
 
@@ -383,21 +318,11 @@ public class LeaderboardComputationService {
     private record PlayerRank(PlayerIdentity identity, String tier, String rankDivision, int leaguePoints, Instant capturedAt) {
     }
 
-    /** A match, tagged with which of the player's challenge participations it was synced through. */
-    private record TaggedMatch(
-            String matchId,
-            boolean win,
-            Integer championId,
-            UUID challengeId,
-            UUID participantId,
-            Instant gameStart
-    ) {
+    private record TaggedMatch(String matchId, boolean win, Integer championId, Instant gameStart) {
     }
 
     private record ParticipantWindowStats(
             PlayerIdentity identity,
-            UUID participantId,
-            UUID challengeId,
             int wins,
             int losses,
             int gamesPlayed,

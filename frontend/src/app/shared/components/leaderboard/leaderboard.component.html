@@ -1,10 +1,9 @@
 <section class="leaderboard">
   <header class="leaderboard__header">
-    <h2 class="leaderboard__title">
+    <h1 class="leaderboard__title">
       <span class="leaderboard__title-prefix">{{ 'leaderboard.titlePrefix' | t }}</span>
       <span class="leaderboard__title-prefix">{{ 'leaderboard.titleMid' | t }}</span>
-      <span class="leaderboard__title-brand">{{ 'leaderboard.titleBrand' | t }}</span>
-    </h2>
+    </h1>
   </header>
 
   <div class="leaderboard__timeframe-wrap">
@@ -122,6 +121,12 @@
     </div>
 
     <div class="leaderboard__toolbar-meta">
+      @if (lastUpdatedLabel(); as lastUpdated) {
+        <div class="leaderboard__last-updated">
+          <span class="leaderboard__last-updated-label">{{ 'leaderboard.lastUpdatedLabel' | t }}</span>
+          <span class="leaderboard__last-updated-value">{{ lastUpdated }}</span>
+        </div>
+      }
       @if (countdownValue(); as countdown) {
         <div class="leaderboard__countdown" role="status" aria-live="polite">
           <span class="leaderboard__countdown-label">{{ 'leaderboard.nextRefreshLabel' | t }}</span>

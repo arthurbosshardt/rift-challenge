@@ -1,7 +1,6 @@
 package com.riftchallenge.leaderboard.dto;
 
 import java.util.List;
-import java.util.UUID;
 
 public record LeaderboardEntryResponse(
         String puuid,
@@ -19,8 +18,6 @@ public record LeaderboardEntryResponse(
         int winStreak,
         int lpGained,
         int position,
-        UUID challengeId,
-        UUID participantId,
         /** Up to 10 most recent matches in the window, newest → oldest (strip order). */
         List<LeaderboardMatchHistoryResponse> recentMatches
 ) {

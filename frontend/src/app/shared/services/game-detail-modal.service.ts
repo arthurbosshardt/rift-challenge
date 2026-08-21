@@ -3,7 +3,8 @@ import { Injectable, signal } from '@angular/core';
 export type GameDetailModalContext =
   | { type: 'account'; accountId: string }
   | { type: 'participant'; challengeId: string; participantId: string }
-  | { type: 'duo'; challengeId: string; duoId: string };
+  | { type: 'duo'; challengeId: string; duoId: string }
+  | { type: 'leaderboard'; puuid: string };
 
 @Injectable({ providedIn: 'root' })
 export class GameDetailModalService {

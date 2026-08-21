@@ -9,6 +9,7 @@ import {
   LeaderboardTimeframe,
 } from '../../../core/models/leaderboard.models';
 import { ParticipantMatchHistory } from '../../../core/models/challenge.models';
+import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
 import { formatRankLabel } from '../../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../../core/utils/record-display';
 import { copyTextToClipboard } from '../../../core/utils/clipboard';
@@ -23,7 +24,7 @@ const MIN_GAMES_FOR_WIN_RATE_FALLBACK = 20;
   selector: 'app-leaderboard',
   imports: [TranslatePipe, PlayerAvatarComponent, MatchHistoryStripComponent],
   templateUrl: './leaderboard.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './leaderboard.component.scss',
 })
 export class LeaderboardComponent implements OnInit, OnDestroy {
@@ -35,7 +36,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly refreshing = signal(false);
   protected readonly response = signal<LeaderboardResponse | null>(null);
-  protected readonly timeframe = signal<LeaderboardTimeframe>('season');
+  protected readonly timeframe = signal<LeaderboardTimeframe>('last7Days');
   protected readonly category = signal<LeaderboardCategory>('winRate');
   protected readonly nowMs = signal(Date.now());
   protected readonly copiedPuuid = signal<string | null>(null);
@@ -131,13 +132,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   }
 
   protected openGameDetail(matchId: string, entry: LeaderboardEntry): void {
-    const match = entry.recentMatches?.find((item) => item.matchId === matchId);
-    const challengeId = match?.challengeId ?? entry.challengeId;
-    const participantId = match?.participantId ?? entry.participantId;
-    if (!challengeId || !participantId) {
-      return;
-    }
-    this.gameDetailModal.open(matchId, { type: 'participant', challengeId, participantId });
+    this.gameDetailModal.open(matchId, { type: 'leaderboard', puuid: entry.puuid });
   }
 
   private isMobileHistoryViewport(): boolean {
@@ -175,6 +170,14 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
         this.error.set(this.i18n.t('leaderboard.loadError'));
       },
     });
+  }
+
+  protected lastUpdatedLabel(): string | null {
+    const response = this.response();
+    if (!response) {
+      return null;
+    }
+    return formatChallengeDateCompact(response.generatedAt, this.i18n.locale());
   }
 
   protected countdownValue(): string | null {

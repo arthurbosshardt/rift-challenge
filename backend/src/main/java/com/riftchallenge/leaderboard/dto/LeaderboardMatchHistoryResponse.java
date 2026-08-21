@@ -1,7 +1,6 @@
 package com.riftchallenge.leaderboard.dto;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public record LeaderboardMatchHistoryResponse(
         String matchId,
@@ -9,8 +8,6 @@ public record LeaderboardMatchHistoryResponse(
         String championIconUrl,
         boolean win,
         int lpDelta,
-        Instant playedAt,
-        UUID challengeId,
-        UUID participantId
+        Instant playedAt
 ) {
 }

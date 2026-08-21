@@ -12,6 +12,8 @@ import com.riftchallenge.account.AppUserRepository;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
 import com.riftchallenge.leaderboard.dto.LeaderboardWindow;
+import com.riftchallenge.match.MatchDetailService;
+import com.riftchallenge.match.dto.MatchDetailResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -38,6 +40,12 @@ class LeaderboardControllerTest {
     @Mock
     private AppUserRepository appUserRepository;
 
+    @Mock
+    private LeaderboardAccountMatchRepository accountMatchRepository;
+
+    @Mock
+    private MatchDetailService matchDetailService;
+
     private LeaderboardController controller;
 
     @BeforeEach
@@ -47,8 +55,29 @@ class LeaderboardControllerTest {
                 cacheService,
                 appUserRepository,
                 new LeaderboardProperties(Instant.parse("2026-07-29T12:00:00Z"), ADMIN_EMAIL),
+                accountMatchRepository,
+                matchDetailService,
                 clock
         );
+    }
+
+    @Test
+    void getPlayerMatchDetail_unknownMatch_throwsNotFound() {
+        when(accountMatchRepository.existsByRiotPuuidAndRiotMatchId("puuid-1", "EUW1_1")).thenReturn(false);
+
+        assertThatThrownBy(() -> controller.getPlayerMatchDetail("puuid-1", "EUW1_1"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode().value())
+                .isEqualTo(404);
+    }
+
+    @Test
+    void getPlayerMatchDetail_knownMatch_delegatesToMatchDetailService() {
+        when(accountMatchRepository.existsByRiotPuuidAndRiotMatchId("puuid-1", "EUW1_1")).thenReturn(true);
+        MatchDetailResponse expected = mock(MatchDetailResponse.class);
+        when(matchDetailService.buildMatchDetail("EUW1_1", "puuid-1")).thenReturn(expected);
+
+        assertThat(controller.getPlayerMatchDetail("puuid-1", "EUW1_1")).isEqualTo(expected);
     }
 
     @Test

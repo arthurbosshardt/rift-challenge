@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed, effect, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChallengeApiService } from '../../../core/services/challenge-api.service';
+import { LeaderboardApiService } from '../../../core/services/leaderboard-api.service';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
 import { MatchDetail, MatchItem, MatchParticipant } from '../../../core/models/challenge.models';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
@@ -26,11 +27,12 @@ const ROLE_ICON_PATHS: Record<string, string> = {
   imports: [NgTemplateOutlet, TranslatePipe, GameDetailSkeletonComponent],
   templateUrl: './game-detail-modal.component.html',
   styleUrl: './game-detail-modal.component.scss',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GameDetailModalComponent {
   protected readonly modalService = inject(GameDetailModalService);
   private readonly challengeApi = inject(ChallengeApiService);
+  private readonly leaderboardApi = inject(LeaderboardApiService);
   private readonly i18n = inject(I18nService);
   private readonly itemData = inject(ItemDataService);
 
@@ -316,7 +318,9 @@ export class GameDetailModalComponent {
         ? this.challengeApi.getAccountMatchDetail(context.accountId, matchId)
         : context.type === 'participant'
           ? this.challengeApi.getParticipantMatchDetail(context.challengeId, context.participantId, matchId)
-          : this.challengeApi.getDuoMatchDetail(context.challengeId, context.duoId, matchId);
+          : context.type === 'duo'
+            ? this.challengeApi.getDuoMatchDetail(context.challengeId, context.duoId, matchId)
+            : this.leaderboardApi.getPlayerMatchDetail(context.puuid, matchId);
 
     request$.subscribe({
       next: (detail) => {

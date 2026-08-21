@@ -22,31 +22,44 @@ public class LeaderboardCacheService {
     private static final List<Integer> REFRESH_HOURS_UTC = List.of(0, 6, 12, 18);
 
     private final LeaderboardCacheRepository cacheRepository;
+    private final LeaderboardAccountSyncService accountSyncService;
     private final LeaderboardComputationService computationService;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
     public LeaderboardCacheService(
             LeaderboardCacheRepository cacheRepository,
+            LeaderboardAccountSyncService accountSyncService,
             LeaderboardComputationService computationService,
             ObjectMapper objectMapper,
             Clock clock
     ) {
         this.cacheRepository = cacheRepository;
+        this.accountSyncService = accountSyncService;
         this.computationService = computationService;
         this.objectMapper = objectMapper;
         this.clock = clock;
     }
 
-    @Transactional
+    /** Not {@code @Transactional}: the bootstrap/stale path below can call {@link #refresh}, which must not run inside an open transaction (see its own note). */
     public LeaderboardSnapshot readOrBootstrap() {
         return cacheRepository.findById(LeaderboardCache.SINGLETON_ID)
                 .map(this::deserialize)
                 .orElseGet(() -> refresh(clock.instant()));
     }
 
-    @Transactional
+    /**
+     * Not {@code @Transactional}: the account sync makes its own Riot API calls and commits its
+     * own writes per account (see {@link LeaderboardAccountSyncService}) — wrapping this in one
+     * transaction would hold a DB connection open for the whole sync, which can run for a while.
+     */
     public LeaderboardSnapshot refresh(Instant now) {
+        accountSyncService.syncAllAccounts(now);
+        return recompute(now);
+    }
+
+    @Transactional
+    LeaderboardSnapshot recompute(Instant now) {
         LeaderboardSnapshot snapshot = computationService.compute(now);
         cacheRepository.save(new LeaderboardCache(serialize(snapshot), now));
         return snapshot;

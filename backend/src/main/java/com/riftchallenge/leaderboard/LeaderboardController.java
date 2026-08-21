@@ -5,12 +5,15 @@ import com.riftchallenge.account.AppUserRepository;
 import com.riftchallenge.authentication.AuthenticatedUserIds;
 import com.riftchallenge.leaderboard.dto.LeaderboardResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
+import com.riftchallenge.match.MatchDetailService;
+import com.riftchallenge.match.dto.MatchDetailResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,17 +26,23 @@ public class LeaderboardController {
     private final LeaderboardCacheService cacheService;
     private final AppUserRepository appUserRepository;
     private final LeaderboardProperties properties;
+    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final MatchDetailService matchDetailService;
     private final Clock clock;
 
     public LeaderboardController(
             LeaderboardCacheService cacheService,
             AppUserRepository appUserRepository,
             LeaderboardProperties properties,
+            LeaderboardAccountMatchRepository accountMatchRepository,
+            MatchDetailService matchDetailService,
             Clock clock
     ) {
         this.cacheService = cacheService;
         this.appUserRepository = appUserRepository;
         this.properties = properties;
+        this.accountMatchRepository = accountMatchRepository;
+        this.matchDetailService = matchDetailService;
         this.clock = clock;
     }
 
@@ -59,6 +68,14 @@ public class LeaderboardController {
         Instant now = clock.instant();
         LeaderboardSnapshot snapshot = cacheService.refresh(now);
         return LeaderboardResponse.from(snapshot, LeaderboardCacheService.nextRefreshAt(now), true, properties.seasonStartAt());
+    }
+
+    @GetMapping("/players/{puuid}/matches/{matchId}")
+    public MatchDetailResponse getPlayerMatchDetail(@PathVariable String puuid, @PathVariable String matchId) {
+        if (!accountMatchRepository.existsByRiotPuuidAndRiotMatchId(puuid, matchId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
+        }
+        return matchDetailService.buildMatchDetail(matchId, puuid);
     }
 
     private boolean isAdmin(Authentication authentication) {
