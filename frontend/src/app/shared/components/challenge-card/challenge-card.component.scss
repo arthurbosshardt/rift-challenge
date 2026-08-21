@@ -6,6 +6,9 @@
   --preview-item-min-height: 4.25rem;
   --preview-duo-item-min-height: calc(var(--preview-player-row-height) * 2 + 0.3125rem + 0.875rem);
   display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
   padding: 1.25rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -167,8 +170,8 @@
   flex-direction: row;
   align-items: stretch;
   gap: var(--preview-gap);
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  min-width: 0;
 }
 
 .challenge-card__preview-track--single-column {
@@ -431,7 +434,7 @@
   right: 0;
   z-index: var(--z-tooltip);
   width: max-content;
-  max-width: min(14rem, calc(100vw - 2rem));
+  max-width: min(14rem, 70vw);
   padding: 0.5rem 0.625rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
@@ -565,8 +568,8 @@
   }
 
   .challenge-card__meta-compact-dates {
-    flex: 1 0 8rem;
-    min-width: 8rem;
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 0.8125rem;
     font-weight: 500;
     line-height: 1.35;
