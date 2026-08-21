@@ -66,7 +66,7 @@ Les visiteurs non connectés voient la landing, la liste des challenges, le lead
 | **Rank estimated** | Rang/LP reconstruits à partir des matchs quand le live Riot n'est plus fiable (challenge fini, peu de games). Flag `rankEstimated`. |
 | **Share slug** | Identifiant d'URL. **UUID du challenge** (stable si on renomme). |
 | **Refresh** | Sync manuelle Riot → Postgres pour un challenge. Cooldown **2 minutes**, appliqué de façon atomique côté backend. |
-| **Leaderboard global** | Classement tous-challenges-confondus (saison + fenêtre glissante 7 jours), recalculé périodiquement et mis en cache. |
+| **Leaderboard global** | Classement tous-challenges-confondus (saison + fenêtre glissante 7 jours), recalculé périodiquement et mis en cache. « Saison » = **année ranked Riot complète** (depuis le reset de LP de janvier), pas un split — Riot ne reset **pas** les LP entre les 3 saisons internes de l'année (S1/S2/S3), donc borner à un split sous-compterait l'activité des joueurs. |
 
 Les anciennes routes `/races/...`, `/my-races`, `/public-races` redirigent vers `/challenges/...`.
 

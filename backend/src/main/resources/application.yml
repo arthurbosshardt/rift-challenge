@@ -47,7 +47,10 @@ riftchallenge:
     regional-routing: ${RIOT_REGIONAL_ROUTING:europe}
     sync-concurrency: ${RIOT_SYNC_CONCURRENCY:4}
   leaderboard:
-    # Bump at each split reset (see docs on LoL season/split dates). No code deploy needed.
-    season-start-at: ${LEADERBOARD_SEASON_START:2026-07-29T12:00:00Z}
+    # Start of the current ranked YEAR (the reset that actually zeroes LP — e.g. Jan 8 2026
+    # noon server time for Season 1 2026), not an in-year season/split boundary: Riot does not
+    # reset LP between a year's 3 seasons, so "season" here spans the whole ranked year. Bump
+    # only when Riot actually resets ranks. No code deploy needed (env var override).
+    season-start-at: ${LEADERBOARD_SEASON_START:2026-01-08T12:00:00Z}
     # Only this account sees/can use the manual refresh button.
     admin-email: ${LEADERBOARD_ADMIN_EMAIL:tanor.pro@gmail.com}
