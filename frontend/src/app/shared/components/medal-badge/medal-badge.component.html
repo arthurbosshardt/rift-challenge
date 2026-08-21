@@ -1,0 +1,43 @@
+@if (tier(); as podiumTier) {
+  <svg class="medal-badge__crest" viewBox="0 0 24 24" aria-hidden="true">
+    <defs>
+      <linearGradient [attr.id]="gradientId" x1="50%" y1="0%" x2="50%" y2="100%">
+        @switch (podiumTier) {
+          @case ('gold') {
+            <stop offset="0%" stop-color="#f2e2ad" />
+            <stop offset="40%" stop-color="#dcc88a" />
+            <stop offset="100%" stop-color="#9a7d3f" />
+          }
+          @case ('silver') {
+            <stop offset="0%" stop-color="#f0f2f5" />
+            <stop offset="40%" stop-color="#d8dde6" />
+            <stop offset="100%" stop-color="#838ba0" />
+          }
+          @case ('bronze') {
+            <stop offset="0%" stop-color="#e2b184" />
+            <stop offset="40%" stop-color="#c9956a" />
+            <stop offset="100%" stop-color="#764a2a" />
+          }
+        }
+      </linearGradient>
+      <linearGradient [attr.id]="gradientId + '-sheen'" x1="18%" y1="0%" x2="82%" y2="100%">
+        <stop offset="0%" stop-color="#fff" stop-opacity="0.45" />
+        <stop offset="55%" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <!-- 10-point sunburst seal (shorter rays). Solid / tintable. -->
+    <path
+      [attr.fill]="'url(#' + gradientId + ')'"
+      d="M12.00 3.00 L14.07 5.63 L17.29 4.72 L17.42 8.06 L20.56 9.22 L18.70 12.00 L20.56 14.78 L17.42 15.94 L17.29 19.28 L14.07 18.37 L12.00 21.00 L9.93 18.37 L6.71 19.28 L6.58 15.94 L3.44 14.78 L5.30 12.00 L3.44 9.22 L6.58 8.06 L6.71 4.72 L9.93 5.63 Z"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="5.8"
+      [attr.fill]="'url(#' + gradientId + '-sheen)'"
+    />
+  </svg>
+  <span class="medal-badge__label">{{ position() }}</span>
+} @else {
+  <span class="medal-badge__label">{{ position() }}</span>
+}

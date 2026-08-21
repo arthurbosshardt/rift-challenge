@@ -1,0 +1,74 @@
+:host {
+  display: grid;
+  place-items: center;
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-tint-strong);
+  color: var(--text-muted);
+  font-family: var(--font-brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+:host(.medal-badge--sm) {
+  width: 1.625rem;
+  height: 1.625rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+:host(.medal-badge--crest) {
+  width: 2.45rem;
+  height: 2.45rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-size: 1.05rem;
+}
+
+:host(.medal-badge--sm.medal-badge--crest) {
+  width: 2.275rem;
+  height: 2.275rem;
+  font-size: 0.9625rem;
+}
+
+:host(.medal-badge--gold) {
+  color: #4a3a12;
+  filter: drop-shadow(0 0 6px rgba(220, 187, 108, 0.55));
+}
+
+:host(.medal-badge--silver) {
+  color: #343b49;
+  filter: drop-shadow(0 0 6px rgba(168, 176, 191, 0.45));
+}
+
+:host(.medal-badge--bronze) {
+  color: #4a301c;
+  filter: drop-shadow(0 0 6px rgba(150, 96, 56, 0.45));
+}
+
+.medal-badge__crest {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.medal-badge__label {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  color: inherit;
+  line-height: 1;
+}

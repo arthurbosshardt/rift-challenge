@@ -29,6 +29,7 @@ import {
 } from '../../../core/utils/challenge-card-preview-grid';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
+import { MedalBadgeComponent } from '../medal-badge/medal-badge.component';
 import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
 import {
   ChallengeBadgeComponent,
@@ -42,7 +43,7 @@ import { HideIfTruncatedDirective } from '../../directives/hide-if-truncated.dir
 
 @Component({
   selector: 'app-challenge-card',
-  imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, ChallengeBadgeComponent, ClampTooltipDirective, HideIfTruncatedDirective],
+  imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, MedalBadgeComponent, ChallengeBadgeComponent, ClampTooltipDirective, HideIfTruncatedDirective],
   templateUrl: './challenge-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-card.component.scss',
@@ -259,22 +260,6 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
     return value > 0 ? 'challenge-card__lp--positive' : 'challenge-card__lp--negative';
   }
 
-  positionClass(position: number, eligible = true): string {
-    if (!eligible || !this.showLeaderboardPreview()) {
-      return '';
-    }
-    if (position === 1) {
-      return 'challenge-card__position--gold';
-    }
-    if (position === 2) {
-      return 'challenge-card__position--silver';
-    }
-    if (position === 3) {
-      return 'challenge-card__position--bronze';
-    }
-    return '';
-  }
-
   previewItemClass(position: number, eligible = true): string {
     if (!eligible || !this.showLeaderboardPreview()) {
       return '';
@@ -289,14 +274,6 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
       return 'challenge-card__preview-item--bronze';
     }
     return '';
-  }
-
-  duoPositionClass(duo: DuoPreview): string {
-    return this.positionClass(duo.position, duo.eligible);
-  }
-
-  participantPositionClass(participant: ParticipantPreview): string {
-    return this.positionClass(participant.position);
   }
 
   duoPreviewItemClass(duo: DuoPreview): string {

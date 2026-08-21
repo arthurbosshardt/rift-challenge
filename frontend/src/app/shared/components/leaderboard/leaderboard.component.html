@@ -192,12 +192,7 @@
               </svg>
             </span>
           }
-          <span
-            class="leaderboard__position"
-            [class.leaderboard__position--gold]="entry.position === 1"
-            [class.leaderboard__position--silver]="entry.position === 2"
-            [class.leaderboard__position--bronze]="entry.position === 3"
-          >{{ entry.position }}</span>
+          <app-medal-badge [position]="entry.position" />
           <span class="leaderboard__value">
             @switch (category()) {
               @case ('rank') {

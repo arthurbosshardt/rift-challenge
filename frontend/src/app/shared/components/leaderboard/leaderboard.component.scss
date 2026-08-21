@@ -287,35 +287,8 @@
   color: #c9956a;
 }
 
-.leaderboard__position {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.leaderboard__position--gold {
-  color: #4a3a12;
-  background: linear-gradient(180deg, #dcc88a 0%, #b8924f 100%);
-  border-color: rgba(197, 160, 89, 0.55);
-}
-
-.leaderboard__position--silver {
-  color: #343b49;
-  background: linear-gradient(180deg, #d8dde6 0%, #a8b0bf 100%);
-  border-color: rgba(196, 202, 214, 0.55);
-}
-
-.leaderboard__position--bronze {
-  color: #4a301c;
-  background: linear-gradient(180deg, #c9956a 0%, #966038 100%);
-  border-color: rgba(176, 122, 78, 0.55);
+app-medal-badge {
+  justify-self: center;
 }
 
 .leaderboard__player {
@@ -645,13 +618,13 @@
     align-self: center;
   }
 
-  .leaderboard__position {
+  app-medal-badge {
     grid-column: 1;
     grid-row: 1 / 3;
     align-self: center;
   }
 
-  .leaderboard__row--expandable .leaderboard__position {
+  .leaderboard__row--expandable app-medal-badge {
     grid-column: 2;
   }
 

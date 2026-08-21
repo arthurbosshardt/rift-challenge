@@ -267,42 +267,6 @@
   color: #d4b088;
 }
 
-.challenge-card__position {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 1.625rem;
-  height: 1.625rem;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-align: center;
-  color: var(--text-muted);
-  background: var(--surface-tint-strong);
-  border: 1px solid var(--border);
-}
-
-.challenge-card__position--gold {
-  color: #4a3a12;
-  background: linear-gradient(180deg, #dcc88a 0%, #b8924f 100%);
-  border-color: rgba(197, 160, 89, 0.55);
-  box-shadow: none;
-}
-
-.challenge-card__position--silver {
-  color: #343b49;
-  background: linear-gradient(180deg, #d8dde6 0%, #a8b0bf 100%);
-  border-color: rgba(196, 202, 214, 0.55);
-  box-shadow: none;
-}
-
-.challenge-card__position--bronze {
-  color: #4a301c;
-  background: linear-gradient(180deg, #c9956a 0%, #966038 100%);
-  border-color: rgba(176, 122, 78, 0.55);
-  box-shadow: none;
-}
-
 .challenge-card__preview-rank {
   flex-shrink: 0;
   width: var(--preview-rank-slot-size);
@@ -608,12 +572,12 @@
     column-gap: 0.5rem;
   }
 
-  .challenge-card__preview-item:has(.challenge-card__stats):not(:has(.challenge-card__position)) {
+  .challenge-card__preview-item:has(.challenge-card__stats):not(:has(app-medal-badge)) {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas: 'visual names stats';
   }
 
-  .challenge-card__preview-item:has(.challenge-card__position) {
+  .challenge-card__preview-item:has(app-medal-badge) {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas: 'position visual names stats';
   }
@@ -623,17 +587,17 @@
     grid-template-areas: 'names';
   }
 
-  .challenge-card__preview-item--duo:has(.challenge-card__stats):not(:has(.challenge-card__position)) {
+  .challenge-card__preview-item--duo:has(.challenge-card__stats):not(:has(app-medal-badge)) {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: 'names stats';
   }
 
-  .challenge-card__preview-item--duo:has(.challenge-card__position) {
+  .challenge-card__preview-item--duo:has(app-medal-badge) {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas: 'position names stats';
   }
 
-  .challenge-card__position {
+  app-medal-badge {
     grid-area: position;
   }
 

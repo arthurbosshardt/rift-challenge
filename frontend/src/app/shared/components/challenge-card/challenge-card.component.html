@@ -51,13 +51,12 @@
                           [class]="duoPreviewItemClass(duo)"
                         >
                           @if (showLeaderboardPreview()) {
-                            <span
-                              class="challenge-card__position"
-                              [class]="duoPositionClass(duo)"
+                            <app-medal-badge
+                              size="sm"
+                              [position]="duo.position"
+                              [eligible]="duo.eligible"
                               aria-hidden="true"
-                            >
-                              {{ duo.position }}
-                            </span>
+                            />
                           }
                           <div class="challenge-card__preview-text challenge-card__preview-text--duo">
                             <div class="challenge-card__duo-player">
@@ -158,13 +157,11 @@
                           [class]="participantPreviewItemClass(participant)"
                         >
                           @if (showLeaderboardPreview()) {
-                            <span
-                              class="challenge-card__position"
-                              [class]="participantPositionClass(participant)"
+                            <app-medal-badge
+                              size="sm"
+                              [position]="participant.position"
                               aria-hidden="true"
-                            >
-                              {{ participant.position }}
-                            </span>
+                            />
                           }
                           <div class="challenge-card__preview-visual">
                             <div class="challenge-card__preview-rank">
