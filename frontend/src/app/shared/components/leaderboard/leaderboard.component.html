@@ -201,7 +201,7 @@
           <span class="leaderboard__value">
             @switch (category()) {
               @case ('rank') {
-                {{ rankLabel(entry) }}
+                <span [style.color]="rankColor(entry)">{{ rankLabel(entry) }}</span>
               }
               @case ('winRate') {
                 <span class="leaderboard__wl">

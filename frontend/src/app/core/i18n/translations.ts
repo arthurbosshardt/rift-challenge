@@ -61,7 +61,6 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'leaderboard.gamesSuffix': 'games',
     'leaderboard.expandHistoryAria': 'Afficher l\'historique des parties',
     'leaderboard.collapseHistoryAria': 'Masquer l\'historique des parties',
-    'seo.home.title': 'Défis SoloQ et DuoQ League of Legends',
     'seo.home.description':
       'Rift Challenge — défis SoloQ et DuoQ League of Legends entre amis : créez un challenge, suivez les LP et le classement en temps quasi réel.',
     'seo.publicChallenges.title': 'Les challenges',
@@ -486,7 +485,6 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'leaderboard.gamesSuffix': 'games',
     'leaderboard.expandHistoryAria': 'Show match history',
     'leaderboard.collapseHistoryAria': 'Hide match history',
-    'seo.home.title': 'League of Legends SoloQ and DuoQ challenges',
     'seo.home.description':
       'Rift Challenge — SoloQ and DuoQ League of Legends challenges with friends: create a challenge, track LP and the leaderboard near real-time.',
     'seo.publicChallenges.title': 'The challenges',

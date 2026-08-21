@@ -10,7 +10,7 @@ import {
 } from '../../../core/models/leaderboard.models';
 import { ParticipantMatchHistory } from '../../../core/models/challenge.models';
 import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
-import { formatRankLabel } from '../../../core/utils/rank-display';
+import { formatRankLabel, tierColor } from '../../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../../core/utils/record-display';
 import { copyTextToClipboard } from '../../../core/utils/clipboard';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
@@ -199,6 +199,10 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
 
   protected rankLabel(entry: LeaderboardEntry): string {
     return formatRankLabel(entry.tier, entry.rankDivision, entry.leaguePoints, this.i18n.locale());
+  }
+
+  protected rankColor(entry: LeaderboardEntry): string {
+    return tierColor(entry.tier);
   }
 
   protected hasRecord = hasPlayedRecord;

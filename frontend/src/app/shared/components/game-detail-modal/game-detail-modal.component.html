@@ -1,5 +1,5 @@
 @if (modalService.isOpen()) {
-  <div class="modal-overlay" role="dialog" aria-modal="true" [attr.aria-label]="'gameDetail.title' | t">
+  <div class="modal-overlay" role="dialog" aria-modal="true" [attr.aria-label]="'gameDetail.title' | t" (click)="close()">
     <section class="modal-panel game-detail-modal" (click)="$event.stopPropagation()">
       <button type="button" class="game-detail-modal__close" [attr.aria-label]="'auth.close' | t" (click)="close()">
         <svg viewBox="0 0 24 24" aria-hidden="true">

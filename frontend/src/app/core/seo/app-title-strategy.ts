@@ -28,9 +28,7 @@ export class AppTitleStrategy extends TitleStrategy {
 
     const path = data?.path ?? this.pathFromSnapshot(snapshot);
     const noindex = data?.noindex === true;
-    const title = data?.titleKey
-      ? `${this.i18n.t(data.titleKey)} | Rift Challenge`
-      : 'Rift Challenge — défis SoloQ et DuoQ League of Legends';
+    const title = data?.titleKey ? `${this.i18n.t(data.titleKey)} | Rift Challenge` : 'Rift Challenge';
     const description = data?.descriptionKey
       ? this.i18n.t(data.descriptionKey)
       : this.i18n.t('seo.home.description');

@@ -76,6 +76,13 @@
   align-items: start;
 }
 
+@media (min-width: 1024px) {
+  .activity-page {
+    width: 80%;
+    margin-inline: auto;
+  }
+}
+
 .activity-column__header {
   display: flex;
   align-items: center;

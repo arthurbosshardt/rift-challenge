@@ -196,7 +196,7 @@ button.linkish:focus-visible .nav-icon {
    instead of leaving a blank gap under it. */
 .shell__main-bg {
   position: absolute;
-  top: -5.5rem;
+  top: -4rem;
   /* Bleed past .shell horizontal padding so the pattern reaches the
      viewport edges on desktop and mobile. */
   right: -1.5rem;
@@ -253,10 +253,12 @@ button.linkish:focus-visible .nav-icon {
 .shell__header {
   position: relative;
   z-index: 40;
-  /* Clears the oversized logo, which overflows down past the header's
-     own box on desktop — every page's content needs this gap, not just
-     the ones that happened to be checked so far. */
-  margin-bottom: 5.5rem;
+  /* 4rem is the least clearance that still fully clears the oversized
+     logo (it overflows 4rem past the header's own box on desktop, see
+     brand-logo.component.ts) — any smaller and the logo would paint over
+     top-left page content like the challenge detail back button, since
+     the header's stacking context sits above .shell__main. */
+  margin-bottom: 4rem;
   padding-bottom: 1.25rem;
   border-bottom: none;
   /* Same visual line as a 1px border-bottom, except it stops short of the

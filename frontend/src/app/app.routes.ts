@@ -15,7 +15,6 @@ export const routes: Routes = [
       import('./features/home/landing-page.component').then((m) => m.LandingPageComponent),
     data: {
       seo: {
-        titleKey: 'seo.home.title',
         descriptionKey: 'seo.home.description',
         path: '/',
       } satisfies RouteSeoData,
@@ -27,7 +26,6 @@ export const routes: Routes = [
       import('./features/home/landing-page.component').then((m) => m.LandingPageComponent),
     data: {
       seo: {
-        titleKey: 'seo.home.title',
         descriptionKey: 'seo.home.description',
         path: '/home',
       } satisfies RouteSeoData,

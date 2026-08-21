@@ -12,16 +12,21 @@
   gap: 1rem;
   width: 100%;
   max-width: 100%;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-elevated);
   box-sizing: border-box;
 }
 
 .leaderboard__header {
   display: flex;
   justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  /* The site header already reads as the leaderboard's context — the
+     in-page "Classement SoloQ" title is only needed on mobile, where the
+     header doesn't carry that reminder. */
+  .leaderboard__header {
+    display: none;
+  }
 }
 
 .leaderboard__title {
@@ -129,7 +134,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.625rem 1rem;
 }
 
@@ -186,7 +191,6 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  margin-left: auto;
 }
 
 .leaderboard__last-updated,
@@ -543,10 +547,6 @@
 
   .leaderboard {
     gap: 0.875rem;
-    padding: 0;
-    border: none;
-    border-radius: 0;
-    background: transparent;
   }
 
   .leaderboard__title {
@@ -593,7 +593,6 @@
   }
 
   .leaderboard__toolbar-meta {
-    margin-left: 0;
     flex-wrap: wrap;
     justify-content: center;
     row-gap: 0.1875rem;
