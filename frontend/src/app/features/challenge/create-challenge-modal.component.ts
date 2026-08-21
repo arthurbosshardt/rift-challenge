@@ -44,7 +44,7 @@ type EndMode = ChallengeEndMode;
     LoaderComponent,
   ],
   templateUrl: './create-challenge-modal.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './create-challenge-modal.component.scss',
 })
 export class CreateChallengeModalComponent {

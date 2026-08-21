@@ -22,7 +22,7 @@ import { BackendStatusService } from './core/services/backend-status.service';
     SettingsModalComponent,
     GameDetailModalComponent,
   ],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template:
     '<router-outlet /><app-login-modal /><app-logout-confirm-modal /><app-create-challenge-modal /><app-edit-challenge-modal /><app-delete-challenge-confirm-modal /><app-settings-modal /><app-game-detail-modal />',
 })

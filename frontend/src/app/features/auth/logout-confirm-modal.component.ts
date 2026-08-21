@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
   selector: 'app-logout-confirm-modal',
   imports: [TranslatePipe],
   templateUrl: './logout-confirm-modal.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './logout-confirm-modal.component.scss',
 })
 export class LogoutConfirmModalComponent {

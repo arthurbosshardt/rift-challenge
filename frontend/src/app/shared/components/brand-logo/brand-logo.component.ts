@@ -15,7 +15,7 @@ export type BrandLogoSize = 'md' | 'sm' | 'lg' | 'xl' | 'modal-lg';
 
 @Component({
   selector: 'app-brand-logo',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span
       class="brand-logo-frame"

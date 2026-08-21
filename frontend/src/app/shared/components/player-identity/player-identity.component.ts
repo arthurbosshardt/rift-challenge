@@ -8,7 +8,7 @@ import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component'
   selector: 'app-player-identity',
   imports: [PlayerAvatarComponent, TranslatePipe],
   templateUrl: './player-identity.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './player-identity.component.scss',
 })
 export class PlayerIdentityComponent {

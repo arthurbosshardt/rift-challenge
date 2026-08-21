@@ -12,7 +12,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     '[style.border-radius]': 'radius()',
   },
   template: '',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './skeleton.component.scss',
 })
 export class SkeletonComponent {

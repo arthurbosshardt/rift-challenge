@@ -5,7 +5,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
   selector: 'app-match-history-skeleton',
   imports: [SkeletonComponent],
   templateUrl: './match-history-skeleton.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './match-history-skeleton.component.scss',
 })
 export class MatchHistorySkeletonComponent {

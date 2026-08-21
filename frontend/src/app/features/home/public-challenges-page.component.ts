@@ -46,7 +46,7 @@ import {
 
   templateUrl: './public-challenges-page.component.html',
 
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 
   styleUrl: './public-challenges-page.component.scss',
 

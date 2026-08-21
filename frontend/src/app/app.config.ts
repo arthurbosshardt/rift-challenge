@@ -4,6 +4,7 @@ import { provideRouter, TitleStrategy } from '@angular/router';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { retryInterceptor } from './core/interceptors/retry.interceptor';
 import { ChampionDataService } from './core/services/champion-data.service';
 import { AppTitleStrategy } from './core/seo/app-title-strategy';
 
@@ -13,6 +14,6 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(ChampionDataService).ensureLoaded()),
     provideRouter(routes),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
-    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor, retryInterceptor])),
   ],
 };

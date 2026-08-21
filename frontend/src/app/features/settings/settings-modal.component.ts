@@ -38,7 +38,7 @@ const MAX_LINKED_ACCOUNTS = 5;
     NavIconComponent,
   ],
   templateUrl: './settings-modal.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './settings-modal.component.scss',
 })
 export class SettingsModalComponent {

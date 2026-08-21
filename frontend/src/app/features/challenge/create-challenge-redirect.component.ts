@@ -6,7 +6,7 @@ import { CreateChallengeModalService } from '../../core/services/create-challeng
 @Component({
   selector: 'app-create-challenge-redirect',
   template: '',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateChallengeRedirectComponent implements OnInit {
   private readonly auth = inject(AuthService);

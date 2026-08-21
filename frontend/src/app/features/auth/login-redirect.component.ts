@@ -6,7 +6,7 @@ import { AuthModalService } from '../../core/services/auth-modal.service';
 @Component({
   selector: 'app-login-redirect',
   template: '',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginRedirectComponent implements OnInit {
   private readonly auth = inject(AuthService);

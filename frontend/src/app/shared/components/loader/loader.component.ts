@@ -15,7 +15,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
       display: block;

@@ -6,7 +6,7 @@ import { MatchHistorySkeletonComponent } from '../match-history-skeleton/match-h
   selector: 'app-leaderboard-skeleton',
   imports: [SkeletonComponent, MatchHistorySkeletonComponent],
   templateUrl: './leaderboard-skeleton.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './leaderboard-skeleton.component.scss',
 })
 export class LeaderboardSkeletonComponent {

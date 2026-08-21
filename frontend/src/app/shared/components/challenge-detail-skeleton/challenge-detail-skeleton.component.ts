@@ -6,7 +6,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
   selector: 'app-challenge-detail-skeleton',
   imports: [LeaderboardSkeletonComponent, SkeletonComponent],
   templateUrl: './challenge-detail-skeleton.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-detail-skeleton.component.scss',
 })
 export class ChallengeDetailSkeletonComponent {

@@ -7,7 +7,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
   selector: 'app-player-avatar',
   imports: [RankEmblemComponent],
   templateUrl: './player-avatar.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './player-avatar.component.scss',
 })
 export class PlayerAvatarComponent {

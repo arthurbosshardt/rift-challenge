@@ -44,7 +44,7 @@ type ParticipantInvalidField = 'riotId' | 'duoPlayer1RiotId' | 'duoPlayer2RiotId
   selector: 'app-edit-challenge-modal',
   imports: [FormsModule, TranslatePipe, PlayerIdentityComponent, ChallengeBadgeComponent, SummonerTypeaheadComponent, LoaderComponent],
   templateUrl: './edit-challenge-modal.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-challenge-modal.component.scss',
 })
 export class EditChallengeModalComponent {

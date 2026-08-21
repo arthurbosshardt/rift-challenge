@@ -6,7 +6,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
   selector: 'app-delete-challenge-confirm-modal',
   imports: [TranslatePipe],
   templateUrl: './delete-challenge-confirm-modal.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './delete-challenge-confirm-modal.component.scss',
 })
 export class DeleteChallengeConfirmModalComponent {

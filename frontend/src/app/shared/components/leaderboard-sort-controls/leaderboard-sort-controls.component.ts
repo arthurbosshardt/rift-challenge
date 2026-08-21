@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../../core/i18n/t.pipe';
   selector: 'app-leaderboard-sort-controls',
   imports: [TranslatePipe, ClampTooltipDirective],
   templateUrl: './leaderboard-sort-controls.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './leaderboard-sort-controls.component.scss',
 })
 export class LeaderboardSortControlsComponent {

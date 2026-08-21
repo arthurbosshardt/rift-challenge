@@ -26,7 +26,7 @@ import {
   imports: [TranslatePipe],
   templateUrl: './match-history-strip.component.html',
   styleUrl: './match-history-strip.component.scss',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MatchHistoryStripComponent implements AfterViewInit, OnDestroy {
   readonly soloEntries = input<ParticipantMatchHistory[]>([]);

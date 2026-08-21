@@ -44,7 +44,7 @@ import { HideIfTruncatedDirective } from '../../directives/hide-if-truncated.dir
   selector: 'app-challenge-card',
   imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, ChallengeBadgeComponent, ClampTooltipDirective, HideIfTruncatedDirective],
   templateUrl: './challenge-card.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-card.component.scss',
 })
 export class ChallengeCardComponent implements AfterViewInit, OnDestroy {

@@ -5,7 +5,7 @@ import { ChallengeCardSkeletonComponent } from '../challenge-card-skeleton/chall
   selector: 'app-challenge-list-skeleton',
   imports: [ChallengeCardSkeletonComponent],
   templateUrl: './challenge-list-skeleton.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-list-skeleton.component.scss',
 })
 export class ChallengeListSkeletonComponent {

@@ -5,7 +5,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 @Component({
   selector: 'app-rank-emblem',
   templateUrl: './rank-emblem.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './rank-emblem.component.scss',
 })
 export class RankEmblemComponent {

@@ -5,21 +5,14 @@ import {
   linkedAccountGuard,
   rootRedirectGuard,
 } from './core/guards/home.guards';
-import { AuthCallbackPageComponent } from './features/auth/auth-callback-page.component';
-import { LoginRedirectComponent } from './features/auth/login-redirect.component';
-import { SettingsPageComponent } from './features/settings/settings-page.component';
-import { LandingPageComponent } from './features/home/landing-page.component';
-import { MyActivityPageComponent } from './features/home/my-activity-page.component';
-import { PublicChallengesPageComponent } from './features/home/public-challenges-page.component';
-import { CreateChallengeRedirectComponent } from './features/challenge/create-challenge-redirect.component';
-import { ChallengeDetailPageComponent } from './features/challenge/challenge-detail-page.component';
 import { RouteSeoData } from './core/seo/app-title-strategy';
 
 export const routes: Routes = [
   {
     path: '',
     canActivate: [rootRedirectGuard],
-    component: LandingPageComponent,
+    loadComponent: () =>
+      import('./features/home/landing-page.component').then((m) => m.LandingPageComponent),
     data: {
       seo: {
         titleKey: 'seo.home.title',
@@ -30,7 +23,8 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    component: LandingPageComponent,
+    loadComponent: () =>
+      import('./features/home/landing-page.component').then((m) => m.LandingPageComponent),
     data: {
       seo: {
         titleKey: 'seo.home.title',
@@ -45,7 +39,8 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    component: LoginRedirectComponent,
+    loadComponent: () =>
+      import('./features/auth/login-redirect.component').then((m) => m.LoginRedirectComponent),
     canActivate: [guestAuthGuard],
     data: {
       seo: {
@@ -58,7 +53,8 @@ export const routes: Routes = [
   },
   {
     path: 'auth/callback',
-    component: AuthCallbackPageComponent,
+    loadComponent: () =>
+      import('./features/auth/auth-callback-page.component').then((m) => m.AuthCallbackPageComponent),
     data: {
       seo: {
         titleKey: 'seo.auth.title',
@@ -87,7 +83,8 @@ export const routes: Routes = [
   },
   {
     path: 'my-challenges',
-    component: MyActivityPageComponent,
+    loadComponent: () =>
+      import('./features/home/my-activity-page.component').then((m) => m.MyActivityPageComponent),
     canActivate: [linkedAccountGuard],
     data: {
       seo: {
@@ -112,7 +109,8 @@ export const routes: Routes = [
   },
   {
     path: 'settings',
-    component: SettingsPageComponent,
+    loadComponent: () =>
+      import('./features/settings/settings-page.component').then((m) => m.SettingsPageComponent),
     canActivate: [authHomeGuard],
     data: {
       seo: {
@@ -125,7 +123,10 @@ export const routes: Routes = [
   },
   {
     path: 'challenges',
-    component: PublicChallengesPageComponent,
+    loadComponent: () =>
+      import('./features/home/public-challenges-page.component').then(
+        (m) => m.PublicChallengesPageComponent,
+      ),
     data: {
       seo: {
         titleKey: 'seo.publicChallenges.title',
@@ -144,7 +145,10 @@ export const routes: Routes = [
   },
   {
     path: 'challenges/new',
-    component: CreateChallengeRedirectComponent,
+    loadComponent: () =>
+      import('./features/challenge/create-challenge-redirect.component').then(
+        (m) => m.CreateChallengeRedirectComponent,
+      ),
     canActivate: [authHomeGuard],
     data: {
       seo: {
@@ -161,7 +165,10 @@ export const routes: Routes = [
   },
   {
     path: 'challenges/:shareSlug',
-    component: ChallengeDetailPageComponent,
+    loadComponent: () =>
+      import('./features/challenge/challenge-detail-page.component').then(
+        (m) => m.ChallengeDetailPageComponent,
+      ),
     data: {
       seo: {
         defer: true,

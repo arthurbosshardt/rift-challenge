@@ -6,7 +6,7 @@ import { SettingsModalService } from '../../core/services/settings-modal.service
 @Component({
   selector: 'app-settings-page',
   template: '',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsPageComponent implements OnInit {
   private readonly settingsModal = inject(SettingsModalService);

@@ -5,7 +5,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
   selector: 'app-game-detail-skeleton',
   imports: [SkeletonComponent],
   templateUrl: './game-detail-skeleton.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './game-detail-skeleton.component.scss',
 })
 export class GameDetailSkeletonComponent {

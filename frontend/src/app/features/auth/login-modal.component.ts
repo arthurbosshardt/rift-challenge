@@ -20,7 +20,7 @@ import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-log
   selector: 'app-login-modal',
   imports: [FormsModule, TranslatePipe, NavIconComponent, BrandLogoComponent],
   templateUrl: './login-modal.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './login-modal.component.scss',
 })
 export class LoginModalComponent {

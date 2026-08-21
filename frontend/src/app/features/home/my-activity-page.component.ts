@@ -39,7 +39,7 @@ type ActivityView = 'activity' | 'challenges';
     TranslatePipe,
   ],
   templateUrl: './my-activity-page.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './my-activity-page.component.scss',
 })
 export class MyActivityPageComponent implements OnInit, OnDestroy {

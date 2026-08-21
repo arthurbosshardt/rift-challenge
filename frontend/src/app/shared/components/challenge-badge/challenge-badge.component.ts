@@ -24,7 +24,7 @@ export function challengeStatusBadgeKind(status: ChallengeStatus): ChallengeBadg
 @Component({
   selector: 'app-challenge-badge',
   templateUrl: './challenge-badge.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-badge.component.scss',
 })
 export class ChallengeBadgeComponent {

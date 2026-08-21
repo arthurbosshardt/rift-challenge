@@ -46,7 +46,7 @@ import { SeoService } from '../../core/seo/seo.service';
   selector: 'app-challenge-detail-page',
   imports: [RouterLink, PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent, ClampTooltipDirective, FitTitleWidthDirective],
   templateUrl: './challenge-detail-page.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-detail-page.component.scss',
 })
 export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
