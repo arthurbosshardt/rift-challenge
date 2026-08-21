@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { createClient, EmailOtpType, Session, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/challenge.models';
@@ -25,7 +25,7 @@ export class AuthService {
     {
       auth: {
         detectSessionInUrl: true,
-        flowType: 'pkce',
+        flowType: 'implicit',
         persistSession: true,
         autoRefreshToken: true,
       },
@@ -134,10 +134,9 @@ export class AuthService {
     await this.waitUntilReady();
 
     const callbackUrl = window.location.href;
-    const hasOAuthCode =
-      new URL(callbackUrl).searchParams.has('code') || callbackUrl.includes('access_token=');
+    const hasAuthCode = new URL(callbackUrl).searchParams.has('code');
 
-    if (hasOAuthCode) {
+    if (hasAuthCode) {
       const { data, error } = await this.supabase.auth.exchangeCodeForSession(callbackUrl);
       if (error) {
         this.session.set(null);
@@ -151,29 +150,10 @@ export class AuthService {
       return null;
     }
 
+    // Flow implicit : detectSessionInUrl a déjà consommé le fragment #access_token
+    // pendant initialize(), quel que soit le navigateur/appareil ayant ouvert le lien.
     const { data } = await this.supabase.auth.getSession();
     this.session.set(data.session);
-    return null;
-  }
-
-  /**
-   * Confirme un lien envoyé par email (inscription, invitation, etc.) via token_hash.
-   * Contrairement à exchangeCodeForSession (PKCE), ne dépend pas du navigateur/appareil
-   * qui a initié l'action : le lien peut être ouvert depuis l'appli mail ou un autre appareil.
-   */
-  async completeEmailVerification(tokenHash: string, type: EmailOtpType): Promise<string | null> {
-    await this.waitUntilReady();
-
-    const { data, error } = await this.supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-    if (error) {
-      this.session.set(null);
-      return authErrorToKey(error) ?? error.message;
-    }
-    this.touchLastSeen();
-    this.session.set(data.session);
-    if (data.session) {
-      await this.loadProfile();
-    }
     return null;
   }
 
@@ -288,8 +268,7 @@ export class AuthService {
     await this.waitUntilReady();
 
     const callbackUrl = window.location.href;
-    const hasRecoveryCode =
-      new URL(callbackUrl).searchParams.has('code') || callbackUrl.includes('access_token=');
+    const hasRecoveryCode = new URL(callbackUrl).searchParams.has('code');
 
     if (hasRecoveryCode) {
       const { data, error } = await this.supabase.auth.exchangeCodeForSession(callbackUrl);
@@ -303,9 +282,12 @@ export class AuthService {
       return null;
     }
 
+    // Flow implicit : detectSessionInUrl a déjà consommé le fragment #access_token
+    // pendant initialize(), quel que soit le navigateur/appareil ayant ouvert le lien.
     const { data } = await this.supabase.auth.getSession();
     if (data.session) {
       this.session.set(data.session);
+      window.history.replaceState({}, '', `${window.location.origin}/auth/reset-password`);
       return null;
     }
 

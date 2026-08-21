@@ -119,22 +119,14 @@ Redirect URLs Supabase (prod + dev) :
 - `https://rift-challenge.com`
 - `https://rift-challenge.com/**`
 - `https://rift-challenge.com/auth/callback`
-- `https://rift-challenge.com/auth/confirm`
 - `https://www.rift-challenge.com`
 - `https://www.rift-challenge.com/**`
 - `https://www.rift-challenge.com/auth/callback`
-- `https://www.rift-challenge.com/auth/confirm`
 - `http://localhost:4200/**` (dev local)
 
 Supabase → **Site URL** : `https://rift-challenge.com`
 
-**Template email "Confirm signup"** (Supabase → Authentication → Email Templates) : le lien par défaut (`{{ .ConfirmationURL }}`) passe par le endpoint `/auth/v1/verify` de Supabase puis redirige vers `/auth/callback?code=...` — un échange PKCE qui **échoue si le lien est ouvert dans un autre navigateur/appareil** que celui de l'inscription (appli mail, autre navigateur). Remplacer le corps du lien par :
-
-```html
-<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Confirmer mon email</a>
-```
-
-Cette route front (`/auth/confirm`) utilise `verifyOtp` côté client, indépendant du navigateur d'origine.
+> Le client Supabase utilise le flow **implicit** (pas PKCE) pour que les liens de confirmation d'email et de réinitialisation de mot de passe fonctionnent quel que soit le navigateur/appareil qui les ouvre (appli mail, etc.). Aucune modification du template email par défaut (`{{ .ConfirmationURL }}`) n'est nécessaire.
 
 ## 5. Riot API en production
 

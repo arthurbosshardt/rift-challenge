@@ -63,19 +63,6 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'auth/confirm',
-    loadComponent: () =>
-      import('./features/auth/auth-confirm-page.component').then((m) => m.AuthConfirmPageComponent),
-    data: {
-      seo: {
-        titleKey: 'seo.auth.title',
-        descriptionKey: 'seo.auth.description',
-        path: '/auth/confirm',
-        noindex: true,
-      } satisfies RouteSeoData,
-    },
-  },
-  {
     path: 'auth/reset-password',
     loadComponent: () =>
       import('./features/auth/reset-password-page.component').then((m) => m.ResetPasswordPageComponent),
