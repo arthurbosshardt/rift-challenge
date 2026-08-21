@@ -1,0 +1,270 @@
+<section class="leaderboard">
+  <header class="leaderboard__header">
+    <h2 class="leaderboard__title">
+      <span class="leaderboard__title-prefix">{{ 'leaderboard.titlePrefix' | t }}</span>
+      <span class="leaderboard__title-brand">{{ 'leaderboard.titleBrand' | t }}</span>
+    </h2>
+  </header>
+
+  <div class="leaderboard__timeframe-wrap">
+    <div class="leaderboard__timeframe" role="group" [attr.aria-label]="'leaderboard.timeframeLabel' | t">
+      <button
+        type="button"
+        class="leaderboard__timeframe-btn"
+        [class.leaderboard__timeframe-btn--active]="timeframe() === 'last7Days'"
+        (click)="setTimeframe('last7Days')"
+      >
+        <svg class="leaderboard__timeframe-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"
+            fill="currentColor"
+          />
+        </svg>
+        {{ 'leaderboard.timeframeLast7Days' | t }}
+      </button>
+      <button
+        type="button"
+        class="leaderboard__timeframe-btn"
+        [class.leaderboard__timeframe-btn--active]="timeframe() === 'season'"
+        (click)="setTimeframe('season')"
+      >
+        <svg class="leaderboard__timeframe-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M7 2v3M17 2v3M4 8h16M5 4.5h14a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        {{ 'leaderboard.timeframeSeason' | t: { year: seasonYear() } }}
+      </button>
+    </div>
+  </div>
+
+  <div class="leaderboard__toolbar">
+    <div class="leaderboard__categories" role="group" [attr.aria-label]="'leaderboard.categoryLabel' | t">
+      @if (timeframe() === 'season') {
+        <button
+          type="button"
+          class="leaderboard__category-btn"
+          [class.leaderboard__category-btn--active]="category() === 'rank'"
+          (click)="setCategory('rank')"
+        >
+          <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 2l2.4 4.8 5.4.8-3.9 3.8.9 5.3L12 14.3 7.2 16.7l.9-5.3-3.9-3.8 5.4-.8L12 2z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linejoin="round"
+            />
+          </svg>
+          {{ 'leaderboard.categoryRank' | t }}
+        </button>
+      }
+      <button
+        type="button"
+        class="leaderboard__category-btn"
+        [class.leaderboard__category-btn--active]="category() === 'winRate'"
+        (click)="setCategory('winRate')"
+      >
+        <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 19V5M4 19h16M8 16V9M12 16V7M16 16v-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        {{ 'leaderboard.categoryWinRate' | t }}
+      </button>
+      <button
+        type="button"
+        class="leaderboard__category-btn"
+        [class.leaderboard__category-btn--active]="category() === 'lpGained'"
+        (click)="setCategory('lpGained')"
+      >
+        <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 17l5-5 4 4 7-8M14 7h6v6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        {{ 'leaderboard.categoryLpGained' | t }}
+      </button>
+      <button
+        type="button"
+        class="leaderboard__category-btn"
+        [class.leaderboard__category-btn--active]="category() === 'winStreak'"
+        (click)="setCategory('winStreak')"
+      >
+        <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"
+            fill="currentColor"
+          />
+        </svg>
+        {{ 'leaderboard.categoryWinStreak' | t }}
+      </button>
+    </div>
+
+    <div class="leaderboard__toolbar-meta">
+      @if (countdownValue(); as countdown) {
+        <div class="leaderboard__countdown" role="status" aria-live="polite">
+          <span class="leaderboard__countdown-label">{{ 'leaderboard.nextRefreshLabel' | t }}</span>
+          <span class="leaderboard__countdown-value">{{ countdown }}</span>
+        </div>
+      }
+      @if (response()?.canRefresh) {
+        <button
+          type="button"
+          class="refresh-action-btn"
+          [disabled]="refreshing()"
+          [attr.aria-label]="'leaderboard.refreshAria' | t"
+          [attr.title]="'leaderboard.refreshAria' | t"
+          (click)="refresh()"
+        >
+          <svg
+            class="refresh-action-btn__icon"
+            [class.refresh-action-btn__icon--spinning]="refreshing()"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+            />
+          </svg>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="leaderboard__state">{{ 'leaderboard.loading' | t }}</p>
+  } @else if (error()) {
+    <p class="leaderboard__state leaderboard__state--error">{{ error() }}</p>
+  } @else if (entries().length === 0) {
+    <p class="leaderboard__state">{{ 'leaderboard.empty' | t }}</p>
+  } @else {
+    <ol class="leaderboard__list">
+      @for (entry of entries(); track entry.puuid) {
+        <li
+          class="leaderboard__row"
+          [class.leaderboard__row--gold]="entry.position === 1"
+          [class.leaderboard__row--silver]="entry.position === 2"
+          [class.leaderboard__row--bronze]="entry.position === 3"
+          [class.leaderboard__row--expanded]="isExpanded(entry)"
+          [class.leaderboard__row--expandable]="soloEntries(entry).length > 0"
+          [attr.aria-expanded]="soloEntries(entry).length ? isExpanded(entry) : null"
+          [attr.aria-label]="
+            soloEntries(entry).length
+              ? ((isExpanded(entry) ? 'leaderboard.collapseHistoryAria' : 'leaderboard.expandHistoryAria') | t)
+              : null
+          "
+          (click)="toggleExpanded(entry, $event)"
+        >
+          @if (soloEntries(entry).length) {
+            <span class="leaderboard__collapse" aria-hidden="true">
+              <svg class="leaderboard__collapse-icon" viewBox="0 0 24 24">
+                <path
+                  d="M6 9l6 6 6-6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+          }
+          <span
+            class="leaderboard__position"
+            [class.leaderboard__position--gold]="entry.position === 1"
+            [class.leaderboard__position--silver]="entry.position === 2"
+            [class.leaderboard__position--bronze]="entry.position === 3"
+          >{{ entry.position }}</span>
+          <span class="leaderboard__value">
+            @switch (category()) {
+              @case ('rank') {
+                {{ rankLabel(entry) }}
+              }
+              @case ('winRate') {
+                <span class="leaderboard__wl">
+                  <span [class]="'leaderboard__winrate ' + winRateClass(entry)">
+                    {{ winRateLabel(entry) }}
+                  </span>
+                  @if (hasRecord(entry.wins, entry.losses)) {
+                    <span class="leaderboard__record">
+                      <span class="leaderboard__wins">
+                        {{ entry.wins }}<span class="leaderboard__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+                      </span>
+                      <span class="leaderboard__record-sep" aria-hidden="true">/</span>
+                      <span class="leaderboard__losses">
+                        {{ entry.losses }}<span class="leaderboard__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+                      </span>
+                    </span>
+                  }
+                </span>
+              }
+              @case ('winStreak') {
+                <span class="leaderboard__tag">
+                  <span class="leaderboard__tag-value">{{ entry.winStreak }}</span>
+                  <span class="leaderboard__tag-label">{{ 'leaderboard.streakSuffix' | t }}</span>
+                </span>
+              }
+              @case ('lpGained') {
+                <span
+                  class="leaderboard__tag"
+                  [class.leaderboard__tag--positive]="entry.lpGained > 0"
+                  [class.leaderboard__tag--negative]="entry.lpGained < 0"
+                >
+                  <span class="leaderboard__tag-value">{{ lpGainedLabel(entry) }}</span>
+                </span>
+              }
+            }
+          </span>
+          @if (soloEntries(entry).length) {
+            <app-match-history-strip
+              class="leaderboard__history"
+              [soloEntries]="soloEntries(entry)"
+              (click)="$event.stopPropagation()"
+              (entryClick)="openGameDetail($event, entry)"
+            />
+          } @else {
+            <div class="leaderboard__history leaderboard__history--empty" aria-hidden="true"></div>
+          }
+          <div class="leaderboard__player">
+            <button
+              type="button"
+              class="leaderboard__name"
+              [class.leaderboard__name--copied]="copiedPuuid() === entry.puuid"
+              [attr.aria-label]="'player.copyRiotIdAria' | t: { riotId: entry.riotId }"
+              (click)="copyRiotId(entry, $event)"
+            >
+              @if (copiedPuuid() === entry.puuid) {
+                {{ 'player.copied' | t }}
+              } @else {
+                {{ entry.riotId }}
+              }
+            </button>
+            <app-player-avatar
+              class="leaderboard__avatar"
+              [profileIconId]="entry.profileIconId"
+              [gameName]="entry.gameName"
+              [tier]="entry.tier"
+              size="sm"
+            />
+          </div>
+        </li>
+      }
+    </ol>
+  }
+</section>

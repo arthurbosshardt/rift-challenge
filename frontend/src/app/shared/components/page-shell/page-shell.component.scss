@@ -184,6 +184,37 @@ button.linkish:focus-visible .nav-icon {
   z-index: 0;
 }
 
+/* Logo watermark behind the page content only — the wrapper clips just its
+   own ::before, so it can't cut off dropdowns/modals that live elsewhere in
+   .shell__main. It bleeds up by the header's margin-bottom (see
+   .shell__header below) so the pattern reaches the header's border line
+   instead of leaving a blank gap under it. */
+.shell__main-bg {
+  position: absolute;
+  top: -5.5rem;
+  /* Bleed past .shell horizontal padding so the pattern reaches the
+     viewport edges on desktop and mobile. */
+  right: -1.5rem;
+  bottom: 0;
+  left: -1.5rem;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shell__main-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* logo-pattern.svg: 576x576 tile, 2x2 cells of 288px.
+     Row1: logo / empty — Row2: empty / logo (checkerboard → diagonals).
+     Drawn at 70% so logos are 30% smaller and the repeat is tighter. */
+  background-image: url('/logo-pattern.svg');
+  background-repeat: repeat;
+  background-size: 300px;
+  opacity: 0.02;
+}
+
 .shell--centered {
   display: flex;
   flex-direction: column;
@@ -284,6 +315,15 @@ button.linkish:focus-visible .nav-icon {
   display: flex;
   flex-direction: column;
   padding-top: 4.5rem;
+}
+
+.shell--floating-nav .shell__main-bg {
+  /* Floating header is fixed and already reserves its own space via
+     padding-top above — no extra margin gap to bleed into here.
+     Horizontal padding is already 0 on this shell variant. */
+  top: 0;
+  right: 0;
+  left: 0;
 }
 
 .shell--floating-nav app-site-footer {
@@ -470,6 +510,12 @@ button.linkish:focus-visible .nav-icon {
     padding-bottom: 0;
     border-bottom: none;
     background-image: none;
+  }
+
+  .shell:not(.shell--floating-nav) .shell__main-bg {
+    top: -2.125rem;
+    right: -1rem;
+    left: -1rem;
   }
 
   .shell__header {

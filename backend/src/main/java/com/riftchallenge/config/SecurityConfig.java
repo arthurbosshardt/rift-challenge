@@ -36,6 +36,7 @@ public class SecurityConfig {
                         "/actuator/health",
                         "/api/health",
                         "/api/challenges/public",
+                        "/api/leaderboard",
                         "/api/champion-icons/**",
                         "/api/challenge-preview",
                         "/api/challenge-preview-image",

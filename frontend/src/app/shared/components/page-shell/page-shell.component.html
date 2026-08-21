@@ -145,6 +145,7 @@
   </header>
 
   <main class="shell__main" [class.shell__main--centered]="centered()">
+    <div class="shell__main-bg" aria-hidden="true"></div>
     @if (title()) {
       <div class="shell__title-row" [class.shell__title-row--brand]="brandTitle()">
         <h1>{{ title() }}</h1>

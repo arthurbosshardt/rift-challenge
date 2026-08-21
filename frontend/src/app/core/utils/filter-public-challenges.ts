@@ -5,6 +5,7 @@ export type PublicChallengeTypeFilter = 'ALL' | ChallengeType;
 export type PublicChallengeStatusFilter = 'ALL' | ChallengeStatus;
 
 export const DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER: ChallengeRegion = 'EUW';
+export const DEFAULT_PUBLIC_CHALLENGE_STATUS_FILTER: PublicChallengeStatusFilter = 'ACTIVE';
 
 export type PublicChallengeFilters = {
   challengeName: string;
@@ -81,7 +82,7 @@ export function hasActivePublicChallengeFilters(filters: PublicChallengeFilters)
     filters.challengeName.trim().length >= 3 ||
     filters.summoner.trim().length >= 3 ||
     filters.type !== 'ALL' ||
-    filters.status !== 'ALL' ||
+    filters.status !== DEFAULT_PUBLIC_CHALLENGE_STATUS_FILTER ||
     filters.region !== DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER
   );
 }

@@ -129,11 +129,12 @@ describe('filter-public-challenges', () => {
   });
 
   it('hasActivePublicChallengeFilters detects active filters', () => {
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(false);
-    expect(hasActivePublicChallengeFilters({ challengeName: 'abc', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: 'jan', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'SOLOQ', status: 'ALL', region: 'EUW' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ACTIVE', region: 'EUW' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'NA' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ACTIVE', region: 'EUW' })).toBe(false);
+    expect(hasActivePublicChallengeFilters({ challengeName: 'abc', summoner: '', type: 'ALL', status: 'ACTIVE', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: 'jan', type: 'ALL', status: 'ACTIVE', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'SOLOQ', status: 'ACTIVE', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'FINISHED', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ACTIVE', region: 'NA' })).toBe(true);
   });
 });

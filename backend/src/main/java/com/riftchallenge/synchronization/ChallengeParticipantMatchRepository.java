@@ -104,6 +104,50 @@ public interface ChallengeParticipantMatchRepository extends JpaRepository<Chall
     }
 
     @Query("""
+            SELECT rpm.riotMatchId AS matchId,
+                   rpm.win AS win,
+                   rm.gameStart AS gameStart
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm
+            WHERE rpm.participantId = :participantId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= :since
+            ORDER BY rm.gameStart ASC
+            """)
+    List<ParticipantMatchOutcomeInWindow> findOutcomesSince(
+            @Param("participantId") UUID participantId,
+            @Param("since") java.time.Instant since
+    );
+
+    @Query("""
+            SELECT rpm.riotMatchId AS matchId,
+                   rpm.win AS win,
+                   rpm.championId AS championId,
+                   rpm.challengeId AS challengeId,
+                   rm.gameStart AS gameStart
+            FROM ChallengeParticipantMatch rpm, RiotMatch rm
+            WHERE rpm.participantId = :participantId
+              AND rm.riotMatchId = rpm.riotMatchId
+              AND rm.gameStart >= :since
+            ORDER BY rm.gameStart ASC
+            """)
+    List<ParticipantMatchHistorySince> findHistorySince(
+            @Param("participantId") UUID participantId,
+            @Param("since") java.time.Instant since
+    );
+
+    interface ParticipantMatchHistorySince {
+        String getMatchId();
+
+        boolean isWin();
+
+        Integer getChampionId();
+
+        UUID getChallengeId();
+
+        java.time.Instant getGameStart();
+    }
+
+    @Query("""
             SELECT COUNT(rpm)
             FROM ChallengeParticipantMatch rpm, RiotMatch rm, Challenge c
             WHERE rpm.participantId = :participantId

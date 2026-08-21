@@ -129,17 +129,6 @@
             type="button"
             class="challenge-search__type-btn"
             appClampTooltip
-            [class.challenge-search__type-btn--active]="statusFilter() === 'ALL'"
-            (click)="setStatusFilter('ALL')"
-            [attr.aria-label]="'home.searchStatusAllAria' | t"
-          >
-            <span class="challenge-search__type-btn-surface">{{ 'home.searchStatusAll' | t }}</span>
-            <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchStatusAllHint' | t }}</span>
-          </button>
-          <button
-            type="button"
-            class="challenge-search__type-btn"
-            appClampTooltip
             [class.challenge-search__type-btn--active-not-started]="statusFilter() === 'NOT_STARTED'"
             (click)="setStatusFilter('NOT_STARTED')"
             [attr.aria-label]="'home.searchStatusNotStartedAria' | t"

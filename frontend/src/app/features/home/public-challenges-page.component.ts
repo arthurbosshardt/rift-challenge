@@ -26,6 +26,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import {
 
   DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER,
+  DEFAULT_PUBLIC_CHALLENGE_STATUS_FILTER,
 
   filterPublicChallenges,
 
@@ -84,7 +85,7 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
   protected readonly typeFilter = signal<PublicChallengeTypeFilter>('ALL');
 
-  protected readonly statusFilter = signal<PublicChallengeStatusFilter>('ALL');
+  protected readonly statusFilter = signal<PublicChallengeStatusFilter>(DEFAULT_PUBLIC_CHALLENGE_STATUS_FILTER);
 
   protected readonly regionFilter = signal<ChallengeRegion>(DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER);
 
@@ -199,7 +200,7 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
     this.typeFilter.set('ALL');
 
-    this.statusFilter.set('ALL');
+    this.statusFilter.set(DEFAULT_PUBLIC_CHALLENGE_STATUS_FILTER);
 
     this.regionFilter.set(DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER);
 

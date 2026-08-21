@@ -842,8 +842,24 @@
     max-height: 100dvh;
   }
 
+  /* Date/duration and team pill share the same top strip on desktop; on
+     narrow phones they collide when both are absolutely positioned on one
+     line. Stack them: meta on top, team banner underneath. */
+  .game-detail-modal__header-info {
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 3.25rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.75rem;
+  }
+
+  .game-detail-modal__top-banners {
+    top: 2.875rem;
+  }
+
   .game-detail-modal__body {
-    padding: 3.25rem 1rem 1rem;
+    padding: 5rem 1rem 1rem;
   }
 }
 
@@ -1046,7 +1062,8 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    padding: 3.25rem 0.5rem 0.5rem;
+    /* Extra top padding: date/duration + team banner are stacked on phones. */
+    padding: 5rem 0.5rem 0.5rem;
   }
 
   .game-detail-modal__team-switch {

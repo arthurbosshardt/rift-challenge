@@ -426,10 +426,21 @@
     width: auto;
   }
 
-  .challenge-search__field--refresh,
-  .challenge-search__field--status {
+  .challenge-search__field--refresh {
     margin-left: auto;
     justify-items: end;
+  }
+
+  .challenge-search__field--status {
+    margin-left: auto;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .challenge-search__field--status .challenge-search__label {
+    justify-self: start;
+    text-align: left;
+    width: 100%;
   }
 
   .challenge-search__field--refresh .challenge-search__label--invisible {
@@ -503,6 +514,7 @@
   .challenge-search__field--status {
     grid-area: status;
     justify-self: end;
+    justify-items: start;
   }
 
   .challenge-search__field--region {

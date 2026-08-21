@@ -1,0 +1,82 @@
+package com.riftchallenge.leaderboard;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Owns the single cached {@link LeaderboardSnapshot}. Refreshed only by
+ * {@link LeaderboardRefreshScheduler} (4x/day, passive) — there is no user-triggered refresh path.
+ */
+@Service
+public class LeaderboardCacheService {
+
+    private static final List<Integer> REFRESH_HOURS_UTC = List.of(0, 6, 12, 18);
+
+    private final LeaderboardCacheRepository cacheRepository;
+    private final LeaderboardComputationService computationService;
+    private final ObjectMapper objectMapper;
+    private final Clock clock;
+
+    public LeaderboardCacheService(
+            LeaderboardCacheRepository cacheRepository,
+            LeaderboardComputationService computationService,
+            ObjectMapper objectMapper,
+            Clock clock
+    ) {
+        this.cacheRepository = cacheRepository;
+        this.computationService = computationService;
+        this.objectMapper = objectMapper;
+        this.clock = clock;
+    }
+
+    @Transactional
+    public LeaderboardSnapshot readOrBootstrap() {
+        return cacheRepository.findById(LeaderboardCache.SINGLETON_ID)
+                .map(this::deserialize)
+                .orElseGet(() -> refresh(clock.instant()));
+    }
+
+    @Transactional
+    public LeaderboardSnapshot refresh(Instant now) {
+        LeaderboardSnapshot snapshot = computationService.compute(now);
+        cacheRepository.save(new LeaderboardCache(serialize(snapshot), now));
+        return snapshot;
+    }
+
+    static Instant nextRefreshAt(Instant now) {
+        LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        for (int hour : REFRESH_HOURS_UTC) {
+            Instant candidate = today.atTime(LocalTime.of(hour, 0)).toInstant(ZoneOffset.UTC);
+            if (candidate.isAfter(now)) {
+                return candidate;
+            }
+        }
+        return today.plusDays(1).atTime(LocalTime.of(REFRESH_HOURS_UTC.get(0), 0)).toInstant(ZoneOffset.UTC);
+    }
+
+    private String serialize(LeaderboardSnapshot snapshot) {
+        try {
+            return objectMapper.writeValueAsString(snapshot);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize leaderboard snapshot", e);
+        }
+    }
+
+    private LeaderboardSnapshot deserialize(LeaderboardCache cache) {
+        try {
+            return objectMapper.readValue(cache.getPayload(), LeaderboardSnapshot.class);
+        } catch (JsonProcessingException e) {
+            // Schema evolved (e.g. new entry fields) — recompute instead of failing the API.
+            return refresh(clock.instant());
+        }
+    }
+}

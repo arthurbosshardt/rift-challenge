@@ -4,12 +4,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { CreateChallengeModalService } from '../../core/services/create-challenge-modal.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
+import { LeaderboardComponent } from '../../shared/components/leaderboard/leaderboard.component';
 
 const ABOUT_BUBBLE_STORAGE_KEY = 'riftchallenge.home.aboutDismissed';
 
 @Component({
   selector: 'app-landing-page',
-  imports: [PageShellComponent, RouterLink, TranslatePipe],
+  imports: [PageShellComponent, RouterLink, TranslatePipe, LeaderboardComponent],
   templateUrl: './landing-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './landing-page.component.scss',
