@@ -1,6 +1,7 @@
 package com.riftchallenge.challenge;
 
 import com.riftchallenge.challenge.dto.AddDuoRequest;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotIdParser;
 import com.riftchallenge.riot.RiotLeagueClient;
@@ -95,11 +96,11 @@ public class ChallengeDuoService {
         );
 
         if (clock.instant().isBefore(challenge.getStartAt())) {
-            captureBaselineIfRanked(participant1);
-            captureBaselineIfRanked(participant2);
+            captureBaselineIfRanked(participant1, challenge.getRegion());
+            captureBaselineIfRanked(participant2, challenge.getRegion());
         }
-        participantProfileService.ensureProfileIcon(participant1.getId());
-        participantProfileService.ensureProfileIcon(participant2.getId());
+        participantProfileService.ensureProfileIcon(participant1.getId(), challenge.getRegion());
+        participantProfileService.ensureProfileIcon(participant2.getId(), challenge.getRegion());
     }
 
     @Transactional
@@ -135,9 +136,9 @@ public class ChallengeDuoService {
         }
     }
 
-    private void captureBaselineIfRanked(ChallengeParticipant participant) {
+    private void captureBaselineIfRanked(ChallengeParticipant participant, ChallengeRegion region) {
         try {
-            riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
+            riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid(), region)
                     .ifPresent(entry -> rankSnapshotRepository.save(toBaselineSnapshot(participant.getId(), entry)));
         } catch (ResponseStatusException ignored) {
             // Baseline can be captured on the first refresh if Riot is temporarily unavailable.

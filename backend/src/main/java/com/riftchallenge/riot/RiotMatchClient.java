@@ -15,24 +15,22 @@ public class RiotMatchClient {
     public static final int RANKED_SOLO_QUEUE_ID = 420;
 
     private final RestClient riotRestClient;
-    private final RiotProperties properties;
 
-    public RiotMatchClient(RestClient riotRestClient, RiotProperties properties) {
+    public RiotMatchClient(RestClient riotRestClient) {
         this.riotRestClient = riotRestClient;
-        this.properties = properties;
     }
 
-    public List<String> getRankedSoloMatchIdsSince(String puuid, long startTimeEpochSeconds) {
-        return getAllRankedSoloMatchIdsInWindow(puuid, startTimeEpochSeconds, null, 100);
+    public List<String> getRankedSoloMatchIdsSince(String puuid, long startTimeEpochSeconds, ChallengeRegion region) {
+        return getAllRankedSoloMatchIdsInWindow(puuid, startTimeEpochSeconds, null, 100, region);
     }
 
     /**
      * Most recent ranked solo/duo matches regardless of when they were played —
      * spans seasons, unlike the window-bound lookups used for challenge sync.
      */
-    public List<String> getRecentRankedSoloMatchIds(String puuid, int count) {
+    public List<String> getRecentRankedSoloMatchIds(String puuid, int count, ChallengeRegion region) {
         String url = "https://%s.api.riotgames.com/lol/match/v5/matches/by-puuid/%s/ids?queue=%d&start=0&count=%d"
-                .formatted(properties.regionalRouting(), puuid, RANKED_SOLO_QUEUE_ID, count);
+                .formatted(region.continentalRouting(), puuid, RANKED_SOLO_QUEUE_ID, count);
 
         try {
             String[] matchIds = riotRestClient.get()
@@ -57,7 +55,8 @@ public class RiotMatchClient {
             String puuid,
             long startTimeEpochSeconds,
             Long endTimeEpochSeconds,
-            int maxTotal
+            int maxTotal,
+            ChallengeRegion region
     ) {
         List<String> allMatchIds = new java.util.ArrayList<>();
         int startIndex = 0;
@@ -69,7 +68,8 @@ public class RiotMatchClient {
                     startTimeEpochSeconds,
                     endTimeEpochSeconds,
                     startIndex,
-                    pageSize
+                    pageSize,
+                    region
             );
 
             if (page.isEmpty()) {
@@ -93,11 +93,12 @@ public class RiotMatchClient {
             long startTimeEpochSeconds,
             Long endTimeEpochSeconds,
             int startIndex,
-            int count
+            int count,
+            ChallengeRegion region
     ) {
         String url = "https://%s.api.riotgames.com/lol/match/v5/matches/by-puuid/%s/ids?startTime=%d&queue=%d&start=%d&count=%d"
                 .formatted(
-                        properties.regionalRouting(),
+                        region.continentalRouting(),
                         puuid,
                         startTimeEpochSeconds,
                         RANKED_SOLO_QUEUE_ID,
@@ -128,9 +129,10 @@ public class RiotMatchClient {
         }
     }
 
+    /** Derives its own routing from the match id prefix (e.g. "EUW1_...") — self-describing, no caller region needed. */
     public RiotMatchDetailDto getMatch(String matchId) {
         String url = "https://%s.api.riotgames.com/lol/match/v5/matches/%s"
-                .formatted(properties.regionalRouting(), matchId);
+                .formatted(ChallengeRegion.fromMatchId(matchId).continentalRouting(), matchId);
 
         try {
             RiotMatchDetailDto match = riotRestClient.get()

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import com.riftchallenge.riot.ChallengeRegion;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -49,11 +50,15 @@ public class Challenge {
     @Column(name = "data_synced_at")
     private Instant dataSyncedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private ChallengeRegion region;
+
     protected Challenge() {
     }
 
     public static Challenge create(UUID ownerId, String name, ChallengeType type, Instant startAt) {
-        return create(ownerId, name, type, startAt, null, null);
+        return create(ownerId, name, type, startAt, null, null, ChallengeRegion.EUW);
     }
 
     public static Challenge create(
@@ -63,7 +68,7 @@ public class Challenge {
             Instant startAt,
             Instant endAt
     ) {
-        return create(ownerId, name, type, startAt, endAt, null);
+        return create(ownerId, name, type, startAt, endAt, null, ChallengeRegion.EUW);
     }
 
     public static Challenge create(
@@ -74,6 +79,18 @@ public class Challenge {
             Instant endAt,
             Integer maxGames
     ) {
+        return create(ownerId, name, type, startAt, endAt, maxGames, ChallengeRegion.EUW);
+    }
+
+    public static Challenge create(
+            UUID ownerId,
+            String name,
+            ChallengeType type,
+            Instant startAt,
+            Instant endAt,
+            Integer maxGames,
+            ChallengeRegion region
+    ) {
         Challenge challenge = new Challenge();
         challenge.id = UUID.randomUUID();
         challenge.ownerId = ownerId;
@@ -83,6 +100,8 @@ public class Challenge {
         challenge.endAt = endAt;
         challenge.maxGames = maxGames;
         challenge.shareSlug = challenge.id.toString();
+        // Fixed at creation, never updated afterward.
+        challenge.region = region;
         return challenge;
     }
 
@@ -112,6 +131,10 @@ public class Challenge {
 
     public ChallengeType getType() {
         return type;
+    }
+
+    public ChallengeRegion getRegion() {
+        return region;
     }
 
     public Instant getStartAt() {

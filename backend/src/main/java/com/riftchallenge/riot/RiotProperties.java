@@ -8,8 +8,10 @@ import org.springframework.validation.annotation.Validated;
 public record RiotProperties(
         String apiKey,
         String appId,
+        // Used only for account-v1 (Riot ID -> PUUID), which resolves globally regardless of
+        // which of the 3 continental clusters is queried. Per-challenge platform/continental
+        // routing lives on ChallengeRegion instead.
         String regionalRouting,
-        String platform,
         int syncConcurrency
 ) {
 }

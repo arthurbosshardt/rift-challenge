@@ -200,7 +200,8 @@ public class ChallengeService {
                 request.type(),
                 request.startAt(),
                 request.endAt(),
-                request.maxGames()
+                request.maxGames(),
+                request.region()
         );
         Challenge saved = challengeRepository.save(challenge);
         summaryCacheService.upsertOne(saved, clock.instant());
@@ -371,7 +372,7 @@ public class ChallengeService {
         if (includeMatchHistory) {
             challengeParticipants.stream()
                     .filter(participant -> participant.getProfileIconId() == null)
-                    .forEach(participant -> participantProfileService.ensureProfileIcon(participant.getId()));
+                    .forEach(participant -> participantProfileService.ensureProfileIcon(participant.getId(), challenge.getRegion()));
             challengeParticipants = participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId());
         }
 

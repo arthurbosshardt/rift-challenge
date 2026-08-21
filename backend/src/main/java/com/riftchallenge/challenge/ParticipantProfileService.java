@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotSummonerClient;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,9 @@ public class ParticipantProfileService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void ensureProfileIcon(UUID participantId) {
-        participantRepository.findById(participantId).ifPresent(this::ensureProfileIconLoaded);
+    public void ensureProfileIcon(UUID participantId, ChallengeRegion region) {
+        participantRepository.findById(participantId)
+                .ifPresent(participant -> ensureProfileIconLoaded(participant, region));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -40,13 +42,13 @@ public class ParticipantProfileService {
         });
     }
 
-    private void ensureProfileIconLoaded(ChallengeParticipant participant) {
+    private void ensureProfileIconLoaded(ChallengeParticipant participant, ChallengeRegion region) {
         if (participant.getProfileIconId() != null) {
             return;
         }
 
         try {
-            riotSummonerClient.findProfileIconId(participant.getRiotPuuid())
+            riotSummonerClient.findProfileIconId(participant.getRiotPuuid(), region)
                     .ifPresent(iconId -> {
                         participant.updateProfileIconId(iconId);
                         participantRepository.save(participant);

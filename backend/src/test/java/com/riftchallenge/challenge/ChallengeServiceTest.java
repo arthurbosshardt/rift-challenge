@@ -18,6 +18,7 @@ import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeNameRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeRequest;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.synchronization.ChallengeSyncService;
 import java.time.Clock;
 import java.time.Instant;
@@ -234,6 +235,7 @@ class ChallengeServiceTest {
                 new CreateChallengeRequest(
                         "Challenge",
                         ChallengeType.SOLOQ,
+                        ChallengeRegion.EUW,
                         NOW,
                         NOW.minusSeconds(60),
                         null
@@ -253,6 +255,7 @@ class ChallengeServiceTest {
                 new CreateChallengeRequest(
                         "Challenge",
                         ChallengeType.SOLOQ,
+                        ChallengeRegion.EUW,
                         NOW,
                         NOW.plusSeconds(3600),
                         10
@@ -272,6 +275,7 @@ class ChallengeServiceTest {
                 new CreateChallengeRequest(
                         "Challenge",
                         ChallengeType.SOLOQ,
+                        ChallengeRegion.EUW,
                         NOW,
                         null,
                         null
@@ -292,6 +296,7 @@ class ChallengeServiceTest {
                 new CreateChallengeRequest(
                         "Existing Challenge",
                         ChallengeType.SOLOQ,
+                        ChallengeRegion.EUW,
                         NOW,
                         NOW.plusSeconds(3600),
                         null
@@ -315,7 +320,7 @@ class ChallengeServiceTest {
 
         var response = challengeService.createChallenge(
                 ownerId,
-                new CreateChallengeRequest("New challenge", ChallengeType.SOLOQ, NOW, NOW.plusSeconds(3600), null)
+                new CreateChallengeRequest("New challenge", ChallengeType.SOLOQ, ChallengeRegion.EUW, NOW, NOW.plusSeconds(3600), null)
         );
 
         assertThat(response.name()).isEqualTo("New challenge");

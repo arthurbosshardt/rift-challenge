@@ -4,6 +4,7 @@ import com.riftchallenge.challenge.ParticipantProfileService;
 import com.riftchallenge.challenge.Challenge;
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeDataSyncService;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RankReplayService;
 import com.riftchallenge.riot.RankReplayService.RankState;
 import com.riftchallenge.riot.RiotLeagueClient;
@@ -98,15 +99,15 @@ public class ChallengeParticipantSyncService {
                 dataChanged = true;
             }
         } else {
-            if (ensureBaselineSnapshot(participant, now)) {
+            if (ensureBaselineSnapshot(participant, now, challenge.getRegion())) {
                 dataChanged = true;
             }
-            if (captureRefreshSnapshot(participant, now)) {
+            if (captureRefreshSnapshot(participant, now, challenge.getRegion())) {
                 dataChanged = true;
             }
         }
 
-        participantProfileService.ensureProfileIcon(participant.getId());
+        participantProfileService.ensureProfileIcon(participant.getId(), challenge.getRegion());
 
         if (dataChanged) {
             dataSyncService.touchDataSyncedAt(challenge.getId(), now);
@@ -119,7 +120,8 @@ public class ChallengeParticipantSyncService {
             return;
         }
 
-        Optional<RiotLeagueEntryDto> currentLeague = riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid());
+        Optional<RiotLeagueEntryDto> currentLeague =
+                riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid(), challenge.getRegion());
         if (currentLeague.isPresent()) {
             ensureHistoricalSnapshotsFromLeague(challenge, participant, now, currentLeague.get());
             return;
@@ -264,7 +266,8 @@ public class ChallengeParticipantSyncService {
                     participant,
                     challenge.getEndAt(),
                     now,
-                    MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY
+                    MAX_POST_CHALLENGE_MATCHES_FOR_RANK_REPLAY,
+                    challenge.getRegion()
             );
             if (!postChallengeOutcomes.complete()) {
                 log.warn(
@@ -290,12 +293,12 @@ public class ChallengeParticipantSyncService {
         return Optional.of(currentState);
     }
 
-    private boolean ensureBaselineSnapshot(ChallengeParticipant participant, Instant now) {
+    private boolean ensureBaselineSnapshot(ChallengeParticipant participant, Instant now, ChallengeRegion region) {
         if (hasBaseline(participant.getId())) {
             return false;
         }
 
-        return riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
+        return riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid(), region)
                 .map(entry -> {
                     rankSnapshotRepository.save(
                             toSnapshot(participant.getId(), now, RankSnapshot.SnapshotType.BASELINE, entry)
@@ -305,8 +308,8 @@ public class ChallengeParticipantSyncService {
                 .orElse(false);
     }
 
-    private boolean captureRefreshSnapshot(ChallengeParticipant participant, Instant now) {
-        return riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid())
+    private boolean captureRefreshSnapshot(ChallengeParticipant participant, Instant now, ChallengeRegion region) {
+        return riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid(), region)
                 .map(entry -> {
                     rankSnapshotRepository.save(
                             toSnapshot(participant.getId(), now, RankSnapshot.SnapshotType.REFRESH, entry)
@@ -336,7 +339,8 @@ public class ChallengeParticipantSyncService {
                 participant.getRiotPuuid(),
                 startEpochSeconds,
                 endEpochSeconds,
-                matchIdFetchLimit
+                matchIdFetchLimit,
+                challenge.getRegion()
         );
 
         int imported = 0;
@@ -466,7 +470,8 @@ public class ChallengeParticipantSyncService {
             ChallengeParticipant participant,
             Instant fromInclusive,
             Instant toExclusive,
-            int maxMatches
+            int maxMatches,
+            ChallengeRegion region
     ) {
         List<MatchOutcome> outcomes = new ArrayList<>();
         long startEpochSeconds = fromInclusive.getEpochSecond();
@@ -477,7 +482,8 @@ public class ChallengeParticipantSyncService {
                 participant.getRiotPuuid(),
                 startEpochSeconds,
                 endEpochSeconds,
-                maxMatches
+                maxMatches,
+                region
         );
 
         if (matchIds.size() >= maxMatches) {
@@ -618,7 +624,8 @@ public class ChallengeParticipantSyncService {
                 participant.getRiotPuuid(),
                 startEpochSeconds,
                 endEpochSeconds,
-                matchIdFetchLimit
+                matchIdFetchLimit,
+                challenge.getRegion()
         );
 
         for (String matchId : matchIds) {

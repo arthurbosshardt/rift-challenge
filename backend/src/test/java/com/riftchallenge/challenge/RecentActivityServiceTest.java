@@ -70,8 +70,8 @@ class RecentActivityServiceTest {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, "puuid-1");
         when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
-        when(riotLeagueClient.findRankedSoloEntry("puuid-1")).thenReturn(Optional.empty());
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT))
+        when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of("EUW1_1"));
         when(riotMatchLookupService.getMatch("EUW1_1")).thenReturn(
                 matchWithParticipants(new RiotMatchDetailDto.Participant("some-other-puuid", true, null, 122, "Darius"))
@@ -88,8 +88,8 @@ class RecentActivityServiceTest {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, "puuid-1");
         when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
-        when(riotLeagueClient.findRankedSoloEntry("puuid-1")).thenReturn(Optional.empty());
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT))
+        when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of("EUW1_1"));
         when(riotMatchLookupService.getMatch("EUW1_1")).thenReturn(
                 matchWithParticipants(new RiotMatchDetailDto.Participant("puuid-1", false, null, 0, ""))
@@ -107,8 +107,8 @@ class RecentActivityServiceTest {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, "puuid-1");
         when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
-        when(riotLeagueClient.findRankedSoloEntry("puuid-1")).thenReturn(Optional.empty());
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT))
+        when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of("EUW1_1", "EUW1_2"));
         when(riotMatchLookupService.getMatch("EUW1_1"))
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot match not found"));
@@ -128,11 +128,11 @@ class RecentActivityServiceTest {
         UserRiotAccount broken = linkedAccount(userId, "puuid-1");
         UserRiotAccount healthy = linkedAccount(userId, "puuid-2");
         when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(broken, healthy));
-        when(riotLeagueClient.findRankedSoloEntry("puuid-1")).thenReturn(Optional.empty());
-        when(riotLeagueClient.findRankedSoloEntry("puuid-2")).thenReturn(Optional.empty());
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT))
+        when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(riotLeagueClient.findRankedSoloEntry("puuid-2", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed"));
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-2", RecentActivityService.RECENT_GAMES_PER_ACCOUNT))
+        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-2", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of());
 
         List<AccountRecentGamesResponse> result = service.listRecentGames(userId);

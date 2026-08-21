@@ -4,6 +4,7 @@ import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
 import com.riftchallenge.challenge.dto.RecentGameResponse;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
@@ -84,7 +85,8 @@ public class RecentActivityService {
 
     private Optional<RiotLeagueEntryDto> fetchCurrentRank(UserRiotAccount account) {
         try {
-            return riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid());
+            // Linked accounts aren't region-tagged yet (unlike challenges); assumes EUW.
+            return riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid(), ChallengeRegion.EUW);
         } catch (ResponseStatusException exception) {
             log.warn(
                     "Unable to fetch current rank for account {}: {}",
@@ -98,7 +100,8 @@ public class RecentActivityService {
     private List<RecentGameResponse> fetchRecentGames(UserRiotAccount account) {
         List<String> matchIds;
         try {
-            matchIds = riotMatchClient.getRecentRankedSoloMatchIds(account.getRiotPuuid(), RECENT_GAMES_PER_ACCOUNT);
+            matchIds = riotMatchClient.getRecentRankedSoloMatchIds(
+                    account.getRiotPuuid(), RECENT_GAMES_PER_ACCOUNT, ChallengeRegion.EUW);
         } catch (ResponseStatusException exception) {
             log.warn(
                     "Unable to fetch recent match ids for account {}: {}",

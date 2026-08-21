@@ -19,9 +19,9 @@ public class RiotSummonerClient {
         this.properties = properties;
     }
 
-    public Optional<Integer> findProfileIconId(String puuid) {
+    public Optional<Integer> findProfileIconId(String puuid, ChallengeRegion region) {
         String url = "https://%s.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/%s"
-                .formatted(properties.platform(), puuid);
+                .formatted(region.platform(), puuid);
 
         try {
             RiotSummonerDto summoner = riotRestClient.get()

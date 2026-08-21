@@ -4,6 +4,7 @@ import com.riftchallenge.match.dto.MatchDetailResponse;
 import com.riftchallenge.match.dto.MatchItemResponse;
 import com.riftchallenge.match.dto.MatchParticipantResponse;
 import com.riftchallenge.match.dto.MatchTeamObjectivesResponse;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.DDragonVersions;
 import com.riftchallenge.riot.ProfileIconLoader;
@@ -55,13 +56,14 @@ public class MatchDetailService {
     public MatchDetailResponse buildMatchDetail(String matchId, String focusPuuid) {
         RiotMatchIds.requireValid(matchId);
         RiotMatchDetailDto match = riotMatchClient.getMatch(matchId);
+        ChallengeRegion region = ChallengeRegion.fromMatchId(matchId);
 
         RiotMatchDetailDto.Participant focus = match.info().participants().stream()
                 .filter(participant -> focusPuuid.equals(participant.puuid()))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found in this match"));
 
-        Map<String, RiotLeagueEntryDto> ranksByPuuid = fetchRanks(match.info().participants());
+        Map<String, RiotLeagueEntryDto> ranksByPuuid = fetchRanks(match.info().participants(), region);
 
         List<MatchParticipantResponse> myTeam = buildTeam(match, focus.teamId(), focusPuuid, ranksByPuuid);
         List<MatchParticipantResponse> enemyTeam =
@@ -103,11 +105,14 @@ public class MatchDetailService {
         return objective == null ? 0 : objective.kills();
     }
 
-    private Map<String, RiotLeagueEntryDto> fetchRanks(List<RiotMatchDetailDto.Participant> participants) {
+    private Map<String, RiotLeagueEntryDto> fetchRanks(
+            List<RiotMatchDetailDto.Participant> participants,
+            ChallengeRegion region
+    ) {
         Map<String, RiotLeagueEntryDto> ranksByPuuid = new ConcurrentHashMap<>();
         participants.parallelStream().forEach(participant -> {
             try {
-                riotLeagueClient.findRankedSoloEntry(participant.puuid())
+                riotLeagueClient.findRankedSoloEntry(participant.puuid(), region)
                         .ifPresent(entry -> ranksByPuuid.put(participant.puuid(), entry));
             } catch (ResponseStatusException exception) {
                 // Rank badges are a nice-to-have: skip a player's rank rather than failing the whole match detail.

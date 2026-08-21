@@ -2,6 +2,7 @@ package com.riftchallenge.account;
 
 import com.riftchallenge.account.dto.LinkRiotAccountRequest;
 import com.riftchallenge.account.dto.UserRiotAccountResponse;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotIdParser;
 import com.riftchallenge.riot.RiotSummonerClient;
@@ -101,7 +102,8 @@ public class UserRiotAccountService {
             }
         });
 
-        Integer profileIconId = riotSummonerClient.findProfileIconId(account.puuid()).orElse(null);
+        // Linked accounts aren't region-tagged yet (unlike challenges); assumes EUW.
+        Integer profileIconId = riotSummonerClient.findProfileIconId(account.puuid(), ChallengeRegion.EUW).orElse(null);
         boolean primaryAccount = !hasPrimary;
         UserRiotAccount saved = userRiotAccountRepository.save(
                 UserRiotAccount.create(userId, account, profileIconId, primaryAccount)
@@ -142,7 +144,7 @@ public class UserRiotAccountService {
         }
 
         try {
-            return riotSummonerClient.findProfileIconId(account.getRiotPuuid())
+            return riotSummonerClient.findProfileIconId(account.getRiotPuuid(), ChallengeRegion.EUW)
                     .map(profileIconId -> {
                         account.updateProfileIconId(profileIconId);
                         return UserRiotAccountResponse.from(userRiotAccountRepository.save(account));

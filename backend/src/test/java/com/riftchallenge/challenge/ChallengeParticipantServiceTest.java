@@ -166,7 +166,7 @@ class ChallengeParticipantServiceTest {
         when(participantRepository.existsByChallengeIdAndRiotPuuid(challengeId, "puuid-1")).thenReturn(false);
         when(participantRepository.save(org.mockito.ArgumentMatchers.any(ChallengeParticipant.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        when(riotLeagueClient.findRankedSoloEntry("puuid-1"))
+        when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed"));
 
         ParticipantResponse response = participantService.addParticipant(

@@ -1,6 +1,7 @@
 package com.riftchallenge.challenge.dto;
 
 import com.riftchallenge.challenge.Challenge;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.challenge.ChallengeType;
 import java.time.Instant;
 import java.util.List;
@@ -11,6 +12,7 @@ public record ChallengeSummaryResponse(
         String shareSlug,
         String name,
         ChallengeType type,
+        ChallengeRegion region,
         Instant startAt,
         Instant endAt,
         Integer maxGames,
@@ -35,6 +37,7 @@ public record ChallengeSummaryResponse(
                 challenge.getShareSlug(),
                 challenge.getName(),
                 challenge.getType(),
+                challenge.getRegion(),
                 challenge.getStartAt(),
                 challenge.getEndAt(),
                 challenge.getMaxGames(),

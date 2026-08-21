@@ -46,7 +46,7 @@ class UserRiotAccountServiceTest {
         when(riotAccountClient.getAccountByRiotId("Tanor", "7154")).thenReturn(account);
         when(userRiotAccountRepository.existsByUserIdAndRiotPuuid(userId, "puuid-1")).thenReturn(false);
         when(userRiotAccountRepository.findByRiotPuuid("puuid-1")).thenReturn(Optional.empty());
-        when(riotSummonerClient.findProfileIconId("puuid-1")).thenReturn(Optional.of(1234));
+        when(riotSummonerClient.findProfileIconId("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.of(1234));
         when(userRiotAccountRepository.save(any(UserRiotAccount.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -74,7 +74,7 @@ class UserRiotAccountServiceTest {
         when(riotAccountClient.getAccountByRiotId("Smurf", "EUW")).thenReturn(account);
         when(userRiotAccountRepository.existsByUserIdAndRiotPuuid(userId, "puuid-2")).thenReturn(false);
         when(userRiotAccountRepository.findByRiotPuuid("puuid-2")).thenReturn(Optional.empty());
-        when(riotSummonerClient.findProfileIconId("puuid-2")).thenReturn(Optional.of(4321));
+        when(riotSummonerClient.findProfileIconId("puuid-2", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.of(4321));
         when(userRiotAccountRepository.save(any(UserRiotAccount.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -138,7 +138,7 @@ class UserRiotAccountServiceTest {
         );
 
         when(userRiotAccountRepository.findByUserIdAndPrimaryAccountTrue(userId)).thenReturn(Optional.of(account));
-        when(riotSummonerClient.findProfileIconId("puuid-1")).thenReturn(Optional.of(5678));
+        when(riotSummonerClient.findProfileIconId("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.of(5678));
         when(userRiotAccountRepository.save(account)).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = userRiotAccountService.findLinkedAccount(userId);
@@ -160,7 +160,7 @@ class UserRiotAccountServiceTest {
         );
 
         when(userRiotAccountRepository.findByUserIdAndPrimaryAccountTrue(userId)).thenReturn(Optional.of(account));
-        when(riotSummonerClient.findProfileIconId("puuid-1"))
+        when(riotSummonerClient.findProfileIconId("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS, "rate limit"));
 
         var response = userRiotAccountService.findLinkedAccount(userId);

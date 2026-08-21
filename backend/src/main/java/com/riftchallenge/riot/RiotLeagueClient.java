@@ -23,9 +23,9 @@ public class RiotLeagueClient {
         this.properties = properties;
     }
 
-    public Optional<RiotLeagueEntryDto> findRankedSoloEntry(String puuid) {
+    public Optional<RiotLeagueEntryDto> findRankedSoloEntry(String puuid, ChallengeRegion region) {
         String url = "https://%s.api.riotgames.com/lol/league/v4/entries/by-puuid/%s"
-                .formatted(properties.platform(), puuid);
+                .formatted(region.platform(), puuid);
 
         try {
             RiotLeagueEntryDto[] entries = riotRestClient.get()
