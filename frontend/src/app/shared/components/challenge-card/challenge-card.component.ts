@@ -256,13 +256,7 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   }
 
   lpClass(value: number): string {
-    if (value > 0) {
-      return 'challenge-card__lp--positive';
-    }
-    if (value < 0) {
-      return 'challenge-card__lp--negative';
-    }
-    return 'challenge-card__lp--neutral';
+    return value > 0 ? 'challenge-card__lp--positive' : 'challenge-card__lp--negative';
   }
 
   positionClass(position: number, eligible = true): string {

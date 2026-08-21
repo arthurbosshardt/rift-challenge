@@ -45,23 +45,6 @@
 
   <div class="leaderboard__toolbar">
     <div class="leaderboard__categories" role="group" [attr.aria-label]="'leaderboard.categoryLabel' | t">
-      @if (timeframe() === 'season') {
-        <button
-          type="button"
-          class="leaderboard__category-btn"
-          [class.leaderboard__category-btn--active]="category() === 'rank'"
-          [attr.aria-label]="'leaderboard.categoryRank' | t"
-          (click)="setCategory('rank')"
-        >
-          <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7 4V2h10v2h5v3a5 5 0 0 1-5 5h-.101a7.014 7.014 0 0 1-3.899 3.899V20h3v2H8v-2h3v-2.101A7.014 7.014 0 0 1 7.101 14H7a5 5 0 0 1-5-5V4h5zm0 2H4v1a3 3 0 0 0 3 3V6zm10 0v4a3 3 0 0 0 3-3V6h-3z"
-              fill="currentColor"
-            />
-          </svg>
-          <span class="leaderboard__category-label">{{ 'leaderboard.categoryRank' | t }}</span>
-        </button>
-      }
       <button
         type="button"
         class="leaderboard__category-btn"
@@ -115,6 +98,23 @@
         </svg>
         <span class="leaderboard__category-label">{{ 'leaderboard.categoryWinStreak' | t }}</span>
       </button>
+      @if (timeframe() === 'season') {
+        <button
+          type="button"
+          class="leaderboard__category-btn"
+          [class.leaderboard__category-btn--active]="category() === 'rank'"
+          [attr.aria-label]="'leaderboard.categoryRank' | t"
+          (click)="setCategory('rank')"
+        >
+          <svg class="leaderboard__category-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 4V2h10v2h5v3a5 5 0 0 1-5 5h-.101a7.014 7.014 0 0 1-3.899 3.899V20h3v2H8v-2h3v-2.101A7.014 7.014 0 0 1 7.101 14H7a5 5 0 0 1-5-5V4h5zm0 2H4v1a3 3 0 0 0 3 3V6zm10 0v4a3 3 0 0 0 3-3V6h-3z"
+              fill="currentColor"
+            />
+          </svg>
+          <span class="leaderboard__category-label">{{ 'leaderboard.categoryRank' | t }}</span>
+        </button>
+      }
     </div>
 
     <div class="leaderboard__toolbar-meta">
