@@ -14,6 +14,10 @@
       </div>
 
       <nav class="shell__nav shell__nav--primary shell__nav--desktop" aria-label="Main">
+        <a routerLink="/home" routerLinkActive="active" (click)="closeUserMenu()">
+          <app-nav-icon name="leaderboard" />
+          <span>{{ 'nav.leaderboard' | t }}</span>
+        </a>
         @if (auth.isAuthenticated() && auth.linkedAccount()) {
           <a routerLink="/my-challenges" routerLinkActive="active" (click)="closeUserMenu()">
             <app-nav-icon name="my-activity" />
@@ -46,7 +50,13 @@
             (click)="toggleUserMenu($event)"
             [attr.aria-expanded]="userMenuOpen()"
             aria-haspopup="menu"
-            [attr.aria-label]="userMenuOpen() ? ('nav.closeMenu' | t) : ('nav.openMenu' | t)"
+            [attr.aria-label]="
+              userMenuOpen()
+                ? ('nav.closeMenu' | t)
+                : auth.isAuthenticated()
+                  ? ('nav.openMenu' | t)
+                  : ('nav.login' | t)
+            "
           >
             @if (auth.isAuthenticated()) {
               @if (auth.isProfileLoading()) {
@@ -69,12 +79,22 @@
                 <span class="user-menu__label">{{ identity.label }}</span>
               }
             } @else {
-              <app-brand-logo size="sm" />
+              <app-nav-icon name="login" />
             }
           </button>
 
           @if (userMenuOpen()) {
             <div class="user-menu__dropdown" role="menu">
+              <a
+                routerLink="/home"
+                routerLinkActive="active"
+                role="menuitem"
+                class="user-menu__item user-menu__item--mobile-nav"
+                (click)="closeUserMenu()"
+              >
+                <app-nav-icon name="leaderboard" />
+                <span>{{ 'nav.leaderboard' | t }}</span>
+              </a>
               @if (auth.isAuthenticated() && auth.linkedAccount()) {
                 <a
                   routerLink="/my-challenges"
