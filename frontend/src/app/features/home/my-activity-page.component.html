@@ -202,9 +202,6 @@
                     </span>
                   </span>
                 }
-                <span class="activity-account__badge" [class.activity-account__badge--primary]="account.primary">
-                  {{ (account.primary ? 'activity.primaryAccount' : 'activity.secondaryAccount') | t }}
-                </span>
               </div>
               @if (account.matches.length > 0) {
                 <app-match-history-strip

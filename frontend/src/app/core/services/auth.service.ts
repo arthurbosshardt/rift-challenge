@@ -416,7 +416,7 @@ export class AuthService {
       const accounts = await firstValueFrom(
         this.http.get<UserRiotAccount[]>(apiUrl('/api/me/riot-accounts')),
       );
-      const account = accounts.find((item) => item.primary) ?? accounts[0];
+      const account = accounts[0];
       if (!account) {
         return null;
       }

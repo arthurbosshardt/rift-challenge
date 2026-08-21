@@ -226,45 +226,14 @@
             @if (accountsLoading()) {
               <app-settings-accounts-skeleton />
             } @else {
-              <div class="accounts-block">
-              <h4 class="accounts-block__title">{{ 'accounts.primaryTitle' | t }}</h4>
-
-              <ng-template #primaryAccountForm>
-                <form
-                  class="settings-form"
-                  [class.settings-form--invalid]="riotInvalidForm() === 'primary'"
-                  (ngSubmit)="linkPrimaryAccount()"
-                >
-                  <div class="settings-form__row settings-form__row--inline">
-                    <label>
-                      {{ 'challenge.riotId' | t }}
-                      <input
-                        name="primaryRiotId"
-                        type="text"
-                        [(ngModel)]="primaryRiotIdInput"
-                        (ngModelChange)="riotInvalidForm.set(null)"
-                        [placeholder]="'challenge.riotIdPlaceholder' | t"
-                        [disabled]="linkingPrimary()"
-                        [class.challenge-form__control--invalid]="riotInvalidForm() === 'primary'"
-                        autocomplete="off"
-                      />
-                    </label>
-                    <button type="submit" [disabled]="linkingPrimary()">
-                      {{ linkingPrimary() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
-                    </button>
-                  </div>
-                </form>
-              </ng-template>
-
-              @if (primaryAccount(); as account) {
-                <div class="linked-account linked-account--primary">
+              @if (linkedAccount(); as account) {
+                <div class="linked-account">
                   <app-player-avatar
                     [profileIconId]="account.profileIconId"
                     [gameName]="account.gameName"
                     size="md"
                   />
                   <div class="linked-account__identity">
-                    <span class="linked-account__badge">{{ 'accounts.primaryBadge' | t }}</span>
                     <strong>{{ account.gameName }}</strong>
                     <span>{{ account.riotId }}</span>
                   </div>
@@ -290,91 +259,58 @@
                   </button>
                 </div>
 
-                <ng-container *ngTemplateOutlet="primaryAccountForm" />
-              } @else {
-                <p class="settings-section__empty">{{ 'accounts.primaryEmpty' | t }}</p>
-
-                <ng-container *ngTemplateOutlet="primaryAccountForm" />
-              }
-            </div>
-
-            @if (primaryAccount()) {
-              <div class="accounts-block accounts-block--smurfs">
-                <h4 class="accounts-block__title">{{ 'accounts.smurfsTitle' | t }}</h4>
-
-                @if (smurfAccounts().length === 0) {
-                  <p class="settings-section__empty">{{ 'accounts.smurfsEmpty' | t }}</p>
-                } @else {
-                  <div class="linked-account-list">
-                    @for (account of smurfAccounts(); track account.id) {
-                      <div class="linked-account linked-account--smurf">
-                        <app-player-avatar
-                          [profileIconId]="account.profileIconId"
-                          [gameName]="account.gameName"
-                          size="md"
-                        />
-                        <div class="linked-account__identity">
-                          <span class="linked-account__badge linked-account__badge--smurf">{{
-                            'accounts.smurfBadge' | t
-                          }}</span>
-                          <strong>{{ account.gameName }}</strong>
-                          <span>{{ account.riotId }}</span>
-                        </div>
-                        <button
-                          type="button"
-                          class="linked-account__remove"
-                          (click)="unlinkAccount(account)"
-                          [disabled]="unlinkingAccountId() === account.id"
-                          [attr.aria-label]="
-                            unlinkingAccountId() === account.id
-                              ? ('accounts.unlinking' | t)
-                              : ('challenge.removeAria' | t:{ name: account.riotId })
-                          "
-                          [attr.title]="'accounts.remove' | t"
-                        >
-                          @if (unlinkingAccountId() === account.id) {
-                            <span class="linked-account__remove-loading" aria-hidden="true">…</span>
-                          } @else {
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                            </svg>
-                          }
-                        </button>
-                      </div>
-                    }
+                <form
+                  class="settings-form"
+                  [class.settings-form--invalid]="riotInvalidForm()"
+                  (ngSubmit)="submitAccountForm()"
+                >
+                  <div class="settings-form__row settings-form__row--inline">
+                    <label>
+                      {{ 'challenge.riotId' | t }}
+                      <input
+                        name="riotId"
+                        type="text"
+                        [(ngModel)]="riotIdInput"
+                        (ngModelChange)="riotInvalidForm.set(false)"
+                        [placeholder]="'challenge.riotIdPlaceholder' | t"
+                        [disabled]="linkingAccount()"
+                        [class.challenge-form__control--invalid]="riotInvalidForm()"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <button type="submit" [disabled]="linkingAccount()">
+                      {{ linkingAccount() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
+                    </button>
                   </div>
-                }
+                </form>
+              } @else {
+                <p class="settings-section__empty">{{ 'accounts.empty' | t }}</p>
 
-                @if (canAddSmurf()) {
-                  <form
-                    class="settings-form"
-                    [class.settings-form--invalid]="riotInvalidForm() === 'smurf'"
-                    (ngSubmit)="linkSmurfAccount()"
-                  >
-                    <div class="settings-form__row settings-form__row--inline">
-                      <label>
-                        {{ 'challenge.riotId' | t }}
-                        <input
-                          name="smurfRiotId"
-                          type="text"
-                          [(ngModel)]="smurfRiotIdInput"
-                          (ngModelChange)="riotInvalidForm.set(null)"
-                          [placeholder]="'challenge.riotIdPlaceholder' | t"
-                          [disabled]="linkingSmurf()"
-                          [class.challenge-form__control--invalid]="riotInvalidForm() === 'smurf'"
-                          autocomplete="off"
-                        />
-                      </label>
-                      <button type="submit" [disabled]="linkingSmurf()">
-                        {{ linkingSmurf() ? ('accounts.linking' | t) : ('accounts.linkSmurf' | t) }}
-                      </button>
-                    </div>
-                  </form>
-                } @else {
-                  <p class="settings-section__empty">{{ 'accounts.limitReached' | t }}</p>
-                }
-              </div>
-            }
+                <form
+                  class="settings-form"
+                  [class.settings-form--invalid]="riotInvalidForm()"
+                  (ngSubmit)="submitAccountForm()"
+                >
+                  <div class="settings-form__row settings-form__row--inline">
+                    <label>
+                      {{ 'challenge.riotId' | t }}
+                      <input
+                        name="riotId"
+                        type="text"
+                        [(ngModel)]="riotIdInput"
+                        (ngModelChange)="riotInvalidForm.set(false)"
+                        [placeholder]="'challenge.riotIdPlaceholder' | t"
+                        [disabled]="linkingAccount()"
+                        [class.challenge-form__control--invalid]="riotInvalidForm()"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <button type="submit" [disabled]="linkingAccount()">
+                      {{ linkingAccount() ? ('accounts.linking' | t) : ('accounts.link' | t) }}
+                    </button>
+                  </div>
+                </form>
+              }
             }
           </div>
 

@@ -7,7 +7,6 @@ import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotIdParser;
 import com.riftchallenge.riot.RiotSummonerClient;
 import com.riftchallenge.riot.dto.RiotAccountDto;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,8 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UserRiotAccountService {
-
-    static final int MAX_ACCOUNTS_PER_USER = 10;
 
     private final UserRiotAccountRepository userRiotAccountRepository;
     private final RiotAccountClient riotAccountClient;
@@ -37,22 +34,14 @@ public class UserRiotAccountService {
 
     @Transactional
     public List<UserRiotAccountResponse> listAccounts(UUID userId) {
-        return userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
-                .sorted(primaryFirst())
-                .map(this::enrichProfileIcon)
-                .toList();
+        return userRiotAccountRepository.findByUserId(userId)
+                .map(account -> List.of(enrichProfileIcon(account)))
+                .orElseGet(List::of);
     }
 
     @Transactional
     public Optional<UserRiotAccountResponse> findLinkedAccount(UUID userId) {
-        return findPrimaryAccount(userId);
-    }
-
-    @Transactional
-    public Optional<UserRiotAccountResponse> findPrimaryAccount(UUID userId) {
-        return userRiotAccountRepository.findByUserIdAndPrimaryAccountTrue(userId)
-                .or(() -> userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream().findFirst())
-                .map(this::enrichProfileIcon);
+        return userRiotAccountRepository.findByUserId(userId).map(this::enrichProfileIcon);
     }
 
     @Transactional(readOnly = true)
@@ -64,49 +53,31 @@ public class UserRiotAccountService {
 
     @Transactional(readOnly = true)
     public List<String> listLinkedPuids(UUID userId) {
-        return userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
-                .map(UserRiotAccount::getRiotPuuid)
-                .toList();
+        return userRiotAccountRepository.findByUserId(userId)
+                .map(account -> List.of(account.getRiotPuuid()))
+                .orElseGet(List::of);
     }
 
     @Transactional
     public UserRiotAccountResponse linkAccount(UUID userId, LinkRiotAccountRequest request) {
-        if (userRiotAccountRepository.countByUserId(userId) >= MAX_ACCOUNTS_PER_USER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Linked account limit reached");
-        }
-
-        boolean hasPrimary = userRiotAccountRepository.findByUserIdAndPrimaryAccountTrue(userId).isPresent();
-        if (hasPrimary && !request.smurf()) {
+        if (userRiotAccountRepository.findByUserId(userId).isPresent()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Primary account already linked. Link additional accounts as smurfs."
-            );
-        }
-        if (!hasPrimary && request.smurf()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Link a primary account before adding smurfs."
+                    "Account already linked. Unlink it before linking a new one."
             );
         }
 
         RiotIdParser.ParsedRiotId parsed = RiotIdParser.parse(request.riotId());
         RiotAccountDto account = riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
 
-        if (userRiotAccountRepository.existsByUserIdAndRiotPuuid(userId, account.puuid())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Account already linked");
-        }
-
         userRiotAccountRepository.findByRiotPuuid(account.puuid()).ifPresent(existing -> {
-            if (!existing.getUserId().equals(userId)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Account linked to another user");
-            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Account linked to another user");
         });
 
         // Linked accounts aren't region-tagged yet (unlike challenges); assumes EUW.
         Integer profileIconId = riotSummonerClient.findProfileIconId(account.puuid(), ChallengeRegion.EUW).orElse(null);
-        boolean primaryAccount = !hasPrimary;
         UserRiotAccount saved = userRiotAccountRepository.save(
-                UserRiotAccount.create(userId, account, profileIconId, primaryAccount)
+                UserRiotAccount.create(userId, account, profileIconId)
         );
         return enrichProfileIcon(saved);
     }
@@ -116,26 +87,7 @@ public class UserRiotAccountService {
         UserRiotAccount account = userRiotAccountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Linked account not found"));
 
-        if (account.isPrimaryAccount()) {
-            promoteNextSmurfToPrimary(userId, account.getId());
-        }
-
         userRiotAccountRepository.delete(account);
-    }
-
-    private void promoteNextSmurfToPrimary(UUID userId, UUID excludedAccountId) {
-        userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
-                .filter(candidate -> !candidate.getId().equals(excludedAccountId))
-                .findFirst()
-                .ifPresent(nextPrimary -> {
-                    nextPrimary.promoteToPrimary();
-                    userRiotAccountRepository.save(nextPrimary);
-                });
-    }
-
-    private Comparator<UserRiotAccount> primaryFirst() {
-        return Comparator.comparing(UserRiotAccount::isPrimaryAccount).reversed()
-                .thenComparing(UserRiotAccount::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private UserRiotAccountResponse enrichProfileIcon(UserRiotAccount account) {

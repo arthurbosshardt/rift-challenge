@@ -9,17 +9,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserRiotAccountRepository extends JpaRepository<UserRiotAccount, UUID> {
 
-    List<UserRiotAccount> findByUserIdOrderByCreatedAtAsc(UUID userId);
-
-    Optional<UserRiotAccount> findByUserIdAndPrimaryAccountTrue(UUID userId);
-
-    long countByUserId(UUID userId);
+    Optional<UserRiotAccount> findByUserId(UUID userId);
 
     Optional<UserRiotAccount> findByIdAndUserId(UUID id, UUID userId);
 
     Optional<UserRiotAccount> findByRiotPuuid(String riotPuuid);
-
-    boolean existsByUserIdAndRiotPuuid(UUID userId, String riotPuuid);
 
     @Query("""
             SELECT a

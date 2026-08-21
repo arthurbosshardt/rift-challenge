@@ -45,8 +45,7 @@ class SummonerSearchServiceTest {
         UserRiotAccount account = UserRiotAccount.create(
                 UUID.randomUUID(),
                 new RiotAccountDto("puuid-1", "Tanor", "7154"),
-                12,
-                true
+                12
         );
         when(participantRepository.searchByRiotId(eq("Tan"), any(Pageable.class))).thenReturn(List.of(participant));
         when(userRiotAccountRepository.searchByRiotId(eq("Tan"), any(Pageable.class))).thenReturn(List.of(account));

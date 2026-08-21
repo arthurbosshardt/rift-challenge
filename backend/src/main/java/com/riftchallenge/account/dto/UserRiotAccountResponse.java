@@ -8,8 +8,7 @@ public record UserRiotAccountResponse(
         String gameName,
         String tagLine,
         String riotId,
-        Integer profileIconId,
-        boolean primary
+        Integer profileIconId
 ) {
 
     public static UserRiotAccountResponse from(UserRiotAccount account) {
@@ -18,8 +17,7 @@ public record UserRiotAccountResponse(
                 account.getRiotGameName(),
                 account.getRiotTagLine(),
                 account.getRiotGameName() + "#" + account.getRiotTagLine(),
-                account.getProfileIconId(),
-                account.isPrimaryAccount()
+                account.getProfileIconId()
         );
     }
 }

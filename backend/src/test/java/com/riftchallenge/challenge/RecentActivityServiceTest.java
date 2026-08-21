@@ -54,9 +54,9 @@ class RecentActivityServiceTest {
     }
 
     @Test
-    void listRecentGames_noLinkedAccounts_returnsEmptyList() {
+    void listRecentGames_noLinkedAccount_returnsEmptyList() {
         UUID userId = UUID.randomUUID();
-        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of());
+        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
         List<AccountRecentGamesResponse> result = service.listRecentGames(userId);
 
@@ -69,7 +69,7 @@ class RecentActivityServiceTest {
     void listRecentGames_matchMissingRequestedParticipant_skipsGameInsteadOfFabricatingLoss() {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, "puuid-1");
-        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
+        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
         when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of("EUW1_1"));
@@ -87,7 +87,7 @@ class RecentActivityServiceTest {
     void listRecentGames_championIdZero_mapsToNullInsteadOfBogusIcon() {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, "puuid-1");
-        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
+        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
         when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of("EUW1_1"));
@@ -106,7 +106,7 @@ class RecentActivityServiceTest {
     void listRecentGames_oneMatchDetailFetchFails_skipsItButKeepsTheOthers() {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, "puuid-1");
-        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(account));
+        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
         when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenReturn(List.of("EUW1_1", "EUW1_2"));
@@ -122,28 +122,8 @@ class RecentActivityServiceTest {
         assertThat(result.get(0).games().get(0).championId()).isEqualTo(55);
     }
 
-    @Test
-    void listRecentGames_matchIdLookupFailsForOneAccount_stillReturnsOtherAccounts() {
-        UUID userId = UUID.randomUUID();
-        UserRiotAccount broken = linkedAccount(userId, "puuid-1");
-        UserRiotAccount healthy = linkedAccount(userId, "puuid-2");
-        when(userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId)).thenReturn(List.of(broken, healthy));
-        when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
-        when(riotLeagueClient.findRankedSoloEntry("puuid-2", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.empty());
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-1", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
-                .thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed"));
-        when(riotMatchClient.getRecentRankedSoloMatchIds("puuid-2", RecentActivityService.RECENT_GAMES_PER_ACCOUNT, com.riftchallenge.riot.ChallengeRegion.EUW))
-                .thenReturn(List.of());
-
-        List<AccountRecentGamesResponse> result = service.listRecentGames(userId);
-
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).games()).isEmpty();
-        assertThat(result.get(1).games()).isEmpty();
-    }
-
     private static UserRiotAccount linkedAccount(UUID userId, String puuid) {
-        return UserRiotAccount.create(userId, new RiotAccountDto(puuid, "Tanor", "EUW"), null, true);
+        return UserRiotAccount.create(userId, new RiotAccountDto(puuid, "Tanor", "EUW"), null);
     }
 
     private static RiotMatchDetailDto matchWithParticipants(RiotMatchDetailDto.Participant... participants) {

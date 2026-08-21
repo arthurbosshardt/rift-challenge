@@ -21,7 +21,6 @@ describe('ActivityCacheService', () => {
           gameName: 'Tanor',
           tagLine: 'EUW',
           profileIconId: 1,
-          primary: true,
           tier: 'GOLD',
           rank: 'II',
           leaguePoints: 50,

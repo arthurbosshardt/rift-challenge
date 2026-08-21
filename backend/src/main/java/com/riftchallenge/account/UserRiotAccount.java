@@ -32,9 +32,6 @@ public class UserRiotAccount {
     @Column(name = "profile_icon_id")
     private Integer profileIconId;
 
-    @Column(name = "is_primary", nullable = false)
-    private boolean primaryAccount;
-
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -49,15 +46,6 @@ public class UserRiotAccount {
     }
 
     public static UserRiotAccount create(UUID userId, RiotAccountDto account, Integer profileIconId) {
-        return create(userId, account, profileIconId, false);
-    }
-
-    public static UserRiotAccount create(
-            UUID userId,
-            RiotAccountDto account,
-            Integer profileIconId,
-            boolean primaryAccount
-    ) {
         UserRiotAccount linked = new UserRiotAccount();
         linked.id = UUID.randomUUID();
         linked.userId = userId;
@@ -65,7 +53,6 @@ public class UserRiotAccount {
         linked.riotGameName = account.gameName();
         linked.riotTagLine = account.tagLine();
         linked.profileIconId = profileIconId;
-        linked.primaryAccount = primaryAccount;
         return linked;
     }
 
@@ -111,17 +98,5 @@ public class UserRiotAccount {
 
     public void updateProfileIconId(Integer profileIconId) {
         this.profileIconId = profileIconId;
-    }
-
-    public boolean isPrimaryAccount() {
-        return primaryAccount;
-    }
-
-    public void promoteToPrimary() {
-        this.primaryAccount = true;
-    }
-
-    public void demoteFromPrimary() {
-        this.primaryAccount = false;
     }
 }

@@ -183,12 +183,10 @@ export interface UserRiotAccount {
   tagLine: string;
   riotId: string;
   profileIconId: number | null;
-  primary: boolean;
 }
 
 export interface LinkRiotAccountRequest {
   riotId: string;
-  smurf?: boolean;
 }
 
 
@@ -207,7 +205,6 @@ export interface AccountRecentGames {
   gameName: string;
   tagLine: string;
   profileIconId: number | null;
-  primary: boolean;
   tier: string | null;
   rank: string | null;
   leaguePoints: number | null;

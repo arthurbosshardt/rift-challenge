@@ -18,7 +18,6 @@ export class UserRiotAccountApiService {
   linkAccount(request: LinkRiotAccountRequest): Observable<UserRiotAccount> {
     return this.http.post<UserRiotAccount>(this.baseUrl, {
       riotId: normalizeRiotId(request.riotId),
-      smurf: request.smurf ?? false,
     });
   }
 

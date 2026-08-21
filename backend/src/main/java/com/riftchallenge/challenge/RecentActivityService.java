@@ -13,7 +13,6 @@ import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,9 +28,6 @@ public class RecentActivityService {
     static final int RECENT_GAMES_PER_ACCOUNT = 20;
 
     private static final Logger log = LoggerFactory.getLogger(RecentActivityService.class);
-    private static final Comparator<UserRiotAccount> PRIMARY_ACCOUNT_FIRST =
-            Comparator.comparing(UserRiotAccount::isPrimaryAccount).reversed()
-                    .thenComparing(UserRiotAccount::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()));
 
     private final UserRiotAccountRepository userRiotAccountRepository;
     private final RiotMatchClient riotMatchClient;
@@ -54,13 +50,11 @@ public class RecentActivityService {
     }
 
     public List<AccountRecentGamesResponse> listRecentGames(UUID userId) {
-        var accounts = userRiotAccountRepository.findByUserIdOrderByCreatedAtAsc(userId).stream()
-                .sorted(PRIMARY_ACCOUNT_FIRST)
-                .toList();
+        Optional<UserRiotAccount> account = userRiotAccountRepository.findByUserId(userId);
 
         riotMatchLookupService.beginRefreshScope();
         try {
-            return accounts.stream().map(this::toAccountResponse).toList();
+            return account.map(this::toAccountResponse).map(List::of).orElseGet(List::of);
         } finally {
             riotMatchLookupService.endRefreshScope();
         }
@@ -73,7 +67,6 @@ public class RecentActivityService {
                 account.getRiotGameName(),
                 account.getRiotTagLine(),
                 account.getProfileIconId(),
-                account.isPrimaryAccount(),
                 currentRank.map(RiotLeagueEntryDto::tier).orElse(null),
                 currentRank.map(RiotLeagueEntryDto::rank).orElse(null),
                 currentRank.map(RiotLeagueEntryDto::leaguePoints).orElse(null),

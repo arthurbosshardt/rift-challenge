@@ -8,7 +8,6 @@ public record AccountRecentGamesResponse(
         String gameName,
         String tagLine,
         Integer profileIconId,
-        boolean primary,
         String tier,
         String rank,
         Integer leaguePoints,
