@@ -77,6 +77,8 @@ class ChallengeSyncServiceTest {
 
         Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(refreshRecordService.tryClaimRefresh(challengeId, now, ChallengeSyncService.REFRESH_COOLDOWN))
+                .thenReturn(false);
         when(challengeRefreshRepository.findByChallengeId(challengeId)).thenReturn(Optional.of(
                 ChallengeRefresh.create(challengeId, Instant.parse("2026-08-16T09:59:30Z"))
         ));
@@ -134,6 +136,8 @@ class ChallengeSyncServiceTest {
 
         Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, Instant.parse("2026-08-16T09:00:00Z"));
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(refreshRecordService.tryClaimRefresh(challengeId, now, ChallengeSyncService.REFRESH_COOLDOWN))
+                .thenReturn(true);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of());
 
         challengeSyncService.refreshChallenge(challengeId);
@@ -172,6 +176,8 @@ class ChallengeSyncServiceTest {
         );
 
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
+        when(refreshRecordService.tryClaimRefresh(challengeId, now, ChallengeSyncService.REFRESH_COOLDOWN))
+                .thenReturn(true);
         when(participantRepository.findByChallengeIdOrderByCreatedAtAsc(challenge.getId())).thenReturn(List.of(first, second));
         doThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached"))
                 .when(participantSyncService)

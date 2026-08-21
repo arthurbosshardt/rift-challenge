@@ -144,14 +144,16 @@ public class ChallengeSyncService {
     }
 
     private void enforceCooldown(UUID challengeId, Instant now) {
-        challengeRefreshRepository.findByChallengeId(challengeId).ifPresent(refresh -> {
-            Instant nextAllowed = refresh.getRefreshedAt().plus(REFRESH_COOLDOWN);
-            if (now.isBefore(nextAllowed)) {
-                throw new ResponseStatusException(
-                        HttpStatus.TOO_MANY_REQUESTS,
-                        "Refresh available at " + nextAllowed
-                );
-            }
-        });
+        if (refreshRecordService.tryClaimRefresh(challengeId, now, REFRESH_COOLDOWN)) {
+            return;
+        }
+
+        Instant nextAllowed = challengeRefreshRepository.findByChallengeId(challengeId)
+                .map(refresh -> refresh.getRefreshedAt().plus(REFRESH_COOLDOWN))
+                .orElse(now);
+        throw new ResponseStatusException(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Refresh available at " + nextAllowed
+        );
     }
 }

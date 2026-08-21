@@ -43,6 +43,7 @@ public class ChallengeController {
     private final ChallengeDuoService duoService;
     private final ChallengeRefreshRequestThrottle refreshRequestThrottle;
     private final ChallengeListRefreshRequestThrottle listRefreshRequestThrottle;
+    private final ChallengeMutationRequestThrottle mutationRequestThrottle;
     private final RecentActivityService recentActivityService;
     private final RecentActivityRequestThrottle recentActivityRequestThrottle;
     private final ChallengeParticipantRepository participantRepository;
@@ -56,6 +57,7 @@ public class ChallengeController {
             ChallengeDuoService duoService,
             ChallengeRefreshRequestThrottle refreshRequestThrottle,
             ChallengeListRefreshRequestThrottle listRefreshRequestThrottle,
+            ChallengeMutationRequestThrottle mutationRequestThrottle,
             RecentActivityService recentActivityService,
             RecentActivityRequestThrottle recentActivityRequestThrottle,
             ChallengeParticipantRepository participantRepository,
@@ -68,6 +70,7 @@ public class ChallengeController {
         this.duoService = duoService;
         this.refreshRequestThrottle = refreshRequestThrottle;
         this.listRefreshRequestThrottle = listRefreshRequestThrottle;
+        this.mutationRequestThrottle = mutationRequestThrottle;
         this.recentActivityService = recentActivityService;
         this.recentActivityRequestThrottle = recentActivityRequestThrottle;
         this.participantRepository = participantRepository;
@@ -114,6 +117,7 @@ public class ChallengeController {
             @Valid @RequestBody CreateChallengeRequest request
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        mutationRequestThrottle.enforce(ownerId);
         return challengeService.createChallenge(ownerId, request);
     }
 
@@ -196,6 +200,7 @@ public class ChallengeController {
             @Valid @RequestBody AddParticipantRequest request
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        mutationRequestThrottle.enforce(ownerId);
         return participantService.addParticipant(challengeId, ownerId, request);
     }
 
@@ -207,6 +212,7 @@ public class ChallengeController {
             @Valid @RequestBody AddDuoRequest request
     ) {
         UUID ownerId = AuthenticatedUserIds.requireOwnerId(authentication);
+        mutationRequestThrottle.enforce(ownerId);
         duoService.addDuo(challengeId, ownerId, request);
     }
 
