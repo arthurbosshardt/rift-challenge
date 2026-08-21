@@ -35,6 +35,8 @@ public class LeaderboardComputationService {
     static final int MIN_GAMES_FOR_WIN_RATE = 20;
     /** Lower floor for the rolling 7-day window — a full season's worth of games isn't realistic in 7 days. */
     static final int MIN_GAMES_FOR_WIN_RATE_ROLLING = 8;
+    /** A single win isn't a "streak" — only show players on a run of 2+ consecutive wins. */
+    static final int MIN_WIN_STREAK_FOR_LEADERBOARD = 2;
     private static final Duration ROLLING_WINDOW = Duration.ofDays(7);
 
     private final UserRiotAccountRepository userRiotAccountRepository;
@@ -128,7 +130,7 @@ public class LeaderboardComputationService {
                         ranks
                 ),
                 buildStatList(
-                        stats,
+                        stats.stream().filter(s -> s.winStreak() >= MIN_WIN_STREAK_FOR_LEADERBOARD).toList(),
                         1,
                         Comparator.comparingInt(ParticipantWindowStats::winStreak).reversed(),
                         ranks

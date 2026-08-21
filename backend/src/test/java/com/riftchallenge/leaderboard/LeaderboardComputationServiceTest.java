@@ -117,13 +117,23 @@ class LeaderboardComputationServiceTest {
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
         LeaderboardEntryResponse seasonEntry = snapshot.season().byWinStreak().get(0);
-        LeaderboardEntryResponse rollingEntry = snapshot.last7Days().byWinStreak().get(0);
 
         assertThat(seasonEntry.gamesPlayed()).isEqualTo(45);
         assertThat(seasonEntry.winStreak()).isEqualTo(25);
-        assertThat(rollingEntry.gamesPlayed()).isEqualTo(20);
-        assertThat(rollingEntry.wins()).isZero();
-        assertThat(rollingEntry.winStreak()).isZero();
+        // Rolling window is all losses (streak 0) -> below the 2-win-streak floor, excluded entirely.
+        assertThat(snapshot.last7Days().byWinStreak()).isEmpty();
+    }
+
+    @Test
+    void winStreakBelowTwo_excludedFromWinStreakLeaderboard() {
+        UserRiotAccount account = account("puuid-single-win", "SingleWin", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START))
+                .thenReturn(history(false, true, false));
+
+        LeaderboardSnapshot snapshot = service.compute(NOW);
+
+        assertThat(snapshot.season().byWinStreak()).isEmpty();
     }
 
     @Test
