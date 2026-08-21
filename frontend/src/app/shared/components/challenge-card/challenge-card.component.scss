@@ -1,7 +1,7 @@
 .challenge-card {
   --preview-rank-slot-size: 28px;
   --preview-player-row-height: 2rem;
-  --preview-stat-row-lp: 0.9375rem;
+  --preview-stat-row-lp: 1.5rem;
   --preview-stat-row-wl: 1.375rem;
   --preview-item-min-height: 4.25rem;
   --preview-duo-item-min-height: calc(var(--preview-player-row-height) * 2 + 0.3125rem + 0.875rem);
@@ -413,12 +413,16 @@
 }
 
 .challenge-card__lp {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   min-height: var(--preview-stat-row-lp);
   flex-shrink: 0;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-tint-strong);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -474,17 +478,27 @@
 }
 
 .challenge-card__winrate {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-tint-strong);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .challenge-card__winrate--positive {
+  border-color: color-mix(in srgb, #7ddf8a 45%, transparent);
+  background: color-mix(in srgb, #7ddf8a 14%, transparent);
   color: #7ddf8a;
 }
 
 .challenge-card__winrate--negative {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
   color: var(--danger);
 }
 
@@ -526,10 +540,14 @@
 }
 
 .challenge-card__lp--positive {
+  border-color: color-mix(in srgb, #7ddf8a 45%, transparent);
+  background: color-mix(in srgb, #7ddf8a 14%, transparent);
   color: #6ec97d;
 }
 
 .challenge-card__lp--negative {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
   color: var(--danger);
 }
 

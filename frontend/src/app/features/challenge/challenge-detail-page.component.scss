@@ -555,7 +555,15 @@
 }
 
 .leaderboard__lp {
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-tint-strong);
+  font-size: 0.875rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -601,10 +609,14 @@
 }
 
 .leaderboard__lp--positive {
+  border-color: color-mix(in srgb, #7ddf8a 45%, transparent);
+  background: color-mix(in srgb, #7ddf8a 14%, transparent);
   color: #7ddf8a;
 }
 
 .leaderboard__lp--negative {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
   color: var(--danger);
 }
 
@@ -617,17 +629,27 @@
 }
 
 .leaderboard__winrate {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-tint-strong);
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .leaderboard__winrate--positive {
+  border-color: color-mix(in srgb, #7ddf8a 45%, transparent);
+  background: color-mix(in srgb, #7ddf8a 14%, transparent);
   color: #7ddf8a;
 }
 
 .leaderboard__winrate--negative {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
   color: var(--danger);
 }
 
