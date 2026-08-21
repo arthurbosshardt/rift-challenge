@@ -63,7 +63,7 @@ class LeaderboardComputationServiceTest {
     }
 
     @Test
-    void belowMinGamesThreshold_excludedFromRateCategories() {
+    void belowMinGamesThreshold_excludedFromWinRateOnly() {
         ChallengeParticipant belowThreshold = participant(CHALLENGE_A, "puuid-below", "Below", "EUW");
         when(participantRepository.findAll()).thenReturn(List.of(belowThreshold));
         boolean[] wins = new boolean[19];
@@ -74,8 +74,9 @@ class LeaderboardComputationServiceTest {
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
         assertThat(snapshot.season().byWinRate()).isEmpty();
-        assertThat(snapshot.season().byWinStreak()).isEmpty();
-        assertThat(snapshot.season().byLpGained()).isEmpty();
+        assertThat(snapshot.season().byWinStreak()).hasSize(1);
+        assertThat(snapshot.season().byWinStreak().get(0).winStreak()).isEqualTo(19);
+        assertThat(snapshot.season().byLpGained()).hasSize(1);
     }
 
     @Test

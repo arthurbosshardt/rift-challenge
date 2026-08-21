@@ -35,7 +35,8 @@ public class LeaderboardComputationService {
 
     static final int LEADERBOARD_SIZE = 10;
     static final int RECENT_MATCHES_SIZE = 10;
-    static final int MIN_GAMES_FOR_RATE_CATEGORIES = 20;
+    /** Minimum games required for win-rate rankings only (avoids tiny-sample spikes). */
+    static final int MIN_GAMES_FOR_WIN_RATE = 20;
     private static final Duration ROLLING_WINDOW = Duration.ofDays(7);
 
     private final ChallengeParticipantRepository participantRepository;
@@ -103,19 +104,19 @@ public class LeaderboardComputationService {
                 buildRankList(ranks, statsByPuuid),
                 buildStatList(
                         stats,
-                        MIN_GAMES_FOR_RATE_CATEGORIES,
+                        MIN_GAMES_FOR_WIN_RATE,
                         Comparator.comparingDouble(ParticipantWindowStats::winRate).reversed(),
                         ranks
                 ),
                 buildStatList(
                         stats.stream().filter(s -> s.lpGained() != null).toList(),
-                        MIN_GAMES_FOR_RATE_CATEGORIES,
+                        1,
                         Comparator.comparingInt(ParticipantWindowStats::lpGained).reversed(),
                         ranks
                 ),
                 buildStatList(
                         stats,
-                        MIN_GAMES_FOR_RATE_CATEGORIES,
+                        1,
                         Comparator.comparingInt(ParticipantWindowStats::winStreak).reversed(),
                         ranks
                 )

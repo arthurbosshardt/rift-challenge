@@ -623,4 +623,8 @@
   .leaderboard__row--expanded .leaderboard__collapse {
     color: var(--gold);
   }
+
+  .leaderboard__tag-label {
+    display: none;
+  }
 }
