@@ -167,7 +167,14 @@ public class LeaderboardAccountSyncService {
             break;
         }
 
-        accountMatchRepository.save(LeaderboardAccountMatch.create(puuid, matchId, win, championId));
+        try {
+            accountMatchRepository.save(LeaderboardAccountMatch.create(puuid, matchId, win, championId));
+        } catch (DataIntegrityViolationException exception) {
+            // Another sync pass (e.g. an overlapping admin refresh) already linked this match to
+            // this account between our existence check and this insert — already have it either way.
+            log.debug("Leaderboard match {} already linked for {}", matchId, puuid);
+            return false;
+        }
         return true;
     }
 

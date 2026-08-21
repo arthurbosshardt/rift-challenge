@@ -9,12 +9,15 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Owns the single cached {@link LeaderboardSnapshot}. Refreshed only by
- * {@link LeaderboardRefreshScheduler} (4x/day, passive) — there is no user-triggered refresh path.
+ * Owns the single cached {@link LeaderboardSnapshot}. Refreshed by
+ * {@link LeaderboardRefreshScheduler} (4x/day, passive) or the admin-only manual refresh endpoint.
  */
 @Service
 public class LeaderboardCacheService {
@@ -26,6 +29,8 @@ public class LeaderboardCacheService {
     private final LeaderboardComputationService computationService;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    /** Single instance, so an in-memory guard is enough to stop two refreshes racing on the same sync data. */
+    private final AtomicBoolean refreshing = new AtomicBoolean(false);
 
     public LeaderboardCacheService(
             LeaderboardCacheRepository cacheRepository,
@@ -52,10 +57,21 @@ public class LeaderboardCacheService {
      * Not {@code @Transactional}: the account sync makes its own Riot API calls and commits its
      * own writes per account (see {@link LeaderboardAccountSyncService}) — wrapping this in one
      * transaction would hold a DB connection open for the whole sync, which can run for a while.
+     *
+     * <p>Guarded against overlapping runs: a second refresh triggered while one is already syncing
+     * (e.g. an impatient double-click now that syncing every linked account can take a while) would
+     * otherwise race the first pass on the same accounts/matches and can fail on a unique constraint.
      */
     public LeaderboardSnapshot refresh(Instant now) {
-        accountSyncService.syncAllAccounts(now);
-        return recompute(now);
+        if (!refreshing.compareAndSet(false, true)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Leaderboard refresh already in progress");
+        }
+        try {
+            accountSyncService.syncAllAccounts(now);
+            return recompute(now);
+        } finally {
+            refreshing.set(false);
+        }
     }
 
     @Transactional
