@@ -163,6 +163,7 @@
           [class.leaderboard__row--bronze]="entry.position === 3"
           [class.leaderboard__row--expanded]="isExpanded(entry)"
           [class.leaderboard__row--expandable]="soloEntries(entry).length > 0"
+          [class.leaderboard__row--single-line]="category() === 'lpGained'"
           [attr.aria-expanded]="soloEntries(entry).length ? isExpanded(entry) : null"
           [attr.aria-label]="
             soloEntries(entry).length

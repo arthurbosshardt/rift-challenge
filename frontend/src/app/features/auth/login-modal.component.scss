@@ -186,14 +186,26 @@ label {
 }
 
 @media (max-width: 1023px) {
+  /* Center against the overlay box (not 100vw) so horizontal page overflow
+     or mobile chrome can't shove the panel off-center. `safe` falls back to
+     start when the panel is taller than the visible viewport (keyboard, etc.). */
+  :host .auth-modal.modal-overlay {
+    align-items: safe center;
+    justify-content: safe center;
+    padding: max(0.75rem, env(safe-area-inset-top, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px))
+      max(0.75rem, env(safe-area-inset-bottom, 0px))
+      max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
   .auth-modal__panel.modal-panel--wide {
     display: flex;
     flex-direction: column;
-    width: min(19rem, calc(100vw - 2.5rem));
-    max-width: min(19rem, calc(100vw - 2.5rem));
-    min-height: min(34rem, calc(100dvh - 2.5rem));
-    max-height: calc(100dvh - 2.5rem);
-    margin-inline: auto;
+    width: min(19rem, 100%);
+    max-width: 100%;
+    min-height: 0;
+    max-height: min(34rem, 100%);
+    margin: auto;
     padding: 1.625rem 1.125rem 1.875rem;
     --auth-modal-btn-height: 2.875rem;
   }

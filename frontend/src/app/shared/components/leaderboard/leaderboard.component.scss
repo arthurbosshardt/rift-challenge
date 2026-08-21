@@ -54,7 +54,7 @@
 
 .leaderboard__timeframe {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 0.25rem;
   padding: 0.25rem;
@@ -535,6 +535,26 @@
     font-size: clamp(1.0625rem, 4.5vw, 1.375rem);
   }
 
+  .leaderboard__timeframe {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .leaderboard__timeframe-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    gap: 0.3125rem;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+  }
+
+  .leaderboard__timeframe-icon {
+    width: 0.9375rem;
+    height: 0.9375rem;
+  }
+
   .leaderboard__toolbar {
     flex-direction: column;
     align-items: center;
@@ -576,38 +596,63 @@
 
 @media (max-width: 719px) {
   .leaderboard__row {
-    grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
     /* Right padding reserves space for the overlapping rank emblem. */
     padding: 0.4375rem 1.875rem 0.4375rem 0.5rem;
   }
 
   .leaderboard__row--expandable {
-    grid-template-columns: 1.5rem 1.75rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.5rem 1.75rem minmax(0, 1fr);
     cursor: pointer;
     touch-action: manipulation;
   }
 
   .leaderboard__collapse {
     display: grid;
-    order: 1;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
   }
 
   .leaderboard__position {
-    order: 2;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .leaderboard__row--expandable .leaderboard__position {
+    grid-column: 2;
   }
 
   .leaderboard__value {
-    order: 3;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    justify-self: start;
+  }
+
+  .leaderboard__row--expandable .leaderboard__value {
+    grid-column: 3;
   }
 
   .leaderboard__player {
-    order: 4;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .leaderboard__row--expandable .leaderboard__player {
+    grid-column: 3;
   }
 
   .leaderboard__history {
     display: none;
-    order: 5;
     grid-column: 1 / -1;
+    grid-row: 3;
     min-width: 0;
   }
 
@@ -624,7 +669,50 @@
     color: var(--gold);
   }
 
-  .leaderboard__tag-label {
-    display: none;
+  /* LP pills are short — keep metric + player on one row. */
+  .leaderboard__row--single-line {
+    grid-template-columns: 1.75rem auto minmax(0, 1fr);
+    grid-template-rows: auto;
+  }
+
+  .leaderboard__row--single-line.leaderboard__row--expandable {
+    grid-template-columns: 1.5rem 1.75rem auto minmax(0, 1fr);
+  }
+
+  .leaderboard__row--single-line .leaderboard__collapse,
+  .leaderboard__row--single-line .leaderboard__position {
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .leaderboard__row--single-line .leaderboard__position {
+    grid-column: 1;
+  }
+
+  .leaderboard__row--single-line.leaderboard__row--expandable .leaderboard__position {
+    grid-column: 2;
+  }
+
+  .leaderboard__row--single-line .leaderboard__value {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .leaderboard__row--single-line.leaderboard__row--expandable .leaderboard__value {
+    grid-column: 3;
+  }
+
+  .leaderboard__row--single-line .leaderboard__player {
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
+  }
+
+  .leaderboard__row--single-line.leaderboard__row--expandable .leaderboard__player {
+    grid-column: 4;
+  }
+
+  .leaderboard__row--single-line .leaderboard__history {
+    grid-row: 2;
   }
 }
