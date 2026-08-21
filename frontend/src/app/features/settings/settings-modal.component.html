@@ -237,55 +237,53 @@
                     <strong>{{ account.gameName }}</strong>
                     <span>{{ account.riotId }}</span>
                   </div>
-                  <button
-                    type="button"
-                    class="linked-account__remove"
-                    (click)="unlinkAccount(account)"
-                    [disabled]="unlinkingAccountId() === account.id"
-                    [attr.aria-label]="
-                      unlinkingAccountId() === account.id
-                        ? ('accounts.unlinking' | t)
-                        : ('challenge.removeAria' | t:{ name: account.riotId })
-                    "
-                    [attr.title]="'accounts.remove' | t"
-                  >
-                    @if (unlinkingAccountId() === account.id) {
-                      <span class="linked-account__remove-loading" aria-hidden="true">…</span>
-                    } @else {
+                  <div class="linked-account__actions">
+                    <button
+                      type="button"
+                      class="icon-button"
+                      (click)="startEditingAccount()"
+                      [disabled]="showAccountForm() || unlinkingAccountId() === account.id"
+                      [attr.aria-label]="'accounts.linkPrimary' | t"
+                      [attr.title]="'accounts.linkPrimary' | t"
+                    >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                        <path
+                          d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
                       </svg>
-                    }
-                  </button>
-                </div>
-
-                <form
-                  class="settings-form"
-                  [class.settings-form--invalid]="riotInvalidForm()"
-                  (ngSubmit)="submitAccountForm()"
-                >
-                  <div class="settings-form__row settings-form__row--inline">
-                    <label>
-                      {{ 'challenge.riotId' | t }}
-                      <input
-                        name="riotId"
-                        type="text"
-                        [(ngModel)]="riotIdInput"
-                        (ngModelChange)="riotInvalidForm.set(false)"
-                        [placeholder]="'challenge.riotIdPlaceholder' | t"
-                        [disabled]="linkingAccount()"
-                        [class.challenge-form__control--invalid]="riotInvalidForm()"
-                        autocomplete="off"
-                      />
-                    </label>
-                    <button type="submit" [disabled]="linkingAccount()">
-                      {{ linkingAccount() ? ('accounts.linking' | t) : ('accounts.linkPrimary' | t) }}
+                    </button>
+                    <button
+                      type="button"
+                      class="linked-account__remove"
+                      (click)="unlinkAccount(account)"
+                      [disabled]="unlinkingAccountId() === account.id"
+                      [attr.aria-label]="
+                        unlinkingAccountId() === account.id
+                          ? ('accounts.unlinking' | t)
+                          : ('challenge.removeAria' | t:{ name: account.riotId })
+                      "
+                      [attr.title]="'accounts.remove' | t"
+                    >
+                      @if (unlinkingAccountId() === account.id) {
+                        <span class="linked-account__remove-loading" aria-hidden="true">…</span>
+                      } @else {
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                        </svg>
+                      }
                     </button>
                   </div>
-                </form>
+                </div>
               } @else {
                 <p class="settings-section__empty">{{ 'accounts.empty' | t }}</p>
+              }
 
+              @if (showAccountForm()) {
                 <form
                   class="settings-form"
                   [class.settings-form--invalid]="riotInvalidForm()"
@@ -306,8 +304,18 @@
                       />
                     </label>
                     <button type="submit" [disabled]="linkingAccount()">
-                      {{ linkingAccount() ? ('accounts.linking' | t) : ('accounts.link' | t) }}
+                      {{ linkingAccount() ? ('accounts.linking' | t) : ((linkedAccount() ? 'accounts.linkPrimary' : 'accounts.link') | t) }}
                     </button>
+                    @if (linkedAccount()) {
+                      <button
+                        type="button"
+                        class="settings-form__cancel"
+                        (click)="cancelEditingAccount()"
+                        [disabled]="linkingAccount()"
+                      >
+                        {{ 'accounts.cancel' | t }}
+                      </button>
+                    }
                   </div>
                 </form>
               }

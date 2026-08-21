@@ -51,9 +51,11 @@ export class SettingsModalComponent {
   protected readonly accountError = signal<string | null>(null);
   protected readonly accountSuccess = signal(false);
   protected readonly riotInvalidForm = signal(false);
+  protected readonly editingAccount = signal(false);
   private readonly pendingAccountChange = signal<string | null>(null);
 
   protected readonly linkedAccount = computed(() => this.accounts()[0] ?? null);
+  protected readonly showAccountForm = computed(() => !this.linkedAccount() || this.editingAccount());
 
   protected riotIdInput = '';
 
@@ -107,6 +109,20 @@ export class SettingsModalComponent {
         return of([]);
       }),
     );
+  }
+
+  protected startEditingAccount(): void {
+    this.riotIdInput = '';
+    this.riotInvalidForm.set(false);
+    this.accountError.set(null);
+    this.editingAccount.set(true);
+  }
+
+  protected cancelEditingAccount(): void {
+    this.riotIdInput = '';
+    this.riotInvalidForm.set(false);
+    this.accountError.set(null);
+    this.editingAccount.set(false);
   }
 
   protected submitAccountForm(): void {
@@ -187,6 +203,7 @@ export class SettingsModalComponent {
       next: async () => {
         onSuccess();
         this.linkingAccount.set(false);
+        this.editingAccount.set(false);
         this.accountSuccess.set(true);
         await this.auth.refreshProfile();
         this.loadAccounts().subscribe();
@@ -244,6 +261,7 @@ export class SettingsModalComponent {
     this.accountError.set(null);
     this.accountSuccess.set(false);
     this.riotInvalidForm.set(false);
+    this.editingAccount.set(false);
     this.pendingAccountChange.set(null);
     this.riotIdInput = '';
     this.currentPasswordInput = '';
