@@ -25,6 +25,10 @@ export function authErrorToKey(error: AuthErrorLike | null | undefined): string 
       return 'auth.rateLimit';
     case 'same_password':
       return 'auth.samePassword';
+    case 'pkce_code_verifier_not_found':
+      return 'auth.crossDeviceLinkError';
+    case 'otp_expired':
+      return 'auth.confirmLinkInvalid';
     case 'validation_failed':
       return mapAuthMessageToKey(error.message) ?? 'auth.genericError';
     default:

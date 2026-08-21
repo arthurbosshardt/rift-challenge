@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, EmailOtpType, Session, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/challenge.models';
@@ -153,6 +153,27 @@ export class AuthService {
 
     const { data } = await this.supabase.auth.getSession();
     this.session.set(data.session);
+    return null;
+  }
+
+  /**
+   * Confirme un lien envoyé par email (inscription, invitation, etc.) via token_hash.
+   * Contrairement à exchangeCodeForSession (PKCE), ne dépend pas du navigateur/appareil
+   * qui a initié l'action : le lien peut être ouvert depuis l'appli mail ou un autre appareil.
+   */
+  async completeEmailVerification(tokenHash: string, type: EmailOtpType): Promise<string | null> {
+    await this.waitUntilReady();
+
+    const { data, error } = await this.supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (error) {
+      this.session.set(null);
+      return authErrorToKey(error) ?? error.message;
+    }
+    this.touchLastSeen();
+    this.session.set(data.session);
+    if (data.session) {
+      await this.loadProfile();
+    }
     return null;
   }
 

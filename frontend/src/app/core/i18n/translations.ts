@@ -215,6 +215,9 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'auth.rateLimit': 'Trop de tentatives. Réessayez dans quelques instants.',
     'auth.samePassword': 'Le nouveau mot de passe doit être différent de l\'ancien.',
     'auth.genericError': 'Une erreur est survenue. Réessayez.',
+    'auth.crossDeviceLinkError':
+      "Ce lien a été ouvert dans un autre navigateur que celui utilisé pour l'inscription. Votre email est probablement déjà confirmé : connectez-vous simplement avec votre mot de passe.",
+    'auth.confirmLinkInvalid': 'Ce lien de confirmation est invalide ou a expiré.',
     'create.title': 'Créer un challenge',
     'create.subtitle': 'Configurez votre nouveau challenge',
     'create.name': 'Nom du challenge',
@@ -640,6 +643,9 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'auth.rateLimit': 'Too many attempts. Try again in a moment.',
     'auth.samePassword': 'The new password must be different from the old one.',
     'auth.genericError': 'Something went wrong. Please try again.',
+    'auth.crossDeviceLinkError':
+      'This link was opened in a different browser than the one used to sign up. Your email is likely already confirmed: just sign in with your password.',
+    'auth.confirmLinkInvalid': 'This confirmation link is invalid or has expired.',
     'create.title': 'Create a challenge',
     'create.subtitle': 'Configure your new challenge',
     'create.name': 'Challenge name',
