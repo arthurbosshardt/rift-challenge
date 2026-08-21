@@ -73,10 +73,23 @@ public class LeaderboardCacheService {
 
     private LeaderboardSnapshot deserialize(LeaderboardCache cache) {
         try {
-            return objectMapper.readValue(cache.getPayload(), LeaderboardSnapshot.class);
+            LeaderboardSnapshot snapshot = objectMapper.readValue(cache.getPayload(), LeaderboardSnapshot.class);
+            if (isStale(snapshot)) {
+                return refresh(clock.instant());
+            }
+            return snapshot;
         } catch (JsonProcessingException e) {
             // Schema evolved (e.g. new entry fields) — recompute instead of failing the API.
             return refresh(clock.instant());
         }
+    }
+
+    /**
+     * A cache row written before {@code winRateMinGames} existed deserializes it as Jackson's
+     * int default (0) instead of failing — that value is never legitimate, so treat it the same
+     * as the schema-evolution case above and recompute.
+     */
+    private boolean isStale(LeaderboardSnapshot snapshot) {
+        return snapshot.season().winRateMinGames() == 0 || snapshot.last7Days().winRateMinGames() == 0;
     }
 }

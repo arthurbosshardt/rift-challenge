@@ -128,7 +128,8 @@ class LeaderboardControllerTest {
                 List.<LeaderboardEntryResponse>of(),
                 List.<LeaderboardEntryResponse>of(),
                 List.<LeaderboardEntryResponse>of(),
-                List.<LeaderboardEntryResponse>of()
+                List.<LeaderboardEntryResponse>of(),
+                20
         );
         return new LeaderboardSnapshot(empty, empty, NOW);
     }

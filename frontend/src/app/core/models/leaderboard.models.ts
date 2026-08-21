@@ -36,6 +36,7 @@ export interface LeaderboardWindow {
   byWinStreak: LeaderboardEntry[];
   byLpGained: LeaderboardEntry[];
   byGamesPlayed: LeaderboardEntry[];
+  winRateMinGames: number;
 }
 
 export interface LeaderboardResponse {

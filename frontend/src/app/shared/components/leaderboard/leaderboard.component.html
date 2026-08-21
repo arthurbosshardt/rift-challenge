@@ -2,6 +2,7 @@
   <header class="leaderboard__header">
     <h2 class="leaderboard__title">
       <span class="leaderboard__title-prefix">{{ 'leaderboard.titlePrefix' | t }}</span>
+      <span class="leaderboard__title-prefix">{{ 'leaderboard.titleMid' | t }}</span>
       <span class="leaderboard__title-brand">{{ 'leaderboard.titleBrand' | t }}</span>
     </h2>
   </header>
@@ -80,7 +81,7 @@
             stroke-linejoin="round"
           />
         </svg>
-        {{ 'leaderboard.categoryWinRate' | t }}
+        {{ 'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() } }}
       </button>
       <button
         type="button"
@@ -163,7 +164,6 @@
           [class.leaderboard__row--bronze]="entry.position === 3"
           [class.leaderboard__row--expanded]="isExpanded(entry)"
           [class.leaderboard__row--expandable]="soloEntries(entry).length > 0"
-          [class.leaderboard__row--single-line]="category() === 'lpGained'"
           [attr.aria-expanded]="soloEntries(entry).length ? isExpanded(entry) : null"
           [attr.aria-label]="
             soloEntries(entry).length

@@ -7,6 +7,7 @@ public record LeaderboardWindow(
         List<LeaderboardEntryResponse> byRank,
         List<LeaderboardEntryResponse> byWinRate,
         List<LeaderboardEntryResponse> byLpGained,
-        List<LeaderboardEntryResponse> byWinStreak
+        List<LeaderboardEntryResponse> byWinStreak,
+        int winRateMinGames
 ) {
 }

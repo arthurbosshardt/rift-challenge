@@ -21,8 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MatchHistoryService {
 
-    static final int MAX_MATCHES = 40;
-
     private final ChallengeParticipantMatchRepository participantMatchRepository;
     private final ChampionIconUrlService championIconUrlService;
 
@@ -59,9 +57,7 @@ public class MatchHistoryService {
         RankState state = rankStateFromProgress(progress);
         List<ParticipantMatchHistoryResponse> history = new ArrayList<>();
 
-        int limit = Math.min(rows.size(), MAX_MATCHES);
-        for (int index = 0; index < limit; index++) {
-            ParticipantMatchHistoryRow row = rows.get(index);
+        for (ParticipantMatchHistoryRow row : rows) {
             if (!isWithinChallengeWindow(row.getGameStart(), challenge.getStartAt(), challenge.getEndAt())) {
                 continue;
             }
@@ -125,9 +121,7 @@ public class MatchHistoryService {
         RankState state2 = rankStateFromProgress(progress2);
         List<DuoMatchHistoryResponse> history = new ArrayList<>();
 
-        int limit = Math.min(rows.size(), MAX_MATCHES);
-        for (int index = 0; index < limit; index++) {
-            ChallengeParticipantMatchRepository.DuoMatchHistoryRow row = rows.get(index);
+        for (ChallengeParticipantMatchRepository.DuoMatchHistoryRow row : rows) {
             if (!isWithinChallengeWindow(row.getGameStart(), challenge.getStartAt(), challenge.getEndAt())) {
                 continue;
             }

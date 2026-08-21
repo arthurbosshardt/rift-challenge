@@ -16,7 +16,9 @@
           </svg>
         </button>
         <h2 class="about-bubble__title">{{ 'landing.aboutTitle' | t }}</h2>
-        <p class="about-bubble__text">{{ 'landing.aboutTextBefore' | t }}<a href="https://soloqchallenge.fr/" target="_blank" rel="noopener noreferrer" class="about-bubble__link">{{ 'landing.aboutLinkLabel' | t }}</a>{{ 'landing.aboutTextMiddle' | t }}@if (auth.isAuthenticated()) {<button type="button" class="about-bubble__link about-bubble__link--button" (click)="createChallengeModal.open()">{{ 'landing.aboutCreateLinkLabel' | t }}</button>} @else {{{ 'landing.aboutCreateLinkLabel' | t }}}{{ 'landing.aboutTextAfterCreate' | t }}@if (auth.isAuthenticated()) {{{ 'landing.aboutPerformText' | t }}} @else {<a routerLink="/login" class="about-bubble__link">{{ 'landing.aboutLoginLinkLabel' | t }}</a>{{ 'landing.aboutLoginTextAfter' | t }}}</p>
+        <p class="about-bubble__text">{{ 'landing.aboutTextBefore' | t }}<a href="https://soloqchallenge.fr/" target="_blank" rel="noopener noreferrer" class="about-bubble__link">{{ 'landing.aboutLinkLabel' | t }}</a>{{ 'landing.aboutTextMiddle' | t }}</p>
+        <p class="about-bubble__text">@if (auth.isAuthenticated()) {<button type="button" class="about-bubble__link about-bubble__link--button" (click)="createChallengeModal.open()">{{ 'landing.aboutCreateLinkLabel' | t }}</button>} @else {{{ 'landing.aboutCreateLinkLabel' | t }}}{{ 'landing.aboutTextAfterCreate' | t }}</p>
+        <p class="about-bubble__text">@if (auth.isAuthenticated()) {{{ 'landing.aboutPerformText' | t }}} @else {<a routerLink="/login" class="about-bubble__link">{{ 'landing.aboutLoginLinkLabel' | t }}</a>{{ 'landing.aboutLoginTextAfter' | t }}}</p>
       </div>
     }
 

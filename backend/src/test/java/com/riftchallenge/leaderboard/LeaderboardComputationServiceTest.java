@@ -59,7 +59,7 @@ class LeaderboardComputationServiceTest {
         );
         when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(any(), any()))
                 .thenReturn(Optional.empty());
-        when(championIconUrlService.buildApiPath(any())).thenReturn(null);
+        org.mockito.Mockito.lenient().when(championIconUrlService.buildApiPath(any())).thenReturn(null);
     }
 
     @Test
@@ -80,34 +80,35 @@ class LeaderboardComputationServiceTest {
     }
 
     @Test
-    void samePlayerAcrossTwoChallenges_keepsOnlyTheBestParticipationPerCategory() {
-        ChallengeParticipant weakRun = participant(CHALLENGE_A, "puuid-same", "Player", "EUW");
-        ChallengeParticipant strongRun = participant(CHALLENGE_B, "puuid-same", "Player", "EUW");
-        when(participantRepository.findAll()).thenReturn(List.of(weakRun, strongRun));
+    void samePlayerAcrossTwoChallenges_mergesMatchHistoryIndependentOfChallenge() {
+        ChallengeParticipant runA = participant(CHALLENGE_A, "puuid-same", "Player", "EUW");
+        ChallengeParticipant runB = participant(CHALLENGE_B, "puuid-same", "Player", "EUW");
+        when(participantRepository.findAll()).thenReturn(List.of(runA, runB));
 
-        when(matchRepository.findHistorySince(weakRun.getId(), SEASON_START))
+        when(matchRepository.findHistorySince(runA.getId(), SEASON_START))
                 .thenReturn(history(
-                        weakRun,
+                        runA,
                         true, false, true, false, false, true, false, false, false, false,
                         true, false, false, false, true, false, false, false, false, true
                 ));
-        when(matchRepository.findHistorySince(strongRun.getId(), SEASON_START))
+        when(matchRepository.findHistorySince(runB.getId(), SEASON_START))
                 .thenReturn(history(
-                        strongRun,
+                        runB,
                         true, true, true, true, false, true, true, true, false, true,
                         true, true, true, true, false, true, true, true, false, true
                 ));
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
+        // One player, one leaderboard row — their solo queue games count the same regardless of
+        // which challenge(s) synced them: 20 games (6 wins) + 20 games (16 wins) = 40 games, 22 wins.
         assertThat(snapshot.season().byWinRate()).hasSize(1);
         LeaderboardEntryResponse entry = snapshot.season().byWinRate().get(0);
         assertThat(entry.puuid()).isEqualTo("puuid-same");
-        assertThat(entry.winRate()).isCloseTo(0.8, org.assertj.core.data.Offset.offset(0.001));
+        assertThat(entry.gamesPlayed()).isEqualTo(40);
+        assertThat(entry.winRate()).isCloseTo(0.55, org.assertj.core.data.Offset.offset(0.001));
         assertThat(entry.position()).isEqualTo(1);
         assertThat(entry.recentMatches()).isNotEmpty();
-        assertThat(entry.participantId()).isEqualTo(strongRun.getId());
-        assertThat(entry.challengeId()).isEqualTo(CHALLENGE_B);
     }
 
     @Test
@@ -162,8 +163,10 @@ class LeaderboardComputationServiceTest {
         List<ParticipantMatchHistorySince> result = new ArrayList<>();
         Instant start = SEASON_START.plusSeconds(3600);
         for (int i = 0; i < wins.length; i++) {
+            // Riot match IDs are globally unique, so tests must give each participation its own
+            // to avoid a same-index game from a different challenge accidentally deduping away.
             result.add(new TestHistory(
-                    "match-" + i,
+                    "match-" + participant.getId() + "-" + i,
                     wins[i],
                     1,
                     participant.getChallengeId(),

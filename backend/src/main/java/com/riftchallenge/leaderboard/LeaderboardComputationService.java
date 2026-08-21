@@ -20,15 +20,19 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
- * Computes the global leaderboard (all challenge participants, deduped by PUUID). Only runs from
- * {@link LeaderboardRefreshScheduler} 4x/day — one query per participant is an acceptable
- * simplicity/performance tradeoff at the current scale; batch it if the participant count grows.
+ * Computes the global leaderboard. Stats are per-player (grouped by PUUID) and independent of
+ * which challenge(s) a player is in — someone can join several challenges, and a match they played
+ * is only ever counted once even if more than one of those challenges synced it. Only runs from
+ * {@link LeaderboardRefreshScheduler} 4x/day — one query per challenge participation is an
+ * acceptable simplicity/performance tradeoff at the current scale; batch it if it grows.
  */
 @Service
 public class LeaderboardComputationService {
@@ -37,6 +41,8 @@ public class LeaderboardComputationService {
     static final int RECENT_MATCHES_SIZE = 10;
     /** Minimum games required for win-rate rankings only (avoids tiny-sample spikes). */
     static final int MIN_GAMES_FOR_WIN_RATE = 20;
+    /** Lower floor for the rolling 7-day window — a full season's worth of games isn't realistic in 7 days. */
+    static final int MIN_GAMES_FOR_WIN_RATE_ROLLING = 8;
     private static final Duration ROLLING_WINDOW = Duration.ofDays(7);
 
     private final ChallengeParticipantRepository participantRepository;
@@ -65,36 +71,87 @@ public class LeaderboardComputationService {
         Instant rollingStart = laterOf(seasonStart, now.minus(ROLLING_WINDOW));
 
         Map<String, PlayerRank> ranks = new HashMap<>();
+        for (ChallengeParticipant participant : participants) {
+            recordLatestRank(ranks, participant);
+        }
+
+        Map<String, List<ChallengeParticipant>> membershipsByPuuid = participants.stream()
+                .collect(Collectors.groupingBy(ChallengeParticipant::getRiotPuuid));
+
         List<ParticipantWindowStats> seasonStats = new ArrayList<>();
         List<ParticipantWindowStats> rollingStats = new ArrayList<>();
 
-        for (ChallengeParticipant participant : participants) {
-            recordLatestRank(ranks, participant);
-
-            List<ParticipantMatchHistorySince> history =
-                    matchRepository.findHistorySince(participant.getId(), seasonStart);
+        for (Map.Entry<String, List<ChallengeParticipant>> group : membershipsByPuuid.entrySet()) {
+            List<TaggedMatch> history = mergeHistoryAcrossChallenges(group.getValue(), seasonStart);
             if (history.isEmpty()) {
                 continue;
             }
 
-            seasonStats.add(toStats(participant, history, ranks.get(participant.getRiotPuuid())));
+            UUID primaryParticipantId = mostCommonParticipantId(history);
+            ChallengeParticipant primaryMembership = group.getValue().stream()
+                    .filter(member -> member.getId().equals(primaryParticipantId))
+                    .findFirst()
+                    .orElseGet(() -> group.getValue().get(0));
+            PlayerIdentity identity = identityOf(primaryMembership);
+            UUID primaryChallengeId = primaryMembership.getChallengeId();
+            PlayerRank rank = ranks.get(group.getKey());
 
-            List<ParticipantMatchHistorySince> rollingHistory = history.stream()
-                    .filter(outcome -> !outcome.getGameStart().isBefore(rollingStart))
+            seasonStats.add(toStats(identity, primaryParticipantId, primaryChallengeId, history, rank));
+
+            List<TaggedMatch> rollingHistory = history.stream()
+                    .filter(match -> !match.gameStart().isBefore(rollingStart))
                     .toList();
             if (!rollingHistory.isEmpty()) {
-                rollingStats.add(toStats(participant, rollingHistory, ranks.get(participant.getRiotPuuid())));
+                rollingStats.add(toStats(identity, primaryParticipantId, primaryChallengeId, rollingHistory, rank));
             }
         }
 
         return new LeaderboardSnapshot(
-                buildWindow(seasonStats, ranks),
-                buildWindow(rollingStats, ranks),
+                buildWindow(seasonStats, ranks, MIN_GAMES_FOR_WIN_RATE),
+                buildWindow(rollingStats, ranks, MIN_GAMES_FOR_WIN_RATE_ROLLING),
                 now
         );
     }
 
-    private LeaderboardWindow buildWindow(List<ParticipantWindowStats> stats, Map<String, PlayerRank> ranks) {
+    /**
+     * Merges a player's match history across every challenge they've joined into one deduped,
+     * chronological list — a match synced by more than one of their challenges is only kept once.
+     */
+    private List<TaggedMatch> mergeHistoryAcrossChallenges(List<ChallengeParticipant> memberships, Instant since) {
+        Map<String, TaggedMatch> byMatchId = new LinkedHashMap<>();
+        for (ChallengeParticipant member : memberships) {
+            List<ParticipantMatchHistorySince> history = matchRepository.findHistorySince(member.getId(), since);
+            for (ParticipantMatchHistorySince row : history) {
+                byMatchId.putIfAbsent(row.getMatchId(), new TaggedMatch(
+                        row.getMatchId(),
+                        row.isWin(),
+                        row.getChampionId(),
+                        row.getChallengeId(),
+                        member.getId(),
+                        row.getGameStart()
+                ));
+            }
+        }
+        return byMatchId.values().stream()
+                .sorted(Comparator.comparing(TaggedMatch::gameStart))
+                .toList();
+    }
+
+    /** Which challenge participation contributed the most matches — used only as display metadata. */
+    private static UUID mostCommonParticipantId(List<TaggedMatch> history) {
+        return history.stream()
+                .collect(Collectors.groupingBy(TaggedMatch::participantId, Collectors.counting()))
+                .entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElseThrow();
+    }
+
+    private LeaderboardWindow buildWindow(
+            List<ParticipantWindowStats> stats,
+            Map<String, PlayerRank> ranks,
+            int winRateMinGames
+    ) {
         Map<String, ParticipantWindowStats> statsByPuuid = new HashMap<>();
         for (ParticipantWindowStats entry : stats) {
             statsByPuuid.putIfAbsent(entry.identity().puuid(), entry);
@@ -104,7 +161,7 @@ public class LeaderboardComputationService {
                 buildRankList(ranks, statsByPuuid),
                 buildStatList(
                         stats,
-                        MIN_GAMES_FOR_WIN_RATE,
+                        winRateMinGames,
                         Comparator.comparingDouble(ParticipantWindowStats::winRate).reversed(),
                         ranks
                 ),
@@ -119,7 +176,8 @@ public class LeaderboardComputationService {
                         1,
                         Comparator.comparingInt(ParticipantWindowStats::winStreak).reversed(),
                         ranks
-                )
+                ),
+                winRateMinGames
         );
     }
 
@@ -148,12 +206,14 @@ public class LeaderboardComputationService {
     }
 
     private ParticipantWindowStats toStats(
-            ChallengeParticipant participant,
-            List<ParticipantMatchHistorySince> historyAsc,
+            PlayerIdentity identity,
+            UUID primaryParticipantId,
+            UUID primaryChallengeId,
+            List<TaggedMatch> historyAsc,
             PlayerRank rank
     ) {
         int gamesPlayed = historyAsc.size();
-        List<Boolean> winsOrdered = historyAsc.stream().map(ParticipantMatchHistorySince::isWin).toList();
+        List<Boolean> winsOrdered = historyAsc.stream().map(TaggedMatch::win).toList();
         int wins = (int) winsOrdered.stream().filter(Boolean::booleanValue).count();
         int losses = gamesPlayed - wins;
         double winRate = (double) wins / gamesPlayed;
@@ -172,44 +232,40 @@ public class LeaderboardComputationService {
         String tierForLp = rank != null && rank.tier() != null ? rank.tier() : "GOLD";
 
         return new ParticipantWindowStats(
-                identityOf(participant),
-                participant.getId(),
-                participant.getChallengeId(),
+                identity,
+                primaryParticipantId,
+                primaryChallengeId,
                 wins,
                 losses,
                 gamesPlayed,
                 winRate,
                 winStreak,
                 lpGained,
-                recentMatches(historyAsc, participant.getId(), tierForLp)
+                recentMatches(historyAsc, tierForLp)
         );
     }
 
-    private List<LeaderboardMatchHistoryResponse> recentMatches(
-            List<ParticipantMatchHistorySince> historyAsc,
-            UUID participantId,
-            String tier
-    ) {
+    private List<LeaderboardMatchHistoryResponse> recentMatches(List<TaggedMatch> historyAsc, String tier) {
         if (historyAsc.isEmpty()) {
             return List.of();
         }
         int from = Math.max(0, historyAsc.size() - RECENT_MATCHES_SIZE);
-        List<ParticipantMatchHistorySince> slice = historyAsc.subList(from, historyAsc.size());
+        List<TaggedMatch> slice = historyAsc.subList(from, historyAsc.size());
         List<LeaderboardMatchHistoryResponse> newestFirst = new ArrayList<>(slice.size());
         for (int i = slice.size() - 1; i >= 0; i--) {
-            ParticipantMatchHistorySince row = slice.get(i);
-            int lpDelta = row.isWin()
+            TaggedMatch row = slice.get(i);
+            int lpDelta = row.win()
                     ? MatchLpEstimator.averageWinLp(tier)
                     : -MatchLpEstimator.averageLossLp(tier);
             newestFirst.add(new LeaderboardMatchHistoryResponse(
-                    row.getMatchId(),
-                    row.getChampionId(),
-                    championIconUrlService.buildApiPath(row.getChampionId()),
-                    row.isWin(),
+                    row.matchId(),
+                    row.championId(),
+                    championIconUrlService.buildApiPath(row.championId()),
+                    row.win(),
                     lpDelta,
-                    row.getGameStart(),
-                    row.getChallengeId(),
-                    participantId
+                    row.gameStart(),
+                    row.challengeId(),
+                    row.participantId()
             ));
         }
         return List.copyOf(newestFirst);
@@ -325,6 +381,17 @@ public class LeaderboardComputationService {
     }
 
     private record PlayerRank(PlayerIdentity identity, String tier, String rankDivision, int leaguePoints, Instant capturedAt) {
+    }
+
+    /** A match, tagged with which of the player's challenge participations it was synced through. */
+    private record TaggedMatch(
+            String matchId,
+            boolean win,
+            Integer championId,
+            UUID challengeId,
+            UUID participantId,
+            Instant gameStart
+    ) {
     }
 
     private record ParticipantWindowStats(

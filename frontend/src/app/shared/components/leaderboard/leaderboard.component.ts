@@ -16,6 +16,9 @@ import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component'
 import { MatchHistoryStripComponent } from '../match-history-strip/match-history-strip.component';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
 
+/** Shown briefly before the real per-window value loads from the API. */
+const MIN_GAMES_FOR_WIN_RATE_FALLBACK = 20;
+
 @Component({
   selector: 'app-leaderboard',
   imports: [TranslatePipe, PlayerAvatarComponent, MatchHistoryStripComponent],
@@ -32,7 +35,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly refreshing = signal(false);
   protected readonly response = signal<LeaderboardResponse | null>(null);
-  protected readonly timeframe = signal<LeaderboardTimeframe>('last7Days');
+  protected readonly timeframe = signal<LeaderboardTimeframe>('season');
   protected readonly category = signal<LeaderboardCategory>('winRate');
   protected readonly nowMs = signal(Date.now());
   protected readonly copiedPuuid = signal<string | null>(null);
@@ -62,6 +65,13 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   });
 
   protected readonly seasonYear = computed(() => this.response()?.seasonYear ?? new Date().getUTCFullYear());
+
+  /* `|| fallback`, not `??`: a leaderboard snapshot cached before this field existed
+     deserializes it as 0 (Jackson default for a missing int), not undefined — and 0 is
+     never a real threshold, so treat it the same as "not loaded yet". */
+  protected readonly winRateMinGames = computed(
+    () => this.response()?.[this.timeframe()]?.winRateMinGames || MIN_GAMES_FOR_WIN_RATE_FALLBACK,
+  );
 
   ngOnInit(): void {
     this.api.getLeaderboard().subscribe({
