@@ -174,11 +174,7 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   }
 
   metaCompactAriaLabel(): string {
-    const parts = [
-      this.statusLabel(this.challenge().status),
-      this.dateRangeCompact(),
-      this.entryCountCompact(),
-    ].filter(Boolean);
+    const parts = [this.dateRangeCompact(), this.entryCountCompact()].filter(Boolean);
     return parts.join(', ');
   }
 

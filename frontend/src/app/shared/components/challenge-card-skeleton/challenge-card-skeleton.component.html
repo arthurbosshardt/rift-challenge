@@ -1,48 +1,10 @@
 <article class="challenge-card-skeleton" [class.challenge-card-skeleton--summary-only]="summaryOnly()">
   <div class="challenge-card-skeleton__layout">
-    <div class="challenge-card-skeleton__summary">
-      <div class="challenge-card-skeleton__header">
-        <div class="challenge-card-skeleton__title">
-          <app-skeleton width="4.75rem" height="1.75rem" radius="999px" />
-          <app-skeleton class="challenge-card-skeleton__title-name" height="1.35rem" />
-        </div>
-      </div>
-
-      <div class="challenge-card-skeleton__meta-group">
-        <div class="challenge-card-skeleton__meta-full">
-          <dl class="challenge-card-skeleton__meta">
-            <div class="challenge-card-skeleton__field">
-              <app-skeleton height="0.75rem" maxWidth="3.5rem" />
-              <app-skeleton height="0.9375rem" maxWidth="5.5rem" />
-            </div>
-            <div class="challenge-card-skeleton__field">
-              <app-skeleton height="0.75rem" maxWidth="4.5rem" />
-              <app-skeleton height="0.9375rem" maxWidth="4rem" />
-            </div>
-          </dl>
-
-          <dl class="challenge-card-skeleton__meta">
-            <div class="challenge-card-skeleton__field">
-              <app-skeleton height="0.75rem" maxWidth="3.25rem" />
-              <app-skeleton height="0.9375rem" maxWidth="6rem" />
-            </div>
-            <div class="challenge-card-skeleton__field">
-              <app-skeleton height="0.75rem" maxWidth="2.75rem" />
-              <app-skeleton height="0.9375rem" maxWidth="6rem" />
-            </div>
-            <div class="challenge-card-skeleton__field">
-              <app-skeleton height="0.75rem" maxWidth="5.5rem" />
-              <app-skeleton height="0.9375rem" maxWidth="2.5rem" />
-            </div>
-          </dl>
-        </div>
-
-        <div class="challenge-card-skeleton__meta-compact">
-          <app-skeleton width="1.625rem" height="1.625rem" radius="999px" />
-          <app-skeleton width="1.625rem" height="1.625rem" radius="999px" />
-          <app-skeleton class="challenge-card-skeleton__meta-compact-dates" height="0.875rem" />
-          <app-skeleton height="0.875rem" maxWidth="2.25rem" />
-        </div>
+    <div class="challenge-card-skeleton__header">
+      <div class="challenge-card-skeleton__title">
+        <app-skeleton width="4.75rem" height="1.75rem" radius="999px" />
+        <app-skeleton width="4.25rem" height="1.75rem" radius="999px" />
+        <app-skeleton class="challenge-card-skeleton__title-name" height="1.35rem" />
       </div>
     </div>
 
@@ -77,5 +39,29 @@
         </section>
       </div>
     }
+
+    <div class="challenge-card-skeleton__meta-group">
+      <div class="challenge-card-skeleton__meta-full">
+        <dl class="challenge-card-skeleton__meta">
+          <div class="challenge-card-skeleton__field">
+            <app-skeleton height="0.75rem" maxWidth="3.25rem" />
+            <app-skeleton height="0.9375rem" maxWidth="6rem" />
+          </div>
+          <div class="challenge-card-skeleton__field">
+            <app-skeleton height="0.75rem" maxWidth="2.75rem" />
+            <app-skeleton height="0.9375rem" maxWidth="6rem" />
+          </div>
+          <div class="challenge-card-skeleton__field">
+            <app-skeleton height="0.75rem" maxWidth="5.5rem" />
+            <app-skeleton height="0.9375rem" maxWidth="2.5rem" />
+          </div>
+        </dl>
+      </div>
+
+      <div class="challenge-card-skeleton__meta-compact">
+        <app-skeleton class="challenge-card-skeleton__meta-compact-dates" height="0.875rem" />
+        <app-skeleton height="0.875rem" maxWidth="2.25rem" />
+      </div>
+    </div>
   </div>
 </article>
