@@ -17,6 +17,11 @@
           [kind]="challengeStatusBadgeKind(challenge().status)"
           [label]="statusLabel(challenge().status)"
         />
+        <app-challenge-badge
+          size="title"
+          [kind]="challengeRegionBadgeKind(challenge().region)"
+          [label]="regionLabel(challenge().region)"
+        />
         <span class="challenge-card__title-text">{{ challenge().name }}</span>
       </h2>
     </div>

@@ -117,6 +117,15 @@ body {
   font-family: var(--font-family);
   font-feature-settings: 'kern' 1;
   -webkit-font-smoothing: antialiased;
+  /* Chrome for Android silently boosts font-size inside narrow flex/grid
+     columns ("text autosizing") to improve legibility on text-heavy pages.
+     Our dense mobile cards (fixed-width rank/name/stat tracks packed to
+     exact row heights) are exactly the layout this targets, so the boost
+     inflates text past its box and visually overlaps neighboring icons —
+     invisible in desktop/dev-tools mobile emulation, which doesn't run
+     this heuristic, but reproducible on real Android hardware. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 button,
@@ -508,6 +517,12 @@ textarea:focus {
   color: var(--text-muted);
   background: var(--surface-tint-strong);
   border: 1px solid var(--border);
+}
+
+.badge--region {
+  color: #5fb3ab;
+  background: rgba(95, 179, 171, 0.12);
+  border: 1px solid rgba(95, 179, 171, 0.3);
 }
 
 .badge--type {

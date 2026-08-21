@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { CreateChallengeModalService } from '../../core/services/create-challenge-modal.service';
 import { SummonerSearchService, SummonerSuggestion } from '../../core/services/summoner-search.service';
-import { ChallengeType, DuoProgress, ParticipantProgress } from '../../core/models/challenge.models';
+import { ChallengeRegion, ChallengeType, DuoProgress, ParticipantProgress } from '../../core/models/challenge.models';
 import { splitLocalDateHour } from '../../core/utils/challenge-date';
 import {
   ChallengeEndMode,
@@ -56,6 +56,8 @@ export class CreateChallengeModalComponent {
 
   protected nameInput = '';
   protected type: ChallengeType = 'SOLOQ';
+  protected region: ChallengeRegion = 'EUW';
+  protected readonly regionOptions: ChallengeRegion[] = ['EUW', 'EUNE', 'NA', 'KR'];
   protected startDateInput = '';
   protected startHourInput = 12;
   protected endMode: EndMode = 'DATE';
@@ -144,6 +146,19 @@ export class CreateChallengeModalComponent {
 
   protected duoLabel(duo: DuoProgress): string {
     return `${duo.player1.riotId} / ${duo.player2.riotId}`;
+  }
+
+  protected regionLabel(region: ChallengeRegion): string {
+    switch (region) {
+      case 'EUNE':
+        return this.i18n.t('challenge.regionEune');
+      case 'NA':
+        return this.i18n.t('challenge.regionNa');
+      case 'KR':
+        return this.i18n.t('challenge.regionKr');
+      default:
+        return this.i18n.t('challenge.regionEuw');
+    }
   }
 
   protected onTypeChange(): void {
@@ -417,6 +432,7 @@ export class CreateChallengeModalComponent {
         this.challengeApi.createChallenge({
           name: trimmedName,
           type: this.type,
+          region: this.region,
           startAt: scheduleValidation.startAt,
           ...(scheduleValidation.endAt ? { endAt: scheduleValidation.endAt } : {}),
           ...(scheduleValidation.maxGames ? { maxGames: scheduleValidation.maxGames } : {}),
@@ -659,6 +675,7 @@ export class CreateChallengeModalComponent {
   private resetForm(): void {
     this.nameInput = '';
     this.type = 'SOLOQ';
+    this.region = 'EUW';
     const now = splitLocalDateHour(new Date().toISOString());
     this.startDateInput = now?.date ?? '';
     this.startHourInput = now?.hour ?? 12;

@@ -47,6 +47,7 @@ export type RawChallengeSummary = Partial<ChallengeSummary> &
 export function normalizeChallengeSummary(raw: RawChallengeSummary): ChallengeSummary {
   return {
     ...raw,
+    region: raw.region ?? 'EUW',
     endAt: raw.endAt ?? null,
     maxGames: raw.maxGames ?? null,
     entryCount: raw.entryCount ?? 0,

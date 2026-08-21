@@ -1,10 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { ChallengeStatus, ChallengeType } from '../../../core/models/challenge.models';
+import { ChallengeRegion, ChallengeStatus, ChallengeType } from '../../../core/models/challenge.models';
 
-export type ChallengeBadgeKind = 'soloq' | 'duoq' | 'not-started' | 'active' | 'finished';
+export type ChallengeBadgeKind = 'soloq' | 'duoq' | 'not-started' | 'active' | 'finished' | 'region';
 
 export function challengeTypeBadgeKind(type: ChallengeType): ChallengeBadgeKind {
   return type === 'SOLOQ' ? 'soloq' : 'duoq';
+}
+
+export function challengeRegionBadgeKind(_region: ChallengeRegion): ChallengeBadgeKind {
+  return 'region';
 }
 
 export function challengeStatusBadgeKind(status: ChallengeStatus): ChallengeBadgeKind {
@@ -43,6 +47,8 @@ export class ChallengeBadgeComponent {
         return `badge badge--status-active${sizeClass}${iconOnlyClass}`;
       case 'finished':
         return `badge badge--status-finished${sizeClass}${iconOnlyClass}`;
+      case 'region':
+        return `badge badge--region${sizeClass}${iconOnlyClass}`;
     }
   });
 }

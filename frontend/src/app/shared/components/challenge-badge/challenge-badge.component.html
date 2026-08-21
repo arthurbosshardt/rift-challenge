@@ -1,39 +1,41 @@
 <span [class]="badgeClass()" [attr.aria-label]="iconOnly() ? label() : null" [attr.title]="iconOnly() ? label() : null">
-  <svg class="badge__icon" viewBox="0 0 24 24" aria-hidden="true">
-    @switch (kind()) {
-      @case ('soloq') {
-        <path
-          d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-          fill="currentColor"
-        />
+  @if (kind() !== 'region') {
+    <svg class="badge__icon" viewBox="0 0 24 24" aria-hidden="true">
+      @switch (kind()) {
+        @case ('soloq') {
+          <path
+            d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+            fill="currentColor"
+          />
+        }
+        @case ('duoq') {
+          <path
+            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+            fill="currentColor"
+          />
+        }
+        @case ('not-started') {
+          <path
+            d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 5v5.25l3.5 2.08-.75 1.23L11 13V7h2z"
+            fill="currentColor"
+          />
+        }
+        @case ('active') {
+          <path
+            d="M8 5v14l11-7L8 5z"
+            fill="currentColor"
+          />
+        }
+        @case ('finished') {
+          <path
+            d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+            fill="currentColor"
+          />
+        }
       }
-      @case ('duoq') {
-        <path
-          d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-          fill="currentColor"
-        />
-      }
-      @case ('not-started') {
-        <path
-          d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 5v5.25l3.5 2.08-.75 1.23L11 13V7h2z"
-          fill="currentColor"
-        />
-      }
-      @case ('active') {
-        <path
-          d="M8 5v14l11-7L8 5z"
-          fill="currentColor"
-        />
-      }
-      @case ('finished') {
-        <path
-          d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-          fill="currentColor"
-        />
-      }
-    }
-  </svg>
-  @if (!iconOnly()) {
+    </svg>
+  }
+  @if (!iconOnly() || kind() === 'region') {
     <span>{{ label() }}</span>
   }
 </span>

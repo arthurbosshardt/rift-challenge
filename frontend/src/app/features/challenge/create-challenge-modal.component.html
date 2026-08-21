@@ -71,6 +71,7 @@
             </label>
           </section>
 
+          <div class="create-challenge-modal__type-region-row">
           <div class="type-switch" role="group" [attr.aria-label]="'create.type' | t">
             <div class="type-switch__label" [class.type-switch__label--active]="type === 'SOLOQ'">
               <svg class="type-switch__label-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -117,6 +118,20 @@
               </svg>
               <span>{{ 'create.duoq' | t }}</span>
             </div>
+          </div>
+
+          <section class="challenge-form__schedule-block create-challenge-modal__region-block" aria-labelledby="create-challenge-region-title">
+            <h3 id="create-challenge-region-title" class="challenge-form__schedule-title">
+              {{ 'create.region' | t }}
+            </h3>
+            <label class="challenge-form__schedule-field">
+              <select name="regionInput" [(ngModel)]="region" [disabled]="loading()">
+                @for (option of regionOptions; track option) {
+                  <option [ngValue]="option">{{ regionLabel(option) }}</option>
+                }
+              </select>
+            </label>
+          </section>
           </div>
 
         </section>

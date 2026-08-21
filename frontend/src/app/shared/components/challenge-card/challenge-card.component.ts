@@ -32,6 +32,7 @@ import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
 import {
   ChallengeBadgeComponent,
+  challengeRegionBadgeKind,
   challengeStatusBadgeKind,
   challengeTypeBadgeKind,
 } from '../challenge-badge/challenge-badge.component';
@@ -151,6 +152,7 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
 
   protected readonly challengeTypeBadgeKind = challengeTypeBadgeKind;
   protected readonly challengeStatusBadgeKind = challengeStatusBadgeKind;
+  protected readonly challengeRegionBadgeKind = challengeRegionBadgeKind;
 
   entryLimit(): number {
     return this.challenge().type === 'DUOQ' ? 8 : 16;
@@ -190,6 +192,19 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
 
   typeLabel(type: ChallengeSummary['type']): string {
     return type === 'SOLOQ' ? this.i18n.t('challenge.typeSoloq') : this.i18n.t('challenge.typeDuoq');
+  }
+
+  regionLabel(region: ChallengeSummary['region']): string {
+    switch (region) {
+      case 'EUNE':
+        return this.i18n.t('challenge.regionEune');
+      case 'NA':
+        return this.i18n.t('challenge.regionNa');
+      case 'KR':
+        return this.i18n.t('challenge.regionKr');
+      default:
+        return this.i18n.t('challenge.regionEuw');
+    }
   }
 
   entryCountLabel(): string {

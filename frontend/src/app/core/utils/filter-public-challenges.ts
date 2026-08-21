@@ -1,12 +1,17 @@
-import { ChallengeSummary, ChallengeType } from '../models/challenge.models';
+import { ChallengeRegion, ChallengeStatus, ChallengeSummary, ChallengeType } from '../models/challenge.models';
 import { normalizeGameName } from './riot-id';
 
 export type PublicChallengeTypeFilter = 'ALL' | ChallengeType;
+export type PublicChallengeStatusFilter = 'ALL' | ChallengeStatus;
+
+export const DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER: ChallengeRegion = 'EUW';
 
 export type PublicChallengeFilters = {
   challengeName: string;
   summoner: string;
   type: PublicChallengeTypeFilter;
+  status: PublicChallengeStatusFilter;
+  region: ChallengeRegion;
 };
 
 function normalizeSearchTerm(value: string): string {
@@ -46,6 +51,14 @@ export function filterPublicChallenges(challenges: ChallengeSummary[], filters: 
       return false;
     }
 
+    if (filters.status !== 'ALL' && challenge.status !== filters.status) {
+      return false;
+    }
+
+    if (challenge.region !== filters.region) {
+      return false;
+    }
+
     if (challengeNameQuery.length >= 3 && !normalizeSearchTerm(challenge.name).includes(challengeNameQuery)) {
       return false;
     }
@@ -67,6 +80,8 @@ export function hasActivePublicChallengeFilters(filters: PublicChallengeFilters)
   return (
     filters.challengeName.trim().length >= 3 ||
     filters.summoner.trim().length >= 3 ||
-    filters.type !== 'ALL'
+    filters.type !== 'ALL' ||
+    filters.status !== 'ALL' ||
+    filters.region !== DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER
   );
 }

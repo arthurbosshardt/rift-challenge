@@ -12,6 +12,7 @@ function challenge(overrides: Partial<ChallengeSummary> = {}): ChallengeSummary 
     shareSlug: 'slug-1',
     name: 'Rush de rentrée 2025',
     type: 'SOLOQ',
+    region: 'EUW',
     startAt: '2026-01-01T00:00:00Z',
     endAt: '2026-02-01T00:00:00Z',
     maxGames: null,
@@ -52,8 +53,8 @@ describe('filter-public-challenges', () => {
       challenge({ id: 'challenge-2', shareSlug: 'slug-2', name: 'Autre course' }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: 'rush', summoner: '', type: 'ALL' })).toHaveLength(1);
-    expect(filterPublicChallenges(challenges, { challengeName: 'ru', summoner: '', type: 'ALL' })).toHaveLength(2);
+    expect(filterPublicChallenges(challenges, { challengeName: 'rush', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: 'ru', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toHaveLength(2);
   });
 
   it('filters by summoner using participantGameNames', () => {
@@ -67,7 +68,7 @@ describe('filter-public-challenges', () => {
       }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'johndoe', type: 'ALL' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'johndoe', type: 'ALL', status: 'ALL', region: 'EUW' })).toHaveLength(1);
   });
 
   it('falls back to preview names when participantGameNames is empty', () => {
@@ -94,7 +95,7 @@ describe('filter-public-challenges', () => {
       }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'johndoe', type: 'ALL' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: 'johndoe', type: 'ALL', status: 'ALL', region: 'EUW' })).toHaveLength(1);
   });
 
   it('filters by challenge type', () => {
@@ -103,14 +104,36 @@ describe('filter-public-challenges', () => {
       challenge({ id: 'challenge-2', shareSlug: 'slug-2', name: 'Duo challenge', type: 'DUOQ' }),
     ];
 
-    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'DUOQ' })).toHaveLength(1);
-    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'DUOQ' })[0].type).toBe('DUOQ');
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'DUOQ', status: 'ALL', region: 'EUW' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'DUOQ', status: 'ALL', region: 'EUW' })[0].type).toBe('DUOQ');
+  });
+
+  it('filters by challenge status', () => {
+    const challenges = [
+      challenge({ status: 'ACTIVE' }),
+      challenge({ id: 'challenge-2', shareSlug: 'slug-2', name: 'Finished challenge', status: 'FINISHED' }),
+    ];
+
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'ALL', status: 'FINISHED', region: 'EUW' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'ALL', status: 'FINISHED', region: 'EUW' })[0].status).toBe('FINISHED');
+  });
+
+  it('filters by region', () => {
+    const challenges = [
+      challenge({ region: 'EUW' }),
+      challenge({ id: 'challenge-2', shareSlug: 'slug-2', name: 'NA challenge', region: 'NA' }),
+    ];
+
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'NA' })).toHaveLength(1);
+    expect(filterPublicChallenges(challenges, { challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'NA' })[0].region).toBe('NA');
   });
 
   it('hasActivePublicChallengeFilters detects active filters', () => {
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL' })).toBe(false);
-    expect(hasActivePublicChallengeFilters({ challengeName: 'abc', summoner: '', type: 'ALL' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: 'jan', type: 'ALL' })).toBe(true);
-    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'SOLOQ' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(false);
+    expect(hasActivePublicChallengeFilters({ challengeName: 'abc', summoner: '', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: 'jan', type: 'ALL', status: 'ALL', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'SOLOQ', status: 'ALL', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ACTIVE', region: 'EUW' })).toBe(true);
+    expect(hasActivePublicChallengeFilters({ challengeName: '', summoner: '', type: 'ALL', status: 'ALL', region: 'NA' })).toBe(true);
   });
 });

@@ -30,6 +30,11 @@
               [kind]="challengeTypeBadgeKind(preview.type)"
               [label]="typeLabel(preview.type)"
             />
+            <app-challenge-badge
+              size="title"
+              [kind]="challengeRegionBadgeKind(preview.region)"
+              [label]="regionLabel(preview.region)"
+            />
             <span class="detail__title-text" appFitTitleWidth>{{ preview.name }}</span>
           </h1>
         </div>
@@ -113,6 +118,11 @@
             size="title"
             [kind]="challengeTypeBadgeKind(currentChallenge.type)"
             [label]="typeLabel(currentChallenge.type)"
+          />
+          <app-challenge-badge
+            size="title"
+            [kind]="challengeRegionBadgeKind(currentChallenge.region)"
+            [label]="regionLabel(currentChallenge.region)"
           />
           <span class="detail__title-text" appFitTitleWidth>{{ currentChallenge.name }}</span>
         </h1>

@@ -1,5 +1,7 @@
 export type ChallengeType = 'SOLOQ' | 'DUOQ';
 
+export type ChallengeRegion = 'EUW' | 'EUNE' | 'NA' | 'KR';
+
 export type ChallengeStatus = 'NOT_STARTED' | 'ACTIVE' | 'FINISHED';
 
 export interface ParticipantPreview {
@@ -35,6 +37,7 @@ export interface ChallengeSummary {
   shareSlug: string;
   name: string;
   type: ChallengeType;
+  region: ChallengeRegion;
   startAt: string;
   endAt: string | null;
   maxGames: number | null;
@@ -121,6 +124,7 @@ export interface ChallengeDetail extends ChallengeSummary {
 export interface CreateChallengeRequest {
   name: string;
   type: ChallengeType;
+  region: ChallengeRegion;
   startAt: string;
   endAt?: string;
   maxGames?: number;

@@ -7,7 +7,7 @@ import { AuthModalService } from '../../core/services/auth-modal.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
-import { ChallengeListResponse } from '../../core/models/challenge.models';
+import { ChallengeListResponse, ChallengeRegion } from '../../core/models/challenge.models';
 import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { formatTimeSince } from '../../core/utils/relative-time';
 
@@ -25,9 +25,13 @@ import { I18nService } from '../../core/i18n/i18n.service';
 
 import {
 
+  DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER,
+
   filterPublicChallenges,
 
   hasActivePublicChallengeFilters,
+
+  PublicChallengeStatusFilter,
 
   PublicChallengeTypeFilter,
 
@@ -80,6 +84,12 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
   protected readonly typeFilter = signal<PublicChallengeTypeFilter>('ALL');
 
+  protected readonly statusFilter = signal<PublicChallengeStatusFilter>('ALL');
+
+  protected readonly regionFilter = signal<ChallengeRegion>(DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER);
+
+  protected readonly regionOptions: ChallengeRegion[] = ['EUW', 'EUNE', 'NA', 'KR'];
+
   protected readonly showLinkBanner = signal(false);
 
 
@@ -93,6 +103,10 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
       summoner: this.summonerQuery(),
 
       type: this.typeFilter(),
+
+      status: this.statusFilter(),
+
+      region: this.regionFilter(),
 
     }),
 
@@ -109,6 +123,10 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
       summoner: this.summonerQuery(),
 
       type: this.typeFilter(),
+
+      status: this.statusFilter(),
+
+      region: this.regionFilter(),
 
     }),
 
@@ -150,6 +168,27 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
 
   }
 
+  protected setStatusFilter(filter: PublicChallengeStatusFilter): void {
+    this.statusFilter.set(filter);
+  }
+
+  protected onRegionFilterChange(event: Event): void {
+    this.regionFilter.set((event.target as HTMLSelectElement).value as ChallengeRegion);
+  }
+
+  protected regionLabel(region: ChallengeRegion): string {
+    switch (region) {
+      case 'EUNE':
+        return this.i18n.t('challenge.regionEune');
+      case 'NA':
+        return this.i18n.t('challenge.regionNa');
+      case 'KR':
+        return this.i18n.t('challenge.regionKr');
+      default:
+        return this.i18n.t('challenge.regionEuw');
+    }
+  }
+
 
 
   protected clearSearch(): void {
@@ -159,6 +198,10 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
     this.summonerQuery.set('');
 
     this.typeFilter.set('ALL');
+
+    this.statusFilter.set('ALL');
+
+    this.regionFilter.set(DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER);
 
   }
 

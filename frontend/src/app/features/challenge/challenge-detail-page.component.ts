@@ -35,6 +35,7 @@ import { ActivityCacheService } from '../../core/services/activity-cache.service
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import {
   ChallengeBadgeComponent,
+  challengeRegionBadgeKind,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -313,9 +314,23 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   }
 
   protected readonly challengeTypeBadgeKind = challengeTypeBadgeKind;
+  protected readonly challengeRegionBadgeKind = challengeRegionBadgeKind;
 
   protected typeLabel(type: ChallengeDetail['type']): string {
     return type === 'SOLOQ' ? this.i18n.t('challenge.typeSoloq') : this.i18n.t('challenge.typeDuoq');
+  }
+
+  protected regionLabel(region: ChallengeDetail['region']): string {
+    switch (region) {
+      case 'EUNE':
+        return this.i18n.t('challenge.regionEune');
+      case 'NA':
+        return this.i18n.t('challenge.regionNa');
+      case 'KR':
+        return this.i18n.t('challenge.regionKr');
+      default:
+        return this.i18n.t('challenge.regionEuw');
+    }
   }
 
   protected previewEntryLimit(type: ChallengeSummary['type']): number {

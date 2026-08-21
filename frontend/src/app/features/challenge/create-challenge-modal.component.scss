@@ -86,6 +86,24 @@
   box-sizing: border-box;
 }
 
+.create-challenge-modal__type-region-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.625rem;
+  width: 100%;
+}
+
+.create-challenge-modal__type-region-row .type-switch {
+  flex: 1.4 1 0;
+  min-width: 0;
+}
+
+.create-challenge-modal__type-region-row .create-challenge-modal__region-block {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
 .create-challenge-modal__meta .challenge-form__schedule-field input,
 .create-challenge-modal__meta .challenge-form__schedule-field select {
   width: 100%;
@@ -544,6 +562,10 @@
   .create-challenge-modal .form-error {
     font-size: 0.8125rem;
     padding: 0.5rem 0.625rem;
+  }
+
+  .create-challenge-modal__type-region-row {
+    flex-direction: column;
   }
 
   .create-challenge-modal .type-switch {

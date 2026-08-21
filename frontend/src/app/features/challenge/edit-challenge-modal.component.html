@@ -44,6 +44,10 @@
           </svg>
           <span>{{ 'challenge.editTitle' | t }}</span>
           <app-challenge-badge [kind]="challengeTypeBadgeKind(challenge.type)" [label]="typeLabel(challenge.type)" />
+          <app-challenge-badge
+            [kind]="challengeRegionBadgeKind(challenge.region)"
+            [label]="regionLabel(challenge.region)"
+          />
         </h2>
       </header>
 

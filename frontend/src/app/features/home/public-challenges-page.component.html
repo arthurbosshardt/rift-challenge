@@ -119,6 +119,87 @@
         </div>
       </div>
 
+    </div>
+
+    <div class="challenge-search__filters challenge-search__filters--row2">
+      <div class="challenge-search__field challenge-search__field--status">
+        <span class="challenge-search__label">{{ 'home.searchStatusLabel' | t }}</span>
+        <div class="challenge-search__type" role="group" [attr.aria-label]="'home.searchStatusLabel' | t">
+          <button
+            type="button"
+            class="challenge-search__type-btn"
+            appClampTooltip
+            [class.challenge-search__type-btn--active]="statusFilter() === 'ALL'"
+            (click)="setStatusFilter('ALL')"
+            [attr.aria-label]="'home.searchStatusAllAria' | t"
+          >
+            <span class="challenge-search__type-btn-surface">{{ 'home.searchStatusAll' | t }}</span>
+            <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchStatusAllHint' | t }}</span>
+          </button>
+          <button
+            type="button"
+            class="challenge-search__type-btn"
+            appClampTooltip
+            [class.challenge-search__type-btn--active-not-started]="statusFilter() === 'NOT_STARTED'"
+            (click)="setStatusFilter('NOT_STARTED')"
+            [attr.aria-label]="'home.searchStatusNotStartedAria' | t"
+          >
+            <span class="challenge-search__type-btn-surface">
+              <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 5v5.25l3.5 2.08-.75 1.23L11 13V7h2z"
+                />
+              </svg>
+            </span>
+            <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchStatusNotStartedHint' | t }}</span>
+          </button>
+          <button
+            type="button"
+            class="challenge-search__type-btn"
+            appClampTooltip
+            [class.challenge-search__type-btn--active-in-progress]="statusFilter() === 'ACTIVE'"
+            (click)="setStatusFilter('ACTIVE')"
+            [attr.aria-label]="'home.searchStatusActiveAria' | t"
+          >
+            <span class="challenge-search__type-btn-surface">
+              <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14l11-7L8 5z" />
+              </svg>
+            </span>
+            <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchStatusActiveHint' | t }}</span>
+          </button>
+          <button
+            type="button"
+            class="challenge-search__type-btn challenge-search__type-btn--end"
+            appClampTooltip
+            [class.challenge-search__type-btn--active-finished]="statusFilter() === 'FINISHED'"
+            (click)="setStatusFilter('FINISHED')"
+            [attr.aria-label]="'home.searchStatusFinishedAria' | t"
+          >
+            <span class="challenge-search__type-btn-surface">
+              <svg class="challenge-search__type-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+              </svg>
+            </span>
+            <span class="challenge-search__type-tooltip" role="tooltip">{{ 'home.searchStatusFinishedHint' | t }}</span>
+          </button>
+        </div>
+      </div>
+
+      <label class="challenge-search__field challenge-search__field--region">
+        <span class="challenge-search__label">{{ 'home.searchRegionLabel' | t }}</span>
+        <select
+          class="challenge-search__region-select"
+          [attr.aria-label]="'home.searchRegionAria' | t"
+          [value]="regionFilter()"
+          (change)="onRegionFilterChange($event)"
+        >
+          @for (option of regionOptions; track option) {
+            <option [value]="option">{{ regionLabel(option) }}</option>
+          }
+        </select>
+      </label>
+
       <div class="challenge-search__field challenge-search__field--refresh">
         <span class="challenge-search__label challenge-search__label--invisible" aria-hidden="true">&nbsp;</span>
         <button

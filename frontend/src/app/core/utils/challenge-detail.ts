@@ -3,6 +3,7 @@ import { ChallengeDetail } from '../models/challenge.models';
 export function normalizeChallengeDetail(challenge: ChallengeDetail): ChallengeDetail {
   return {
     ...challenge,
+    region: challenge.region ?? 'EUW',
     endAt: challenge.endAt ?? null,
     maxGames: challenge.maxGames ?? null,
     participants: (challenge.participants ?? []).map((participant) => ({

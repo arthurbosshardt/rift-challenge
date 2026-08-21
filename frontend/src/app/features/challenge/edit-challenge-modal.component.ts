@@ -30,6 +30,7 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
 import { SummonerSearchService, SummonerSuggestion } from '../../core/services/summoner-search.service';
 import {
   ChallengeBadgeComponent,
+  challengeRegionBadgeKind,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
 import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
@@ -116,9 +117,23 @@ export class EditChallengeModalComponent {
   }
 
   protected readonly challengeTypeBadgeKind = challengeTypeBadgeKind;
+  protected readonly challengeRegionBadgeKind = challengeRegionBadgeKind;
 
   protected typeLabel(type: ChallengeDetail['type']): string {
     return type === 'SOLOQ' ? this.i18n.t('challenge.typeSoloq') : this.i18n.t('challenge.typeDuoq');
+  }
+
+  protected regionLabel(region: ChallengeDetail['region']): string {
+    switch (region) {
+      case 'EUNE':
+        return this.i18n.t('challenge.regionEune');
+      case 'NA':
+        return this.i18n.t('challenge.regionNa');
+      case 'KR':
+        return this.i18n.t('challenge.regionKr');
+      default:
+        return this.i18n.t('challenge.regionEuw');
+    }
   }
 
   protected entryCount(challenge: ChallengeDetail): number {
