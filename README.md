@@ -1,13 +1,28 @@
 # Rift Challenge
 
-Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreSQL).
+Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreSQL). Les joueurs créent un défi sur une période donnée, y inscrivent des comptes Riot, et comparent leur progression (LP / rang / V-D) — plus un classement global tous-challenges-confondus.
+
+**Prod** : [https://rift-challenge.com](https://rift-challenge.com)
 
 ## Structure
 
 - `frontend/` — Angular
-- `backend/` — Spring Boot 3.3 / Java 21
-- `.cursor/rules/` — règles projet
-- [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — recap métier + technique + design system (pour reprise IA)
+- `backend/` — Spring Boot
+- `rules/` — règles projet mutualisées (produit, backend, frontend, base de données, API Riot, tests, delivery) — **à lire avant tout changement significatif**, humain ou IA
+- `docs/` — guides opérationnels : [`DEPLOY.md`](docs/DEPLOY.md) (Render/Vercel/Supabase), [`GOOGLE_OAUTH.md`](docs/GOOGLE_OAUTH.md)
+
+## Versions
+
+| Composant | Version |
+|---|---|
+| Java | 21 (Temurin) |
+| Spring Boot | 3.3.7 |
+| Maven | 3.9.9 |
+| Angular | 22.1.x |
+| TypeScript | 6.0.x |
+| Node.js | 22 LTS (utilisé en CI — une version locale plus récente/impaire fonctionne généralement aussi) |
+| Vitest | 4.x (via `ng test`, pas Karma) |
+| PostgreSQL | 17 en local / géré par Supabase en prod |
 
 ## Prérequis locaux
 
@@ -30,7 +45,7 @@ $env:PGPASSWORD='postgres'
 & "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -O riftchallenge riftchallenge
 ```
 
-Variables dans `.env` à la racine (gitignored).
+Variables dans `.env` à la racine (gitignored). Les migrations Flyway s'exécutent au démarrage du backend (`V1` → `V24` actuellement).
 
 ## Lancer
 
@@ -46,9 +61,25 @@ cd frontend
 npm start
 ```
 
-- Back : http://localhost:8080  
-- Front : http://localhost:4200  
+- Back : http://localhost:8080
+- Front : http://localhost:4200
 - Health : http://localhost:8080/actuator/health
+
+Tests :
+
+```bash
+# backend
+cd backend && mvn test
+
+# frontend
+cd frontend && npm test        # ng test (Vitest, jsdom)
+```
+
+Build de prod frontend (vérifie aussi les budgets de bundle/style) :
+
+```bash
+cd frontend && npm run build
+```
 
 ## Riot API (secrets)
 
@@ -74,22 +105,23 @@ mvn spring-boot:run
 
 Les clés dev Riot expirent toutes les 24 h — regénérer sur le portail si besoin.
 
-## Routes UI
+## Routes UI (repères)
 
-| Route | Visiteur | Connecté |
-|---|---|---|
-| `/` | Les challenges | → `/my-challenges` |
-| `/my-challenges` | — | Mes challenges |
-| `/challenges` | — | Les challenges |
-| `/challenges/:shareSlug` | Détail + lien partageable | idem |
+| Route | Accès |
+|---|---|
+| `/`, `/home` | Landing publique |
+| `/challenges` | Liste des challenges + classement global |
+| `/challenges/:shareSlug` | Détail d'un challenge (public via lien de partage) |
+| `/challenges/new` | Création (connecté) |
+| `/my-challenges` | Challenges rejoints (connecté + compte Riot lié) |
+| `/settings` | Paramètres (connecté) |
+| `/login`, `/auth/callback`, `/auth/reset-password` | Flux d'auth |
 
-## API (MVP)
+Table de routage source : `frontend/src/app/app.routes.ts`.
 
-- `GET /api/challenges/public` — liste (lecture du cache BDD)
-- `POST /api/challenges/public/refresh` — recalcule le cache (cooldown 60s)
-- `GET /api/challenges/participating` (auth)
-- `GET /api/challenges/share/{shareSlug}`
-- `POST /api/challenges` (auth)
+## API (repères)
+
+Voir [`rules/10-backend.md`](rules/10-backend.md) pour la liste complète des endpoints, l'architecture backend et les mécanismes de throttling.
 
 ## Déploiement
 
@@ -114,5 +146,5 @@ Guides détaillés :
 4. **Vercel → Environment Variables** — `API_BASE_URL` = URL publique du backend Render (ex. `https://ton-backend.onrender.com`)
 5. **Supabase** — Site URL `https://rift-challenge.com` + redirect URLs (voir [GOOGLE_OAUTH.md](docs/GOOGLE_OAUTH.md))
 6. **Google Cloud** — autoriser `https://rift-challenge.com` et `https://www.rift-challenge.com` dans les origins OAuth
-7. Redéployer front + backend, puis tester login, création de challenge et lien partageable
-
+7. **GitHub → Settings → Secrets and variables → Actions → Variables** — `RENDER_HEALTH_URL` (URL `/actuator/health` du backend Render) pour le workflow anti cold-start (`.github/workflows/keep-alive.yml`)
+8. Redéployer front + backend, puis tester login, création de challenge et lien partageable
