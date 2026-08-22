@@ -5,6 +5,8 @@ import { SettingsModalService } from '../../core/services/settings-modal.service
 import { ActivityCacheService, ActivityAccount, normalizeActivityAccount } from '../../core/services/activity-cache.service';
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AccountRecentGames, ChallengeListResponse } from '../../core/models/challenge.models';
 import { formatRankLabel, tierColor } from '../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../core/utils/record-display';
