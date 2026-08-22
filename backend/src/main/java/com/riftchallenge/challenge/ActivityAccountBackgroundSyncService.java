@@ -1,7 +1,7 @@
 package com.riftchallenge.challenge;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountSyncService;
 import com.riftchallenge.leaderboard.LeaderboardAccountSyncService.ActivitySyncBatchResult;
@@ -37,7 +37,7 @@ public class ActivityAccountBackgroundSyncService {
 
     private final LeaderboardAccountSyncService accountSyncService;
     private final LeaderboardAccountMatchRepository accountMatchRepository;
-    private final UserRiotAccountRepository userRiotAccountRepository;
+    private final RiotAccountRepository riotAccountRepository;
     private final RiotMatchLookupService riotMatchLookupService;
     private final LeaderboardProperties leaderboardProperties;
     private final ExecutorService riotSyncExecutor;
@@ -50,7 +50,7 @@ public class ActivityAccountBackgroundSyncService {
     public ActivityAccountBackgroundSyncService(
             LeaderboardAccountSyncService accountSyncService,
             LeaderboardAccountMatchRepository accountMatchRepository,
-            UserRiotAccountRepository userRiotAccountRepository,
+            RiotAccountRepository riotAccountRepository,
             RiotMatchLookupService riotMatchLookupService,
             LeaderboardProperties leaderboardProperties,
             ExecutorService riotSyncExecutor,
@@ -58,59 +58,61 @@ public class ActivityAccountBackgroundSyncService {
     ) {
         this.accountSyncService = accountSyncService;
         this.accountMatchRepository = accountMatchRepository;
-        this.userRiotAccountRepository = userRiotAccountRepository;
+        this.riotAccountRepository = riotAccountRepository;
         this.riotMatchLookupService = riotMatchLookupService;
         this.leaderboardProperties = leaderboardProperties;
         this.riotSyncExecutor = riotSyncExecutor;
         this.clock = clock;
     }
 
-    public boolean isCatchUpActive(UUID accountId) {
-        return Boolean.TRUE.equals(catchUpChainActive.get(accountId))
-                || syncInProgress.containsKey(accountId);
+    public boolean isCatchUpActive(UUID riotAccountId) {
+        return Boolean.TRUE.equals(catchUpChainActive.get(riotAccountId))
+                || syncInProgress.containsKey(riotAccountId);
     }
 
-    public boolean isSeasonHistoryExhausted(UUID accountId) {
-        if (Boolean.TRUE.equals(seasonHistoryExhausted.get(accountId))) {
+    public boolean isSeasonHistoryExhausted(UUID riotAccountId) {
+        if (Boolean.TRUE.equals(seasonHistoryExhausted.get(riotAccountId))) {
             return true;
         }
-        return userRiotAccountRepository.findById(accountId)
-                .map(UserRiotAccount::isActivitySeasonHistoryExhausted)
+        return riotAccountRepository.findById(riotAccountId)
+                .map(RiotAccount::isActivitySeasonHistoryExhausted)
                 .orElse(false);
     }
 
-    public void scheduleSyncIfIdle(UserRiotAccount account, int seasonMatchTotal, int storedMatchCount) {
+    public void scheduleSyncIfIdle(RiotAccount account, int seasonMatchTotal, int storedMatchCount) {
+        UUID riotAccountId = account.getId();
         if (storedMatchCount >= seasonMatchTotal) {
-            catchUpChainActive.remove(account.getId());
-            seasonHistoryExhausted.remove(account.getId());
+            catchUpChainActive.remove(riotAccountId);
+            seasonHistoryExhausted.remove(riotAccountId);
             clearPersistedSeasonHistoryExhausted(account);
             return;
         }
 
-        if (isSeasonHistoryExhausted(account.getId())) {
+        if (isSeasonHistoryExhausted(riotAccountId)) {
             return;
         }
 
-        if (isCatchUpActive(account.getId())) {
+        if (isCatchUpActive(riotAccountId)) {
             return;
         }
 
         Instant now = clock.instant();
-        Instant lastChain = lastChainStartedAt.get(account.getId());
-        if (lastChain != null && lastChain.plus(NEW_CHAIN_COOLDOWN).isAfter(now)) {
+        Instant lastChain = lastChainStartedAt.get(riotAccountId);
+        if (lastChain != null && lastChain.plus(NEW_CHAIN_COOLDOWN).isAfter(now) && storedMatchCount > 0) {
             return;
         }
 
         startCatchUpChain(account, seasonMatchTotal, 0);
     }
 
-    void startCatchUpChain(UserRiotAccount account, int seasonMatchTotal, int chainDepth) {
+    void startCatchUpChain(RiotAccount account, int seasonMatchTotal, int chainDepth) {
+        UUID riotAccountId = account.getId();
         if (chainDepth >= MAX_CATCH_UP_CHAIN) {
-            catchUpChainActive.remove(account.getId());
+            catchUpChainActive.remove(riotAccountId);
             return;
         }
 
-        if (isSeasonHistoryExhausted(account.getId())) {
+        if (isSeasonHistoryExhausted(riotAccountId)) {
             return;
         }
 
@@ -119,23 +121,24 @@ public class ActivityAccountBackgroundSyncService {
                 leaderboardProperties.seasonStartAt()
         );
         if (storedMatchCount >= seasonMatchTotal) {
-            catchUpChainActive.remove(account.getId());
+            catchUpChainActive.remove(riotAccountId);
             return;
         }
 
-        if (syncInProgress.putIfAbsent(account.getId(), Boolean.TRUE) != null) {
+        if (syncInProgress.putIfAbsent(riotAccountId, Boolean.TRUE) != null) {
             return;
         }
 
         if (chainDepth == 0) {
-            lastChainStartedAt.put(account.getId(), clock.instant());
-            catchUpChainActive.put(account.getId(), Boolean.TRUE);
+            lastChainStartedAt.put(riotAccountId, clock.instant());
+            catchUpChainActive.put(riotAccountId, Boolean.TRUE);
         }
 
         riotSyncExecutor.submit(() -> runCatchUpBatch(account, seasonMatchTotal, chainDepth));
     }
 
-    private void runCatchUpBatch(UserRiotAccount account, int seasonMatchTotal, int chainDepth) {
+    private void runCatchUpBatch(RiotAccount account, int seasonMatchTotal, int chainDepth) {
+        UUID riotAccountId = account.getId();
         ActivitySyncBatchResult batchResult = null;
         try {
             riotMatchLookupService.beginRefreshScope();
@@ -145,23 +148,23 @@ public class ActivityAccountBackgroundSyncService {
                 riotMatchLookupService.endRefreshScope();
             }
         } catch (ResponseStatusException exception) {
-            catchUpChainActive.remove(account.getId());
+            catchUpChainActive.remove(riotAccountId);
             if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                log.warn("Background activity sync hit Riot rate limit for account {}", account.getId());
+                log.warn("Background activity sync hit Riot rate limit for riot account {}", riotAccountId);
             } else {
                 log.warn(
-                        "Background activity sync failed for account {}: {}",
-                        account.getId(),
+                        "Background activity sync failed for riot account {}: {}",
+                        riotAccountId,
                         exception.getReason()
                 );
             }
             return;
         } catch (RuntimeException exception) {
-            catchUpChainActive.remove(account.getId());
-            log.warn("Background activity sync failed for account {}: {}", account.getId(), exception.getMessage());
+            catchUpChainActive.remove(riotAccountId);
+            log.warn("Background activity sync failed for riot account {}: {}", riotAccountId, exception.getMessage());
             return;
         } finally {
-            syncInProgress.remove(account.getId());
+            syncInProgress.remove(riotAccountId);
         }
 
         long storedMatchCount = accountMatchRepository.countSeasonMatchesSince(
@@ -169,13 +172,13 @@ public class ActivityAccountBackgroundSyncService {
                 leaderboardProperties.seasonStartAt()
         );
         if (batchResult != null && batchResult.allMatchIdsImported()) {
-            seasonHistoryExhausted.put(account.getId(), Boolean.TRUE);
+            seasonHistoryExhausted.put(riotAccountId, Boolean.TRUE);
             markPersistedSeasonHistoryExhausted(account);
         }
         if (storedMatchCount >= seasonMatchTotal
                 || (batchResult != null && batchResult.allMatchIdsImported())
                 || chainDepth + 1 >= MAX_CATCH_UP_CHAIN) {
-            catchUpChainActive.remove(account.getId());
+            catchUpChainActive.remove(riotAccountId);
             return;
         }
 
@@ -184,26 +187,26 @@ public class ActivityAccountBackgroundSyncService {
                 Thread.sleep(CATCH_UP_RETRY_DELAY.toMillis());
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
-                catchUpChainActive.remove(account.getId());
+                catchUpChainActive.remove(riotAccountId);
                 return;
             }
             startCatchUpChain(account, seasonMatchTotal, chainDepth + 1);
         });
     }
 
-    private void markPersistedSeasonHistoryExhausted(UserRiotAccount account) {
+    private void markPersistedSeasonHistoryExhausted(RiotAccount account) {
         if (account.isActivitySeasonHistoryExhausted()) {
             return;
         }
         account.markActivitySeasonHistoryExhausted();
-        userRiotAccountRepository.save(account);
+        riotAccountRepository.save(account);
     }
 
-    private void clearPersistedSeasonHistoryExhausted(UserRiotAccount account) {
+    private void clearPersistedSeasonHistoryExhausted(RiotAccount account) {
         if (!account.isActivitySeasonHistoryExhausted()) {
             return;
         }
         account.clearActivitySeasonHistoryExhausted();
-        userRiotAccountRepository.save(account);
+        riotAccountRepository.save(account);
     }
 }

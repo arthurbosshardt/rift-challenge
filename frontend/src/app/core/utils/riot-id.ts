@@ -1,3 +1,9 @@
+import type { AppLocale } from '../i18n/translations';
+
+export function defaultRiotTagLine(locale: AppLocale | string): string {
+  return locale === 'fr' ? 'EUW' : 'NA';
+}
+
 export function normalizeGameName(gameName: string): string {
   return gameName.replace(/\s/g, '');
 }
@@ -6,10 +12,25 @@ export function normalizeTagLine(tagLine: string): string {
   return tagLine.replace(/\u00A0/g, ' ').trim().replace(/^#+/, '');
 }
 
-export function normalizeRiotId(riotId: string): string {
+export function normalizeRiotId(riotId: string, defaultTagLine?: string): string {
   const trimmed = riotId.replace(/\u00A0/g, ' ').trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
   const hashIndex = trimmed.indexOf('#');
-  if (hashIndex <= 0 || hashIndex >= trimmed.length - 1) {
+  if (hashIndex < 0) {
+    if (defaultTagLine) {
+      const gameName = normalizeGameName(trimmed);
+      const tagLine = normalizeTagLine(defaultTagLine);
+      if (gameName && tagLine) {
+        return `${gameName}#${tagLine}`;
+      }
+    }
+    return trimmed;
+  }
+
+  if (hashIndex === 0 || hashIndex >= trimmed.length - 1) {
     return trimmed;
   }
 
@@ -22,8 +43,15 @@ export function normalizeRiotId(riotId: string): string {
   return `${gameName}#${tagLine}`;
 }
 
-export function parseRiotId(riotId: string): { gameName: string; tagLine: string } | null {
-  const normalized = normalizeRiotId(riotId);
+export function normalizeRiotIdForLocale(riotId: string, locale: AppLocale | string): string {
+  return normalizeRiotId(riotId, defaultRiotTagLine(locale));
+}
+
+export function parseRiotId(
+  riotId: string,
+  defaultTagLine?: string,
+): { gameName: string; tagLine: string } | null {
+  const normalized = normalizeRiotId(riotId, defaultTagLine);
   const hashIndex = normalized.indexOf('#');
   if (hashIndex <= 0 || hashIndex >= normalized.length - 1) {
     return null;
@@ -36,6 +64,13 @@ export function parseRiotId(riotId: string): { gameName: string; tagLine: string
   }
 
   return { gameName, tagLine };
+}
+
+export function parseRiotIdForLocale(
+  riotId: string,
+  locale: AppLocale | string,
+): { gameName: string; tagLine: string } | null {
+  return parseRiotId(riotId, defaultRiotTagLine(locale));
 }
 
 export function buildRiotId(gameName: string, tagLine: string): string | null {

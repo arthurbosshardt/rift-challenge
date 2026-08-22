@@ -404,7 +404,12 @@ export class AuthService {
       }
 
       this.profileUsername.set(me.username?.trim() || null);
+      const previousLinkedId = this.linkedRiotAccount()?.id ?? null;
       const linked = me.linkedRiotAccount ?? (await this.fetchLinkedAccountFallback());
+      const nextLinkedId = linked?.id ?? null;
+      if (previousLinkedId !== nextLinkedId) {
+        this.activityCache.invalidateActivity();
+      }
       this.linkedRiotAccount.set(linked);
     } catch {
       this.profileUsername.set(null);

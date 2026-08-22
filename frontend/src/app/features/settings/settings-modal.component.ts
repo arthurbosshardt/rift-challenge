@@ -14,7 +14,7 @@ import { ActivityCacheService } from '../../core/services/activity-cache.service
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { UserRiotAccount } from '../../core/models/challenge.models';
-import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
+import { buildRiotId, parseRiotIdForLocale } from '../../core/utils/riot-id';
 import { translateAuthError } from '../../core/utils/auth-errors';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
@@ -182,7 +182,7 @@ export class SettingsModalComponent {
       return;
     }
 
-    const parsed = parseRiotId(riotIdInput);
+    const parsed = parseRiotIdForLocale(riotIdInput, this.i18n.locale());
 
     if (!parsed) {
       this.accountError.set(this.i18n.t('errors.riotIdFormat'));

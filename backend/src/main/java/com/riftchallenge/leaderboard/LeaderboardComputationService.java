@@ -1,7 +1,7 @@
 package com.riftchallenge.leaderboard;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardMatchHistoryResponse;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Computes the global leaderboard from data synced independently of challenges (see
- * {@link LeaderboardAccountSyncService}) — every linked Riot account counts, regardless of
+ * {@link LeaderboardAccountSyncService}) — every tracked Riot account counts, regardless of
  * whether or which challenge(s) its owner has joined. Only runs from
  * {@link LeaderboardCacheService#refresh}, right after the account sync.
  */
@@ -39,20 +39,20 @@ public class LeaderboardComputationService {
     static final int MIN_WIN_STREAK_FOR_LEADERBOARD = 2;
     private static final Duration ROLLING_WINDOW = Duration.ofDays(7);
 
-    private final UserRiotAccountRepository userRiotAccountRepository;
+    private final RiotAccountRepository riotAccountRepository;
     private final LeaderboardAccountMatchRepository matchRepository;
     private final LeaderboardAccountRankRepository rankRepository;
     private final LeaderboardProperties properties;
     private final ChampionIconUrlService championIconUrlService;
 
     public LeaderboardComputationService(
-            UserRiotAccountRepository userRiotAccountRepository,
+            RiotAccountRepository riotAccountRepository,
             LeaderboardAccountMatchRepository matchRepository,
             LeaderboardAccountRankRepository rankRepository,
             LeaderboardProperties properties,
             ChampionIconUrlService championIconUrlService
     ) {
-        this.userRiotAccountRepository = userRiotAccountRepository;
+        this.riotAccountRepository = riotAccountRepository;
         this.matchRepository = matchRepository;
         this.rankRepository = rankRepository;
         this.properties = properties;
@@ -60,19 +60,19 @@ public class LeaderboardComputationService {
     }
 
     public LeaderboardSnapshot compute(Instant now) {
-        List<UserRiotAccount> accounts = userRiotAccountRepository.findAll();
+        List<RiotAccount> accounts = riotAccountRepository.findAll();
         Instant seasonStart = properties.seasonStartAt();
         Instant rollingStart = laterOf(seasonStart, now.minus(ROLLING_WINDOW));
 
         Map<String, PlayerRank> ranks = new HashMap<>();
-        for (UserRiotAccount account : accounts) {
+        for (RiotAccount account : accounts) {
             recordLatestRank(ranks, account);
         }
 
         List<ParticipantWindowStats> seasonStats = new ArrayList<>();
         List<ParticipantWindowStats> rollingStats = new ArrayList<>();
 
-        for (UserRiotAccount account : accounts) {
+        for (RiotAccount account : accounts) {
             List<TaggedMatch> history = accountHistorySince(account.getRiotPuuid(), seasonStart);
             if (history.isEmpty()) {
                 continue;
@@ -140,7 +140,7 @@ public class LeaderboardComputationService {
         );
     }
 
-    private void recordLatestRank(Map<String, PlayerRank> ranks, UserRiotAccount account) {
+    private void recordLatestRank(Map<String, PlayerRank> ranks, RiotAccount account) {
         rankRepository.findByRiotPuuid(account.getRiotPuuid()).ifPresent(snapshot -> ranks.put(
                 account.getRiotPuuid(),
                 new PlayerRank(
@@ -313,7 +313,7 @@ public class LeaderboardComputationService {
         );
     }
 
-    private static PlayerIdentity identityOf(UserRiotAccount account) {
+    private static PlayerIdentity identityOf(RiotAccount account) {
         return new PlayerIdentity(
                 account.getRiotPuuid(),
                 account.getRiotGameName(),

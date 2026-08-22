@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
@@ -22,8 +22,7 @@ import { ChampionPoolSkeletonComponent } from '../../shared/components/champion-
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
-import { TranslatePipe } from '../../core/i18n/t.pipe';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { LeaderboardCategoryIconComponent } from '../../shared/components/leaderboard-category-icon/leaderboard-category-icon.component';
 
 type ActivityView = 'activity' | 'challenges';
 
@@ -41,6 +40,7 @@ type ActivityView = 'activity' | 'challenges';
     SkeletonComponent,
     NavIconComponent,
     TranslatePipe,
+    LeaderboardCategoryIconComponent,
   ],
   templateUrl: './my-activity-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,12 +69,29 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   protected readonly activityAccounts = this.cache.activityAccounts;
   protected readonly activityLoading = signal(this.cache.activityLastLoadedAt() === null);
   protected readonly activityError = signal<string | null>(null);
-  private readonly activityCooldown = new RefreshCooldown(30_000);
+  private readonly activityCooldown = new RefreshCooldown();
   protected readonly refreshCooldownSeconds = this.activityCooldown.seconds;
   protected readonly lastRefreshedAt = this.cache.lastRefreshedAt;
   private seasonSyncPollInterval: ReturnType<typeof setInterval> | null = null;
 
   protected readonly activitySkeletonRows = [0, 1];
+
+  private linkedAccountTracker: string | null | undefined;
+
+  constructor() {
+    effect(() => {
+      const linkedAccountId = this.auth.linkedAccount()?.id ?? null;
+      if (this.linkedAccountTracker === undefined) {
+        this.linkedAccountTracker = linkedAccountId;
+        return;
+      }
+      if (linkedAccountId === this.linkedAccountTracker) {
+        return;
+      }
+      this.linkedAccountTracker = linkedAccountId;
+      void this.onLinkedAccountChanged(linkedAccountId);
+    });
+  }
 
   ngOnInit(): void {
     void this.loadPage();
@@ -122,15 +139,12 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     return total > 0 ? wins / total : 0;
   }
 
-  protected accountChampionsLoading(account: ActivityAccount): boolean {
-    if (account.seasonSyncComplete || (account.champions ?? []).length > 0) {
-      return false;
-    }
-    return account.seasonSyncInProgress;
+  protected accountSeasonSyncInProgress(account: ActivityAccount): boolean {
+    return !account.seasonSyncComplete;
   }
 
   private hasIncompleteSeasonSync(): boolean {
-    return this.activityAccounts().some((account) => account.seasonSyncInProgress);
+    return this.activityAccounts().some((account) => !account.seasonSyncComplete);
   }
 
   /** Cache from before champion stats could omit `champions` while games are already stored. */
@@ -181,8 +195,17 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     return this.i18n.t(idleKey);
   }
 
+  protected activityRefreshDisabled(): boolean {
+    return (
+      this.activityLoading() ||
+      this.refreshCooldownSeconds() > 0 ||
+      !this.backend.ready() ||
+      this.hasIncompleteSeasonSync()
+    );
+  }
+
   protected refreshActivity(): void {
-    if (this.activityCooldown.active || this.activityLoading()) {
+    if (this.activityCooldown.active || this.activityLoading() || this.hasIncompleteSeasonSync()) {
       return;
     }
     this.activityError.set(null);
@@ -324,6 +347,26 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
         }
       },
     });
+  }
+
+  private async onLinkedAccountChanged(linkedAccountId: string | null): Promise<void> {
+    this.activityError.set(null);
+    this.activityCooldown.clear();
+    this.stopSeasonSyncPolling();
+    this.cache.invalidateActivity();
+
+    if (!linkedAccountId) {
+      this.activityLoading.set(false);
+      return;
+    }
+
+    await this.auth.waitUntilReady();
+    if (!(await this.auth.resolveAccessToken())) {
+      this.activityLoading.set(false);
+      return;
+    }
+
+    this.loadActivity(false, true);
   }
 
   private loadActivity(silent = false, refresh = false): void {

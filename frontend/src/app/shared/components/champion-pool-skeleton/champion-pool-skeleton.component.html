@@ -1,4 +1,10 @@
-<div class="champion-pool-skeleton" role="status" aria-busy="true" [attr.aria-label]="loadingAriaLabel()">
+<div
+  class="champion-pool-skeleton"
+  [class.champion-pool-skeleton--header-only]="headerOnly()"
+  role="status"
+  aria-busy="true"
+  [attr.aria-label]="loadingAriaLabel()"
+>
   <div class="champion-pool-skeleton__header">
     <div class="champion-pool-skeleton__status">
       <svg class="champion-pool-skeleton__spinner" viewBox="0 0 24 24" aria-hidden="true">
@@ -29,25 +35,27 @@
       <div class="champion-pool-skeleton__progress-fill" [style.width.%]="progressPercent()"></div>
     </div>
   </div>
-  <div class="champion-pool-skeleton__rows">
-    @for (row of rows; track row) {
-      <div class="champion-pool-skeleton__row">
-        <div class="champion-pool-skeleton__identity">
-          <app-skeleton [circle]="true" width="2.5rem" height="2.5rem" />
-          <div class="champion-pool-skeleton__identity-copy">
-            <app-skeleton height="0.875rem" maxWidth="5.5rem" />
-            <app-skeleton height="0.6875rem" maxWidth="4rem" />
+  @if (!headerOnly()) {
+    <div class="champion-pool-skeleton__rows">
+      @for (row of rows; track row) {
+        <div class="champion-pool-skeleton__row">
+          <div class="champion-pool-skeleton__identity">
+            <app-skeleton [circle]="true" width="2.5rem" height="2.5rem" />
+            <div class="champion-pool-skeleton__identity-copy">
+              <app-skeleton height="0.875rem" maxWidth="5.5rem" />
+              <app-skeleton height="0.6875rem" maxWidth="4rem" />
+            </div>
+          </div>
+          <div class="champion-pool-skeleton__stats">
+            <app-skeleton height="0.875rem" maxWidth="3rem" />
+            <app-skeleton height="0.6875rem" maxWidth="5rem" />
+          </div>
+          <div class="champion-pool-skeleton__record">
+            <app-skeleton height="1.25rem" width="2.75rem" radius="999px" />
+            <app-skeleton height="0.6875rem" maxWidth="3.5rem" />
           </div>
         </div>
-        <div class="champion-pool-skeleton__stats">
-          <app-skeleton height="0.875rem" maxWidth="3rem" />
-          <app-skeleton height="0.6875rem" maxWidth="5rem" />
-        </div>
-        <div class="champion-pool-skeleton__record">
-          <app-skeleton height="1.25rem" width="2.75rem" radius="999px" />
-          <app-skeleton height="0.6875rem" maxWidth="3.5rem" />
-        </div>
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 </div>

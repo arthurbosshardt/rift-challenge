@@ -1,7 +1,5 @@
 package com.riftchallenge.account;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,28 +8,34 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserRiotAccountRepository extends JpaRepository<UserRiotAccount, UUID> {
 
-    Optional<UserRiotAccount> findByUserId(UUID userId);
-
-    Optional<UserRiotAccount> findByIdAndUserId(UUID id, UUID userId);
-
-    Optional<UserRiotAccount> findByRiotPuuid(String riotPuuid);
+    @Query("""
+            SELECT l
+            FROM UserRiotAccount l
+            JOIN FETCH l.riotAccount
+            WHERE l.userId = :userId
+            """)
+    Optional<UserRiotAccount> findByUserId(@Param("userId") UUID userId);
 
     @Query("""
-            SELECT a
-            FROM UserRiotAccount a
-            WHERE LOWER(a.riotGameName) LIKE LOWER(CONCAT(:query, '%'))
-               OR LOWER(CONCAT(a.riotGameName, '#', a.riotTagLine)) LIKE LOWER(CONCAT(:query, '%'))
-            ORDER BY a.riotGameName ASC
+            SELECT l
+            FROM UserRiotAccount l
+            JOIN FETCH l.riotAccount
+            WHERE l.id = :id AND l.userId = :userId
             """)
-    List<UserRiotAccount> searchByRiotId(
-            @Param("query") String query,
-            org.springframework.data.domain.Pageable pageable
-    );
+    Optional<UserRiotAccount> findByIdAndUserId(@Param("id") UUID id, @Param("userId") UUID userId);
 
     @Query("""
-            SELECT a.riotPuuid
-            FROM UserRiotAccount a
-            WHERE a.riotPuuid IN :puuids
+            SELECT l
+            FROM UserRiotAccount l
+            JOIN FETCH l.riotAccount
+            WHERE l.riotAccount.riotPuuid = :riotPuuid
             """)
-    List<String> findLinkedPuidsIn(@Param("puuids") Collection<String> puuids);
+    Optional<UserRiotAccount> findByRiotAccountPuuid(@Param("riotPuuid") String riotPuuid);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(l) > 0 THEN true ELSE false END
+            FROM UserRiotAccount l
+            WHERE l.riotAccount.id = :riotAccountId
+            """)
+    boolean existsByRiotAccountId(@Param("riotAccountId") UUID riotAccountId);
 }

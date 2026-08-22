@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
@@ -14,7 +15,6 @@ import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.RiotLeagueClient;
-import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import java.time.Instant;
 import java.util.List;
@@ -75,8 +75,7 @@ class RecentActivityServiceTest {
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW))
                 .thenReturn(Optional.of(new RiotLeagueEntryDto("RANKED_SOLO_5x5", "GOLD", "II", 55, 72, 65)));
-        when(backgroundSyncService.isCatchUpActive(account.getId())).thenReturn(true);
-        when(backgroundSyncService.isSeasonHistoryExhausted(account.getId())).thenReturn(false);
+        when(backgroundSyncService.isSeasonHistoryExhausted(account.getRiotAccount().getId())).thenReturn(false);
         when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(
                 java.util.stream.IntStream.range(0, 100)
                         .mapToObj(i -> seasonRow(
@@ -102,7 +101,25 @@ class RecentActivityServiceTest {
         assertThat(result.get(0).seasonGames()).isEqualTo(137);
         assertThat(result.get(0).champions()).isNotEmpty();
         assertThat(result.get(0).champions().getFirst().games()).isEqualTo(100);
-        verify(backgroundSyncService).scheduleSyncIfIdle(account, 137, 100);
+        verify(backgroundSyncService).scheduleSyncIfIdle(account.getRiotAccount(), 137, 100);
+    }
+
+    @Test
+    void listRecentGames_marksSyncInProgressWhenCatchUpNotActiveYet() {
+        UUID userId = UUID.randomUUID();
+        UserRiotAccount account = linkedAccount(userId, PUUID);
+        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
+        when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW))
+                .thenReturn(Optional.of(new RiotLeagueEntryDto("RANKED_SOLO_5x5", "GOLD", "II", 55, 2, 1)));
+        when(backgroundSyncService.isSeasonHistoryExhausted(account.getRiotAccount().getId())).thenReturn(false);
+        when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(List.of());
+
+        List<AccountRecentGamesResponse> result = service.listRecentGames(userId);
+
+        assertThat(result.get(0).seasonSyncComplete()).isFalse();
+        assertThat(result.get(0).seasonSyncInProgress()).isTrue();
+        assertThat(result.get(0).champions()).isEmpty();
+        verify(backgroundSyncService).scheduleSyncIfIdle(account.getRiotAccount(), 3, 0);
     }
 
     @Test
@@ -158,7 +175,7 @@ class RecentActivityServiceTest {
         assertThat(result.get(0).champions()).hasSize(3);
         assertThat(result.get(0).champions().getFirst().games()).isEqualTo(3);
         assertThat(result.get(0).champions().getFirst().wins()).isEqualTo(2);
-        verify(backgroundSyncService).scheduleSyncIfIdle(account, 3, 3);
+        verify(backgroundSyncService).scheduleSyncIfIdle(account.getRiotAccount(), 3, 3);
     }
 
     @Test
@@ -175,11 +192,11 @@ class RecentActivityServiceTest {
 
         assertThat(result.get(0).seasonSyncComplete()).isFalse();
         assertThat(result.get(0).champions()).isNotEmpty();
-        verify(backgroundSyncService).scheduleSyncIfIdle(account, 500, 1);
+        verify(backgroundSyncService).scheduleSyncIfIdle(account.getRiotAccount(), 500, 1);
     }
 
     private static UserRiotAccount linkedAccount(UUID userId, String puuid) {
-        return UserRiotAccount.create(userId, new RiotAccountDto(puuid, "Tanor", "EUW"), null);
+        return TestRiotAccounts.linkedAccount(userId, puuid, "Tanor", "EUW");
     }
 
     private static SeasonActivityRow seasonRow(

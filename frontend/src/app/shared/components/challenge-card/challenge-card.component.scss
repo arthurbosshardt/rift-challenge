@@ -369,6 +369,7 @@
 .challenge-card__preview-rank-label--badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
   width: fit-content;
   max-width: 100%;
   padding: 0.1875rem 0.5rem;
@@ -408,6 +409,7 @@
 .challenge-card__lp {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
   min-height: var(--preview-stat-row-lp);
   flex-shrink: 0;
   padding: 0.1875rem 0.5rem;
@@ -473,6 +475,7 @@
 .challenge-card__winrate {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
   padding: 0.1875rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);

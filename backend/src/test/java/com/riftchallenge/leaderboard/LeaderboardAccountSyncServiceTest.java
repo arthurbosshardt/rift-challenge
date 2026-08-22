@@ -9,8 +9,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.TestRiotAccounts;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
 import com.riftchallenge.riot.RiotMatchLookupService;
@@ -40,7 +41,7 @@ class LeaderboardAccountSyncServiceTest {
     private static final String PUUID = "puuid-1";
 
     @Mock
-    private UserRiotAccountRepository userRiotAccountRepository;
+    private RiotAccountRepository riotAccountRepository;
 
     @Mock
     private LeaderboardAccountMatchRepository accountMatchRepository;
@@ -61,12 +62,12 @@ class LeaderboardAccountSyncServiceTest {
     private RiotMatchLookupService riotMatchLookupService;
 
     private LeaderboardAccountSyncService service;
-    private UserRiotAccount account;
+    private RiotAccount account;
 
     @BeforeEach
     void setUp() {
         service = new LeaderboardAccountSyncService(
-                userRiotAccountRepository,
+                riotAccountRepository,
                 accountMatchRepository,
                 accountRankRepository,
                 riotMatchRepository,
@@ -76,9 +77,9 @@ class LeaderboardAccountSyncServiceTest {
                 new LeaderboardProperties(SEASON_START, "admin@example.com")
         );
 
-        account = UserRiotAccount.create(UUID.randomUUID(), new RiotAccountDto(PUUID, "Player", "EUW"));
-        lenient().when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
-        lenient().when(userRiotAccountRepository.findLinkedPuidsIn(any())).thenReturn(List.of());
+        account = TestRiotAccounts.riotAccount(PUUID, "Player", "EUW");
+        lenient().when(riotAccountRepository.findAll()).thenReturn(List.of(account));
+        lenient().when(riotAccountRepository.findPuidsIn(any())).thenReturn(List.of());
         lenient().when(riotLeagueClient.findRankedSoloEntry(any(), any())).thenReturn(Optional.empty());
     }
 
@@ -177,7 +178,7 @@ class LeaderboardAccountSyncServiceTest {
         when(riotMatchRepository.existsByRiotMatchId(matchId)).thenReturn(false);
         when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(PUUID, matchId)).thenReturn(Optional.empty());
         when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(coPlayerPuuid, matchId)).thenReturn(Optional.empty());
-        when(userRiotAccountRepository.findLinkedPuidsIn(any())).thenReturn(List.of(PUUID, coPlayerPuuid));
+        when(riotAccountRepository.findPuidsIn(any())).thenReturn(List.of(PUUID, coPlayerPuuid));
 
         service.importMatch(PUUID, matchId);
 

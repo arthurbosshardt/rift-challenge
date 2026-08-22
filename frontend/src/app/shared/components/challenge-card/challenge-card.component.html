@@ -81,7 +81,10 @@
                                     class="challenge-card__preview-rank-label challenge-card__preview-rank-label--badge"
                                     [style.--rank-color]="rankColor(duo.player1)"
                                     appHideIfTruncated
-                                  >{{ p1Rank }}</span>
+                                  >
+                                    <app-leaderboard-category-icon category="rank" [compact]="true" />
+                                    {{ p1Rank }}
+                                  </span>
                                 } @else {
                                   <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
                                     {{ duo.player1.riotId }}
@@ -111,7 +114,10 @@
                                     class="challenge-card__preview-rank-label challenge-card__preview-rank-label--badge"
                                     [style.--rank-color]="rankColor(duo.player2)"
                                     appHideIfTruncated
-                                  >{{ p2Rank }}</span>
+                                  >
+                                    <app-leaderboard-category-icon category="rank" [compact]="true" />
+                                    {{ p2Rank }}
+                                  </span>
                                 } @else {
                                   <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
                                     {{ duo.player2.riotId }}
@@ -129,6 +135,7 @@
                                 [class]="lpClass(duo.combinedLpGained)"
                                 [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
                               >
+                                <app-leaderboard-category-icon category="lpGained" [compact]="true" />
                                 {{ lpLabel(duo.combinedLpGained) }}
                                 <span class="challenge-card__lp-tooltip" role="tooltip">
                                   {{ 'challenge.lpGainedEstimatedHint' | t }}
@@ -136,6 +143,7 @@
                               </span>
                               <span class="challenge-card__wl">
                                 <span [class]="'challenge-card__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                                  <app-leaderboard-category-icon category="winRate" [compact]="true" />
                                   {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
                                 </span>
                                 @if (hasRecord(duo.wins, duo.losses)) {
@@ -192,7 +200,10 @@
                                 class="challenge-card__preview-rank-label challenge-card__preview-rank-label--badge"
                                 [style.--rank-color]="rankColor(participant)"
                                 appHideIfTruncated
-                              >{{ label }}</span>
+                              >
+                                <app-leaderboard-category-icon category="rank" [compact]="true" />
+                                {{ label }}
+                              </span>
                             } @else {
                               <span class="challenge-card__preview-rank-label challenge-card__preview-rank-label--muted">
                                 {{ participant.riotId }}
@@ -208,6 +219,7 @@
                                 [class]="lpClass(participant.lpGained)"
                                 [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
                               >
+                                <app-leaderboard-category-icon category="lpGained" [compact]="true" />
                                 {{ lpLabel(participant.lpGained) }}
                                 <span class="challenge-card__lp-tooltip" role="tooltip">
                                   {{ 'challenge.lpGainedEstimatedHint' | t }}
@@ -217,6 +229,7 @@
                                 <span
                                   [class]="'challenge-card__winrate ' + winRateClass(participant.winRate, participant.wins, participant.losses)"
                                 >
+                                  <app-leaderboard-category-icon category="winRate" [compact]="true" />
                                   {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
                                 </span>
                                 @if (hasRecord(participant.wins, participant.losses)) {

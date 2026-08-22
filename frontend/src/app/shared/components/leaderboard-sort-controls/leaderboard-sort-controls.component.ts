@@ -3,10 +3,14 @@ import { LeaderboardSort, SortDirection, sortDirectionArrow } from '../../../cor
 import { ClampTooltipDirective } from '../../directives/clamp-tooltip.directive';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
+import {
+  LeaderboardCategoryIconComponent,
+  sortCriterionToCategoryIcon,
+} from '../leaderboard-category-icon/leaderboard-category-icon.component';
 
 @Component({
   selector: 'app-leaderboard-sort-controls',
-  imports: [TranslatePipe, ClampTooltipDirective],
+  imports: [TranslatePipe, ClampTooltipDirective, LeaderboardCategoryIconComponent],
   templateUrl: './leaderboard-sort-controls.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './leaderboard-sort-controls.component.scss',
@@ -52,5 +56,9 @@ export class LeaderboardSortControlsComponent {
 
   protected sortDirectionIcon(): string {
     return sortDirectionArrow(this.sortDirection());
+  }
+
+  protected categoryIcon(criterion: LeaderboardSort) {
+    return sortCriterionToCategoryIcon(criterion);
   }
 }

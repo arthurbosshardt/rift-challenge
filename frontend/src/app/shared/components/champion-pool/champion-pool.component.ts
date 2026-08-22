@@ -6,9 +6,11 @@ import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { apiUrl } from '../../../core/utils/api-url';
 
+import { LeaderboardCategoryIconComponent } from '../leaderboard-category-icon/leaderboard-category-icon.component';
+
 @Component({
   selector: 'app-champion-pool',
-  imports: [NgTemplateOutlet, TranslatePipe],
+  imports: [NgTemplateOutlet, TranslatePipe, LeaderboardCategoryIconComponent],
   templateUrl: './champion-pool.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './champion-pool.component.scss',

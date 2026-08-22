@@ -7,8 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.dto.LinkRiotAccountRequest;
-import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotSummonerClient;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.Optional;
@@ -28,7 +28,7 @@ class UserRiotAccountServiceTest {
     private UserRiotAccountRepository userRiotAccountRepository;
 
     @Mock
-    private RiotAccountClient riotAccountClient;
+    private RiotAccountService riotAccountService;
 
     @Mock
     private RiotSummonerClient riotSummonerClient;
@@ -42,12 +42,11 @@ class UserRiotAccountServiceTest {
     @Test
     void linkAccount_whenValid_persistsAccount() {
         UUID userId = UUID.randomUUID();
-        RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
+        RiotAccount riotAccount = TestRiotAccounts.riotAccount("puuid-1", "Tanor", "7154", 1234);
 
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.empty());
-        when(riotAccountClient.getAccountByRiotId("Tanor", "7154")).thenReturn(account);
-        when(userRiotAccountRepository.findByRiotPuuid("puuid-1")).thenReturn(Optional.empty());
-        when(riotSummonerClient.findProfileIconId("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.of(1234));
+        when(riotAccountService.findOrCreateFromRiotId("Tanor#7154")).thenReturn(riotAccount);
+        when(userRiotAccountRepository.findByRiotAccountPuuid("puuid-1")).thenReturn(Optional.empty());
         when(userRiotAccountRepository.save(any(UserRiotAccount.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -62,7 +61,7 @@ class UserRiotAccountServiceTest {
     @Test
     void linkAccount_whenAccountAlreadyLinked_throwsBadRequest() {
         UUID userId = UUID.randomUUID();
-        UserRiotAccount existing = UserRiotAccount.create(userId, new RiotAccountDto("puuid-1", "Tanor", "7154"), 1);
+        UserRiotAccount existing = TestRiotAccounts.linkedAccount(userId, "puuid-1", "Tanor", "7154", 1);
 
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
 
@@ -77,12 +76,12 @@ class UserRiotAccountServiceTest {
     void linkAccount_whenLinkedToAnotherUser_throwsConflict() {
         UUID userId = UUID.randomUUID();
         UUID otherUserId = UUID.randomUUID();
-        RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
+        RiotAccount riotAccount = TestRiotAccounts.riotAccount("puuid-1", "Tanor", "7154");
 
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.empty());
-        when(riotAccountClient.getAccountByRiotId("Tanor", "7154")).thenReturn(account);
-        when(userRiotAccountRepository.findByRiotPuuid("puuid-1"))
-                .thenReturn(Optional.of(UserRiotAccount.create(otherUserId, account)));
+        when(riotAccountService.findOrCreateFromRiotId("Tanor#7154")).thenReturn(riotAccount);
+        when(userRiotAccountRepository.findByRiotAccountPuuid("puuid-1"))
+                .thenReturn(Optional.of(TestRiotAccounts.linkedAccount(otherUserId, riotAccount)));
 
         assertThatThrownBy(() -> userRiotAccountService.linkAccount(userId, new LinkRiotAccountRequest("Tanor#7154")))
                 .isInstanceOf(ResponseStatusException.class)
@@ -94,7 +93,7 @@ class UserRiotAccountServiceTest {
     @Test
     void findLinkedAccount_whenProfileIconMissing_fetchesAndPersistsIcon() {
         UUID userId = UUID.randomUUID();
-        UserRiotAccount account = UserRiotAccount.create(userId, new RiotAccountDto("puuid-1", "Tanor", "7154"), null);
+        UserRiotAccount account = TestRiotAccounts.linkedAccount(userId, "puuid-1", "Tanor", "7154");
 
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotSummonerClient.findProfileIconId("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW)).thenReturn(Optional.of(5678));
@@ -111,7 +110,7 @@ class UserRiotAccountServiceTest {
     @Test
     void findLinkedAccount_whenRiotUnavailable_keepsAccountWithoutIcon() {
         UUID userId = UUID.randomUUID();
-        UserRiotAccount account = UserRiotAccount.create(userId, new RiotAccountDto("puuid-1", "Tanor", "7154"), null);
+        UserRiotAccount account = TestRiotAccounts.linkedAccount(userId, "puuid-1", "Tanor", "7154");
 
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotSummonerClient.findProfileIconId("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW))
@@ -127,7 +126,7 @@ class UserRiotAccountServiceTest {
     @Test
     void listLinkedPuids_whenAccountLinked_returnsItsPuuid() {
         UUID userId = UUID.randomUUID();
-        UserRiotAccount account = UserRiotAccount.create(userId, new RiotAccountDto("puuid-1", "Tanor", "7154"), 1);
+        UserRiotAccount account = TestRiotAccounts.linkedAccount(userId, "puuid-1", "Tanor", "7154", 1);
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
 
         assertThat(userRiotAccountService.listLinkedPuids(userId)).containsExactly("puuid-1");
@@ -144,7 +143,7 @@ class UserRiotAccountServiceTest {
     @Test
     void unlinkAccount_deletesTheLinkedAccount() {
         UUID userId = UUID.randomUUID();
-        UserRiotAccount account = UserRiotAccount.create(userId, new RiotAccountDto("puuid-1", "Tanor", "7154"), 1);
+        UserRiotAccount account = TestRiotAccounts.linkedAccount(userId, "puuid-1", "Tanor", "7154", 1);
 
         when(userRiotAccountRepository.findByIdAndUserId(account.getId(), userId)).thenReturn(Optional.of(account));
 

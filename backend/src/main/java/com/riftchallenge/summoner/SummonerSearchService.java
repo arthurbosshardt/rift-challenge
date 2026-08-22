@@ -1,7 +1,7 @@
 package com.riftchallenge.summoner;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeParticipantRepository;
 import java.util.ArrayList;
@@ -18,14 +18,14 @@ public class SummonerSearchService {
     private static final int LIMIT = 8;
 
     private final ChallengeParticipantRepository participantRepository;
-    private final UserRiotAccountRepository userRiotAccountRepository;
+    private final RiotAccountRepository riotAccountRepository;
 
     public SummonerSearchService(
             ChallengeParticipantRepository participantRepository,
-            UserRiotAccountRepository userRiotAccountRepository
+            RiotAccountRepository riotAccountRepository
     ) {
         this.participantRepository = participantRepository;
-        this.userRiotAccountRepository = userRiotAccountRepository;
+        this.riotAccountRepository = riotAccountRepository;
     }
 
     @Transactional(readOnly = true)
@@ -42,7 +42,7 @@ public class SummonerSearchService {
             putIfAbsent(byPuuid, participant.getRiotPuuid(), participant.getRiotGameName(),
                     participant.getRiotTagLine(), participant.getProfileIconId());
         }
-        for (UserRiotAccount account : userRiotAccountRepository.searchByRiotId(query, page)) {
+        for (RiotAccount account : riotAccountRepository.searchByRiotId(query, page)) {
             putIfAbsent(byPuuid, account.getRiotPuuid(), account.getRiotGameName(),
                     account.getRiotTagLine(), account.getProfileIconId());
         }

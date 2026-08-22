@@ -16,6 +16,7 @@ import { copyTextToClipboard } from '../../../core/utils/clipboard';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { MatchHistoryStripComponent } from '../match-history-strip/match-history-strip.component';
 import { MedalBadgeComponent } from '../medal-badge/medal-badge.component';
+import { LeaderboardCategoryIconComponent } from '../leaderboard-category-icon/leaderboard-category-icon.component';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
 
 /** Shown briefly before the real per-window value loads from the API. */
@@ -23,7 +24,7 @@ const MIN_GAMES_FOR_WIN_RATE_FALLBACK = 20;
 
 @Component({
   selector: 'app-leaderboard',
-  imports: [TranslatePipe, PlayerAvatarComponent, MatchHistoryStripComponent, MedalBadgeComponent],
+  imports: [TranslatePipe, PlayerAvatarComponent, MatchHistoryStripComponent, MedalBadgeComponent, LeaderboardCategoryIconComponent],
   templateUrl: './leaderboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './leaderboard.component.scss',

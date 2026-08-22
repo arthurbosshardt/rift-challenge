@@ -1,9 +1,11 @@
 package com.riftchallenge.account;
 
-import com.riftchallenge.riot.dto.RiotAccountDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -20,17 +22,9 @@ public class UserRiotAccount {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "riot_puuid", nullable = false, length = 78)
-    private String riotPuuid;
-
-    @Column(name = "riot_game_name", nullable = false, length = 16)
-    private String riotGameName;
-
-    @Column(name = "riot_tag_line", nullable = false, length = 5)
-    private String riotTagLine;
-
-    @Column(name = "profile_icon_id")
-    private Integer profileIconId;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "riot_account_id", nullable = false)
+    private RiotAccount riotAccount;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -38,25 +32,14 @@ public class UserRiotAccount {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    @Column(name = "activity_season_history_exhausted", nullable = false)
-    private boolean activitySeasonHistoryExhausted;
-
     protected UserRiotAccount() {
     }
 
-    public static UserRiotAccount create(UUID userId, RiotAccountDto account) {
-        return create(userId, account, null);
-    }
-
-    public static UserRiotAccount create(UUID userId, RiotAccountDto account, Integer profileIconId) {
+    public static UserRiotAccount create(UUID userId, RiotAccount riotAccount) {
         UserRiotAccount linked = new UserRiotAccount();
         linked.id = UUID.randomUUID();
         linked.userId = userId;
-        linked.riotPuuid = account.puuid();
-        linked.riotGameName = account.gameName();
-        linked.riotTagLine = account.tagLine();
-        linked.profileIconId = profileIconId;
-        linked.activitySeasonHistoryExhausted = false;
+        linked.riotAccount = riotAccount;
         return linked;
     }
 
@@ -80,20 +63,24 @@ public class UserRiotAccount {
         return userId;
     }
 
+    public RiotAccount getRiotAccount() {
+        return riotAccount;
+    }
+
     public String getRiotPuuid() {
-        return riotPuuid;
+        return riotAccount.getRiotPuuid();
     }
 
     public String getRiotGameName() {
-        return riotGameName;
+        return riotAccount.getRiotGameName();
     }
 
     public String getRiotTagLine() {
-        return riotTagLine;
+        return riotAccount.getRiotTagLine();
     }
 
     public Integer getProfileIconId() {
-        return profileIconId;
+        return riotAccount.getProfileIconId();
     }
 
     public Instant getCreatedAt() {
@@ -101,18 +88,18 @@ public class UserRiotAccount {
     }
 
     public void updateProfileIconId(Integer profileIconId) {
-        this.profileIconId = profileIconId;
+        riotAccount.updateProfileIconId(profileIconId);
     }
 
     public boolean isActivitySeasonHistoryExhausted() {
-        return activitySeasonHistoryExhausted;
+        return riotAccount.isActivitySeasonHistoryExhausted();
     }
 
     public void markActivitySeasonHistoryExhausted() {
-        this.activitySeasonHistoryExhausted = true;
+        riotAccount.markActivitySeasonHistoryExhausted();
     }
 
     public void clearActivitySeasonHistoryExhausted() {
-        this.activitySeasonHistoryExhausted = false;
+        riotAccount.clearActivitySeasonHistoryExhausted();
     }
 }

@@ -33,7 +33,7 @@ import {
   challengeRegionBadgeKind,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
-import { buildRiotId, parseRiotId } from '../../core/utils/riot-id';
+import { buildRiotId, parseRiotIdForLocale } from '../../core/utils/riot-id';
 
 type NameInvalidField = 'name';
 type EndMode = ChallengeEndMode;
@@ -448,7 +448,7 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    const parsed = parseRiotId(this.riotIdInput);
+    const parsed = parseRiotIdForLocale(this.riotIdInput, this.i18n.locale());
     if (!parsed) {
       this.participantInvalidFields.set(new Set(['riotId']));
       this.participantFieldErrors.set({ riotId: this.i18n.t('errors.riotIdFormat') });
@@ -489,8 +489,8 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    const player1 = parseRiotId(this.duoPlayer1RiotIdInput);
-    const player2 = parseRiotId(this.duoPlayer2RiotIdInput);
+    const player1 = parseRiotIdForLocale(this.duoPlayer1RiotIdInput, this.i18n.locale());
+    const player2 = parseRiotIdForLocale(this.duoPlayer2RiotIdInput, this.i18n.locale());
     if (!player1 || !player2) {
       const invalidFields = new Set<ParticipantInvalidField>();
       const fieldErrors: Partial<Record<ParticipantInvalidField, string>> = {};

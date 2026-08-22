@@ -15,6 +15,8 @@ export class ChampionPoolSkeletonComponent {
 
   readonly remainingGames = input(0);
   readonly remainingBaseline = input(0);
+  /** When true, only the sync header is shown (stats table rendered separately below). */
+  readonly headerOnly = input(false);
 
   protected readonly rows = [0, 1, 2, 3, 4];
 

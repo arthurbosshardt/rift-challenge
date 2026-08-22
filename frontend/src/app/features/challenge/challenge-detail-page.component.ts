@@ -39,13 +39,14 @@ import {
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
 import { MedalBadgeComponent } from '../../shared/components/medal-badge/medal-badge.component';
+import { LeaderboardCategoryIconComponent } from '../../shared/components/leaderboard-category-icon/leaderboard-category-icon.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { SeoService } from '../../core/seo/seo.service';
 
 @Component({
   selector: 'app-challenge-detail-page',
-  imports: [RouterLink, PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent, ClampTooltipDirective, FitTitleWidthDirective, MedalBadgeComponent],
+  imports: [RouterLink, PageShellComponent, PlayerIdentityComponent, ChallengeDatePipe, LeaderboardSkeletonComponent, ChallengeDetailSkeletonComponent, LeaderboardSortControlsComponent, TranslatePipe, MatchHistoryStripComponent, ChallengeBadgeComponent, ClampTooltipDirective, FitTitleWidthDirective, MedalBadgeComponent, LeaderboardCategoryIconComponent],
   templateUrl: './challenge-detail-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-detail-page.component.scss',

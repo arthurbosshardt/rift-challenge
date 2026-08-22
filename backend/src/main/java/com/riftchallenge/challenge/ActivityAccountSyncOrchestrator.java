@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
@@ -34,7 +35,11 @@ public class ActivityAccountSyncOrchestrator {
         this.leaderboardProperties = leaderboardProperties;
     }
 
-    public void scheduleSyncForAccount(UserRiotAccount account) {
+    public void scheduleSyncForAccount(UserRiotAccount link) {
+        scheduleSyncForRiotAccount(link.getRiotAccount());
+    }
+
+    public void scheduleSyncForRiotAccount(RiotAccount account) {
         int seasonMatchTotal = ActivitySeasonMatchTotals.resolve(riotLeagueClient, account.getRiotPuuid());
         int storedMatchCount = (int) accountMatchRepository.countSeasonMatchesSince(
                 account.getRiotPuuid(),
@@ -44,11 +49,15 @@ public class ActivityAccountSyncOrchestrator {
     }
 
     public void scheduleSyncForAllLinkedAccounts() {
-        for (UserRiotAccount account : userRiotAccountRepository.findAll()) {
+        for (UserRiotAccount link : userRiotAccountRepository.findAll()) {
             try {
-                scheduleSyncForAccount(account);
+                scheduleSyncForAccount(link);
             } catch (RuntimeException exception) {
-                log.warn("Unable to schedule activity sync for linked account {}: {}", account.getId(), exception.getMessage());
+                log.warn(
+                        "Unable to schedule activity sync for linked account {}: {}",
+                        link.getId(),
+                        exception.getMessage()
+                );
             }
         }
     }

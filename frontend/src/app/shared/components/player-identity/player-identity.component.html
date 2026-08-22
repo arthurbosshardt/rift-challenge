@@ -40,7 +40,10 @@
       }
     </span>
     @if (rankLabel()) {
-      <span class="player-identity__rank-label">{{ rankLabel() }}</span>
+      <span class="player-identity__rank-label">
+        <app-leaderboard-category-icon category="rank" [compact]="true" />
+        {{ rankLabel() }}
+      </span>
     }
   </div>
 </div>

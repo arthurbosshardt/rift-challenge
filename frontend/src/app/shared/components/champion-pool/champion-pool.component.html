@@ -48,7 +48,10 @@
     </div>
 
     <div class="champion-pool__record">
-      <span [class]="'champion-pool__winrate-badge ' + winRateClass(entry)">{{ winRateLabel(entry) }}</span>
+      <span [class]="'champion-pool__winrate-badge ' + winRateClass(entry)">
+        <app-leaderboard-category-icon category="winRate" [compact]="true" />
+        {{ winRateLabel(entry) }}
+      </span>
       <span class="champion-pool__games">{{ gamesLabel(entry) }}</span>
     </div>
   </article>

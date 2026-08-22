@@ -32,7 +32,7 @@
         type="button"
         class="refresh-action-btn activity-refresh-btn activity-refresh-btn--mobile"
         (click)="refreshActivity()"
-        [disabled]="activityLoading() || refreshCooldownSeconds() > 0 || !backend.ready()"
+        [disabled]="activityRefreshDisabled()"
         [attr.aria-label]="'activity.refreshAria' | t"
         [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
       >
@@ -93,7 +93,7 @@
           type="button"
           class="refresh-action-btn activity-refresh-btn activity-refresh-btn--desktop"
           (click)="refreshActivity()"
-          [disabled]="activityLoading() || refreshCooldownSeconds() > 0 || !backend.ready()"
+          [disabled]="activityRefreshDisabled()"
           [attr.aria-label]="'activity.refreshAria' | t"
           [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('activity.refreshAria' | t)"
         >
@@ -187,10 +187,12 @@
                   />
                 </div>
                 <span class="activity-account__rank" [style.color]="accountRankColor(account)">
+                  <app-leaderboard-category-icon category="rank" [compact]="true" />
                   {{ accountRankLabel(account) }}
                 </span>
                 @if (accountHasRecord(account)) {
                   <span [class]="'activity-account__winrate ' + accountWinRateClass(account)">
+                    <app-leaderboard-category-icon category="winRate" [compact]="true" />
                     {{ accountWinRateLabel(account) }}
                   </span>
                   <span class="activity-account__record">
@@ -210,17 +212,19 @@
                   (entryClick)="openGameDetail($event, account.accountId)"
                 />
               }
-              @if (accountChampionsLoading(account)) {
+              @if (accountSeasonSyncInProgress(account)) {
                 <app-champion-pool-skeleton
+                  [headerOnly]="(account.champions ?? []).length > 0"
                   [remainingGames]="accountSyncRemaining(account)"
                   [remainingBaseline]="account.syncRemainingBaseline"
                 />
-              } @else if ((account.champions ?? []).length > 0) {
+              }
+              @if ((account.champions ?? []).length > 0) {
                 <app-champion-pool [champions]="account.champions ?? []" />
-              } @else if (account.syncedGames > 0 || account.matches.length > 0) {
+              } @else if (!accountSeasonSyncInProgress(account) && (account.syncedGames > 0 || account.matches.length > 0)) {
                 <p class="activity-account__champions-empty">{{ 'activity.championsEmpty' | t }}</p>
               }
-              @if (account.matches.length === 0 && !accountChampionsLoading(account) && (account.champions ?? []).length === 0) {
+              @if (account.matches.length === 0 && !accountSeasonSyncInProgress(account) && (account.champions ?? []).length === 0) {
                 <p class="activity-account__empty">{{ 'activity.accountEmpty' | t }}</p>
               }
             </div>

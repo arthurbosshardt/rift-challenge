@@ -4,18 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.TestRiotAccounts;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
 import com.riftchallenge.riot.ChampionIconUrlService;
-import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +28,7 @@ class LeaderboardComputationServiceTest {
     private static final Instant NOW = Instant.parse("2026-08-21T10:00:00Z");
 
     @Mock
-    private UserRiotAccountRepository userRiotAccountRepository;
+    private RiotAccountRepository riotAccountRepository;
 
     @Mock
     private LeaderboardAccountMatchRepository matchRepository;
@@ -45,7 +44,7 @@ class LeaderboardComputationServiceTest {
     @BeforeEach
     void setUp() {
         service = new LeaderboardComputationService(
-                userRiotAccountRepository,
+                riotAccountRepository,
                 matchRepository,
                 rankRepository,
                 new LeaderboardProperties(SEASON_START, "admin@example.com"),
@@ -57,8 +56,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void belowMinGamesThreshold_excludedFromWinRateOnly() {
-        UserRiotAccount account = account("puuid-below", "Below", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-below", "Below", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         boolean[] wins = new boolean[19];
         java.util.Arrays.fill(wins, true);
         when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(history(wins));
@@ -73,8 +72,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void accountWithEnoughGames_ranksByWinRate() {
-        UserRiotAccount account = account("puuid-active", "Active", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-active", "Active", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(history(
                 true, true, true, true, false, true, true, true, false, true,
                 true, true, true, true, false, true, true, true, false, true
@@ -93,8 +92,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void accountWithNoMatches_isExcludedEntirely() {
-        UserRiotAccount account = account("puuid-idle", "Idle", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-idle", "Idle", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(List.of());
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
@@ -106,8 +105,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void rollingSevenDayWindow_excludesOlderMatchesButSeasonKeepsThem() {
-        UserRiotAccount account = account("puuid-rolling", "Rolling", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-rolling", "Rolling", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
 
         List<AccountMatchHistoryRow> allSeasonMatches = new ArrayList<>();
         allSeasonMatches.addAll(historyAt(NOW.minusSeconds(30L * 24 * 3600), true, 25));
@@ -126,8 +125,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void winStreakBelowTwo_excludedFromWinStreakLeaderboard() {
-        UserRiotAccount account = account("puuid-single-win", "SingleWin", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-single-win", "SingleWin", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START))
                 .thenReturn(history(false, true, false));
 
@@ -138,8 +137,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void rankList_reflectsStoredAccountRank() {
-        UserRiotAccount account = account("puuid-rank", "Ranked", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-rank", "Ranked", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(List.of());
         when(rankRepository.findByRiotPuuid(account.getRiotPuuid())).thenReturn(Optional.of(
                 LeaderboardAccountRank.create(account.getRiotPuuid(), NOW, "DIAMOND", "II", 40)
@@ -157,8 +156,8 @@ class LeaderboardComputationServiceTest {
 
     @Test
     void rankList_last7Days_includesSeasonHistoryWhenNoRollingStats() {
-        UserRiotAccount account = account("puuid-rank-rolling", "Ranked", "EUW");
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        RiotAccount account = account("puuid-rank-rolling", "Ranked", "EUW");
+        when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START))
                 .thenReturn(historyAt(NOW.minusSeconds(30L * 24 * 3600), true, 5));
         when(rankRepository.findByRiotPuuid(account.getRiotPuuid())).thenReturn(Optional.of(
@@ -171,8 +170,8 @@ class LeaderboardComputationServiceTest {
         assertThat(snapshot.last7Days().byRank().get(0).recentMatches()).isNotEmpty();
     }
 
-    private static UserRiotAccount account(String puuid, String gameName, String tagLine) {
-        return UserRiotAccount.create(UUID.randomUUID(), new RiotAccountDto(puuid, gameName, tagLine));
+    private static RiotAccount account(String puuid, String gameName, String tagLine) {
+        return TestRiotAccounts.riotAccount(puuid, gameName, tagLine);
     }
 
     private static List<AccountMatchHistoryRow> history(boolean... wins) {

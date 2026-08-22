@@ -3,10 +3,7 @@ package com.riftchallenge.account;
 import com.riftchallenge.account.dto.LinkRiotAccountRequest;
 import com.riftchallenge.account.dto.UserRiotAccountResponse;
 import com.riftchallenge.riot.ChallengeRegion;
-import com.riftchallenge.riot.RiotAccountClient;
-import com.riftchallenge.riot.RiotIdParser;
 import com.riftchallenge.riot.RiotSummonerClient;
-import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,18 +17,18 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserRiotAccountService {
 
     private final UserRiotAccountRepository userRiotAccountRepository;
-    private final RiotAccountClient riotAccountClient;
+    private final RiotAccountService riotAccountService;
     private final RiotSummonerClient riotSummonerClient;
     private final ApplicationEventPublisher eventPublisher;
 
     public UserRiotAccountService(
             UserRiotAccountRepository userRiotAccountRepository,
-            RiotAccountClient riotAccountClient,
+            RiotAccountService riotAccountService,
             RiotSummonerClient riotSummonerClient,
             ApplicationEventPublisher eventPublisher
     ) {
         this.userRiotAccountRepository = userRiotAccountRepository;
-        this.riotAccountClient = riotAccountClient;
+        this.riotAccountService = riotAccountService;
         this.riotSummonerClient = riotSummonerClient;
         this.eventPublisher = eventPublisher;
     }
@@ -71,18 +68,13 @@ public class UserRiotAccountService {
             );
         }
 
-        RiotIdParser.ParsedRiotId parsed = RiotIdParser.parse(request.riotId());
-        RiotAccountDto account = riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
+        RiotAccount riotAccount = riotAccountService.findOrCreateFromRiotId(request.riotId());
 
-        userRiotAccountRepository.findByRiotPuuid(account.puuid()).ifPresent(existing -> {
+        userRiotAccountRepository.findByRiotAccountPuuid(riotAccount.getRiotPuuid()).ifPresent(existing -> {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Account linked to another user");
         });
 
-        // Linked accounts aren't region-tagged yet (unlike challenges); assumes EUW.
-        Integer profileIconId = riotSummonerClient.findProfileIconId(account.puuid(), ChallengeRegion.EUW).orElse(null);
-        UserRiotAccount saved = userRiotAccountRepository.save(
-                UserRiotAccount.create(userId, account, profileIconId)
-        );
+        UserRiotAccount saved = userRiotAccountRepository.save(UserRiotAccount.create(userId, riotAccount));
         eventPublisher.publishEvent(new LinkedAccountSyncEvent(saved));
         return enrichProfileIcon(saved);
     }

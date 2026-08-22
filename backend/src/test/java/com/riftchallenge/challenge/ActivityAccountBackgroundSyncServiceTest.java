@@ -8,17 +8,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.TestRiotAccounts;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountSyncService;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.RiotMatchLookupService;
-import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.AfterEach;
@@ -42,7 +41,7 @@ class ActivityAccountBackgroundSyncServiceTest {
     private LeaderboardAccountMatchRepository accountMatchRepository;
 
     @Mock
-    private UserRiotAccountRepository userRiotAccountRepository;
+    private RiotAccountRepository riotAccountRepository;
 
     @Mock
     private RiotMatchLookupService riotMatchLookupService;
@@ -56,7 +55,7 @@ class ActivityAccountBackgroundSyncServiceTest {
         service = new ActivityAccountBackgroundSyncService(
                 accountSyncService,
                 accountMatchRepository,
-                userRiotAccountRepository,
+                riotAccountRepository,
                 riotMatchLookupService,
                 new LeaderboardProperties(SEASON_START, "admin@example.com"),
                 executorService,
@@ -71,7 +70,7 @@ class ActivityAccountBackgroundSyncServiceTest {
 
     @Test
     void scheduleSyncIfIdle_runsSyncOffRequestThread() {
-        UserRiotAccount account = linkedAccount();
+        RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(10L, 10L);
         when(accountSyncService.syncAccountForActivity(account, 120))
                 .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false));
@@ -85,7 +84,7 @@ class ActivityAccountBackgroundSyncServiceTest {
 
     @Test
     void scheduleSyncIfIdle_skipsWhenSeasonAlreadyStored() {
-        UserRiotAccount account = linkedAccount();
+        RiotAccount account = riotAccount();
 
         service.scheduleSyncIfIdle(account, 120, 120);
 
@@ -94,7 +93,7 @@ class ActivityAccountBackgroundSyncServiceTest {
 
     @Test
     void startCatchUpChain_skipsWhenAlreadyComplete() {
-        UserRiotAccount account = linkedAccount();
+        RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(137L);
 
         service.startCatchUpChain(account, 137, 0);
@@ -104,7 +103,7 @@ class ActivityAccountBackgroundSyncServiceTest {
 
     @Test
     void scheduleSyncIfIdle_skipsWhenCatchUpAlreadyActive() {
-        UserRiotAccount account = linkedAccount();
+        RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(10L, 10L);
         when(accountSyncService.syncAccountForActivity(account, 120))
                 .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false));
@@ -117,7 +116,7 @@ class ActivityAccountBackgroundSyncServiceTest {
 
     @Test
     void scheduleSyncIfIdle_skipsWhenSeasonHistoryExhausted() {
-        UserRiotAccount account = linkedAccount();
+        RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(125L);
         when(accountSyncService.syncAccountForActivity(account, 137))
                 .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(0, true));
@@ -132,27 +131,22 @@ class ActivityAccountBackgroundSyncServiceTest {
 
     @Test
     void runCatchUpBatch_marksSeasonHistoryExhaustedWhenAllMatchIdsImported() {
-        UserRiotAccount account = linkedAccount();
+        RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(125L, 125L);
         when(accountSyncService.syncAccountForActivity(account, 137))
                 .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, true));
-
-        when(userRiotAccountRepository.findById(account.getId())).thenReturn(java.util.Optional.of(account));
+        when(riotAccountRepository.save(account)).thenReturn(account);
 
         service.startCatchUpChain(account, 137, 0);
 
         verify(accountSyncService, timeout(2_000)).syncAccountForActivity(account, 137);
         assertThat(service.isSeasonHistoryExhausted(account.getId())).isTrue();
         assertThat(service.isCatchUpActive(account.getId())).isFalse();
-        verify(userRiotAccountRepository, timeout(2_000)).save(account);
+        verify(riotAccountRepository, timeout(2_000)).save(account);
         assertThat(account.isActivitySeasonHistoryExhausted()).isTrue();
     }
 
-    private static UserRiotAccount linkedAccount() {
-        return UserRiotAccount.create(
-                UUID.randomUUID(),
-                new RiotAccountDto(PUUID, "Player", "EUW"),
-                null
-        );
+    private static RiotAccount riotAccount() {
+        return TestRiotAccounts.riotAccount(PUUID, "Player", "EUW");
     }
 }

@@ -41,10 +41,11 @@ import {
 
 import { ClampTooltipDirective } from '../../directives/clamp-tooltip.directive';
 import { HideIfTruncatedDirective } from '../../directives/hide-if-truncated.directive';
+import { LeaderboardCategoryIconComponent } from '../leaderboard-category-icon/leaderboard-category-icon.component';
 
 @Component({
   selector: 'app-challenge-card',
-  imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, MedalBadgeComponent, ChallengeBadgeComponent, ClampTooltipDirective, HideIfTruncatedDirective],
+  imports: [RouterLink, ChallengeDatePipe, TranslatePipe, PlayerAvatarComponent, RankEmblemComponent, MedalBadgeComponent, ChallengeBadgeComponent, ClampTooltipDirective, HideIfTruncatedDirective, LeaderboardCategoryIconComponent],
   templateUrl: './challenge-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './challenge-card.component.scss',

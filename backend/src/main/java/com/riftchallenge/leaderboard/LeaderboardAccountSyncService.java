@@ -1,7 +1,7 @@
 package com.riftchallenge.leaderboard;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotMatchDurations;
 import com.riftchallenge.riot.RiotLeagueClient;
@@ -31,7 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
  * depend on which challenge(s) they've joined or how often those get refreshed. Runs only from
  * {@link LeaderboardCacheService#refresh}, same cadence as the leaderboard recompute itself.
  *
- * <p>Linked accounts aren't region-tagged yet (see {@code UserRiotAccountService}); assumes EUW,
+ * <p>Tracked accounts aren't region-tagged yet; assumes EUW,
  * same simplification used everywhere else a linked account is queried outside a challenge.
  */
 @Service
@@ -57,7 +57,7 @@ public class LeaderboardAccountSyncService {
 
     private static final Logger log = LoggerFactory.getLogger(LeaderboardAccountSyncService.class);
 
-    private final UserRiotAccountRepository userRiotAccountRepository;
+    private final RiotAccountRepository riotAccountRepository;
     private final LeaderboardAccountMatchRepository accountMatchRepository;
     private final LeaderboardAccountRankRepository accountRankRepository;
     private final RiotMatchRepository riotMatchRepository;
@@ -67,7 +67,7 @@ public class LeaderboardAccountSyncService {
     private final LeaderboardProperties properties;
 
     public LeaderboardAccountSyncService(
-            UserRiotAccountRepository userRiotAccountRepository,
+            RiotAccountRepository riotAccountRepository,
             LeaderboardAccountMatchRepository accountMatchRepository,
             LeaderboardAccountRankRepository accountRankRepository,
             RiotMatchRepository riotMatchRepository,
@@ -76,7 +76,7 @@ public class LeaderboardAccountSyncService {
             RiotMatchLookupService riotMatchLookupService,
             LeaderboardProperties properties
     ) {
-        this.userRiotAccountRepository = userRiotAccountRepository;
+        this.riotAccountRepository = riotAccountRepository;
         this.accountMatchRepository = accountMatchRepository;
         this.accountRankRepository = accountRankRepository;
         this.riotMatchRepository = riotMatchRepository;
@@ -87,12 +87,12 @@ public class LeaderboardAccountSyncService {
     }
 
     public void syncAllAccounts(Instant now) {
-        List<UserRiotAccount> accounts = userRiotAccountRepository.findAll();
+        List<RiotAccount> accounts = riotAccountRepository.findAll();
         riotMatchLookupService.beginRefreshScope();
         int remainingBudget = MAX_MATCH_IMPORTS_PER_PASS;
         boolean matchBudgetExhaustedLogged = false;
         try {
-            for (UserRiotAccount account : accounts) {
+            for (RiotAccount account : accounts) {
                 try {
                     riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid(), ChallengeRegion.EUW)
                             .ifPresent(entry -> upsertRank(account.getRiotPuuid(), now, entry));
@@ -135,7 +135,7 @@ public class LeaderboardAccountSyncService {
      * Called on Mes statistiques refresh so champion stats can be served from DB (OP.GG-style)
      * without hundreds of live Riot calls per page load.
      */
-    public ActivitySyncBatchResult syncAccountForActivity(UserRiotAccount account, int seasonMatchTotal) {
+    public ActivitySyncBatchResult syncAccountForActivity(RiotAccount account, int seasonMatchTotal) {
         int fetchLimit = Math.min(Math.max(seasonMatchTotal, 1), 500);
         String puuid = account.getRiotPuuid();
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
@@ -208,7 +208,7 @@ public class LeaderboardAccountSyncService {
     }
 
     /** @return how many match-detail fetches were performed for this account. */
-    private int syncMatches(UserRiotAccount account, Instant now, int budget) {
+    private int syncMatches(RiotAccount account, Instant now, int budget) {
         long existingMatches = accountMatchRepository.countByRiotPuuid(account.getRiotPuuid());
         int fetchLimit = existingMatches == 0
                 ? Math.min(MAX_CATCHUP_MATCHES, budget)
@@ -224,7 +224,7 @@ public class LeaderboardAccountSyncService {
 
     /** @return how many match-detail fetches were performed for this account. */
     private int syncMatches(
-            UserRiotAccount account,
+            RiotAccount account,
             int importLimit,
             int catchUpImportLimit,
             int fetchLimit,
@@ -313,10 +313,10 @@ public class LeaderboardAccountSyncService {
             return;
         }
 
-        Set<String> linkedPuids = new HashSet<>(userRiotAccountRepository.findLinkedPuidsIn(participantPuids));
-        linkedPuids.remove(primaryPuuid);
-        for (String linkedPuuid : linkedPuids) {
-            persistParticipantMatchIfNeeded(linkedPuuid, match);
+        Set<String> trackedPuids = new HashSet<>(riotAccountRepository.findPuidsIn(participantPuids));
+        trackedPuids.remove(primaryPuuid);
+        for (String trackedPuuid : trackedPuids) {
+            persistParticipantMatchIfNeeded(trackedPuuid, match);
         }
     }
 

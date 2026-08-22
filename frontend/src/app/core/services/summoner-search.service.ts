@@ -1,7 +1,9 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { catchError, Observable, of } from 'rxjs';
+import { I18nService } from '../i18n/i18n.service';
 import { apiUrl } from '../utils/api-url';
+import { normalizeRiotIdForLocale } from '../utils/riot-id';
 
 export interface SummonerSuggestion {
   puuid: string;
@@ -13,6 +15,8 @@ export interface SummonerSuggestion {
 
 @Injectable({ providedIn: 'root' })
 export class SummonerSearchService {
+  private readonly i18n = inject(I18nService);
+
   constructor(private readonly http: HttpClient) {}
 
   search(query: string): Observable<SummonerSuggestion[]> {
@@ -27,7 +31,7 @@ export class SummonerSearchService {
 
   resolve(riotId: string): Observable<SummonerSuggestion> {
     return this.http.get<SummonerSuggestion>(apiUrl('/api/summoners/resolve'), {
-      params: { riotId },
+      params: { riotId: normalizeRiotIdForLocale(riotId, this.i18n.locale()) },
     });
   }
 }

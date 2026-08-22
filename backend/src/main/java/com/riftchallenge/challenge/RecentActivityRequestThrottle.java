@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class RecentActivityRequestThrottle {
 
-    static final Duration MIN_INTERVAL = Duration.ofSeconds(30);
+    static final Duration MIN_INTERVAL = Duration.ofSeconds(5);
 
     private final Clock clock;
     private final ConcurrentMap<UUID, Instant> lastRequestByUser = new ConcurrentHashMap<>();

@@ -3,10 +3,11 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { copyTextToClipboard } from '../../../core/utils/clipboard';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
+import { LeaderboardCategoryIconComponent } from '../leaderboard-category-icon/leaderboard-category-icon.component';
 
 @Component({
   selector: 'app-player-identity',
-  imports: [PlayerAvatarComponent, TranslatePipe],
+  imports: [PlayerAvatarComponent, TranslatePipe, LeaderboardCategoryIconComponent],
   templateUrl: './player-identity.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './player-identity.component.scss',

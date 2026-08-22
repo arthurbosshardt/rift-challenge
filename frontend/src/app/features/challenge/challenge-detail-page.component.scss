@@ -546,6 +546,7 @@
 .leaderboard__lp {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
   padding: 0.1875rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -620,6 +621,7 @@
 .leaderboard__winrate {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
   padding: 0.1875rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);

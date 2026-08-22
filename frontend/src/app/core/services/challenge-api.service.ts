@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
@@ -17,13 +17,15 @@ import {
   AccountRecentGames,
   MatchDetail,
 } from '../models/challenge.models';
+import { I18nService } from '../i18n/i18n.service';
 import { apiUrl } from '../utils/api-url';
-import { normalizeRiotId } from '../utils/riot-id';
+import { normalizeRiotIdForLocale } from '../utils/riot-id';
 import { normalizeChallengeListResponse, type RawChallengeListResponse } from '../utils/challenge-summary';
 
 @Injectable({ providedIn: 'root' })
 export class ChallengeApiService {
   private readonly baseUrl = apiUrl('/api/challenges');
+  private readonly i18n = inject(I18nService);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -78,9 +80,10 @@ export class ChallengeApiService {
   }
 
   addDuo(challengeId: string, request: AddDuoRequest): Observable<void> {
+    const locale = this.i18n.locale();
     return this.http.post<void>(`${this.baseUrl}/${challengeId}/duos`, {
-      player1RiotId: normalizeRiotId(request.player1RiotId),
-      player2RiotId: normalizeRiotId(request.player2RiotId),
+      player1RiotId: normalizeRiotIdForLocale(request.player1RiotId, locale),
+      player2RiotId: normalizeRiotIdForLocale(request.player2RiotId, locale),
     });
   }
 
@@ -90,7 +93,7 @@ export class ChallengeApiService {
 
   addParticipant(challengeId: string, request: AddParticipantRequest): Observable<unknown> {
     return this.http.post(`${this.baseUrl}/${challengeId}/participants`, {
-      riotId: normalizeRiotId(request.riotId),
+      riotId: normalizeRiotIdForLocale(request.riotId, this.i18n.locale()),
     });
   }
 

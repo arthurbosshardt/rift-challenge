@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
+  defaultRiotTagLine,
   normalizeGameName,
   normalizeTagLine,
   normalizeRiotId,
+  normalizeRiotIdForLocale,
   parseRiotId,
+  parseRiotIdForLocale,
   buildRiotId,
 } from './riot-id';
 
 describe('Riot ID Utilities', () => {
+  describe('defaultRiotTagLine', () => {
+    it('uses EUW for French locale', () => {
+      expect(defaultRiotTagLine('fr')).toBe('EUW');
+    });
+
+    it('uses NA for English and other locales', () => {
+      expect(defaultRiotTagLine('en')).toBe('NA');
+    });
+  });
   describe('normalizeGameName', () => {
     it('removes all whitespace', () => {
       expect(normalizeGameName('Game Name')).toBe('GameName');
@@ -52,9 +64,19 @@ describe('Riot ID Utilities', () => {
       expect(normalizeRiotId('JohnDoe##NA1')).toBe('JohnDoe#NA1');
     });
 
-    it('returns original if hash is missing', () => {
+    it('returns original if hash is missing and no default tag', () => {
       const input = 'JohnDoeNA1';
       expect(normalizeRiotId(input)).toBe(input);
+    });
+
+    it('appends default tag when hash is missing', () => {
+      expect(normalizeRiotId('JohnDoe', 'EUW')).toBe('JohnDoe#EUW');
+      expect(normalizeRiotId('John Doe', 'NA')).toBe('JohnDoe#NA');
+    });
+
+    it('uses locale helper for default tag', () => {
+      expect(normalizeRiotIdForLocale('Tanor', 'fr')).toBe('Tanor#EUW');
+      expect(normalizeRiotIdForLocale('Tanor', 'en')).toBe('Tanor#NA');
     });
 
     it('returns original if hash is at start', () => {
@@ -79,8 +101,13 @@ describe('Riot ID Utilities', () => {
       expect(result).toEqual({ gameName: 'JohnDoe', tagLine: 'NA1' });
     });
 
-    it('returns null for missing hash', () => {
+    it('returns null for missing hash without default tag', () => {
       expect(parseRiotId('JohnDoeNA1')).toBeNull();
+    });
+
+    it('parses with default tag when hash is missing', () => {
+      expect(parseRiotId('JohnDoe', 'EUW')).toEqual({ gameName: 'JohnDoe', tagLine: 'EUW' });
+      expect(parseRiotIdForLocale('JohnDoe', 'en')).toEqual({ gameName: 'JohnDoe', tagLine: 'NA' });
     });
 
     it('returns null for hash at start', () => {

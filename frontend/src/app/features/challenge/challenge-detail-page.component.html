@@ -376,16 +376,21 @@
                         [class.leaderboard__lp--positive]="participant.lpGained > 0"
                         [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
                       >
+                        <app-leaderboard-category-icon category="lpGained" [compact]="true" />
                         {{ lpLabel(participant.lpGained, true) }}
                         <span class="leaderboard__lp-tooltip" role="tooltip">
                           {{ 'challenge.lpGainedEstimatedHint' | t }}
                         </span>
                       </span>
                     } @else {
-                      <span class="leaderboard__lp">{{ lpLabel(participant.lpGained, false) }}</span>
+                      <span class="leaderboard__lp">
+                        <app-leaderboard-category-icon category="lpGained" [compact]="true" />
+                        {{ lpLabel(participant.lpGained, false) }}
+                      </span>
                     }
                     <span class="leaderboard__wl">
                       <span [class]="'leaderboard__winrate ' + winRateClass(participant.winRate, participant.wins, participant.losses)">
+                        <app-leaderboard-category-icon category="winRate" [compact]="true" />
                         {{ winRateLabel(participant.winRate, participant.wins, participant.losses) }}
                       </span>
                       @if (hasRecord(participant.wins, participant.losses)) {
@@ -462,15 +467,20 @@
                         [class.leaderboard__lp--positive]="duo.combinedLpGained > 0"
                         [attr.aria-label]="'challenge.lpGainedEstimatedAria' | t"
                       >
+                        <app-leaderboard-category-icon category="lpGained" [compact]="true" />
                         {{ lpLabel(duo.combinedLpGained, true) }}
                         <span class="leaderboard__lp-tooltip" role="tooltip">
                           {{ 'challenge.lpGainedEstimatedHint' | t }}
                         </span>
                       </span>
                     } @else {
-                      <span class="leaderboard__lp">{{ lpLabel(duo.combinedLpGained, false) }}</span>
+                      <span class="leaderboard__lp">
+                        <app-leaderboard-category-icon category="lpGained" [compact]="true" />
+                        {{ lpLabel(duo.combinedLpGained, false) }}
+                      </span>
                     }
                     <span [class]="'leaderboard__winrate ' + winRateClass(duo.winRate, duo.wins, duo.losses)">
+                      <app-leaderboard-category-icon category="winRate" [compact]="true" />
                       {{ winRateLabel(duo.winRate, duo.wins, duo.losses) }}
                     </span>
                     @if (hasRecord(duo.wins, duo.losses)) {

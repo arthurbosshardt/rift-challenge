@@ -5,8 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.account.UserRiotAccount;
-import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.TestRiotAccounts;
+import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeParticipantRepository;
 import com.riftchallenge.riot.dto.RiotAccountDto;
@@ -25,7 +26,7 @@ class SummonerSearchServiceTest {
     @Mock
     private ChallengeParticipantRepository participantRepository;
     @Mock
-    private UserRiotAccountRepository userRiotAccountRepository;
+    private RiotAccountRepository riotAccountRepository;
 
     @InjectMocks
     private SummonerSearchService summonerSearchService;
@@ -42,13 +43,9 @@ class SummonerSearchServiceTest {
                 UUID.randomUUID(),
                 new RiotAccountDto("puuid-1", "Tanor", "7154")
         );
-        UserRiotAccount account = UserRiotAccount.create(
-                UUID.randomUUID(),
-                new RiotAccountDto("puuid-1", "Tanor", "7154"),
-                12
-        );
+        RiotAccount account = TestRiotAccounts.riotAccount("puuid-1", "Tanor", "7154", 12);
         when(participantRepository.searchByRiotId(eq("Tan"), any(Pageable.class))).thenReturn(List.of(participant));
-        when(userRiotAccountRepository.searchByRiotId(eq("Tan"), any(Pageable.class))).thenReturn(List.of(account));
+        when(riotAccountRepository.searchByRiotId(eq("Tan"), any(Pageable.class))).thenReturn(List.of(account));
 
         List<SummonerSuggestionResponse> results = summonerSearchService.search("Tan");
 

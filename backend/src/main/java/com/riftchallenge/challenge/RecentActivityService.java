@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
@@ -59,8 +60,9 @@ public class RecentActivityService {
         return account.map(this::toAccountResponse).map(List::of).orElseGet(List::of);
     }
 
-    private AccountRecentGamesResponse toAccountResponse(UserRiotAccount account) {
-        Optional<RiotLeagueEntryDto> currentRank = fetchCurrentRank(account);
+    private AccountRecentGamesResponse toAccountResponse(UserRiotAccount link) {
+        RiotAccount account = link.getRiotAccount();
+        Optional<RiotLeagueEntryDto> currentRank = fetchCurrentRank(link);
         int seasonMatchTotal = seasonMatchTotal(currentRank);
 
         List<SeasonActivityRow> seasonRows = accountMatchRepository.findSeasonActivitySince(
@@ -74,13 +76,13 @@ public class RecentActivityService {
         boolean seasonSyncComplete = syncedGames >= seasonMatchTotal
                 || account.isActivitySeasonHistoryExhausted()
                 || backgroundSyncService.isSeasonHistoryExhausted(account.getId());
-        boolean seasonSyncInProgress = !seasonSyncComplete && backgroundSyncService.isCatchUpActive(account.getId());
+        boolean seasonSyncInProgress = !seasonSyncComplete;
         List<ChampionStatResponse> champions = !seasonRows.isEmpty()
                 ? buildSeasonChampionStatsFromRows(seasonRows)
                 : List.of();
 
         return new AccountRecentGamesResponse(
-                account.getId(),
+                link.getId(),
                 account.getRiotGameName(),
                 account.getRiotTagLine(),
                 account.getProfileIconId(),
@@ -89,7 +91,7 @@ public class RecentActivityService {
                 currentRank.map(RiotLeagueEntryDto::leaguePoints).orElse(null),
                 seasonWins(currentRank, seasonRows),
                 seasonLosses(currentRank, seasonRows),
-                buildRecentGamesFromDatabase(account, seasonRows),
+                buildRecentGamesFromDatabase(link, seasonRows),
                 champions,
                 seasonRows.size(),
                 seasonSyncComplete ? syncedGames : seasonMatchTotal,
