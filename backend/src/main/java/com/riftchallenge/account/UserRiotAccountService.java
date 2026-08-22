@@ -10,6 +10,7 @@ import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +22,18 @@ public class UserRiotAccountService {
     private final UserRiotAccountRepository userRiotAccountRepository;
     private final RiotAccountClient riotAccountClient;
     private final RiotSummonerClient riotSummonerClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     public UserRiotAccountService(
             UserRiotAccountRepository userRiotAccountRepository,
             RiotAccountClient riotAccountClient,
-            RiotSummonerClient riotSummonerClient
+            RiotSummonerClient riotSummonerClient,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.userRiotAccountRepository = userRiotAccountRepository;
         this.riotAccountClient = riotAccountClient;
         this.riotSummonerClient = riotSummonerClient;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -79,6 +83,7 @@ public class UserRiotAccountService {
         UserRiotAccount saved = userRiotAccountRepository.save(
                 UserRiotAccount.create(userId, account, profileIconId)
         );
+        eventPublisher.publishEvent(new LinkedAccountSyncEvent(saved));
         return enrichProfileIcon(saved);
     }
 

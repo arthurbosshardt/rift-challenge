@@ -11,15 +11,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * GET /api/challenges/recent fans out to dozens of live Riot API calls per user
- * (rank + match list + match detail, per linked account). Unlike challenge refresh,
- * it has no persisted data to fall back on, so it needs its own, longer-than-UX,
- * server-enforced cooldown to avoid burning the shared Riot API rate limit.
+ * Manual refresh ({@code ?refresh=true}) still enqueues background Riot sync work, so it
+ * keeps a server-enforced cooldown. Plain GETs (page load + sync polling) are not throttled.
  */
 @Component
 public class RecentActivityRequestThrottle {
 
-    static final Duration MIN_INTERVAL = Duration.ofSeconds(10);
+    static final Duration MIN_INTERVAL = Duration.ofSeconds(30);
 
     private final Clock clock;
     private final ConcurrentMap<UUID, Instant> lastRequestByUser = new ConcurrentHashMap<>();

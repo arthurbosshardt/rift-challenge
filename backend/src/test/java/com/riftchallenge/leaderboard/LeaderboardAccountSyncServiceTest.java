@@ -3,6 +3,7 @@ package com.riftchallenge.leaderboard;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -76,8 +77,9 @@ class LeaderboardAccountSyncServiceTest {
         );
 
         account = UserRiotAccount.create(UUID.randomUUID(), new RiotAccountDto(PUUID, "Player", "EUW"));
-        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
-        when(riotLeagueClient.findRankedSoloEntry(any(), any())).thenReturn(Optional.empty());
+        lenient().when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        lenient().when(userRiotAccountRepository.findLinkedPuidsIn(any())).thenReturn(List.of());
+        lenient().when(riotLeagueClient.findRankedSoloEntry(any(), any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -85,6 +87,7 @@ class LeaderboardAccountSyncServiceTest {
         String matchId = "EUW1_111";
         when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
                 .thenReturn(List.of(matchId));
+        when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(PUUID, matchId)).thenReturn(Optional.empty());
         when(riotMatchLookupService.getMatch(matchId)).thenReturn(matchDetail(matchId, 420, true, 99));
 
         service.syncAllAccounts(NOW);
@@ -97,6 +100,7 @@ class LeaderboardAccountSyncServiceTest {
         String matchId = "EUW1_222";
         when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
                 .thenReturn(List.of(matchId));
+        when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(PUUID, matchId)).thenReturn(Optional.empty());
         // Flex queue (440), not ranked solo/duo (420) — must never count toward the leaderboard.
         when(riotMatchLookupService.getMatch(matchId)).thenReturn(matchDetail(matchId, 440, true, 99));
 
@@ -110,7 +114,8 @@ class LeaderboardAccountSyncServiceTest {
         String matchId = "EUW1_333";
         when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
                 .thenReturn(List.of(matchId));
-        when(accountMatchRepository.existsByRiotPuuidAndRiotMatchId(PUUID, matchId)).thenReturn(true);
+        when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(PUUID, matchId))
+                .thenReturn(Optional.of(linkedMatch(matchId, true, 99)));
 
         service.syncAllAccounts(NOW);
 
@@ -127,6 +132,7 @@ class LeaderboardAccountSyncServiceTest {
                 .toList();
         when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
                 .thenReturn(matchIds);
+        when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(eq(PUUID), anyString())).thenReturn(Optional.empty());
         when(riotMatchLookupService.getMatch(anyString()))
                 .thenAnswer(invocation -> matchDetail(invocation.getArgument(0), 420, true, 99));
 
@@ -135,14 +141,72 @@ class LeaderboardAccountSyncServiceTest {
         verify(accountMatchRepository, times(LeaderboardAccountSyncService.MAX_NEW_MATCHES_PER_SYNC)).save(any());
     }
 
+    @Test
+    void importMatch_alsoPersistsRowsForLinkedCoPlayers() {
+        String matchId = "EUW1_444";
+        String coPlayerPuuid = "puuid-2";
+        RiotMatchDetailDto match = new RiotMatchDetailDto(
+                new RiotMatchDetailDto.Metadata(matchId),
+                new RiotMatchDetailDto.Info(
+                        NOW.toEpochMilli(),
+                        1_800L,
+                        420,
+                        List.of(
+                                new RiotMatchDetailDto.Participant(
+                                        PUUID, null, null, true, 4586, 99, "Champ",
+                                        0, 0, null,
+                                        5, 2, 7, 0, 150, 0, 0L,
+                                        0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0,
+                                        null
+                                ),
+                                new RiotMatchDetailDto.Participant(
+                                        coPlayerPuuid, null, null, false, 4586, 12, "Other",
+                                        0, 0, null,
+                                        1, 4, 2, 0, 120, 0, 0L,
+                                        0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0,
+                                        null
+                                )
+                        ),
+                        List.of()
+                )
+        );
+
+        when(riotMatchLookupService.getMatch(matchId)).thenReturn(match);
+        when(riotMatchRepository.existsByRiotMatchId(matchId)).thenReturn(false);
+        when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(PUUID, matchId)).thenReturn(Optional.empty());
+        when(accountMatchRepository.findByRiotPuuidAndRiotMatchId(coPlayerPuuid, matchId)).thenReturn(Optional.empty());
+        when(userRiotAccountRepository.findLinkedPuidsIn(any())).thenReturn(List.of(PUUID, coPlayerPuuid));
+
+        service.importMatch(PUUID, matchId);
+
+        verify(accountMatchRepository, times(2)).save(any());
+    }
+
     private static RiotMatchDetailDto matchDetail(String matchId, int queueId, boolean win, int championId) {
         return new RiotMatchDetailDto(
                 new RiotMatchDetailDto.Metadata(matchId),
                 new RiotMatchDetailDto.Info(
                         NOW.toEpochMilli(),
+                        1_800L,
                         queueId,
-                        List.of(new RiotMatchDetailDto.Participant(PUUID, win, 4586, championId, "Champ"))
+                        List.of(new RiotMatchDetailDto.Participant(
+                                PUUID, null, null, win, 4586, championId, "Champ",
+                                0, 0, null,
+                                5, 2, 7, 0, 150, 0, 0L,
+                                0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0,
+                                null
+                        )),
+                        List.of()
                 )
+        );
+    }
+
+    private static LeaderboardAccountMatch linkedMatch(String matchId, boolean win, int championId) {
+        return LeaderboardAccountMatch.create(
+                PUUID, matchId, win, championId, "Champ", 5, 2, 7, 150, 1_800L
         );
     }
 }

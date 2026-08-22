@@ -11,7 +11,6 @@ import com.riftchallenge.synchronization.RankSnapshot.SnapshotType;
 import com.riftchallenge.synchronization.RankSnapshotRepository;
 import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +89,7 @@ public class ChallengeProgressService {
             unsorted.add(buildForParticipant(participant, includeMatchHistory, challenge, baseline, current, winLoss));
         }
 
-        unsorted.sort(Comparator.comparingInt(ParticipantProgressResponse::rankScore).reversed());
+        unsorted.sort(ChallengeLeaderboardOrdering.BY_LP_GAIN);
 
         List<ParticipantProgressResponse> ranked = new ArrayList<>();
         for (int index = 0; index < unsorted.size(); index++) {

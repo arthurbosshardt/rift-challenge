@@ -1,4 +1,4 @@
-import { ParticipantProgress, DuoProgress } from '../models/challenge.models';
+import { DuoPreview, DuoProgress, ParticipantPreview, ParticipantProgress } from '../models/challenge.models';
 
 export type LeaderboardSort = 'RANK' | 'LP_GAIN' | 'WIN_RATE';
 export type SortDirection = 'asc' | 'desc';
@@ -57,6 +57,12 @@ function compareParticipants(
   switch (sort) {
     case 'LP_GAIN':
       result = compareNumbers(left.lpGained, right.lpGained, direction);
+      if (result === 0) {
+        result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
+      }
+      if (result === 0) {
+        result = compareNumbers(left.rankScore, right.rankScore, direction);
+      }
       break;
     case 'WIN_RATE':
       result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
@@ -92,6 +98,12 @@ function compareDuos(
   switch (sort) {
     case 'LP_GAIN':
       result = compareNumbers(left.combinedLpGained, right.combinedLpGained, direction);
+      if (result === 0) {
+        result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
+      }
+      if (result === 0) {
+        result = compareNumbers(left.combinedRankScore, right.combinedRankScore, direction);
+      }
       break;
     case 'WIN_RATE':
       result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
@@ -129,6 +141,65 @@ function compareWinRate(
     return compareNumbers(leftRate, rightRate, direction);
   }
   return compareNumbers(leftWins, rightWins, direction);
+}
+
+export function sortParticipantPreviews(
+  participants: ParticipantPreview[],
+  direction: SortDirection = 'desc',
+): ParticipantPreview[] {
+  const sorted = [...participants];
+  sorted.sort((left, right) => compareParticipantPreviews(left, right, direction));
+  return assignPreviewPositions(sorted, direction);
+}
+
+export function sortDuoPreviews(duos: DuoPreview[], direction: SortDirection = 'desc'): DuoPreview[] {
+  const sorted = [...duos];
+  sorted.sort((left, right) => compareDuoPreviews(left, right, direction));
+  return assignPreviewPositions(sorted, direction);
+}
+
+function compareParticipantPreviews(
+  left: ParticipantPreview,
+  right: ParticipantPreview,
+  direction: SortDirection,
+): number {
+  let result = compareNumbers(left.lpGained, right.lpGained, direction);
+  if (result === 0) {
+    result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
+  }
+  if (result !== 0) {
+    return result;
+  }
+  return compareStrings(left.riotId, right.riotId, direction);
+}
+
+function compareDuoPreviews(left: DuoPreview, right: DuoPreview, direction: SortDirection): number {
+  if (!left.eligible && right.eligible) {
+    return 1;
+  }
+  if (left.eligible && !right.eligible) {
+    return -1;
+  }
+
+  let result = compareNumbers(left.combinedLpGained, right.combinedLpGained, direction);
+  if (result === 0) {
+    result = compareWinRate(left.winRate, left.wins, right.winRate, right.wins, direction);
+  }
+  if (result !== 0) {
+    return result;
+  }
+  return compareStrings(left.id, right.id, direction);
+}
+
+function assignPreviewPositions<T extends { position: number }>(
+  sorted: T[],
+  direction: SortDirection,
+): T[] {
+  const total = sorted.length;
+  return sorted.map((entry, index) => ({
+    ...entry,
+    position: leaderboardPosition(index, total, direction),
+  }));
 }
 
 export { winRateLabel } from './record-display';

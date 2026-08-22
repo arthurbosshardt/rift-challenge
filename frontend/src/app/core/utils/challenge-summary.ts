@@ -7,6 +7,7 @@ import {
   ChallengeListResponse,
   ChallengeSummary,
 } from '../models/challenge.models';
+import { sortDuos, sortParticipants } from './leaderboard-sort';
 
 export const CHALLENGE_PREVIEW_FETCH_LIMIT = 10;
 
@@ -104,7 +105,9 @@ export function enrichSummaryFromDetail(summary: ChallengeSummary, detail: Chall
       entryCount: detail.duos.length,
       participantGameNames,
       previewParticipants: [],
-      previewDuos: detail.duos.slice(0, CHALLENGE_PREVIEW_FETCH_LIMIT).map(toDuoPreview),
+      previewDuos: sortDuos(detail.duos, 'LP_GAIN', 'desc')
+        .slice(0, CHALLENGE_PREVIEW_FETCH_LIMIT)
+        .map(toDuoPreview),
     };
   }
 
@@ -112,7 +115,9 @@ export function enrichSummaryFromDetail(summary: ChallengeSummary, detail: Chall
     ...summary,
     entryCount: detail.participants.length,
     participantGameNames,
-    previewParticipants: detail.participants.slice(0, CHALLENGE_PREVIEW_FETCH_LIMIT).map(toParticipantPreview),
+    previewParticipants: sortParticipants(detail.participants, 'LP_GAIN', 'desc')
+      .slice(0, CHALLENGE_PREVIEW_FETCH_LIMIT)
+      .map(toParticipantPreview),
     previewDuos: [],
   };
 }

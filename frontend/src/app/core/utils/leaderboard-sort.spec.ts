@@ -4,10 +4,12 @@ import {
   leaderboardPosition,
   podiumTier,
   sortDirectionArrow,
+  sortDuoPreviews,
   sortDuos,
+  sortParticipantPreviews,
   sortParticipants,
 } from './leaderboard-sort';
-import { DuoProgress, ParticipantProgress } from '../models/challenge.models';
+import { DuoPreview, DuoProgress, ParticipantPreview, ParticipantProgress } from '../models/challenge.models';
 
 function participant(overrides: Partial<ParticipantProgress>): ParticipantProgress {
   return {
@@ -32,7 +34,60 @@ function participant(overrides: Partial<ParticipantProgress>): ParticipantProgre
   };
 }
 
+function participantPreview(overrides: Partial<ParticipantPreview>): ParticipantPreview {
+  return {
+    id: 'p1',
+    gameName: 'A',
+    tagLine: 'EUW',
+    riotId: 'A#EUW',
+    profileIconId: null,
+    currentTier: 'GOLD',
+    currentRank: 'I',
+    currentLp: 50,
+    lpGained: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    position: 1,
+    ...overrides,
+  };
+}
+
 describe('leaderboard-sort', () => {
+  it('sorts participant previews by LP gained with updated positions', () => {
+    const sorted = sortParticipantPreviews([
+      participantPreview({ id: 'low', lpGained: 10, position: 2 }),
+      participantPreview({ id: 'high', lpGained: 80, position: 1 }),
+    ]);
+
+    expect(sorted.map((item) => item.id)).toEqual(['high', 'low']);
+    expect(sorted.map((item) => item.position)).toEqual([1, 2]);
+  });
+
+  it('sorts duo previews with eligible entries first', () => {
+    const eligible: DuoPreview = {
+      id: 'ok',
+      player1: participantPreview({ id: 'a' }),
+      player2: participantPreview({ id: 'b' }),
+      combinedLpGained: 5,
+      wins: 1,
+      losses: 0,
+      winRate: 1,
+      eligible: true,
+      position: 1,
+    };
+    const ineligible: DuoPreview = {
+      ...eligible,
+      id: 'ko',
+      eligible: false,
+      combinedLpGained: 999,
+      position: 2,
+    };
+
+    const sorted = sortDuoPreviews([ineligible, eligible]);
+    expect(sorted.map((item) => item.id)).toEqual(['ok', 'ko']);
+  });
+
   it('sorts participants by LP gained descending with 1 2 3 numbers', () => {
     const sorted = sortParticipants(
       [
@@ -73,6 +128,20 @@ describe('leaderboard-sort', () => {
     expect(ascending.map((item) => item.id)).toEqual(['c', 'a', 'b']);
     expect(descending.map((item) => item.position)).toEqual([1, 2, 3]);
     expect(ascending.map((item) => item.position)).toEqual([3, 2, 1]);
+  });
+
+  it('breaks LP ties with win rate then rank score', () => {
+    const sorted = sortParticipants(
+      [
+        participant({ id: 'rank', lpGained: 20, winRate: 0.5, wins: 5, rankScore: 2000 }),
+        participant({ id: 'ratio', lpGained: 20, winRate: 0.7, wins: 7, rankScore: 1000 }),
+        participant({ id: 'lp', lpGained: 40, winRate: 0.3, wins: 3, rankScore: 500 }),
+      ],
+      'LP_GAIN',
+      'desc',
+    );
+
+    expect(sorted.map((item) => item.id)).toEqual(['lp', 'ratio', 'rank']);
   });
 
   it('reverses tied participants when direction changes', () => {

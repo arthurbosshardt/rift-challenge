@@ -38,6 +38,9 @@ public class UserRiotAccount {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "activity_season_history_exhausted", nullable = false)
+    private boolean activitySeasonHistoryExhausted;
+
     protected UserRiotAccount() {
     }
 
@@ -53,6 +56,7 @@ public class UserRiotAccount {
         linked.riotGameName = account.gameName();
         linked.riotTagLine = account.tagLine();
         linked.profileIconId = profileIconId;
+        linked.activitySeasonHistoryExhausted = false;
         return linked;
     }
 
@@ -98,5 +102,17 @@ public class UserRiotAccount {
 
     public void updateProfileIconId(Integer profileIconId) {
         this.profileIconId = profileIconId;
+    }
+
+    public boolean isActivitySeasonHistoryExhausted() {
+        return activitySeasonHistoryExhausted;
+    }
+
+    public void markActivitySeasonHistoryExhausted() {
+        this.activitySeasonHistoryExhausted = true;
+    }
+
+    public void clearActivitySeasonHistoryExhausted() {
+        this.activitySeasonHistoryExhausted = false;
     }
 }

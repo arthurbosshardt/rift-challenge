@@ -110,8 +110,12 @@ export class ChallengeApiService {
     return this.http.get<AuthMeResponse>(apiUrl('/api/auth/me'));
   }
 
-  listRecentGames(): Observable<AccountRecentGames[]> {
-    return this.http.get<AccountRecentGames[]>(apiUrl('/api/challenges/recent'));
+  listRecentGames(options?: { refresh?: boolean }): Observable<AccountRecentGames[]> {
+    const refresh = options?.refresh ?? false;
+    return this.http.get<AccountRecentGames[]>(
+      apiUrl('/api/challenges/recent'),
+      refresh ? { params: { refresh: 'true' } } : undefined,
+    );
   }
 
   getAccountMatchDetail(accountId: string, matchId: string): Observable<MatchDetail> {

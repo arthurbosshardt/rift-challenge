@@ -211,6 +211,26 @@ export interface AccountRecentGames {
   wins: number | null;
   losses: number | null;
   games: RecentGameResponse[];
+  champions: ChampionStat[];
+  syncedGames: number;
+  seasonGames: number;
+  seasonSyncComplete: boolean;
+  seasonSyncInProgress: boolean;
+}
+
+export interface ChampionStat {
+  championId: number | null;
+  championIconUrl: string | null;
+  championName: string | null;
+  games: number;
+  wins: number;
+  winRate: number;
+  avgKills: number;
+  avgDeaths: number;
+  avgAssists: number;
+  kda: number;
+  avgCs: number;
+  avgCsPerMin: number;
 }
 
 export interface MatchItem {

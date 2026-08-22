@@ -10,6 +10,7 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { UserRiotAccountApiService } from '../../core/services/user-riot-account-api.service';
+import { ActivityCacheService } from '../../core/services/activity-cache.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { UserRiotAccount } from '../../core/models/challenge.models';
@@ -40,6 +41,7 @@ import { tap, catchError } from 'rxjs/operators';
 export class SettingsModalComponent {
   protected readonly settingsModal = inject(SettingsModalService);
   private readonly accountApi = inject(UserRiotAccountApiService);
+  private readonly activityCache = inject(ActivityCacheService);
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
   protected readonly i18n = inject(I18nService);
@@ -202,6 +204,7 @@ export class SettingsModalComponent {
     this.accountApi.linkAccount({ riotId }).subscribe({
       next: async () => {
         onSuccess();
+        this.activityCache.invalidateActivity();
         this.linkingAccount.set(false);
         this.editingAccount.set(false);
         this.accountSuccess.set(true);

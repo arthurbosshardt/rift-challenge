@@ -14,7 +14,7 @@ import { TranslatePipe } from '../../../core/i18n/t.pipe';
 export class LeaderboardSortControlsComponent {
   private readonly i18n = inject(I18nService);
 
-  readonly sortCriterion = input<LeaderboardSort>('RANK');
+  readonly sortCriterion = input<LeaderboardSort>('LP_GAIN');
   readonly sortDirection = input<SortDirection>('desc');
   readonly disabled = input(false);
   readonly showFinishedHelp = input(false);
@@ -25,9 +25,9 @@ export class LeaderboardSortControlsComponent {
   protected readonly sortOptions = computed(() => {
     this.i18n.locale();
     return [
-      ['RANK', this.i18n.t('sort.rank')],
       ['LP_GAIN', this.i18n.t('sort.lp')],
       ['WIN_RATE', this.i18n.t('sort.winRate')],
+      ['RANK', this.i18n.t('sort.rank')],
     ] as [LeaderboardSort, string][];
   });
 

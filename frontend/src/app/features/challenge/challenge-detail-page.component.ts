@@ -81,7 +81,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   protected readonly lastUpdateRelative = signal<string | null>(null);
   protected readonly startCountdown = signal<string | null>(null);
   protected readonly endCountdown = signal<string | null>(null);
-  protected readonly sortCriterion = signal<LeaderboardSort>('RANK');
+  protected readonly sortCriterion = signal<LeaderboardSort>('LP_GAIN');
   protected readonly sortDirection = signal<SortDirection>('desc');
 
   protected readonly sortedParticipants = computed(() => {

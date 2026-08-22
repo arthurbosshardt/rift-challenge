@@ -3,6 +3,7 @@ package com.riftchallenge.leaderboard;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.riot.ChallengeRegion;
+import com.riftchallenge.riot.RiotMatchDurations;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
 import com.riftchallenge.riot.RiotMatchLookupService;
@@ -11,8 +12,10 @@ import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import com.riftchallenge.synchronization.RiotMatch;
 import com.riftchallenge.synchronization.RiotMatchRepository;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,6 +49,11 @@ public class LeaderboardAccountSyncService {
      * one, the same tradeoff {@link #MAX_NEW_MATCHES_PER_SYNC} already makes per account.
      */
     static final int MAX_MATCH_IMPORTS_PER_PASS = 20;
+    /** Per activity refresh: import missing season matches before serving champion stats from DB. */
+    public static final int ACTIVITY_MAX_IMPORTS_PER_REFRESH = 10;
+    static final int ACTIVITY_MAX_CATCHUP_MATCHES = 10;
+    /** Hard ceiling on match-detail fetches per background activity sync (imports + backfills). */
+    public static final int ACTIVITY_SYNC_BUDGET = 15;
 
     private static final Logger log = LoggerFactory.getLogger(LeaderboardAccountSyncService.class);
 
@@ -122,12 +130,109 @@ public class LeaderboardAccountSyncService {
         accountRankRepository.save(rank);
     }
 
-    /** @return how many new matches were imported for this account, so the caller can track its pass-wide budget. */
+    /**
+     * Incrementally imports missing ranked solo/duo season matches for one linked account.
+     * Called on Mes statistiques refresh so champion stats can be served from DB (OP.GG-style)
+     * without hundreds of live Riot calls per page load.
+     */
+    public ActivitySyncBatchResult syncAccountForActivity(UserRiotAccount account, int seasonMatchTotal) {
+        int fetchLimit = Math.min(Math.max(seasonMatchTotal, 1), 500);
+        String puuid = account.getRiotPuuid();
+        List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
+                puuid,
+                properties.seasonStartAt().getEpochSecond(),
+                null,
+                fetchLimit,
+                ChallengeRegion.EUW
+        );
+
+        int used = syncMatches(
+                account,
+                ACTIVITY_MAX_IMPORTS_PER_REFRESH,
+                ACTIVITY_MAX_CATCHUP_MATCHES,
+                fetchLimit,
+                ACTIVITY_SYNC_BUDGET
+        );
+        int remainingBudget = Math.max(0, ACTIVITY_SYNC_BUDGET - used);
+        if (remainingBudget > 0) {
+            backfillMissingCombatStats(puuid, remainingBudget);
+        }
+
+        boolean allMatchIdsImported = matchIds.stream()
+                .noneMatch(matchId -> accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId).isEmpty());
+        return new ActivitySyncBatchResult(used, allMatchIdsImported);
+    }
+
+    public record ActivitySyncBatchResult(int fetchesUsed, boolean allMatchIdsImported) {
+    }
+
+    /**
+     * Fetches Riot match details for rows that predate combat-stat columns and persists KDA/CS.
+     */
+    public int backfillMissingCombatStats(String puuid, int maxUpdates) {
+        if (maxUpdates <= 0) {
+            return 0;
+        }
+
+        List<String> matchIds = accountMatchRepository.findMatchIdsMissingCombatStatsSince(
+                puuid,
+                properties.seasonStartAt(),
+                org.springframework.data.domain.PageRequest.of(0, maxUpdates)
+        );
+
+        int updated = 0;
+        for (String matchId : matchIds) {
+            Optional<LeaderboardAccountMatch> existing =
+                    accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId);
+            if (existing.isEmpty() || existing.get().hasCombatStats()) {
+                continue;
+            }
+
+            try {
+                if (backfillMatchStats(existing.get(), puuid, matchId)) {
+                    updated++;
+                }
+            } catch (ResponseStatusException exception) {
+                if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                    log.warn(
+                            "Riot rate limit while backfilling combat stats for {} after {} updates",
+                            puuid,
+                            updated
+                    );
+                    break;
+                }
+                log.warn("Unable to backfill combat stats for match {} ({}): {}", matchId, puuid, exception.getReason());
+            }
+        }
+        return updated;
+    }
+
+    /** @return how many match-detail fetches were performed for this account. */
     private int syncMatches(UserRiotAccount account, Instant now, int budget) {
+        long existingMatches = accountMatchRepository.countByRiotPuuid(account.getRiotPuuid());
+        int fetchLimit = existingMatches == 0
+                ? Math.min(MAX_CATCHUP_MATCHES, budget)
+                : (int) Math.min(100, existingMatches + MAX_NEW_MATCHES_PER_SYNC);
+        return syncMatches(
+                account,
+                MAX_NEW_MATCHES_PER_SYNC,
+                MAX_CATCHUP_MATCHES,
+                fetchLimit,
+                budget
+        );
+    }
+
+    /** @return how many match-detail fetches were performed for this account. */
+    private int syncMatches(
+            UserRiotAccount account,
+            int importLimit,
+            int catchUpImportLimit,
+            int fetchLimit,
+            int budget
+    ) {
         String puuid = account.getRiotPuuid();
         long existingMatches = accountMatchRepository.countByRiotPuuid(puuid);
-        int importLimit = Math.min(existingMatches > 0 ? MAX_NEW_MATCHES_PER_SYNC : MAX_CATCHUP_MATCHES, budget);
-        int fetchLimit = existingMatches == 0 ? importLimit : (int) Math.min(100, existingMatches + importLimit);
+        int effectiveImportLimit = Math.min(existingMatches > 0 ? importLimit : catchUpImportLimit, budget);
 
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
                 puuid,
@@ -137,32 +242,52 @@ public class LeaderboardAccountSyncService {
                 ChallengeRegion.EUW
         );
 
-        int imported = 0;
+        int fetched = 0;
         for (String matchId : matchIds) {
-            if (imported >= importLimit) {
+            if (fetched >= effectiveImportLimit || fetched >= budget) {
                 break;
             }
-            if (accountMatchRepository.existsByRiotPuuidAndRiotMatchId(puuid, matchId)) {
+
+            Optional<LeaderboardAccountMatch> existing =
+                    accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId);
+            if (existing.isPresent()) {
+                if (!existing.get().hasCombatStats()) {
+                    try {
+                        if (backfillMatchStats(existing.get(), puuid, matchId)) {
+                            fetched++;
+                        }
+                    } catch (ResponseStatusException exception) {
+                        if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                            log.warn(
+                                    "Riot API rate limit while backfilling leaderboard match stats for account {} after {} updates",
+                                    account.getId(),
+                                    fetched
+                            );
+                            break;
+                        }
+                        throw exception;
+                    }
+                }
                 continue;
             }
 
             try {
                 if (importMatch(puuid, matchId)) {
-                    imported++;
+                    fetched++;
                 }
             } catch (ResponseStatusException exception) {
                 if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
                     log.warn(
                             "Riot API rate limit while importing leaderboard matches for account {} after {} new matches",
                             account.getId(),
-                            imported
+                            fetched
                     );
                     break;
                 }
                 throw exception;
             }
         }
-        return imported;
+        return fetched;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -175,26 +300,121 @@ public class LeaderboardAccountSyncService {
         Instant gameStart = Instant.ofEpochMilli(match.info().gameStartTimestamp());
         persistMatchIfNeeded(match, gameStart);
 
-        boolean win = false;
-        Integer championId = null;
-        for (RiotMatchDetailDto.Participant participant : match.info().participants()) {
-            if (!puuid.equals(participant.puuid())) {
-                continue;
-            }
-            win = participant.win();
-            championId = participant.championId();
-            break;
+        boolean imported = persistParticipantMatchIfNeeded(puuid, match);
+        importLinkedCoPlayers(puuid, match);
+        return imported;
+    }
+
+    private void importLinkedCoPlayers(String primaryPuuid, RiotMatchDetailDto match) {
+        List<String> participantPuids = match.info().participants().stream()
+                .map(RiotMatchDetailDto.Participant::puuid)
+                .toList();
+        if (participantPuids.isEmpty()) {
+            return;
         }
 
+        Set<String> linkedPuids = new HashSet<>(userRiotAccountRepository.findLinkedPuidsIn(participantPuids));
+        linkedPuids.remove(primaryPuuid);
+        for (String linkedPuuid : linkedPuids) {
+            persistParticipantMatchIfNeeded(linkedPuuid, match);
+        }
+    }
+
+    private boolean persistParticipantMatchIfNeeded(String puuid, RiotMatchDetailDto match) {
+        String matchId = match.metadata().matchId();
+        if (accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId).isPresent()) {
+            return false;
+        }
+
+        Optional<ParticipantSnapshot> participant = findParticipantSnapshot(puuid, match);
+        if (participant.isEmpty()) {
+            return false;
+        }
+
+        ParticipantSnapshot snapshot = participant.get();
         try {
-            accountMatchRepository.save(LeaderboardAccountMatch.create(puuid, matchId, win, championId));
+            accountMatchRepository.save(LeaderboardAccountMatch.create(
+                    puuid,
+                    matchId,
+                    snapshot.win(),
+                    snapshot.championId(),
+                    snapshot.championName(),
+                    snapshot.kills(),
+                    snapshot.deaths(),
+                    snapshot.assists(),
+                    snapshot.cs(),
+                    snapshot.gameDurationSeconds()
+            ));
         } catch (DataIntegrityViolationException exception) {
-            // Another sync pass (e.g. an overlapping admin refresh) already linked this match to
-            // this account between our existence check and this insert — already have it either way.
             log.debug("Leaderboard match {} already linked for {}", matchId, puuid);
             return false;
         }
         return true;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    boolean backfillMatchStats(LeaderboardAccountMatch linkedMatch, String puuid, String matchId) {
+        RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
+        if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
+            return false;
+        }
+
+        Optional<ParticipantSnapshot> participant = findParticipantSnapshot(puuid, match);
+        if (participant.isEmpty()) {
+            return false;
+        }
+
+        ParticipantSnapshot snapshot = participant.get();
+        linkedMatch.backfillCombatStats(
+                snapshot.championName(),
+                snapshot.kills(),
+                snapshot.deaths(),
+                snapshot.assists(),
+                snapshot.cs(),
+                snapshot.gameDurationSeconds()
+        );
+        accountMatchRepository.save(linkedMatch);
+        return true;
+    }
+
+    private Optional<ParticipantSnapshot> findParticipantSnapshot(String puuid, RiotMatchDetailDto match) {
+        for (RiotMatchDetailDto.Participant participant : match.info().participants()) {
+            if (!puuid.equals(participant.puuid())) {
+                continue;
+            }
+
+            Integer championId = participant.championId() != null && participant.championId() > 0
+                    ? participant.championId()
+                    : null;
+            String championName = participant.championName();
+            if (championName != null && championName.isBlank()) {
+                championName = null;
+            }
+
+            return Optional.of(new ParticipantSnapshot(
+                    championId,
+                    championName,
+                    participant.win(),
+                    participant.kills(),
+                    participant.deaths(),
+                    participant.assists(),
+                    participant.totalMinionsKilled() + participant.neutralMinionsKilled(),
+                    RiotMatchDurations.normalizeSeconds(match.info().gameDuration())
+            ));
+        }
+        return Optional.empty();
+    }
+
+    private record ParticipantSnapshot(
+            Integer championId,
+            String championName,
+            boolean win,
+            int kills,
+            int deaths,
+            int assists,
+            int cs,
+            long gameDurationSeconds
+    ) {
     }
 
     private void persistMatchIfNeeded(RiotMatchDetailDto match, Instant gameStart) {

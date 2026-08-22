@@ -13,6 +13,11 @@ public record AccountRecentGamesResponse(
         Integer leaguePoints,
         Integer wins,
         Integer losses,
-        List<RecentGameResponse> games
+        List<RecentGameResponse> games,
+        List<ChampionStatResponse> champions,
+        int syncedGames,
+        int seasonGames,
+        boolean seasonSyncComplete,
+        boolean seasonSyncInProgress
 ) {
 }

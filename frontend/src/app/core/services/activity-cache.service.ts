@@ -1,8 +1,14 @@
 import { Injectable, signal } from '@angular/core';
-import { AccountRecentGames, ChallengeSummary, ParticipantMatchHistory } from '../models/challenge.models';
+import {
+  AccountRecentGames,
+  ChallengeSummary,
+  ParticipantMatchHistory,
+  RecentGameResponse,
+} from '../models/challenge.models';
 
 export interface ActivityAccount extends AccountRecentGames {
   matches: ParticipantMatchHistory[];
+  syncRemainingBaseline: number;
 }
 
 interface PersistedActivityCache {
@@ -15,7 +21,62 @@ interface PersistedActivityCache {
   challengesGeneratedAt: string | null;
 }
 
-const STORAGE_KEY = 'riftchallenge.activityCache.v1';
+const STORAGE_KEY = 'riftchallenge.activityCache.v6';
+
+type ActivityAccountSource = AccountRecentGames & {
+  matches?: ParticipantMatchHistory[];
+  games?: RecentGameResponse[];
+};
+
+export function normalizeActivityAccount(account: ActivityAccountSource): ActivityAccount {
+  const wins = account.wins ?? 0;
+  const losses = account.losses ?? 0;
+  const seasonGames = account.seasonGames ?? wins + losses;
+  const syncedGames = account.syncedGames ?? 0;
+  const seasonSyncComplete =
+    account.seasonSyncComplete ?? (seasonGames > 0 && syncedGames >= seasonGames);
+  const seasonSyncInProgress = account.seasonSyncInProgress ?? false;
+
+  const matches =
+    account.matches ??
+    (account.games ?? []).map((game) => ({
+      matchId: game.id,
+      championId: game.championId,
+      championIconUrl: game.championIconUrl,
+      win: game.win,
+      lpDelta: 0,
+      playedAt: game.playedAt,
+    }));
+
+  return {
+    ...account,
+    champions: account.champions ?? [],
+    syncedGames,
+    seasonGames,
+    seasonSyncComplete,
+    seasonSyncInProgress,
+    syncRemainingBaseline: Math.max(0, seasonGames - syncedGames),
+    matches,
+  };
+}
+
+function applySyncBaseline(
+  account: ActivityAccount,
+  resetBaseline: boolean,
+  previous?: ActivityAccount,
+): ActivityAccount {
+  const remaining = Math.max(0, account.seasonGames - account.syncedGames);
+  if (account.seasonSyncComplete) {
+    return { ...account, syncRemainingBaseline: 0 };
+  }
+
+  const baseline =
+    resetBaseline || previous?.syncRemainingBaseline == null
+      ? remaining
+      : previous.syncRemainingBaseline;
+
+  return { ...account, syncRemainingBaseline: baseline };
+}
 
 @Injectable({ providedIn: 'root' })
 export class ActivityCacheService {
@@ -45,7 +106,13 @@ export class ActivityCacheService {
       return;
     }
 
-    this.activityAccounts.set(stored.activityAccounts ?? []);
+    this.activityAccounts.set(
+      (stored.activityAccounts ?? []).map((account) => {
+        const normalized = normalizeActivityAccount(account);
+        const remaining = Math.max(0, normalized.seasonGames - normalized.syncedGames);
+        return { ...normalized, syncRemainingBaseline: remaining };
+      }),
+    );
     this.activityLastLoadedAt.set(stored.activityLastLoadedAt);
     this.lastRefreshedAt.set(stored.lastRefreshedAt);
     this.challenges.set(stored.challenges ?? []);
@@ -53,8 +120,13 @@ export class ActivityCacheService {
     this.challengesGeneratedAt.set(stored.challengesGeneratedAt);
   }
 
-  setActivity(accounts: ActivityAccount[], refreshedAt: string): void {
-    this.activityAccounts.set(accounts);
+  setActivity(accounts: ActivityAccount[], refreshedAt: string, resetSyncBaseline = false): void {
+    const previousById = new Map(this.activityAccounts().map((account) => [account.accountId, account]));
+    this.activityAccounts.set(
+      accounts
+        .map((account) => normalizeActivityAccount(account))
+        .map((account) => applySyncBaseline(account, resetSyncBaseline, previousById.get(account.accountId))),
+    );
     this.activityLastLoadedAt.set(Date.now());
     this.lastRefreshedAt.set(refreshedAt);
     this.persist();
@@ -80,6 +152,14 @@ export class ActivityCacheService {
     } catch {
       /* private mode / quota */
     }
+  }
+
+  /** Drop cached activity after linking a new Riot account so Mes statistiques refetches sync state. */
+  invalidateActivity(): void {
+    this.activityAccounts.set([]);
+    this.activityLastLoadedAt.set(null);
+    this.lastRefreshedAt.set(null);
+    this.persist();
   }
 
   private persist(): void {

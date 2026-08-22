@@ -3,65 +3,82 @@ package com.riftchallenge.challenge;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
+import com.riftchallenge.challenge.dto.ChampionStatResponse;
 import com.riftchallenge.challenge.dto.RecentGameResponse;
+import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.SeasonActivityRow;
+import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.RiotLeagueClient;
-import com.riftchallenge.riot.RiotMatchClient;
-import com.riftchallenge.riot.RiotMatchLookupService;
+import com.riftchallenge.riot.RiotMatchDurations;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
-import com.riftchallenge.riot.dto.RiotMatchDetailDto;
-import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RecentActivityService {
 
-    static final int RECENT_GAMES_PER_ACCOUNT = 20;
-
     private static final Logger log = LoggerFactory.getLogger(RecentActivityService.class);
+    static final int RECENT_MATCH_LIMIT = 20;
 
     private final UserRiotAccountRepository userRiotAccountRepository;
-    private final RiotMatchClient riotMatchClient;
-    private final RiotMatchLookupService riotMatchLookupService;
+    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final ActivityAccountBackgroundSyncService backgroundSyncService;
     private final RiotLeagueClient riotLeagueClient;
     private final ChampionIconUrlService championIconUrlService;
+    private final LeaderboardProperties leaderboardProperties;
 
     public RecentActivityService(
             UserRiotAccountRepository userRiotAccountRepository,
-            RiotMatchClient riotMatchClient,
-            RiotMatchLookupService riotMatchLookupService,
+            LeaderboardAccountMatchRepository accountMatchRepository,
+            ActivityAccountBackgroundSyncService backgroundSyncService,
             RiotLeagueClient riotLeagueClient,
-            ChampionIconUrlService championIconUrlService
+            ChampionIconUrlService championIconUrlService,
+            LeaderboardProperties leaderboardProperties
     ) {
         this.userRiotAccountRepository = userRiotAccountRepository;
-        this.riotMatchClient = riotMatchClient;
-        this.riotMatchLookupService = riotMatchLookupService;
+        this.accountMatchRepository = accountMatchRepository;
+        this.backgroundSyncService = backgroundSyncService;
         this.riotLeagueClient = riotLeagueClient;
         this.championIconUrlService = championIconUrlService;
+        this.leaderboardProperties = leaderboardProperties;
     }
 
     public List<AccountRecentGamesResponse> listRecentGames(UUID userId) {
         Optional<UserRiotAccount> account = userRiotAccountRepository.findByUserId(userId);
-
-        riotMatchLookupService.beginRefreshScope();
-        try {
-            return account.map(this::toAccountResponse).map(List::of).orElseGet(List::of);
-        } finally {
-            riotMatchLookupService.endRefreshScope();
-        }
+        return account.map(this::toAccountResponse).map(List::of).orElseGet(List::of);
     }
 
     private AccountRecentGamesResponse toAccountResponse(UserRiotAccount account) {
         Optional<RiotLeagueEntryDto> currentRank = fetchCurrentRank(account);
+        int seasonMatchTotal = seasonMatchTotal(currentRank);
+
+        List<SeasonActivityRow> seasonRows = accountMatchRepository.findSeasonActivitySince(
+                account.getRiotPuuid(),
+                leaderboardProperties.seasonStartAt()
+        );
+
+        backgroundSyncService.scheduleSyncIfIdle(account, seasonMatchTotal, seasonRows.size());
+
+        int syncedGames = seasonRows.size();
+        boolean seasonSyncComplete = syncedGames >= seasonMatchTotal
+                || account.isActivitySeasonHistoryExhausted()
+                || backgroundSyncService.isSeasonHistoryExhausted(account.getId());
+        boolean seasonSyncInProgress = !seasonSyncComplete && backgroundSyncService.isCatchUpActive(account.getId());
+        List<ChampionStatResponse> champions = !seasonRows.isEmpty()
+                ? buildSeasonChampionStatsFromRows(seasonRows)
+                : List.of();
+
         return new AccountRecentGamesResponse(
                 account.getId(),
                 account.getRiotGameName(),
@@ -70,10 +87,50 @@ public class RecentActivityService {
                 currentRank.map(RiotLeagueEntryDto::tier).orElse(null),
                 currentRank.map(RiotLeagueEntryDto::rank).orElse(null),
                 currentRank.map(RiotLeagueEntryDto::leaguePoints).orElse(null),
-                currentRank.map(RiotLeagueEntryDto::wins).orElse(null),
-                currentRank.map(RiotLeagueEntryDto::losses).orElse(null),
-                fetchRecentGames(account)
+                seasonWins(currentRank, seasonRows),
+                seasonLosses(currentRank, seasonRows),
+                buildRecentGamesFromDatabase(account, seasonRows),
+                champions,
+                seasonRows.size(),
+                seasonSyncComplete ? syncedGames : seasonMatchTotal,
+                seasonSyncComplete,
+                seasonSyncInProgress
         );
+    }
+
+    private static int seasonMatchTotal(Optional<RiotLeagueEntryDto> currentRank) {
+        return ActivitySeasonMatchTotals.seasonMatchTotal(currentRank);
+    }
+
+    private static Integer seasonWins(Optional<RiotLeagueEntryDto> currentRank, List<SeasonActivityRow> seasonRows) {
+        if (currentRank.isPresent()) {
+            return currentRank.get().wins();
+        }
+        if (seasonRows.isEmpty()) {
+            return null;
+        }
+        return countWins(seasonRows);
+    }
+
+    private static Integer seasonLosses(Optional<RiotLeagueEntryDto> currentRank, List<SeasonActivityRow> seasonRows) {
+        if (currentRank.isPresent()) {
+            return currentRank.get().losses();
+        }
+        if (seasonRows.isEmpty()) {
+            return null;
+        }
+        int wins = countWins(seasonRows);
+        return seasonRows.size() - wins;
+    }
+
+    private static int countWins(List<SeasonActivityRow> seasonRows) {
+        int wins = 0;
+        for (SeasonActivityRow row : seasonRows) {
+            if (row.isWin()) {
+                wins++;
+            }
+        }
+        return wins;
     }
 
     private Optional<RiotLeagueEntryDto> fetchCurrentRank(UserRiotAccount account) {
@@ -90,71 +147,182 @@ public class RecentActivityService {
         }
     }
 
-    private List<RecentGameResponse> fetchRecentGames(UserRiotAccount account) {
-        List<String> matchIds;
-        try {
-            matchIds = riotMatchClient.getRecentRankedSoloMatchIds(
-                    account.getRiotPuuid(), RECENT_GAMES_PER_ACCOUNT, ChallengeRegion.EUW);
-        } catch (ResponseStatusException exception) {
-            log.warn(
-                    "Unable to fetch recent match ids for account {}: {}",
-                    account.getId(),
-                    exception.getReason()
-            );
-            return List.of();
-        }
-
-        List<RecentGameResponse> games = new ArrayList<>();
-        for (String matchId : matchIds) {
-            try {
-                toRecentGameResponse(account, matchId, riotMatchLookupService.getMatch(matchId))
-                        .ifPresent(games::add);
-            } catch (ResponseStatusException exception) {
-                if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
-                    log.warn(
-                            "Riot rate limit reached while fetching recent games for account {} after {} matches",
-                            account.getId(),
-                            games.size()
-                    );
-                    break;
-                }
-                log.warn(
-                        "Unable to fetch detail for match {} (account {}): {}",
-                        matchId,
-                        account.getId(),
-                        exception.getReason()
-                );
-            }
-        }
-        return games;
-    }
-
-    private Optional<RecentGameResponse> toRecentGameResponse(
+    private List<RecentGameResponse> buildRecentGamesFromDatabase(
             UserRiotAccount account,
-            String matchId,
-            RiotMatchDetailDto match
+            List<SeasonActivityRow> seasonRows
     ) {
-        for (RiotMatchDetailDto.Participant participant : match.info().participants()) {
-            if (!account.getRiotPuuid().equals(participant.puuid())) {
-                continue;
+        List<RecentGameResponse> games = new ArrayList<>(Math.min(seasonRows.size(), RECENT_MATCH_LIMIT));
+        for (SeasonActivityRow row : seasonRows) {
+            if (games.size() >= RECENT_MATCH_LIMIT) {
+                break;
             }
 
-            Integer championId = participant.championId() != null && participant.championId() > 0
-                    ? participant.championId()
+            Integer championId = row.getChampionId() != null && row.getChampionId() > 0
+                    ? row.getChampionId()
                     : null;
-
-            return Optional.of(new RecentGameResponse(
-                    matchId,
+            games.add(new RecentGameResponse(
+                    row.getMatchId(),
                     account.getRiotGameName(),
                     account.getRiotTagLine(),
                     championId,
                     championIconUrlService.buildApiPath(championId),
-                    participant.win(),
-                    Instant.ofEpochMilli(match.info().gameStartTimestamp())
+                    row.isWin(),
+                    row.getGameStart()
             ));
         }
+        return games;
+    }
 
-        log.warn("Match {} did not include a participant for account {}; skipping", matchId, account.getId());
-        return Optional.empty();
+    private List<ChampionStatResponse> buildSeasonChampionStatsFromRows(List<SeasonActivityRow> rows) {
+        Map<Integer, ChampionAccumulator> championStats = new HashMap<>();
+        ChampionAccumulator overall = new ChampionAccumulator();
+
+        for (SeasonActivityRow row : rows) {
+            ParticipantSnapshot snapshot = toParticipantSnapshot(row);
+            overall.add(snapshot);
+            if (snapshot.championId() != null) {
+                championStats
+                        .computeIfAbsent(snapshot.championId(), ChampionAccumulator::forChampion)
+                        .add(snapshot);
+            }
+        }
+
+        return buildChampionStats(overall, championStats);
+    }
+
+    private ParticipantSnapshot toParticipantSnapshot(SeasonActivityRow row) {
+        Integer championId = row.getChampionId() != null && row.getChampionId() > 0
+                ? row.getChampionId()
+                : null;
+        String championName = row.getChampionName();
+        if (championName != null && championName.isBlank()) {
+            championName = null;
+        }
+
+        boolean hasCombatStats = row.getKills() != null
+                && row.getDeaths() != null
+                && row.getAssists() != null
+                && row.getCs() != null
+                && row.getGameDurationSeconds() != null;
+
+        return new ParticipantSnapshot(
+                championId,
+                championName,
+                row.isWin(),
+                hasCombatStats,
+                hasCombatStats ? row.getKills() : 0,
+                hasCombatStats ? row.getDeaths() : 0,
+                hasCombatStats ? row.getAssists() : 0,
+                hasCombatStats ? row.getCs() : 0,
+                hasCombatStats ? RiotMatchDurations.normalizeSeconds(row.getGameDurationSeconds()) : 0L
+        );
+    }
+
+    private List<ChampionStatResponse> buildChampionStats(
+            ChampionAccumulator overall,
+            Map<Integer, ChampionAccumulator> byChampion
+    ) {
+        if (overall.games == 0) {
+            return List.of();
+        }
+
+        List<ChampionStatResponse> champions = new ArrayList<>();
+        champions.add(overall.toResponse(null, null, null));
+
+        byChampion.values().stream()
+                .sorted(Comparator.<ChampionAccumulator>comparingInt(accumulator -> accumulator.games).reversed())
+                .map(accumulator -> accumulator.toResponse(
+                        accumulator.championId,
+                        championIconUrlService.buildApiPath(accumulator.championId),
+                        accumulator.championName
+                ))
+                .forEach(champions::add);
+
+        return champions;
+    }
+
+    private record ParticipantSnapshot(
+            Integer championId,
+            String championName,
+            boolean win,
+            boolean hasCombatStats,
+            int kills,
+            int deaths,
+            int assists,
+            int cs,
+            long gameDurationSeconds
+    ) {
+    }
+
+    private static final class ChampionAccumulator {
+        private Integer championId;
+        private String championName;
+        private int games;
+        private int wins;
+        private int kills;
+        private int deaths;
+        private int assists;
+        private int cs;
+        private long totalDurationSeconds;
+        private int statGames;
+
+        static ChampionAccumulator forChampion(Integer championId) {
+            ChampionAccumulator accumulator = new ChampionAccumulator();
+            accumulator.championId = championId;
+            return accumulator;
+        }
+
+        void add(ParticipantSnapshot snapshot) {
+            if (championName == null && snapshot.championName() != null) {
+                championName = snapshot.championName();
+            }
+            games++;
+            if (snapshot.win()) {
+                wins++;
+            }
+            if (!snapshot.hasCombatStats()) {
+                return;
+            }
+            statGames++;
+            kills += snapshot.kills();
+            deaths += snapshot.deaths();
+            assists += snapshot.assists();
+            cs += snapshot.cs();
+            totalDurationSeconds += Math.max(snapshot.gameDurationSeconds(), 0L);
+        }
+
+        ChampionStatResponse toResponse(Integer championId, String championIconUrl, String championName) {
+            double winRate = games > 0 ? (double) wins / games : 0.0;
+            double avgKills = statGames > 0 ? (double) kills / statGames : 0.0;
+            double avgDeaths = statGames > 0 ? (double) deaths / statGames : 0.0;
+            double avgAssists = statGames > 0 ? (double) assists / statGames : 0.0;
+            double kda = deaths > 0 ? (double) (kills + assists) / deaths : kills + assists;
+            int avgCs = statGames > 0 ? Math.round((float) cs / statGames) : 0;
+            double durationMinutes = totalDurationSeconds / 60.0;
+            double avgCsPerMin = durationMinutes > 0 ? cs / durationMinutes : 0.0;
+
+            return new ChampionStatResponse(
+                    championId,
+                    championIconUrl,
+                    championName,
+                    games,
+                    wins,
+                    winRate,
+                    roundOneDecimal(avgKills),
+                    roundOneDecimal(avgDeaths),
+                    roundOneDecimal(avgAssists),
+                    roundTwoDecimals(kda),
+                    avgCs,
+                    roundOneDecimal(avgCsPerMin)
+            );
+        }
+
+        private static double roundOneDecimal(double value) {
+            return Math.round(value * 10.0) / 10.0;
+        }
+
+        private static double roundTwoDecimals(double value) {
+            return Math.round(value * 100.0) / 100.0;
+        }
     }
 }

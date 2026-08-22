@@ -239,9 +239,14 @@ public class ChallengeController {
     }
 
     @GetMapping("/recent")
-    public List<AccountRecentGamesResponse> listRecentGames(Authentication authentication) {
+    public List<AccountRecentGamesResponse> listRecentGames(
+            Authentication authentication,
+            @RequestParam(defaultValue = "false") boolean refresh
+    ) {
         UUID userId = AuthenticatedUserIds.requireOwnerId(authentication);
-        recentActivityRequestThrottle.enforce(userId);
+        if (refresh) {
+            recentActivityRequestThrottle.enforce(userId);
+        }
         return recentActivityService.listRecentGames(userId);
     }
 

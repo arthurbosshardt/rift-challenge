@@ -1,0 +1,55 @@
+@if (champions().length > 0) {
+  <section class="champion-pool" [attr.aria-label]="'activity.championsTitle' | t">
+    <div class="champion-pool__shell">
+      @if (overviewEntry(); as entry) {
+        <ng-container *ngTemplateOutlet="championRow; context: { entry }" />
+      }
+      <div class="champion-pool__list">
+        @for (entry of championEntries(); track entry.championId) {
+          <ng-container *ngTemplateOutlet="championRow; context: { entry }" />
+        }
+      </div>
+    </div>
+  </section>
+}
+
+<ng-template #championRow let-entry="entry">
+  <article class="champion-pool__row" [class.champion-pool__row--overview]="isOverview(entry)">
+    <div class="champion-pool__identity">
+      <div class="champion-pool__icon-wrap">
+        @if (isOverview(entry)) {
+          <span class="champion-pool__icon champion-pool__icon--overview" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.08 5 7.41 0 2.08-.8 3.97-2.1 5.39z"
+              />
+            </svg>
+          </span>
+        } @else if (iconSrc(entry); as src) {
+          <img
+            class="champion-pool__icon"
+            [src]="src"
+            [alt]="displayName(entry)"
+            loading="lazy"
+          />
+        } @else {
+          <span class="champion-pool__icon champion-pool__icon--fallback" aria-hidden="true">?</span>
+        }
+      </div>
+      <div class="champion-pool__identity-copy">
+        <span class="champion-pool__name">{{ displayName(entry) }}</span>
+        <span class="champion-pool__cs">{{ csLabel(entry) }}</span>
+      </div>
+    </div>
+
+    <div class="champion-pool__stats">
+      <span [class]="'champion-pool__kda ' + kdaClass(entry)">{{ kdaLabel(entry) }}</span>
+      <span class="champion-pool__kda-breakdown">{{ kdaBreakdown(entry) }}</span>
+    </div>
+
+    <div class="champion-pool__record">
+      <span [class]="'champion-pool__winrate-badge ' + winRateClass(entry)">{{ winRateLabel(entry) }}</span>
+      <span class="champion-pool__games">{{ gamesLabel(entry) }}</span>
+    </div>
+  </article>
+</ng-template>

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +32,9 @@ class UserRiotAccountServiceTest {
 
     @Mock
     private RiotSummonerClient riotSummonerClient;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserRiotAccountService userRiotAccountService;
@@ -52,6 +56,7 @@ class UserRiotAccountServiceTest {
         assertThat(response.riotId()).isEqualTo("Tanor#7154");
         assertThat(response.profileIconId()).isEqualTo(1234);
         verify(userRiotAccountRepository).save(any(UserRiotAccount.class));
+        verify(eventPublisher).publishEvent(any(LinkedAccountSyncEvent.class));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.riftchallenge.account;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,4 +27,11 @@ public interface UserRiotAccountRepository extends JpaRepository<UserRiotAccount
             @Param("query") String query,
             org.springframework.data.domain.Pageable pageable
     );
+
+    @Query("""
+            SELECT a.riotPuuid
+            FROM UserRiotAccount a
+            WHERE a.riotPuuid IN :puuids
+            """)
+    List<String> findLinkedPuidsIn(@Param("puuids") Collection<String> puuids);
 }

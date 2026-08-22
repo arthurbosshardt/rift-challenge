@@ -209,7 +209,18 @@
                   [soloEntries]="account.matches"
                   (entryClick)="openGameDetail($event, account.accountId)"
                 />
-              } @else {
+              }
+              @if (accountChampionsLoading(account)) {
+                <app-champion-pool-skeleton
+                  [remainingGames]="accountSyncRemaining(account)"
+                  [remainingBaseline]="account.syncRemainingBaseline"
+                />
+              } @else if ((account.champions ?? []).length > 0) {
+                <app-champion-pool [champions]="account.champions ?? []" />
+              } @else if (account.syncedGames > 0 || account.matches.length > 0) {
+                <p class="activity-account__champions-empty">{{ 'activity.championsEmpty' | t }}</p>
+              }
+              @if (account.matches.length === 0 && !accountChampionsLoading(account) && (account.champions ?? []).length === 0) {
                 <p class="activity-account__empty">{{ 'activity.accountEmpty' | t }}</p>
               }
             </div>

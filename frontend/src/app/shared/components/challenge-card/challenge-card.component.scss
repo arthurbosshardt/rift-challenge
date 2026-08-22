@@ -254,8 +254,7 @@
   box-shadow: inset 0 0 0 1px rgba(176, 122, 78, 0.06);
 }
 
-.challenge-card__preview-item--gold .challenge-card__preview-names,
-.challenge-card__preview-item--gold .challenge-card__lp--positive {
+.challenge-card__preview-item--gold .challenge-card__preview-names {
   color: #dcc88a;
 }
 
@@ -264,6 +263,24 @@
 }
 
 .challenge-card__preview-item--bronze .challenge-card__preview-names {
+  color: #d4b088;
+}
+
+.challenge-card__preview-item--gold .challenge-card__lp {
+  border-color: rgba(197, 160, 89, 0.45);
+  background: color-mix(in srgb, #c5a059 16%, transparent);
+  color: #dcc88a;
+}
+
+.challenge-card__preview-item--silver .challenge-card__lp {
+  border-color: rgba(196, 202, 214, 0.42);
+  background: color-mix(in srgb, #c4cad6 14%, transparent);
+  color: #d8dde6;
+}
+
+.challenge-card__preview-item--bronze .challenge-card__lp {
+  border-color: rgba(176, 122, 78, 0.42);
+  background: color-mix(in srgb, #b07a4e 14%, transparent);
   color: #d4b088;
 }
 
@@ -344,10 +361,22 @@
 .challenge-card__preview-rank-label {
   font-size: 0.75rem;
   line-height: 1.2;
-  color: var(--gold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.challenge-card__preview-rank-label--badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--rank-color) 40%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--rank-color) 16%, transparent);
+  color: var(--rank-color);
+  font-weight: 700;
 }
 
 .challenge-card__preview-ranks {

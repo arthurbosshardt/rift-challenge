@@ -20,7 +20,8 @@ import {
 import { ChallengeDatePipe } from '../../pipes/challenge-date.pipe';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { formatFinishedRankLabel, formatRankLabel } from '../../../core/utils/rank-display';
+import { sortDuoPreviews, sortParticipantPreviews } from '../../../core/utils/leaderboard-sort';
+import { formatFinishedRankLabel, formatRankLabel, tierColor } from '../../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../../core/utils/record-display';
 import {
   groupChallengeCardPreviewItems,
@@ -59,8 +60,10 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   protected readonly showPreviewFade = signal(false);
   protected readonly previewViewportWidth = signal(0);
   protected readonly entryCount = computed(() => this.challenge().entryCount ?? 0);
-  protected readonly previewParticipants = computed(() => this.challenge().previewParticipants ?? []);
-  protected readonly previewDuos = computed(() => this.challenge().previewDuos ?? []);
+  protected readonly previewParticipants = computed(() =>
+    sortParticipantPreviews(this.challenge().previewParticipants ?? []),
+  );
+  protected readonly previewDuos = computed(() => sortDuoPreviews(this.challenge().previewDuos ?? []));
   protected readonly previewEntryCount = computed(() =>
     this.challenge().type === 'DUOQ' ? this.previewDuos().length : this.previewParticipants().length,
   );
@@ -244,6 +247,10 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
       locale,
       true,
     );
+  }
+
+  rankColor(participant: ParticipantPreview): string {
+    return tierColor(participant.currentTier);
   }
 
   lpLabel(value: number): string {

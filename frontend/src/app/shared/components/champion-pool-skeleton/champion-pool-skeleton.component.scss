@@ -1,0 +1,165 @@
+.champion-pool-skeleton {
+  min-width: 0;
+  margin-top: -0.125rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.015);
+  overflow: visible;
+}
+
+.champion-pool-skeleton__header {
+  overflow: visible;
+}
+
+.champion-pool-skeleton__rows {
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.champion-pool-skeleton__status {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 0.75rem 0.625rem;
+}
+
+.champion-pool-skeleton__spinner {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: currentColor;
+  color: var(--text-subtle);
+  animation: champion-pool-skeleton-spin 0.8s linear infinite;
+}
+
+.champion-pool-skeleton__progress-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  min-width: 0;
+  color: var(--text-subtle);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.champion-pool-skeleton__info-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-subtle);
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.champion-pool-skeleton__info-btn:hover,
+.champion-pool-skeleton__info-btn:focus-visible {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+  background: var(--gold-a06);
+}
+
+.champion-pool-skeleton__info-tooltip {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: var(--z-tooltip);
+  width: max-content;
+  max-width: min(16rem, calc(100vw - 1.5rem));
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(0.25rem);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+  pointer-events: none;
+}
+
+.champion-pool-skeleton__info-btn:hover .champion-pool-skeleton__info-tooltip,
+.champion-pool-skeleton__info-btn:focus-visible .champion-pool-skeleton__info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.champion-pool-skeleton__progress {
+  height: 0.1875rem;
+  margin: 0 0.75rem 0.625rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.champion-pool-skeleton__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent, #c89b3c);
+  transition: width 0.35s ease;
+}
+
+.champion-pool-skeleton__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.85fr);
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6875rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.champion-pool-skeleton__row:last-child {
+  border-bottom: none;
+}
+
+.champion-pool-skeleton__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.champion-pool-skeleton__identity-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.champion-pool-skeleton__stats,
+.champion-pool-skeleton__record {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.375rem;
+}
+
+@keyframes champion-pool-skeleton-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

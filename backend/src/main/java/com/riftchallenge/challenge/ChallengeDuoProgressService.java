@@ -3,7 +3,6 @@ package com.riftchallenge.challenge;
 import com.riftchallenge.challenge.dto.DuoProgressResponse;
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -52,7 +51,7 @@ public class ChallengeDuoProgressService {
             unsorted.add(buildForDuo(duo, includeMatchHistory, challenge));
         }
 
-        unsorted.sort(Comparator.comparingInt(DuoProgressResponse::combinedRankScore).reversed());
+        unsorted.sort(ChallengeLeaderboardOrdering.BY_LP_GAIN_DUO);
 
         List<DuoProgressResponse> ranked = new ArrayList<>();
         for (int index = 0; index < unsorted.size(); index++) {

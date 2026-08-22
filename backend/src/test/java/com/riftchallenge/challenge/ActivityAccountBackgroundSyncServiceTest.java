@@ -1,0 +1,158 @@
+package com.riftchallenge.challenge;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.riftchallenge.account.UserRiotAccount;
+import com.riftchallenge.account.UserRiotAccountRepository;
+import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.LeaderboardAccountSyncService;
+import com.riftchallenge.leaderboard.LeaderboardProperties;
+import com.riftchallenge.riot.RiotMatchLookupService;
+import com.riftchallenge.riot.dto.RiotAccountDto;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class ActivityAccountBackgroundSyncServiceTest {
+
+    private static final Instant SEASON_START = Instant.parse("2026-01-08T12:00:00Z");
+    private static final Instant NOW = Instant.parse("2026-08-22T09:00:00Z");
+    private static final String PUUID = "puuid-1";
+
+    @Mock
+    private LeaderboardAccountSyncService accountSyncService;
+
+    @Mock
+    private LeaderboardAccountMatchRepository accountMatchRepository;
+
+    @Mock
+    private UserRiotAccountRepository userRiotAccountRepository;
+
+    @Mock
+    private RiotMatchLookupService riotMatchLookupService;
+
+    private ExecutorService executorService;
+    private ActivityAccountBackgroundSyncService service;
+
+    @BeforeEach
+    void setUp() {
+        executorService = Executors.newSingleThreadExecutor();
+        service = new ActivityAccountBackgroundSyncService(
+                accountSyncService,
+                accountMatchRepository,
+                userRiotAccountRepository,
+                riotMatchLookupService,
+                new LeaderboardProperties(SEASON_START, "admin@example.com"),
+                executorService,
+                Clock.fixed(NOW, ZoneOffset.UTC)
+        );
+    }
+
+    @AfterEach
+    void tearDown() {
+        executorService.shutdownNow();
+    }
+
+    @Test
+    void scheduleSyncIfIdle_runsSyncOffRequestThread() {
+        UserRiotAccount account = linkedAccount();
+        when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(10L, 10L);
+        when(accountSyncService.syncAccountForActivity(account, 120))
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false));
+
+        service.scheduleSyncIfIdle(account, 120, 10);
+
+        verify(riotMatchLookupService, timeout(2_000)).beginRefreshScope();
+        verify(accountSyncService, timeout(2_000)).syncAccountForActivity(account, 120);
+        verify(riotMatchLookupService, timeout(2_000)).endRefreshScope();
+    }
+
+    @Test
+    void scheduleSyncIfIdle_skipsWhenSeasonAlreadyStored() {
+        UserRiotAccount account = linkedAccount();
+
+        service.scheduleSyncIfIdle(account, 120, 120);
+
+        verifyNoInteractions(accountSyncService, riotMatchLookupService);
+    }
+
+    @Test
+    void startCatchUpChain_skipsWhenAlreadyComplete() {
+        UserRiotAccount account = linkedAccount();
+        when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(137L);
+
+        service.startCatchUpChain(account, 137, 0);
+
+        verifyNoInteractions(accountSyncService);
+    }
+
+    @Test
+    void scheduleSyncIfIdle_skipsWhenCatchUpAlreadyActive() {
+        UserRiotAccount account = linkedAccount();
+        when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(10L, 10L);
+        when(accountSyncService.syncAccountForActivity(account, 120))
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false));
+
+        service.startCatchUpChain(account, 120, 0);
+        service.scheduleSyncIfIdle(account, 120, 10);
+
+        verify(accountSyncService, timeout(2_000).times(1)).syncAccountForActivity(account, 120);
+    }
+
+    @Test
+    void scheduleSyncIfIdle_skipsWhenSeasonHistoryExhausted() {
+        UserRiotAccount account = linkedAccount();
+        when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(125L);
+        when(accountSyncService.syncAccountForActivity(account, 137))
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(0, true));
+
+        service.startCatchUpChain(account, 137, 0);
+        verify(accountSyncService, timeout(2_000)).syncAccountForActivity(account, 137);
+
+        service.scheduleSyncIfIdle(account, 137, 125);
+
+        verify(accountSyncService, timeout(2_000).times(1)).syncAccountForActivity(account, 137);
+    }
+
+    @Test
+    void runCatchUpBatch_marksSeasonHistoryExhaustedWhenAllMatchIdsImported() {
+        UserRiotAccount account = linkedAccount();
+        when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(125L, 125L);
+        when(accountSyncService.syncAccountForActivity(account, 137))
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, true));
+
+        when(userRiotAccountRepository.findById(account.getId())).thenReturn(java.util.Optional.of(account));
+
+        service.startCatchUpChain(account, 137, 0);
+
+        verify(accountSyncService, timeout(2_000)).syncAccountForActivity(account, 137);
+        assertThat(service.isSeasonHistoryExhausted(account.getId())).isTrue();
+        assertThat(service.isCatchUpActive(account.getId())).isFalse();
+        verify(userRiotAccountRepository, timeout(2_000)).save(account);
+        assertThat(account.isActivitySeasonHistoryExhausted()).isTrue();
+    }
+
+    private static UserRiotAccount linkedAccount() {
+        return UserRiotAccount.create(
+                UUID.randomUUID(),
+                new RiotAccountDto(PUUID, "Player", "EUW"),
+                null
+        );
+    }
+}

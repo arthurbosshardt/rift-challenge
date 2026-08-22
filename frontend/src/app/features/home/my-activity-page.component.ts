@@ -2,7 +2,7 @@ import { Component, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy }
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
-import { ActivityCacheService } from '../../core/services/activity-cache.service';
+import { ActivityCacheService, ActivityAccount, normalizeActivityAccount } from '../../core/services/activity-cache.service';
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
 import { AccountRecentGames, ChallengeListResponse } from '../../core/models/challenge.models';
@@ -17,6 +17,8 @@ import { ChallengeListSkeletonComponent } from '../../shared/components/challeng
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
 import { MatchHistoryStripComponent } from '../../shared/components/match-history-strip/match-history-strip.component';
 import { MatchHistorySkeletonComponent } from '../../shared/components/match-history-skeleton/match-history-skeleton.component';
+import { ChampionPoolComponent } from '../../shared/components/champion-pool/champion-pool.component';
+import { ChampionPoolSkeletonComponent } from '../../shared/components/champion-pool-skeleton/champion-pool-skeleton.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { GameDetailModalService } from '../../shared/services/game-detail-modal.service';
@@ -34,6 +36,8 @@ type ActivityView = 'activity' | 'challenges';
     PlayerIdentityComponent,
     MatchHistoryStripComponent,
     MatchHistorySkeletonComponent,
+    ChampionPoolComponent,
+    ChampionPoolSkeletonComponent,
     SkeletonComponent,
     NavIconComponent,
     TranslatePipe,
@@ -65,9 +69,10 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   protected readonly activityAccounts = this.cache.activityAccounts;
   protected readonly activityLoading = signal(this.cache.activityLastLoadedAt() === null);
   protected readonly activityError = signal<string | null>(null);
-  private readonly activityCooldown = new RefreshCooldown();
+  private readonly activityCooldown = new RefreshCooldown(30_000);
   protected readonly refreshCooldownSeconds = this.activityCooldown.seconds;
   protected readonly lastRefreshedAt = this.cache.lastRefreshedAt;
+  private seasonSyncPollInterval: ReturnType<typeof setInterval> | null = null;
 
   protected readonly activitySkeletonRows = [0, 1];
 
@@ -78,6 +83,7 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.activityCooldown.clear();
     this.stopChallengesCountdownTick();
+    this.stopSeasonSyncPolling();
   }
 
   protected setView(view: ActivityView): void {
@@ -114,6 +120,30 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     const losses = account.losses ?? 0;
     const total = wins + losses;
     return total > 0 ? wins / total : 0;
+  }
+
+  protected accountChampionsLoading(account: ActivityAccount): boolean {
+    if (account.seasonSyncComplete || (account.champions ?? []).length > 0) {
+      return false;
+    }
+    return account.seasonSyncInProgress;
+  }
+
+  private hasIncompleteSeasonSync(): boolean {
+    return this.activityAccounts().some((account) => account.seasonSyncInProgress);
+  }
+
+  /** Cache from before champion stats could omit `champions` while games are already stored. */
+  private hasStaleActivityChampions(): boolean {
+    return this.activityAccounts().some(
+      (account) =>
+        (account.matches.length > 0 || account.syncedGames > 0) &&
+        (account.champions ?? []).length === 0,
+    );
+  }
+
+  protected accountSyncRemaining(account: ActivityAccount): number {
+    return Math.max(0, account.seasonGames - account.syncedGames);
   }
 
   protected lastRefreshedLabel(): string | null {
@@ -155,7 +185,8 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     if (this.activityCooldown.active || this.activityLoading()) {
       return;
     }
-    this.loadActivity();
+    this.activityError.set(null);
+    this.loadActivity(false, true);
     this.activityCooldown.start();
   }
 
@@ -252,6 +283,10 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
 
     if (this.cache.activityLastLoadedAt() === null) {
       void this.loadActivity();
+    } else if (this.hasIncompleteSeasonSync() || this.hasStaleActivityChampions()) {
+      this.activityLoading.set(false);
+      void this.loadActivity(true);
+      this.updateSeasonSyncPolling();
     } else {
       this.activityLoading.set(false);
     }
@@ -291,32 +326,37 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadActivity(): void {
-    this.activityLoading.set(true);
-    this.challengeApi.listRecentGames().subscribe({
+  private loadActivity(silent = false, refresh = false): void {
+    if (!silent) {
+      this.activityLoading.set(true);
+    }
+    this.challengeApi.listRecentGames({ refresh }).subscribe({
       next: (accounts) => {
+        this.activityError.set(null);
         this.cache.setActivity(
-          accounts.map((account) => ({
-            ...account,
-            matches: account.games.map((game) => ({
-              matchId: game.id,
-              championId: game.championId,
-              championIconUrl: game.championIconUrl,
-              win: game.win,
-              lpDelta: 0,
-              playedAt: game.playedAt,
-            })),
-          })),
+          accounts.map((account) => normalizeActivityAccount(account)),
           new Date().toISOString(),
+          !silent,
         );
         this.activityLoading.set(false);
+        this.updateSeasonSyncPolling();
       },
-      error: (err: { status?: number }) => {
-        this.activityLoading.set(false);
+      error: (err: { status?: number; error?: { message?: string } }) => {
+        if (!silent) {
+          this.activityLoading.set(false);
+        }
+        if (silent) {
+          return;
+        }
         if (err.status === 401) {
           this.activityError.set(this.i18n.t('home.sessionExpired'));
         } else if (err.status === 429) {
-          this.activityError.set(this.i18n.t('errors.riotRateLimit'));
+          const message = err.error?.message?.toLowerCase() ?? '';
+          if (message.includes('wait before refreshing')) {
+            this.activityCooldown.start();
+          } else {
+            this.activityError.set(this.i18n.t('errors.riotRateLimit'));
+          }
         } else if (this.backend.ready()) {
           this.activityError.set(this.i18n.t('activity.loadError'));
         } else {
@@ -325,5 +365,21 @@ export class MyActivityPageComponent implements OnInit, OnDestroy {
         }
       },
     });
+  }
+
+  private updateSeasonSyncPolling(): void {
+    const needsPoll = this.hasIncompleteSeasonSync();
+    if (needsPoll && this.seasonSyncPollInterval === null) {
+      this.seasonSyncPollInterval = setInterval(() => this.loadActivity(true), 45_000);
+    } else if (!needsPoll) {
+      this.stopSeasonSyncPolling();
+    }
+  }
+
+  private stopSeasonSyncPolling(): void {
+    if (this.seasonSyncPollInterval) {
+      clearInterval(this.seasonSyncPollInterval);
+      this.seasonSyncPollInterval = null;
+    }
   }
 }
