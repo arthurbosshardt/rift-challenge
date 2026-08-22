@@ -416,15 +416,10 @@
   min-width: 0;
 }
 
-.leaderboard__item--leader,
 .leaderboard__item--podium-gold {
   border-color: rgba(197, 160, 89, 0.45);
   background: linear-gradient(90deg, rgba(197, 160, 89, 0.11), rgba(197, 160, 89, 0.03));
   box-shadow: inset 0 0 0 1px rgba(197, 160, 89, 0.06);
-}
-
-.leaderboard__item--podium-gold .leaderboard__rank {
-  color: #d8bc82;
 }
 
 .leaderboard__item--podium-silver {
@@ -432,17 +427,9 @@
   background: linear-gradient(90deg, rgba(196, 202, 214, 0.12), rgba(255, 255, 255, 0.02));
 }
 
-.leaderboard__item--podium-silver .leaderboard__rank {
-  color: #d8dde8;
-}
-
 .leaderboard__item--podium-bronze {
   border-color: rgba(176, 122, 78, 0.48);
   background: linear-gradient(90deg, rgba(176, 122, 78, 0.14), rgba(255, 255, 255, 0.02));
-}
-
-.leaderboard__item--podium-bronze .leaderboard__rank {
-  color: #c9956a;
 }
 
 .leaderboard__item--ineligible .leaderboard__rank,
@@ -530,12 +517,14 @@
 .leaderboard__rank {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.125rem;
-  font-size: 1.125rem;
-  color: var(--gold);
-  font-weight: 700;
   min-width: 2rem;
+  justify-self: center;
+}
+
+.leaderboard__rank app-medal-badge {
+  flex-shrink: 0;
 }
 
 .leaderboard__games-counter {

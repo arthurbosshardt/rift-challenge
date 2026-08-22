@@ -196,7 +196,9 @@
           <span class="leaderboard__value">
             @switch (category()) {
               @case ('rank') {
-                <span [style.color]="rankColor(entry)">{{ rankLabel(entry) }}</span>
+                <span class="leaderboard__tag leaderboard__tag--rank" [style.--rank-color]="rankColor(entry)">
+                  {{ rankLabel(entry) }}
+                </span>
               }
               @case ('winRate') {
                 <span class="leaderboard__wl">
@@ -217,7 +219,7 @@
                 </span>
               }
               @case ('winStreak') {
-                <span class="leaderboard__tag">
+                <span [class]="'leaderboard__tag ' + streakTagClass(entry)">
                   <span class="leaderboard__tag-value">{{ entry.winStreak }}</span>
                   <span class="leaderboard__tag-label">{{ 'leaderboard.streakSuffix' | t }}</span>
                 </span>

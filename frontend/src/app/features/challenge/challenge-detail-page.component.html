@@ -340,8 +340,8 @@
             <ol class="leaderboard">
               @for (participant of sortedParticipants(); track leaderboardRowTrack(participant.id)) {
                 <li [class]="'leaderboard__item ' + (podiumTierForParticipant(participant.position) ?? '')">
-                  <span class="leaderboard__rank">
-                    #{{ participant.position }}
+                  <div class="leaderboard__rank">
+                    <app-medal-badge [position]="participant.position" />
                     @if (currentChallenge.maxGames; as maxGames) {
                       <span
                         class="leaderboard__games-counter"
@@ -350,7 +350,7 @@
                         {{ participant.wins + participant.losses }}/{{ maxGames }}
                       </span>
                     }
-                  </span>
+                  </div>
                   <app-player-identity
                     class="leaderboard__identity"
                     [compact]="true"
@@ -411,8 +411,8 @@
                   [class]="'leaderboard__item leaderboard__item--duo ' + (podiumTierForDuo(duo) ?? '')"
                   [class.leaderboard__item--ineligible]="!duo.eligible"
                 >
-                  <span class="leaderboard__rank">
-                    #{{ duo.position }}
+                  <div class="leaderboard__rank">
+                    <app-medal-badge [position]="duo.position" [eligible]="duo.eligible" />
                     @if (currentChallenge.maxGames; as maxGames) {
                       <span
                         class="leaderboard__games-counter"
@@ -421,7 +421,7 @@
                         {{ duo.wins + duo.losses }}/{{ maxGames }}
                       </span>
                     }
-                  </span>
+                  </div>
                   <div class="leaderboard__identity leaderboard__identity--duo">
                     <div class="leaderboard__duo-player-slot">
                       <app-player-identity

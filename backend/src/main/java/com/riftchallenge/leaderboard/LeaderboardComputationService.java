@@ -92,8 +92,8 @@ public class LeaderboardComputationService {
         }
 
         return new LeaderboardSnapshot(
-                buildWindow(seasonStats, ranks, MIN_GAMES_FOR_WIN_RATE),
-                buildWindow(rollingStats, ranks, MIN_GAMES_FOR_WIN_RATE_ROLLING),
+                buildWindow(seasonStats, ranks, MIN_GAMES_FOR_WIN_RATE, seasonStart),
+                buildWindow(rollingStats, ranks, MIN_GAMES_FOR_WIN_RATE_ROLLING, seasonStart),
                 now
         );
     }
@@ -108,7 +108,8 @@ public class LeaderboardComputationService {
     private LeaderboardWindow buildWindow(
             List<ParticipantWindowStats> stats,
             Map<String, PlayerRank> ranks,
-            int winRateMinGames
+            int winRateMinGames,
+            Instant rankHistorySince
     ) {
         Map<String, ParticipantWindowStats> statsByPuuid = new HashMap<>();
         for (ParticipantWindowStats entry : stats) {
@@ -116,7 +117,7 @@ public class LeaderboardComputationService {
         }
 
         return new LeaderboardWindow(
-                buildRankList(ranks, statsByPuuid),
+                buildRankList(ranks, statsByPuuid, rankHistorySince),
                 buildStatList(
                         stats,
                         winRateMinGames,
@@ -214,7 +215,8 @@ public class LeaderboardComputationService {
 
     private List<LeaderboardEntryResponse> buildRankList(
             Map<String, PlayerRank> ranks,
-            Map<String, ParticipantWindowStats> statsByPuuid
+            Map<String, ParticipantWindowStats> statsByPuuid,
+            Instant historySince
     ) {
         List<PlayerRank> sorted = ranks.values().stream()
                 .sorted(Comparator.comparingInt(
@@ -227,7 +229,13 @@ public class LeaderboardComputationService {
         int position = 1;
         for (PlayerRank rank : sorted) {
             ParticipantWindowStats stats = statsByPuuid.get(rank.identity().puuid());
-            result.add(toRankEntry(rank, position++, stats));
+            List<LeaderboardMatchHistoryResponse> recentMatches = stats != null
+                    ? stats.recentMatches()
+                    : recentMatches(
+                            accountHistorySince(rank.identity().puuid(), historySince),
+                            rank.tier() != null ? rank.tier() : "GOLD"
+                    );
+            result.add(toRankEntry(rank, position++, recentMatches));
         }
         return result;
     }
@@ -285,7 +293,11 @@ public class LeaderboardComputationService {
         );
     }
 
-    private LeaderboardEntryResponse toRankEntry(PlayerRank rank, int position, ParticipantWindowStats stats) {
+    private LeaderboardEntryResponse toRankEntry(
+            PlayerRank rank,
+            int position,
+            List<LeaderboardMatchHistoryResponse> recentMatches
+    ) {
         return new LeaderboardEntryResponse(
                 rank.identity().puuid(),
                 rank.identity().gameName(),
@@ -297,7 +309,7 @@ public class LeaderboardComputationService {
                 rank.leaguePoints(),
                 0, 0, 0, 0.0, 0, 0,
                 position,
-                stats != null ? stats.recentMatches() : List.of()
+                recentMatches
         );
     }
 

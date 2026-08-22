@@ -10,6 +10,7 @@ export type NavIconName =
   | 'logout'
   | 'challenges'
   | 'history'
+  | 'stats'
   | 'leaderboard';
 
 @Component({
@@ -62,6 +63,18 @@ export type NavIconName =
           />
           <path d="M3 3v5h5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
           <path d="M12 7v5l4 2" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      }
+      @case ('stats') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 19V5M4 19h16M8 16V9M12 16V7M16 16v-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       }
       @case ('leaderboard') {

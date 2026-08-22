@@ -495,6 +495,33 @@ app-medal-badge {
   color: #7ddf8a;
 }
 
+.leaderboard__tag--rank {
+  align-items: center;
+  color: var(--rank-color);
+  border-color: color-mix(in srgb, var(--rank-color) 40%, transparent);
+  background: color-mix(in srgb, var(--rank-color) 16%, transparent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.leaderboard__tag--streak-warm {
+  border-color: color-mix(in srgb, #e6c84a 45%, transparent);
+  background: color-mix(in srgb, #e6c84a 14%, transparent);
+  color: #e6c84a;
+}
+
+.leaderboard__tag--streak-hot {
+  border-color: color-mix(in srgb, #f0a030 45%, transparent);
+  background: color-mix(in srgb, #f0a030 14%, transparent);
+  color: #f0a030;
+}
+
+.leaderboard__tag--streak-fire {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
 .leaderboard__tag--negative {
   border-color: color-mix(in srgb, var(--danger) 45%, transparent);
   background: color-mix(in srgb, var(--danger) 12%, transparent);

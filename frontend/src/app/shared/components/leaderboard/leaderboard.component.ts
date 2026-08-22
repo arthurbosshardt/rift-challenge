@@ -219,4 +219,15 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   protected lpGainedLabel(entry: LeaderboardEntry): string {
     return entry.lpGained >= 0 ? `+${entry.lpGained} LP` : `${entry.lpGained} LP`;
   }
+
+  protected streakTagClass(entry: LeaderboardEntry): string {
+    const streak = entry.winStreak;
+    if (streak >= 6) {
+      return 'leaderboard__tag--streak-fire';
+    }
+    if (streak >= 4) {
+      return 'leaderboard__tag--streak-hot';
+    }
+    return 'leaderboard__tag--streak-warm';
+  }
 }

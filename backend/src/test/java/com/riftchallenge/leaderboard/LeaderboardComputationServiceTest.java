@@ -155,6 +155,22 @@ class LeaderboardComputationServiceTest {
         assertThat(snapshot.last7Days().byRank()).isEqualTo(snapshot.season().byRank());
     }
 
+    @Test
+    void rankList_last7Days_includesSeasonHistoryWhenNoRollingStats() {
+        UserRiotAccount account = account("puuid-rank-rolling", "Ranked", "EUW");
+        when(userRiotAccountRepository.findAll()).thenReturn(List.of(account));
+        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START))
+                .thenReturn(historyAt(NOW.minusSeconds(30L * 24 * 3600), true, 5));
+        when(rankRepository.findByRiotPuuid(account.getRiotPuuid())).thenReturn(Optional.of(
+                LeaderboardAccountRank.create(account.getRiotPuuid(), NOW, "PLATINUM", "I", 20)
+        ));
+
+        LeaderboardSnapshot snapshot = service.compute(NOW);
+
+        assertThat(snapshot.last7Days().byRank()).hasSize(1);
+        assertThat(snapshot.last7Days().byRank().get(0).recentMatches()).isNotEmpty();
+    }
+
     private static UserRiotAccount account(String puuid, String gameName, String tagLine) {
         return UserRiotAccount.create(UUID.randomUUID(), new RiotAccountDto(puuid, gameName, tagLine));
     }

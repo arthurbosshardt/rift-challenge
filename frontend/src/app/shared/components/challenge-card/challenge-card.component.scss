@@ -601,6 +601,10 @@
     grid-area: position;
   }
 
+  .challenge-card__preview-rank {
+    display: none;
+  }
+
   .challenge-card__preview-visual {
     display: inline-flex;
     align-items: center;

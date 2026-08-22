@@ -10,7 +10,7 @@
       [class.activity-switch__btn--active]="view() === 'activity'"
       (click)="setView('activity')"
     >
-      <app-nav-icon name="history" />
+      <app-nav-icon name="stats" />
       {{ 'activity.recentTitle' | t }}
     </button>
     <button
@@ -86,7 +86,7 @@
     <section class="activity-column" [class.activity-column--hidden-mobile]="view() !== 'activity'">
       <div class="activity-column__header">
         <h2 class="activity-column__title">
-          <app-nav-icon name="history" />
+          <app-nav-icon name="stats" />
           {{ 'activity.recentTitle' | t }}
         </h2>
         <button
