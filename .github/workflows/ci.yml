@@ -41,7 +41,7 @@ jobs:
         working-directory: frontend
 
       - name: Unit tests
-        run: npx vitest run
+        run: node scripts/write-last-updated.mjs && npx vitest run
         working-directory: frontend
 
       - name: Build frontend
