@@ -1,6 +1,6 @@
 # Rift Challenge
 
-Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreSQL). Les joueurs créent un défi sur une période donnée, y inscrivent des comptes Riot, et comparent leur progression (LP / rang / V-D) — plus un classement global tous-challenges-confondus.
+Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreSQL). Les joueurs créent un défi sur une période donnée,s'inscrit avec son compte RIOT, et comparent la progression (LP / rang / V-D) avec ses amis. Un leaderboard global sur la saison et les 7 derniers jours est également disponible pour se comparer aux autres joueurs du monde.
 
 **Prod** : [https://rift-challenge.com](https://rift-challenge.com)
 
@@ -9,7 +9,6 @@ Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreS
 - `frontend/` — Angular
 - `backend/` — Spring Boot
 - `rules/` — règles projet mutualisées (produit, backend, frontend, base de données, API Riot, tests, delivery) — **à lire avant tout changement significatif**, humain ou IA
-- `docs/` — guides opérationnels : [`DEPLOY.md`](docs/DEPLOY.md) (Render/Vercel/Supabase), [`GOOGLE_OAUTH.md`](docs/GOOGLE_OAUTH.md)
 
 ## Versions
 
