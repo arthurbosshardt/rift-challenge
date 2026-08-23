@@ -18,4 +18,4 @@ jobs:
             echo "::warning::RENDER_HEALTH_URL repository variable is not set (Settings > Secrets and variables > Actions > Variables). Skipping ping."
             exit 0
           fi
-          curl -fsS --max-time 30 "${{ vars.RENDER_HEALTH_URL }}"
+          curl -fsS --max-time 180 "${{ vars.RENDER_HEALTH_URL }}"
