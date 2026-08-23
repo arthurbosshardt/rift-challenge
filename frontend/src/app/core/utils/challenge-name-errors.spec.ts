@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
 import { isChallengeNameTakenError } from './challenge-name-errors';
-
+import '@angular/compiler';
 function conflict(message: string): HttpErrorResponse {
   return new HttpErrorResponse({
     status: 409,
