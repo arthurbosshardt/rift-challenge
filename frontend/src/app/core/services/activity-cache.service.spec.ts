@@ -1,5 +1,5 @@
 import { ActivityCacheService } from './activity-cache.service';
-import { describe } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
 describe('ActivityCacheService', () => {
   const ownerKey = 'user-1';
