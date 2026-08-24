@@ -39,7 +39,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   protected readonly refreshing = signal(false);
   protected readonly response = signal<LeaderboardResponse | null>(null);
   protected readonly timeframe = signal<LeaderboardTimeframe>('last7Days');
-  protected readonly category = signal<LeaderboardCategory>('winRate');
+  protected readonly category = signal<LeaderboardCategory>('lpGained');
   protected readonly nowMs = signal(Date.now());
   protected readonly copiedPuuid = signal<string | null>(null);
   protected readonly expandedPuuid = signal<string | null>(null);
@@ -145,7 +145,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
     this.timeframe.set(value);
     this.expandedPuuid.set(null);
     if (value === 'last7Days' && this.category() === 'rank') {
-      this.category.set('winRate');
+      this.category.set('lpGained');
     }
   }
 

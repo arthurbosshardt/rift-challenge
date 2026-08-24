@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { ApplicationRef, Injectable, computed, inject, signal } from '@angular/core';
 import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -18,6 +18,7 @@ import { ActivityCacheService } from './activity-cache.service';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly activityCache = inject(ActivityCacheService);
+  private readonly appRef = inject(ApplicationRef);
 
   private readonly supabase: SupabaseClient = createClient(
     environment.supabaseUrl,
@@ -463,6 +464,12 @@ export class AuthService {
         this.touchLastSeen();
         return;
       }
+      // Zoneless CD schedules its render via rAF, which browsers pause while a tab is
+      // backgrounded/unfocused. Confirmation/magic-link emails often open the callback
+      // route in a tab that isn't focused yet, so state updates silently without a
+      // repaint. Force a tick when the tab regains visibility so the UI catches up
+      // without requiring a manual refresh.
+      this.appRef.tick();
       if (this.session() && !this.sessionWithinTtl(this.session())) {
         void this.logout();
         return;
@@ -472,6 +479,7 @@ export class AuthService {
     const onPageHide = () => this.touchLastSeen();
 
     document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', () => this.appRef.tick());
     window.addEventListener('pagehide', onPageHide);
     window.setInterval(() => {
       if (document.visibilityState === 'visible' && this.session()) {

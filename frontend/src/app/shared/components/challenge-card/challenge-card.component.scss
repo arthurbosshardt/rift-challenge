@@ -669,4 +669,18 @@
   .challenge-card__wl {
     justify-content: flex-end;
   }
+
+  // Mobile keeps only the winrate badge for the W/L stat row — the
+  // separate win/loss count is redundant at this width and the winrate
+  // badge already carries that information more compactly.
+  .challenge-card__record {
+    display: none;
+  }
+
+  // The rank-label line's muted fallback (shown when a participant has no
+  // current rank) is the full Riot ID — redundant on mobile since the
+  // summoner name already appears above it.
+  .challenge-card__preview-rank-label--muted {
+    display: none;
+  }
 }

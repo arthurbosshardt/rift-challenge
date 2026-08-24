@@ -516,6 +516,27 @@ button.linkish:focus-visible .nav-icon {
   text-align: center;
 }
 
+/* Between the mobile breakpoint and ~1400px, the desktop header's three
+   grid columns (minmax(0,1fr) auto minmax(0,1fr)) get squeezed below
+   their content width by the centered nav — since nothing here clips
+   overflow, the brand name text bleeds into the nav instead of wrapping.
+   Drop just the "Rift Challenge" title in that range and keep the logo;
+   visually-hidden (not display:none) keeps it in the accessible name for
+   screen readers. */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .brand__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
 @media (max-width: 1023px) {
   .shell {
     padding: 1rem;

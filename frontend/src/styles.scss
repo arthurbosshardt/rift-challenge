@@ -117,8 +117,6 @@ body {
      exceeds 100%. Clip at the document root so a single component bug
      can't take the whole page's fixed-position UI down with it. */
   overflow-x: hidden;
-  background: var(--app-background);
-  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-family);
   font-feature-settings: 'kern' 1;
@@ -132,6 +130,20 @@ body {
      this heuristic, but reproducible on real Android hardware. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+/* Renders the app background on a fixed, off-thread layer instead of
+   `background-attachment: fixed` on body — that property forces mobile
+   browsers to repaint the whole gradient on every scroll frame since it
+   can't be handed to the compositor, which is what caused the scroll
+   jank. A fixed pseudo-element behind the content gives the same "fixed
+   background" look but scrolls for free. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--app-background);
 }
 
 button,
@@ -148,6 +160,8 @@ button {
   background: var(--gold-a12);
   color: var(--text);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
   transition:
     border-color 0.15s ease,
     background 0.15s ease,

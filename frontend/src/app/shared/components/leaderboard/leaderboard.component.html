@@ -48,22 +48,22 @@
       <button
         type="button"
         class="leaderboard__category-btn"
-        [class.leaderboard__category-btn--active]="category() === 'winRate'"
-        [attr.aria-label]="'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() }"
-        (click)="setCategory('winRate')"
-      >
-        <app-leaderboard-category-icon category="winRate" />
-        <span class="leaderboard__category-label">{{ 'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() } }}</span>
-      </button>
-      <button
-        type="button"
-        class="leaderboard__category-btn"
         [class.leaderboard__category-btn--active]="category() === 'lpGained'"
         [attr.aria-label]="'leaderboard.categoryLpGained' | t"
         (click)="setCategory('lpGained')"
       >
         <app-leaderboard-category-icon category="lpGained" />
         <span class="leaderboard__category-label">{{ 'leaderboard.categoryLpGained' | t }}</span>
+      </button>
+      <button
+        type="button"
+        class="leaderboard__category-btn"
+        [class.leaderboard__category-btn--active]="category() === 'winRate'"
+        [attr.aria-label]="'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() }"
+        (click)="setCategory('winRate')"
+      >
+        <app-leaderboard-category-icon category="winRate" />
+        <span class="leaderboard__category-label">{{ 'leaderboard.categoryWinRate' | t: { minGames: winRateMinGames() } }}</span>
       </button>
       <button
         type="button"
@@ -232,7 +232,7 @@
               @if (copiedPuuid() === entry.puuid) {
                 {{ 'player.copied' | t }}
               } @else {
-                {{ entry.riotId }}
+                {{ entry.gameName }}
               }
             </button>
             <app-player-avatar
