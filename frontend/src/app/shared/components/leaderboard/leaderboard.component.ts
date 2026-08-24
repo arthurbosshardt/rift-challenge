@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { LeaderboardApiService } from '../../../core/services/leaderboard-api.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
@@ -33,6 +34,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   private readonly api = inject(LeaderboardApiService);
   private readonly i18n = inject(I18nService);
   private readonly gameDetailModal = inject(GameDetailModalService);
+  private readonly router = inject(Router);
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -135,6 +137,11 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
 
   protected openGameDetail(matchId: string, entry: LeaderboardEntry): void {
     this.gameDetailModal.open(matchId, { type: 'leaderboard', puuid: entry.puuid });
+  }
+
+  protected goToProfile(entry: LeaderboardEntry, event: Event): void {
+    event.stopPropagation();
+    void this.router.navigate(['/players', entry.riotId]);
   }
 
   private isMobileHistoryViewport(): boolean {

@@ -19,6 +19,8 @@ import { translateAuthError } from '../../core/utils/auth-errors';
 import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.component';
 import { PlayerAvatarComponent } from '../../shared/components/player-avatar/player-avatar.component';
 import { SettingsAccountsSkeletonComponent } from '../../shared/components/settings-accounts-skeleton/settings-accounts-skeleton.component';
+import { SummonerTypeaheadComponent } from '../../shared/components/summoner-typeahead/summoner-typeahead.component';
+import { SummonerSuggestion } from '../../core/services/summoner-search.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ThemeService } from '../../core/theme/theme.service';
@@ -33,6 +35,7 @@ import { tap, catchError } from 'rxjs/operators';
     TranslatePipe,
     FormsModule,
     NavIconComponent,
+    SummonerTypeaheadComponent,
   ],
   templateUrl: './settings-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -125,6 +128,11 @@ export class SettingsModalComponent {
     this.riotInvalidForm.set(false);
     this.accountError.set(null);
     this.editingAccount.set(false);
+  }
+
+  protected applySummoner(suggestion: SummonerSuggestion): void {
+    this.riotIdInput = suggestion.riotId;
+    this.riotInvalidForm.set(false);
   }
 
   protected submitAccountForm(): void {

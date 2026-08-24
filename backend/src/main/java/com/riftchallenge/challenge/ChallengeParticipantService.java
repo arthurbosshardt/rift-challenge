@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
 import com.riftchallenge.riot.ChallengeRegion;
@@ -30,6 +31,7 @@ public class ChallengeParticipantService {
     private final RiotAccountClient riotAccountClient;
     private final RiotLeagueClient riotLeagueClient;
     private final ParticipantProfileService participantProfileService;
+    private final RiotAccountService riotAccountService;
     private final Clock clock;
 
     public ChallengeParticipantService(
@@ -39,6 +41,7 @@ public class ChallengeParticipantService {
             RiotAccountClient riotAccountClient,
             RiotLeagueClient riotLeagueClient,
             ParticipantProfileService participantProfileService,
+            RiotAccountService riotAccountService,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
@@ -47,6 +50,7 @@ public class ChallengeParticipantService {
         this.riotAccountClient = riotAccountClient;
         this.riotLeagueClient = riotLeagueClient;
         this.participantProfileService = participantProfileService;
+        this.riotAccountService = riotAccountService;
         this.clock = clock;
     }
 
@@ -80,6 +84,8 @@ public class ChallengeParticipantService {
         if (participantRepository.existsByChallengeIdAndRiotPuuid(challengeId, account.puuid())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Participant already added");
         }
+
+        riotAccountService.findOrCreate(account, null);
 
         ChallengeParticipant participant = ChallengeParticipant.create(challengeId, account);
         ChallengeParticipant saved = participantRepository.save(participant);

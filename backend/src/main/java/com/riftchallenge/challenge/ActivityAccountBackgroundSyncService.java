@@ -10,12 +10,14 @@ import com.riftchallenge.riot.RiotMatchLookupService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,6 +36,8 @@ public class ActivityAccountBackgroundSyncService {
     static final Duration NEW_CHAIN_COOLDOWN = Duration.ofMinutes(2);
     /** Safety cap: at most this many back-to-back batches per chain (15 matches each). */
     static final int MAX_CATCH_UP_CHAIN = 12;
+    /** Rows imported before combat-stat columns existed get patched in batches of this size. */
+    static final int COMBAT_STATS_BACKFILL_BATCH = 15;
 
     private final LeaderboardAccountSyncService accountSyncService;
     private final LeaderboardAccountMatchRepository accountMatchRepository;
@@ -46,6 +50,7 @@ public class ActivityAccountBackgroundSyncService {
     private final ConcurrentMap<UUID, Boolean> catchUpChainActive = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Boolean> seasonHistoryExhausted = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Instant> lastChainStartedAt = new ConcurrentHashMap<>();
+    private final ConcurrentMap<UUID, Boolean> combatStatsBackfillExhausted = new ConcurrentHashMap<>();
 
     public ActivityAccountBackgroundSyncService(
             LeaderboardAccountSyncService accountSyncService,
@@ -85,6 +90,7 @@ public class ActivityAccountBackgroundSyncService {
             catchUpChainActive.remove(riotAccountId);
             seasonHistoryExhausted.remove(riotAccountId);
             clearPersistedSeasonHistoryExhausted(account);
+            scheduleCombatStatsBackfillIfIdle(account);
             return;
         }
 
@@ -192,6 +198,57 @@ public class ActivityAccountBackgroundSyncService {
             }
             startCatchUpChain(account, seasonMatchTotal, chainDepth + 1);
         });
+    }
+
+    /**
+     * Season import is caught up, but rows persisted before combat-stat columns existed (see
+     * V27__leaderboard_account_match_stats.sql) still have null KDA/CS. Those are only patched by
+     * {@link LeaderboardAccountSyncService#backfillMissingCombatStats}, which the catch-up chain
+     * above never reaches once storedMatchCount >= seasonMatchTotal — so trigger it separately.
+     */
+    private void scheduleCombatStatsBackfillIfIdle(RiotAccount account) {
+        UUID riotAccountId = account.getId();
+        if (Boolean.TRUE.equals(combatStatsBackfillExhausted.get(riotAccountId)) || isCatchUpActive(riotAccountId)) {
+            return;
+        }
+
+        List<String> missing = accountMatchRepository.findMatchIdsMissingCombatStatsSince(
+                account.getRiotPuuid(),
+                leaderboardProperties.seasonStartAt(),
+                PageRequest.of(0, 1)
+        );
+        if (missing.isEmpty()) {
+            combatStatsBackfillExhausted.put(riotAccountId, Boolean.TRUE);
+            return;
+        }
+
+        if (syncInProgress.putIfAbsent(riotAccountId, Boolean.TRUE) != null) {
+            return;
+        }
+
+        riotSyncExecutor.submit(() -> runCombatStatsBackfill(account));
+    }
+
+    private void runCombatStatsBackfill(RiotAccount account) {
+        UUID riotAccountId = account.getId();
+        try {
+            riotMatchLookupService.beginRefreshScope();
+            try {
+                accountSyncService.backfillMissingCombatStats(account.getRiotPuuid(), COMBAT_STATS_BACKFILL_BATCH);
+            } finally {
+                riotMatchLookupService.endRefreshScope();
+            }
+        } catch (ResponseStatusException exception) {
+            if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                log.warn("Combat stats backfill hit Riot rate limit for riot account {}", riotAccountId);
+            } else {
+                log.warn("Combat stats backfill failed for riot account {}: {}", riotAccountId, exception.getReason());
+            }
+        } catch (RuntimeException exception) {
+            log.warn("Combat stats backfill failed for riot account {}: {}", riotAccountId, exception.getMessage());
+        } finally {
+            syncInProgress.remove(riotAccountId);
+        }
     }
 
     private void markPersistedSeasonHistoryExhausted(RiotAccount account) {

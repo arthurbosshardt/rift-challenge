@@ -1,0 +1,78 @@
+<app-page-shell [title]="''">
+  <h1 class="visually-hidden">{{ 'home.myChallengesTitle' | t }}</h1>
+  <div class="activity-page">
+    <div class="activity-column__header">
+      <a
+        class="icon-button my-challenges__back-button"
+        [routerLink]="backTarget()"
+        [attr.aria-label]="'challenge.backAria' | t"
+        [attr.title]="'challenge.backTitle' | t"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M19 12H5M12 19l-7-7 7-7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </a>
+      <h2 class="activity-column__title">
+        <app-nav-icon name="challenges" />
+        {{ 'home.myChallengesTitle' | t }}
+      </h2>
+      <button
+        type="button"
+        class="refresh-action-btn activity-refresh-btn--compact"
+        (click)="refreshChallenges()"
+        [disabled]="challengesLoading() || challengesRefreshing() || !challengesRefreshAvailable() || !backend.ready()"
+        [attr.aria-label]="'home.searchRefreshAria' | t"
+        [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('home.searchRefreshAria' | t)"
+      >
+        <svg
+          class="refresh-action-btn__icon"
+          [class.refresh-action-btn__icon--spinning]="challengesRefreshing()"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+          />
+        </svg>
+        <span class="refresh-action-btn__label">{{ challengesRefreshButtonLabel() }}</span>
+      </button>
+      @if (challengesLastUpdatedLabel(); as label) {
+        <span class="activity-refresh-lastupdate">{{ label }}</span>
+      }
+    </div>
+
+    @if (auth.isProfileLoading()) {
+      <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
+    } @else if (!auth.linkedAccount()) {
+      <p class="state">
+        {{ 'home.linkAccountFirst' | t }}
+        <button type="button" class="state-link" (click)="settingsModal.open()">
+          <app-nav-icon name="settings" />
+          <span>{{ 'home.openSettings' | t }}</span>
+        </button>
+      </p>
+    } @else if (challengesLoading()) {
+      @if (!backend.ready()) {
+        <p class="state">{{ 'backend.wakingUpMessage' | t }}</p>
+      }
+      <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />
+    } @else if (challengesError()) {
+      <p class="state state--error">{{ challengesError() }}</p>
+    } @else if (challenges().length === 0) {
+      <p class="state">{{ 'home.emptyParticipating' | t }}</p>
+    } @else {
+      <div class="challenge-grid">
+        @for (challenge of challenges(); track challenge.id) {
+          <app-challenge-card [challenge]="challenge" />
+        }
+      </div>
+    }
+  </div>
+</app-page-shell>

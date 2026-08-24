@@ -1,0 +1,38 @@
+@use '../home/challenge-list-shared' as *;
+@use '../../shared/styles/activity-layout' as *;
+
+.activity-column__title {
+  gap: 0.65625rem;
+  font-size: 1.59375rem;
+  line-height: 2.625rem;
+}
+
+.activity-column__avatar {
+  flex-shrink: 0;
+  margin-right: 0.375rem;
+}
+
+.activity-column__riotid {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 0.125rem;
+  transition: color 0.15s ease;
+}
+
+.activity-column__riotid:hover {
+  color: var(--gold);
+}
+
+.activity-column__riotid--copied {
+  color: var(--success);
+}
+
+.activity-account__header-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}

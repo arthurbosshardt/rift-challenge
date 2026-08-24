@@ -606,6 +606,24 @@ class ChallengeServiceTest {
         assertThat(challenges.getFirst().name()).isEqualTo("Joined");
     }
 
+    /** Backs the public player profile page — same query as listParticipatingChallenges, keyed by an arbitrary puuid. */
+    @Test
+    void listChallengesForPuuids_returnsChallengesForGivenPuuid() {
+        UUID challengeId = UUID.randomUUID();
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(), "Someone else's challenge", ChallengeType.SOLOQ, NOW.minusSeconds(3600), NOW.plusSeconds(3600));
+
+        when(summaryCacheService.readOrBootstrap()).thenReturn(new ChallengeListSnapshot(List.of(), NOW));
+        when(summaryCacheService.eligibility()).thenReturn(availableEligibility());
+        when(participantRepository.findDistinctChallengeIdsByRiotPuuidIn(List.of("puuid-2"))).thenReturn(List.of(challengeId));
+        when(summaryCacheService.readByChallengeIds(List.of(challengeId))).thenReturn(List.of(summaryOf(challenge)));
+
+        List<ChallengeSummaryResponse> challenges = challengeService.listChallengesForPuuids(List.of("puuid-2")).challenges();
+
+        assertThat(challenges).hasSize(1);
+        assertThat(challenges.getFirst().name()).isEqualTo("Someone else's challenge");
+    }
+
     @Test
     void listParticipatingChallenges_withoutLinkedAccounts_returnsEmpty() {
         UUID userId = UUID.randomUUID();

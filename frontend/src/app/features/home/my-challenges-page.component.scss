@@ -1,0 +1,26 @@
+@use './challenge-list-shared' as *;
+@use '../../shared/styles/activity-layout' as *;
+
+.state {
+  margin: 0;
+}
+
+.state a,
+.state-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  vertical-align: middle;
+  margin-left: 0.375rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--gold);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.my-challenges__back-button {
+  flex-shrink: 0;
+}

@@ -20,10 +20,11 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { NavIconComponent } from '../nav-icon/nav-icon.component';
 import { SiteFooterComponent } from '../site-footer/site-footer.component';
+import { PlayerSearchComponent } from '../player-search/player-search.component';
 
 @Component({
   selector: 'app-page-shell',
-  imports: [RouterLink, RouterLinkActive, TranslatePipe, BrandLogoComponent, SkeletonComponent, PlayerAvatarComponent, NavIconComponent, SiteFooterComponent],
+  imports: [RouterLink, RouterLinkActive, TranslatePipe, BrandLogoComponent, SkeletonComponent, PlayerAvatarComponent, NavIconComponent, SiteFooterComponent, PlayerSearchComponent],
   templateUrl: './page-shell.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './page-shell.component.scss',

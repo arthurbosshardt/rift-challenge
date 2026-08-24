@@ -73,6 +73,27 @@
   white-space: nowrap;
 }
 
+.user-menu__trigger-content {
+  display: contents;
+}
+
+.user-menu__burger-icon {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .user-menu__burger-icon {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .user-menu__trigger-content {
+    display: none;
+  }
+}
+
 .user-menu__dropdown {
   position: absolute;
   top: calc(100% + 0.625rem);
@@ -395,6 +416,10 @@ button.linkish:focus-visible .nav-icon {
   min-width: 0;
 }
 
+.shell__nav-avatar {
+  flex-shrink: 0;
+}
+
 .shell__nav--primary a {
   display: inline-flex;
   align-items: center;
@@ -535,6 +560,40 @@ button.linkish:focus-visible .nav-icon {
     white-space: nowrap;
     border: 0;
   }
+
+  /* The player search collapses to an icon in this same squeezed range (see
+     player-search.component.scss) — without that, its ~16rem inline field
+     made .shell__actions wider than the grid could give it alongside the
+     centered nav, and the two visibly overlapped. While expanded, it takes
+     over the nav's grid column instead of floating over the page, since the
+     nav has nowhere left to shrink to. */
+  .shell__header-bar:has(.player-search--expanded) .shell__nav--desktop {
+    display: none;
+  }
+
+  .shell__header-bar:has(.player-search--expanded) .shell__actions {
+    grid-column: 2 / -1;
+    justify-self: stretch;
+  }
+}
+
+/* Same idea as the brand-name hide above, but triggered by the player search
+   being expanded rather than by viewport width alone — an expanded search
+   needs the room in this whole range (mobile included), and must not paint
+   over the logo. Scoped to <=1399px: above that the search never collapses,
+   so "expanded" can only be true here from a resize while it was open. */
+@media (max-width: 1399px) {
+  .shell__header-bar:has(.player-search--expanded) .brand__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }
 
 @media (max-width: 1023px) {
@@ -592,6 +651,16 @@ button.linkish:focus-visible .nav-icon {
     grid-column: unset;
     grid-row: unset;
     justify-self: unset;
+  }
+
+  .shell__header-bar:has(.player-search--expanded) .shell__actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    /* The brand logo is oversized on purpose and paints past its own flex
+       box (see .shell__header margin-bottom above) — the usual column-gap
+       isn't quite enough clearance once the name is hidden down to just
+       that logo, so pad a bit further past it. */
+    margin-left: 0.75rem;
   }
 
   .shell__login-desktop,

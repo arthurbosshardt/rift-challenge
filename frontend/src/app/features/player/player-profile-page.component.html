@@ -1,0 +1,74 @@
+<app-page-shell [title]="''">
+  <h1 class="visually-hidden">{{ titleFor('player.statsTitle') }}</h1>
+  <div class="activity-page">
+    @if (notFound()) {
+      <p class="state state--error">{{ 'player.notFound' | t }}</p>
+    } @else {
+      <div class="activity-column__header">
+        <h2 class="activity-column__title">
+          <app-player-avatar
+            class="activity-column__avatar"
+            [profileIconId]="profileIconId()"
+            [gameName]="displayName()"
+            [sizePx]="48"
+          />
+          {{ displayName() }}
+        </h2>
+        @if (riotIdLabel(); as riotId) {
+          <span
+            class="activity-column__riotid"
+            [class.activity-column__riotid--copied]="riotIdCopied()"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="copyRiotIdAria()"
+            (click)="copyRiotId($event)"
+            (keydown.enter)="copyRiotId($event)"
+            (keydown.space)="copyRiotId($event)"
+          >{{ riotIdCopied() ? ('player.copied' | t) : riotId }}</span>
+        }
+        <button
+          type="button"
+          class="refresh-action-btn activity-refresh-btn--compact"
+          (click)="refreshActivity()"
+          [disabled]="refreshDisabled()"
+          [attr.aria-label]="'activity.refreshAria' | t"
+          [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : ('activity.refreshAria' | t)"
+        >
+          <svg
+            class="refresh-action-btn__icon"
+            [class.refresh-action-btn__icon--spinning]="activityLoading()"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+            />
+          </svg>
+          <span class="refresh-action-btn__label">{{ refreshButtonLabel() }}</span>
+        </button>
+        @if (lastRefreshedLabel(); as label) {
+          <span class="activity-refresh-lastupdate">{{ label }}</span>
+        }
+      </div>
+
+      @if (activityLoading()) {
+        <div class="activity-accounts" role="status" [attr.aria-label]="'activity.loading' | t" aria-live="polite">
+          <div class="activity-account__header-skeleton">
+            <app-skeleton width="5.5rem" height="1.625rem" radius="999px" />
+            <app-skeleton width="4rem" height="1.5rem" radius="999px" />
+            <app-skeleton width="4.5rem" height="1.625rem" radius="999px" />
+          </div>
+          <app-match-history-skeleton />
+        </div>
+      } @else if (activityError()) {
+        <p class="state state--error">{{ activityError() }}</p>
+      } @else if (!activityAccount()) {
+        <p class="state">{{ 'activity.empty' | t }}</p>
+      } @else {
+        <div class="activity-accounts">
+          <app-activity-account-card [account]="activityAccount()!" (matchClick)="openGameDetail($event)" />
+        </div>
+      }
+    }
+  </div>
+</app-page-shell>

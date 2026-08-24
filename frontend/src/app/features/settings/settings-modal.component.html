@@ -292,15 +292,15 @@
                   <div class="settings-form__row settings-form__row--inline">
                     <label>
                       {{ 'challenge.riotId' | t }}
-                      <input
+                      <app-summoner-typeahead
                         name="riotId"
-                        type="text"
-                        [(ngModel)]="riotIdInput"
-                        (ngModelChange)="riotInvalidForm.set(false)"
+                        [value]="riotIdInput"
+                        (valueChange)="riotIdInput = $event; riotInvalidForm.set(false)"
+                        (selected)="applySummoner($event)"
                         [placeholder]="'challenge.riotIdPlaceholder' | t"
                         [disabled]="linkingAccount()"
-                        [class.challenge-form__control--invalid]="riotInvalidForm()"
-                        autocomplete="off"
+                        [invalid]="riotInvalidForm()"
+                        [ariaInvalid]="riotInvalidForm()"
                       />
                     </label>
                     <button type="submit" [disabled]="linkingAccount()">

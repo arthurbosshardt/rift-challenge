@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -42,7 +43,7 @@ import {
 
   selector: 'app-public-challenges-page',
 
-  imports: [PageShellComponent, ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe, NavIconComponent, ClampTooltipDirective],
+  imports: [RouterLink, PageShellComponent, ChallengeCardComponent, ChallengeListSkeletonComponent, TranslatePipe, NavIconComponent, ClampTooltipDirective],
 
   templateUrl: './public-challenges-page.component.html',
 

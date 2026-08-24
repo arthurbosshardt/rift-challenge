@@ -33,7 +33,8 @@ import {
   challengeRegionBadgeKind,
   challengeTypeBadgeKind,
 } from '../../shared/components/challenge-badge/challenge-badge.component';
-import { buildRiotId, parseRiotIdForLocale } from '../../core/utils/riot-id';
+import { buildRiotId, parseRiotIdForRegion } from '../../core/utils/riot-id';
+import { regionLabel as sharedRegionLabel } from '../../core/utils/region-display';
 
 type NameInvalidField = 'name';
 type EndMode = ChallengeEndMode;
@@ -124,16 +125,7 @@ export class EditChallengeModalComponent {
   }
 
   protected regionLabel(region: ChallengeDetail['region']): string {
-    switch (region) {
-      case 'EUNE':
-        return this.i18n.t('challenge.regionEune');
-      case 'NA':
-        return this.i18n.t('challenge.regionNa');
-      case 'KR':
-        return this.i18n.t('challenge.regionKr');
-      default:
-        return this.i18n.t('challenge.regionEuw');
-    }
+    return sharedRegionLabel(region, this.i18n);
   }
 
   protected entryCount(challenge: ChallengeDetail): number {
@@ -448,7 +440,7 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    const parsed = parseRiotIdForLocale(this.riotIdInput, this.i18n.locale());
+    const parsed = parseRiotIdForRegion(this.riotIdInput, challenge.region);
     if (!parsed) {
       this.participantInvalidFields.set(new Set(['riotId']));
       this.participantFieldErrors.set({ riotId: this.i18n.t('errors.riotIdFormat') });
@@ -489,8 +481,8 @@ export class EditChallengeModalComponent {
       return;
     }
 
-    const player1 = parseRiotIdForLocale(this.duoPlayer1RiotIdInput, this.i18n.locale());
-    const player2 = parseRiotIdForLocale(this.duoPlayer2RiotIdInput, this.i18n.locale());
+    const player1 = parseRiotIdForRegion(this.duoPlayer1RiotIdInput, challenge.region);
+    const player2 = parseRiotIdForRegion(this.duoPlayer2RiotIdInput, challenge.region);
     if (!player1 || !player2) {
       const invalidFields = new Set<ParticipantInvalidField>();
       const fieldErrors: Partial<Record<ParticipantInvalidField, string>> = {};

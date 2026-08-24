@@ -13,6 +13,8 @@ public interface RiotAccountRepository extends JpaRepository<RiotAccount, UUID> 
 
     Optional<RiotAccount> findByRiotPuuid(String riotPuuid);
 
+    Optional<RiotAccount> findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(String riotGameName, String riotTagLine);
+
     @Query("""
             SELECT r.riotPuuid
             FROM RiotAccount r
@@ -23,8 +25,8 @@ public interface RiotAccountRepository extends JpaRepository<RiotAccount, UUID> 
     @Query("""
             SELECT r
             FROM RiotAccount r
-            WHERE LOWER(r.riotGameName) LIKE LOWER(CONCAT(:query, '%'))
-               OR LOWER(CONCAT(r.riotGameName, '#', r.riotTagLine)) LIKE LOWER(CONCAT(:query, '%'))
+            WHERE LOWER(r.riotGameName) LIKE LOWER(CONCAT('%', :query, '%'))
+               OR LOWER(CONCAT(r.riotGameName, '#', r.riotTagLine)) LIKE LOWER(CONCAT('%', :query, '%'))
             ORDER BY r.riotGameName ASC
             """)
     List<RiotAccount> searchByRiotId(@Param("query") String query, Pageable pageable);

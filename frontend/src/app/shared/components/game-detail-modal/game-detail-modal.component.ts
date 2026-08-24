@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, effect, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { Router } from '@angular/router';
 import { ChallengeApiService } from '../../../core/services/challenge-api.service';
 import { LeaderboardApiService } from '../../../core/services/leaderboard-api.service';
 import { GameDetailModalService } from '../../services/game-detail-modal.service';
@@ -35,6 +36,7 @@ export class GameDetailModalComponent {
   private readonly leaderboardApi = inject(LeaderboardApiService);
   private readonly i18n = inject(I18nService);
   private readonly itemData = inject(ItemDataService);
+  private readonly router = inject(Router);
 
   protected readonly detail = signal<MatchDetail | null>(null);
   protected readonly loading = signal(false);
@@ -289,6 +291,18 @@ export class GameDetailModalComponent {
     event.preventDefault();
     event.stopPropagation();
     void this.performCopy(player);
+  }
+
+  protected viewProfileAria(player: MatchParticipant): string {
+    return this.i18n.t('player.viewProfileAria', { riotId: this.playerKey(player) });
+  }
+
+  protected goToProfile(player: MatchParticipant, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const riotId = this.playerKey(player);
+    this.modalService.close();
+    void this.router.navigate(['/players', riotId]);
   }
 
   private async performCopy(player: MatchParticipant): Promise<void> {

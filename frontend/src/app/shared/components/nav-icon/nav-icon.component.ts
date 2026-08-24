@@ -11,7 +11,9 @@ export type NavIconName =
   | 'challenges'
   | 'history'
   | 'stats'
-  | 'leaderboard';
+  | 'leaderboard'
+  | 'search'
+  | 'close';
 
 @Component({
   selector: 'app-nav-icon',
@@ -157,6 +159,23 @@ export type NavIconName =
             stroke-width="1.75"
             stroke-linecap="round"
             stroke-linejoin="round"
+          />
+        </svg>
+      }
+      @case ('search') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.75" />
+          <path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+        </svg>
+      }
+      @case ('close') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
           />
         </svg>
       }

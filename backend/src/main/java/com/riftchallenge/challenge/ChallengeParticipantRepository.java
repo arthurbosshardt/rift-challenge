@@ -19,13 +19,18 @@ public interface ChallengeParticipantRepository extends JpaRepository<ChallengeP
 
     Optional<ChallengeParticipant> findByIdAndChallengeId(UUID id, UUID challengeId);
 
+    Optional<ChallengeParticipant> findFirstByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCaseOrderByCreatedAtDesc(
+            String riotGameName,
+            String riotTagLine
+    );
+
     List<ChallengeParticipant> findByDuoIdOrderByCreatedAtAsc(UUID duoId);
 
     @Query("""
             SELECT p
             FROM ChallengeParticipant p
-            WHERE LOWER(p.riotGameName) LIKE LOWER(CONCAT(:query, '%'))
-               OR LOWER(CONCAT(p.riotGameName, '#', p.riotTagLine)) LIKE LOWER(CONCAT(:query, '%'))
+            WHERE LOWER(p.riotGameName) LIKE LOWER(CONCAT('%', :query, '%'))
+               OR LOWER(CONCAT(p.riotGameName, '#', p.riotTagLine)) LIKE LOWER(CONCAT('%', :query, '%'))
             ORDER BY p.riotGameName ASC
             """)
     List<ChallengeParticipant> searchByRiotId(

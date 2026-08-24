@@ -3,6 +3,7 @@ import {
   authHomeGuard,
   guestAuthGuard,
   linkedAccountGuard,
+  myChallengesRedirectGuard,
   rootRedirectGuard,
 } from './core/guards/home.guards';
 import { RouteSeoData } from './core/seo/app-title-strategy';
@@ -81,29 +82,34 @@ export const routes: Routes = [
   },
   {
     path: 'my-challenges',
+    canActivate: [myChallengesRedirectGuard],
+    children: [],
+  },
+  {
+    path: 'my-participations',
     loadComponent: () =>
-      import('./features/home/my-activity-page.component').then((m) => m.MyActivityPageComponent),
+      import('./features/home/my-challenges-page.component').then((m) => m.MyChallengesPageComponent),
     canActivate: [linkedAccountGuard],
     data: {
       seo: {
-        titleKey: 'seo.myChallenges.title',
-        descriptionKey: 'seo.myChallenges.description',
-        path: '/my-challenges',
+        titleKey: 'seo.myParticipations.title',
+        descriptionKey: 'seo.myParticipations.description',
+        path: '/my-participations',
         noindex: true,
       } satisfies RouteSeoData,
     },
   },
   {
     path: 'my-races',
-    redirectTo: 'my-challenges',
+    redirectTo: 'my-participations',
   },
   {
     path: 'created-races',
-    redirectTo: 'my-challenges',
+    redirectTo: 'my-participations',
   },
   {
     path: 'created-challenges',
-    redirectTo: 'my-challenges',
+    redirectTo: 'my-participations',
   },
   {
     path: 'settings',
@@ -177,6 +183,19 @@ export const routes: Routes = [
   {
     path: 'races/:shareSlug',
     redirectTo: ({ params }) => `/challenges/${params['shareSlug']}`,
+  },
+  {
+    path: 'players/:riotId',
+    loadComponent: () =>
+      import('./features/player/player-profile-page.component').then(
+        (m) => m.PlayerProfilePageComponent,
+      ),
+    data: {
+      seo: {
+        defer: true,
+        path: '/players',
+      } satisfies RouteSeoData,
+    },
   },
   {
     path: '**',

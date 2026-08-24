@@ -1,23 +1,46 @@
-<div class="summoner-typeahead" #root>
-  <input
-    [name]="name()"
-    type="text"
-    [ngModel]="value()"
-    (ngModelChange)="onInput($event)"
-    [placeholder]="placeholder()"
-    [disabled]="disabled()"
-    [class.challenge-form__control--invalid]="invalid()"
-    [attr.aria-invalid]="ariaInvalid()"
-    [attr.aria-expanded]="open()"
-    aria-autocomplete="list"
-    autocomplete="off"
-    spellcheck="false"
-  />
+<div
+  class="summoner-typeahead"
+  [class.summoner-typeahead--invalid]="invalid()"
+  #root
+>
+  <div class="summoner-typeahead__field">
+    <input
+      [name]="name()"
+      type="text"
+      [ngModel]="value()"
+      (ngModelChange)="onInput($event)"
+      (keydown.enter)="onEnter($event)"
+      [placeholder]="placeholder()"
+      [disabled]="disabled()"
+      [attr.aria-invalid]="ariaInvalid()"
+      [attr.aria-expanded]="open()"
+      aria-autocomplete="list"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    @if (showSearchButton()) {
+      <button
+        type="button"
+        class="summoner-typeahead__search-btn"
+        (click)="triggerSearch()"
+        [disabled]="disabled()"
+        [attr.aria-label]="searchAriaLabel()"
+      >
+        <app-nav-icon name="search" />
+      </button>
+    }
+  </div>
   @if (open() && suggestions().length > 0) {
-    <ul class="summoner-typeahead__list" role="listbox">
+    <ul
+      class="summoner-typeahead__list"
+      role="listbox"
+      [style.top.px]="dropdownPosition().top"
+      [style.left.px]="dropdownPosition().left"
+      [style.width.px]="dropdownPosition().width"
+    >
       @for (suggestion of suggestions(); track suggestion.puuid) {
         <li>
-          <button type="button" class="summoner-typeahead__option" (mousedown)="pick(suggestion)">
+          <button type="button" class="summoner-typeahead__option" (mousedown)="$event.preventDefault(); pick(suggestion)">
             <app-player-avatar
               [profileIconId]="suggestion.profileIconId"
               [gameName]="suggestion.gameName"

@@ -235,13 +235,20 @@
                 {{ entry.gameName }}
               }
             </button>
-            <app-player-avatar
-              class="leaderboard__avatar"
-              [profileIconId]="entry.profileIconId"
-              [gameName]="entry.gameName"
-              [tier]="entry.tier"
-              size="sm"
-            />
+            <button
+              type="button"
+              class="leaderboard__avatar-link"
+              [attr.aria-label]="'player.viewProfileAria' | t: { riotId: entry.riotId }"
+              (click)="goToProfile(entry, $event)"
+            >
+              <app-player-avatar
+                class="leaderboard__avatar"
+                [profileIconId]="entry.profileIconId"
+                [gameName]="entry.gameName"
+                [tier]="entry.tier"
+                size="sm"
+              />
+            </button>
           </div>
         </li>
       }

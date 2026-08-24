@@ -1,0 +1,28 @@
+<div class="player-search" [class.player-search--expanded]="expanded()" #root>
+  <button
+    type="button"
+    class="player-search__toggle"
+    (click)="expand()"
+    [attr.aria-label]="'nav.searchPlayerExpandAria' | t"
+  >
+    <app-nav-icon name="search" />
+  </button>
+  <div class="player-search__field">
+    <app-summoner-typeahead
+      name="playerSearch"
+      [value]="query()"
+      (valueChange)="query.set($event)"
+      (selected)="onSelected($event)"
+      [showSearchButton]="true"
+      [placeholder]="'nav.searchPlayer' | t"
+    />
+    <button
+      type="button"
+      class="player-search__close"
+      (click)="collapse()"
+      [attr.aria-label]="'nav.searchPlayerCollapseAria' | t"
+    >
+      <app-nav-icon name="close" />
+    </button>
+  </div>
+</div>

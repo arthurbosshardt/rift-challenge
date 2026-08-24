@@ -136,14 +136,19 @@ public class ChallengeService {
     @Transactional
     public ChallengeListResponse listParticipatingChallenges(UUID userId) {
         List<String> linkedPuids = userRiotAccountService.listLinkedPuids(userId);
+        return listChallengesForPuuids(linkedPuids);
+    }
+
+    /** Public lookup for the shareable player profile page — same query, keyed directly by puuid. */
+    public ChallengeListResponse listChallengesForPuuids(List<String> puuids) {
         ChallengeListSnapshot snapshot = summaryCacheService.readOrBootstrap();
         RefreshEligibility eligibility = summaryCacheService.eligibility();
 
-        if (linkedPuids.isEmpty()) {
+        if (puuids.isEmpty()) {
             return toListResponse(List.of(), snapshot.generatedAt(), eligibility);
         }
 
-        List<UUID> challengeIds = participantRepository.findDistinctChallengeIdsByRiotPuuidIn(linkedPuids);
+        List<UUID> challengeIds = participantRepository.findDistinctChallengeIdsByRiotPuuidIn(puuids);
         if (challengeIds.isEmpty()) {
             return toListResponse(List.of(), snapshot.generatedAt(), eligibility);
         }

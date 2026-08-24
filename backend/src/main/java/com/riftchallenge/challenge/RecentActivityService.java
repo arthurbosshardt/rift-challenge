@@ -1,6 +1,8 @@
 package com.riftchallenge.challenge;
 
 import com.riftchallenge.account.RiotAccount;
+import com.riftchallenge.account.RiotAccountRepository;
+import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
@@ -13,6 +15,7 @@ import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchDurations;
+import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,9 +33,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class RecentActivityService {
 
     private static final Logger log = LoggerFactory.getLogger(RecentActivityService.class);
-    static final int RECENT_MATCH_LIMIT = 20;
 
     private final UserRiotAccountRepository userRiotAccountRepository;
+    private final RiotAccountRepository riotAccountRepository;
+    private final ChallengeParticipantRepository participantRepository;
+    private final RiotAccountService riotAccountService;
     private final LeaderboardAccountMatchRepository accountMatchRepository;
     private final ActivityAccountBackgroundSyncService backgroundSyncService;
     private final RiotLeagueClient riotLeagueClient;
@@ -41,6 +46,9 @@ public class RecentActivityService {
 
     public RecentActivityService(
             UserRiotAccountRepository userRiotAccountRepository,
+            RiotAccountRepository riotAccountRepository,
+            ChallengeParticipantRepository participantRepository,
+            RiotAccountService riotAccountService,
             LeaderboardAccountMatchRepository accountMatchRepository,
             ActivityAccountBackgroundSyncService backgroundSyncService,
             RiotLeagueClient riotLeagueClient,
@@ -48,6 +56,9 @@ public class RecentActivityService {
             LeaderboardProperties leaderboardProperties
     ) {
         this.userRiotAccountRepository = userRiotAccountRepository;
+        this.riotAccountRepository = riotAccountRepository;
+        this.participantRepository = participantRepository;
+        this.riotAccountService = riotAccountService;
         this.accountMatchRepository = accountMatchRepository;
         this.backgroundSyncService = backgroundSyncService;
         this.riotLeagueClient = riotLeagueClient;
@@ -57,12 +68,31 @@ public class RecentActivityService {
 
     public List<AccountRecentGamesResponse> listRecentGames(UUID userId) {
         Optional<UserRiotAccount> account = userRiotAccountRepository.findByUserId(userId);
-        return account.map(this::toAccountResponse).map(List::of).orElseGet(List::of);
+        return account.map(link -> buildResponse(link.getRiotAccount(), link.getId())).map(List::of).orElseGet(List::of);
     }
 
-    private AccountRecentGamesResponse toAccountResponse(UserRiotAccount link) {
-        RiotAccount account = link.getRiotAccount();
-        Optional<RiotLeagueEntryDto> currentRank = fetchCurrentRank(link);
+    /**
+     * Public lookup for the shareable player profile page — DB-only resolve, no ownership check.
+     * Falls back to {@link ChallengeParticipantRepository} and registers the account into
+     * {@link RiotAccount} on the fly, so this doesn't depend on {@code /players/{riotId}}
+     * having been called first to register it.
+     */
+    public Optional<AccountRecentGamesResponse> getActivityForRiotId(String gameName, String tagLine) {
+        Optional<RiotAccount> account = riotAccountRepository
+                .findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(gameName, tagLine);
+        if (account.isEmpty()) {
+            account = participantRepository
+                    .findFirstByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCaseOrderByCreatedAtDesc(gameName, tagLine)
+                    .map(participant -> riotAccountService.findOrCreate(
+                            new RiotAccountDto(participant.getRiotPuuid(), participant.getRiotGameName(), participant.getRiotTagLine()),
+                            participant.getProfileIconId()
+                    ));
+        }
+        return account.map(a -> buildResponse(a, a.getId()));
+    }
+
+    private AccountRecentGamesResponse buildResponse(RiotAccount account, UUID responseId) {
+        Optional<RiotLeagueEntryDto> currentRank = fetchCurrentRank(account);
         int seasonMatchTotal = seasonMatchTotal(currentRank);
 
         List<SeasonActivityRow> seasonRows = accountMatchRepository.findSeasonActivitySince(
@@ -82,7 +112,7 @@ public class RecentActivityService {
                 : List.of();
 
         return new AccountRecentGamesResponse(
-                link.getId(),
+                responseId,
                 account.getRiotGameName(),
                 account.getRiotTagLine(),
                 account.getProfileIconId(),
@@ -91,7 +121,7 @@ public class RecentActivityService {
                 currentRank.map(RiotLeagueEntryDto::leaguePoints).orElse(null),
                 seasonWins(currentRank, seasonRows),
                 seasonLosses(currentRank, seasonRows),
-                buildRecentGamesFromDatabase(link, seasonRows),
+                buildRecentGamesFromDatabase(account, seasonRows),
                 champions,
                 seasonRows.size(),
                 seasonSyncComplete ? syncedGames : seasonMatchTotal,
@@ -135,7 +165,7 @@ public class RecentActivityService {
         return wins;
     }
 
-    private Optional<RiotLeagueEntryDto> fetchCurrentRank(UserRiotAccount account) {
+    private Optional<RiotLeagueEntryDto> fetchCurrentRank(RiotAccount account) {
         try {
             // Linked accounts aren't region-tagged yet (unlike challenges); assumes EUW.
             return riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid(), ChallengeRegion.EUW);
@@ -150,15 +180,11 @@ public class RecentActivityService {
     }
 
     private List<RecentGameResponse> buildRecentGamesFromDatabase(
-            UserRiotAccount account,
+            RiotAccount account,
             List<SeasonActivityRow> seasonRows
     ) {
-        List<RecentGameResponse> games = new ArrayList<>(Math.min(seasonRows.size(), RECENT_MATCH_LIMIT));
+        List<RecentGameResponse> games = new ArrayList<>(seasonRows.size());
         for (SeasonActivityRow row : seasonRows) {
-            if (games.size() >= RECENT_MATCH_LIMIT) {
-                break;
-            }
-
             Integer championId = row.getChampionId() != null && row.getChampionId() > 0
                     ? row.getChampionId()
                     : null;

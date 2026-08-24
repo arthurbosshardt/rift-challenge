@@ -1,6 +1,7 @@
 package com.riftchallenge.challenge;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -18,6 +19,7 @@ import com.riftchallenge.riot.RiotMatchLookupService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.AfterEach;
@@ -89,6 +91,19 @@ class ActivityAccountBackgroundSyncServiceTest {
         service.scheduleSyncIfIdle(account, 120, 120);
 
         verifyNoInteractions(accountSyncService, riotMatchLookupService);
+    }
+
+    /** Rows imported before V27 added combat-stat columns are stuck at null KDA/CS forever unless
+     *  this runs even though the season's match count is already fully caught up. */
+    @Test
+    void scheduleSyncIfIdle_backfillsCombatStatsWhenSeasonAlreadyStored() {
+        RiotAccount account = riotAccount();
+        when(accountMatchRepository.findMatchIdsMissingCombatStatsSince(eq(PUUID), eq(SEASON_START), any()))
+                .thenReturn(List.of("match-1"));
+
+        service.scheduleSyncIfIdle(account, 120, 120);
+
+        verify(accountSyncService, timeout(2_000)).backfillMissingCombatStats(PUUID, 15);
     }
 
     @Test

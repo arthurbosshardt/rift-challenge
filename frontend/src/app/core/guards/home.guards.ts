@@ -7,7 +7,8 @@ async function defaultAuthenticatedRoute(auth: AuthService): Promise<string[]> {
   if (!auth.linkedAccount()) {
     await auth.refreshProfile();
   }
-  return auth.linkedAccount() ? ['/my-challenges'] : ['/challenges'];
+  const linkedAccount = auth.linkedAccount();
+  return linkedAccount ? ['/players', linkedAccount.riotId] : ['/challenges'];
 }
 
 export const rootRedirectGuard: CanActivateFn = async () => {
@@ -54,6 +55,30 @@ export const linkedAccountGuard: CanActivateFn = async (_route, state) => {
   }
 
   return true;
+};
+
+/** `/my-challenges` is a legacy URL kept for old bookmarks/links; it always redirects to the owner's `/players/:riotId`. */
+export const myChallengesRedirectGuard: CanActivateFn = async (_route, state) => {
+  const auth = inject(AuthService);
+  const authModal = inject(AuthModalService);
+  const router = inject(Router);
+  await auth.waitUntilReady();
+
+  if (!auth.isAuthenticated()) {
+    authModal.open({ returnUrl: state.url });
+    return router.createUrlTree(['/home']);
+  }
+
+  if (!auth.linkedAccount()) {
+    await auth.refreshProfile();
+  }
+
+  const linkedAccount = auth.linkedAccount();
+  if (!linkedAccount) {
+    return router.createUrlTree(['/challenges']);
+  }
+
+  return router.createUrlTree(['/players', linkedAccount.riotId]);
 };
 
 export const guestAuthGuard: CanActivateFn = async () => {

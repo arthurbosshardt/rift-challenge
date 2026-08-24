@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddDuoRequest;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotAccountClient;
@@ -29,6 +30,7 @@ public class ChallengeDuoService {
     private final RiotAccountClient riotAccountClient;
     private final RiotLeagueClient riotLeagueClient;
     private final ParticipantProfileService participantProfileService;
+    private final RiotAccountService riotAccountService;
     private final Clock clock;
 
     public ChallengeDuoService(
@@ -39,6 +41,7 @@ public class ChallengeDuoService {
             RiotAccountClient riotAccountClient,
             RiotLeagueClient riotLeagueClient,
             ParticipantProfileService participantProfileService,
+            RiotAccountService riotAccountService,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
@@ -48,6 +51,7 @@ public class ChallengeDuoService {
         this.riotAccountClient = riotAccountClient;
         this.riotLeagueClient = riotLeagueClient;
         this.participantProfileService = participantProfileService;
+        this.riotAccountService = riotAccountService;
         this.clock = clock;
     }
 
@@ -85,6 +89,9 @@ public class ChallengeDuoService {
         if (participantRepository.existsByChallengeIdAndRiotPuuid(challengeId, account2.puuid())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Player already added");
         }
+
+        riotAccountService.findOrCreate(account1, null);
+        riotAccountService.findOrCreate(account2, null);
 
         ChallengeDuo duo = challengeDuoRepository.save(ChallengeDuo.create(challengeId));
 

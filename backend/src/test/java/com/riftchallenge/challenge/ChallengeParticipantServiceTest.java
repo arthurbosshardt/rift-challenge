@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
 import com.riftchallenge.riot.RiotAccountClient;
@@ -48,6 +49,9 @@ class ChallengeParticipantServiceTest {
     @Mock
     private ParticipantProfileService participantProfileService;
 
+    @Mock
+    private RiotAccountService riotAccountService;
+
     private final Clock clock = Clock.fixed(Instant.parse("2026-08-16T10:00:00Z"), ZoneOffset.UTC);
 
     @InjectMocks
@@ -62,6 +66,7 @@ class ChallengeParticipantServiceTest {
                 riotAccountClient,
                 riotLeagueClient,
                 participantProfileService,
+                riotAccountService,
                 clock
         );
     }

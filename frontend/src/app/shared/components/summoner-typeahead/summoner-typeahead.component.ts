@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   inject,
@@ -13,11 +14,13 @@ import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SummonerSearchService, SummonerSuggestion } from '../../../core/services/summoner-search.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
+import { NavIconComponent } from '../nav-icon/nav-icon.component';
 
 @Component({
   selector: 'app-summoner-typeahead',
-  imports: [FormsModule, PlayerAvatarComponent],
+  imports: [FormsModule, PlayerAvatarComponent, NavIconComponent],
   templateUrl: './summoner-typeahead.component.html',
   styleUrl: './summoner-typeahead.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,13 +34,16 @@ export class SummonerTypeaheadComponent {
   readonly value = input('');
   readonly valueChange = output<string>();
   readonly selected = output<SummonerSuggestion>();
+  readonly showSearchButton = input(false);
 
   private readonly searchApi = inject(SummonerSearchService);
+  private readonly i18n = inject(I18nService);
   private readonly queries = new Subject<string>();
   private readonly root = viewChild<ElementRef<HTMLElement>>('root');
 
   protected readonly suggestions = signal<SummonerSuggestion[]>([]);
   protected readonly open = signal(false);
+  protected readonly dropdownPosition = signal({ top: 0, left: 0, width: 0 });
 
   constructor() {
     this.queries
@@ -50,7 +56,25 @@ export class SummonerTypeaheadComponent {
       .subscribe((results) => {
         this.suggestions.set(results);
         this.open.set(results.length > 0);
+        if (results.length > 0) {
+          this.updateDropdownPosition();
+        }
       });
+
+    // Dropdown is `position: fixed` so it can escape clipping ancestors (e.g. a
+    // scrollable modal body); re-anchor it whenever the page scrolls or resizes.
+    // Capture phase is required since scroll events don't bubble.
+    const reposition = (): void => {
+      if (this.open()) {
+        this.updateDropdownPosition();
+      }
+    };
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    });
   }
 
   @HostListener('document:click', ['$event'])
@@ -61,6 +85,15 @@ export class SummonerTypeaheadComponent {
     }
   }
 
+  private updateDropdownPosition(): void {
+    const host = this.root()?.nativeElement;
+    if (!host) {
+      return;
+    }
+    const rect = host.getBoundingClientRect();
+    this.dropdownPosition.set({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }
+
   protected onInput(value: string): void {
     this.valueChange.emit(value);
     const hashIndex = value.indexOf('#');
@@ -69,9 +102,29 @@ export class SummonerTypeaheadComponent {
   }
 
   protected pick(suggestion: SummonerSuggestion): void {
-    this.valueChange.emit(suggestion.gameName);
+    this.valueChange.emit(suggestion.riotId);
     this.selected.emit(suggestion);
     this.suggestions.set([]);
     this.open.set(false);
+  }
+
+  protected onEnter(event: Event): void {
+    if (!this.showSearchButton()) {
+      return;
+    }
+    event.preventDefault();
+    this.triggerSearch();
+  }
+
+  /** Picks the top autocomplete match — used by the Enter key and the search button. */
+  protected triggerSearch(): void {
+    const top = this.suggestions()[0];
+    if (top) {
+      this.pick(top);
+    }
+  }
+
+  protected searchAriaLabel(): string {
+    return this.i18n.t('nav.searchPlayerSubmitAria');
   }
 }

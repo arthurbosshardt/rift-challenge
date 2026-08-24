@@ -1,0 +1,80 @@
+<div class="activity-account">
+  <div class="activity-account__header">
+    <span class="activity-account__rank" [style.color]="rankColor()">
+      <app-leaderboard-category-icon category="rank" [compact]="true" />
+      {{ rankLabel() }}
+    </span>
+    @if (hasRecord()) {
+      <span [class]="'activity-account__winrate ' + winRateClass()">
+        <app-leaderboard-category-icon category="winRate" [compact]="true" />
+        {{ winRateLabelText() }}
+      </span>
+      <span class="activity-account__record">
+        <span class="activity-account__wins">
+          {{ account().wins }}<span class="activity-account__record-abbr">{{ 'challenge.winAbbr' | t }}</span>
+        </span>
+        <span class="activity-account__record-sep" aria-hidden="true">/</span>
+        <span class="activity-account__losses">
+          {{ account().losses }}<span class="activity-account__record-abbr">{{ 'challenge.lossAbbr' | t }}</span>
+        </span>
+      </span>
+    }
+  </div>
+  @if (syncInProgress()) {
+    <app-champion-pool-skeleton
+      [headerOnly]="(account().champions ?? []).length > 0"
+      [remainingGames]="syncRemaining()"
+      [remainingBaseline]="account().syncRemainingBaseline"
+    />
+  }
+  @if (account().matches.length > 0) {
+    <app-match-history-strip [soloEntries]="account().matches" (entryClick)="onMatchClick($event)" />
+  }
+  @if (account().matches.length === 0 && !syncInProgress() && (account().champions ?? []).length === 0) {
+    <p class="activity-account__empty">{{ 'activity.accountEmpty' | t }}</p>
+  } @else {
+    <div class="activity-account__view-switch" role="tablist" [attr.aria-label]="'activity.championsTitle' | t">
+      <button
+        type="button"
+        class="activity-account__view-switch-btn"
+        role="tab"
+        [attr.aria-selected]="selectedView() === 'performance'"
+        [class.activity-account__view-switch-btn--active]="selectedView() === 'performance'"
+        (click)="setSelectedView('performance')"
+      >
+        {{ 'activity.switchPerformance' | t }}
+      </button>
+      <button
+        type="button"
+        class="activity-account__view-switch-btn"
+        role="tab"
+        [attr.aria-selected]="selectedView() === 'champions'"
+        [class.activity-account__view-switch-btn--active]="selectedView() === 'champions'"
+        (click)="setSelectedView('champions')"
+      >
+        {{ 'activity.switchChampions' | t }}
+      </button>
+    </div>
+    <div class="activity-account__stats-row">
+      <div
+        class="activity-account__champions-col"
+        [class.activity-account__champions-col--hidden]="selectedView() !== 'champions'"
+      >
+        @if ((account().champions ?? []).length > 0) {
+          <app-champion-pool [champions]="account().champions ?? []" />
+        } @else if (!syncInProgress() && (account().syncedGames > 0 || account().matches.length > 0)) {
+          <p class="activity-account__champions-empty">{{ 'activity.championsEmpty' | t }}</p>
+        }
+      </div>
+      <div
+        class="activity-account__performance-col"
+        [class.activity-account__performance-col--hidden]="selectedView() !== 'performance'"
+      >
+        <div class="activity-account__performance-placeholder">
+          <span class="activity-account__performance-title">{{ 'activity.performanceTitle' | t }}</span>
+          <span class="activity-account__performance-subtitle">{{ 'activity.performanceSubtitle' | t }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</div>

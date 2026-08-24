@@ -469,6 +469,12 @@
   border-radius: 50%;
   flex-shrink: 0;
   object-fit: cover;
+  cursor: pointer;
+}
+
+.game-detail-modal__avatar:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .game-detail-modal__avatar--fallback {
@@ -874,7 +880,7 @@
     display: grid;
     grid-template-columns: auto auto auto auto minmax(0, 1fr) auto auto;
     grid-template-areas:
-      'role ranktext rankbadge avatar identity champ loadout'
+      'role rankbadge ranktext avatar identity champ loadout'
       'stats stats stats stats stats stats stats'
       'items items items items items items items';
     align-items: center;
@@ -883,8 +889,8 @@
   }
 
   /* Flatten avatar-rank so the badge and avatar are independent grid
-     items — that lets the rank text sit before the emblem without the
-     badge overlapping it (desktop keeps the badge overlaid on the avatar). */
+     items — that lets the rank badge sit before the rank text (desktop
+     keeps the badge overlaid on the avatar). */
   .game-detail-modal__avatar-rank {
     display: contents;
   }
@@ -896,8 +902,8 @@
   .game-detail-modal__rank-text {
     grid-area: ranktext;
     width: 4.25rem;
-    justify-items: end;
-    text-align: right;
+    justify-items: start;
+    text-align: left;
   }
 
   .game-detail-modal__rank-tier,

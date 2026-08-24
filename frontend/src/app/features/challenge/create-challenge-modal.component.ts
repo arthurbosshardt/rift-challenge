@@ -23,7 +23,8 @@ import {
 } from '../../core/utils/challenge-schedule';
 import { mapParticipantError } from '../../core/utils/challenge-participant-errors';
 import { isChallengeNameTakenError } from '../../core/utils/challenge-name-errors';
-import { buildRiotId, parseRiotIdForLocale } from '../../core/utils/riot-id';
+import { buildRiotId, parseRiotIdForRegion } from '../../core/utils/riot-id';
+import { CHALLENGE_REGIONS, regionLabel as sharedRegionLabel } from '../../core/utils/region-display';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PlayerIdentityComponent } from '../../shared/components/player-identity/player-identity.component';
@@ -57,7 +58,7 @@ export class CreateChallengeModalComponent {
   protected nameInput = '';
   protected type: ChallengeType = 'SOLOQ';
   protected region: ChallengeRegion = 'EUW';
-  protected readonly regionOptions: ChallengeRegion[] = ['EUW', 'EUNE', 'NA', 'KR'];
+  protected readonly regionOptions: ChallengeRegion[] = CHALLENGE_REGIONS;
   protected startDateInput = '';
   protected startHourInput = 12;
   protected endMode: EndMode = 'DATE';
@@ -149,16 +150,7 @@ export class CreateChallengeModalComponent {
   }
 
   protected regionLabel(region: ChallengeRegion): string {
-    switch (region) {
-      case 'EUNE':
-        return this.i18n.t('challenge.regionEune');
-      case 'NA':
-        return this.i18n.t('challenge.regionNa');
-      case 'KR':
-        return this.i18n.t('challenge.regionKr');
-      default:
-        return this.i18n.t('challenge.regionEuw');
-    }
+    return sharedRegionLabel(region, this.i18n);
   }
 
   protected onTypeChange(): void {
@@ -295,7 +287,7 @@ export class CreateChallengeModalComponent {
       return;
     }
 
-    const parsed = parseRiotIdForLocale(this.riotIdInput, this.i18n.locale());
+    const parsed = parseRiotIdForRegion(this.riotIdInput, this.region);
     if (!parsed) {
       this.participantInvalidFields.set(new Set(['riotId']));
       this.participantFieldErrors.set({ riotId: this.i18n.t('errors.riotIdFormat') });
@@ -333,8 +325,8 @@ export class CreateChallengeModalComponent {
       return;
     }
 
-    const player1 = parseRiotIdForLocale(this.duoPlayer1RiotIdInput, this.i18n.locale());
-    const player2 = parseRiotIdForLocale(this.duoPlayer2RiotIdInput, this.i18n.locale());
+    const player1 = parseRiotIdForRegion(this.duoPlayer1RiotIdInput, this.region);
+    const player2 = parseRiotIdForRegion(this.duoPlayer2RiotIdInput, this.region);
     if (!player1 || !player2) {
       const invalidFields = new Set<ParticipantInvalidField>();
       const fieldErrors: Partial<Record<ParticipantInvalidField, string>> = {};

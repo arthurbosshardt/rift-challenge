@@ -354,6 +354,8 @@
                   <app-player-identity
                     class="leaderboard__identity"
                     [compact]="true"
+                    [linkToProfile]="true"
+                    [rankBadgePosition]="'end'"
                     [gameName]="participant.gameName"
                     [tagLine]="participant.tagLine"
                     [riotId]="participant.riotId"
@@ -431,6 +433,8 @@
                     <div class="leaderboard__duo-player-slot">
                       <app-player-identity
                         [compact]="true"
+                        [linkToProfile]="true"
+                        [rankBadgePosition]="'end'"
                         [gameName]="duo.player1.gameName"
                         [tagLine]="duo.player1.tagLine"
                         [riotId]="duo.player1.riotId"
@@ -442,6 +446,8 @@
                     <div class="leaderboard__duo-player-slot">
                       <app-player-identity
                         [compact]="true"
+                        [linkToProfile]="true"
+                        [rankBadgePosition]="'end'"
                         [gameName]="duo.player2.gameName"
                         [tagLine]="duo.player2.tagLine"
                         [riotId]="duo.player2.riotId"
@@ -508,6 +514,8 @@
               <li class="participants__list-item">
                 <app-player-identity
                   [compact]="true"
+                  [linkToProfile]="true"
+                  [rankBadgePosition]="'end'"
                   [gameName]="participant.gameName"
                   [tagLine]="participant.tagLine"
                   [riotId]="participant.riotId"
@@ -524,6 +532,8 @@
                 <div class="participants__duo-stack">
                   <app-player-identity
                     [compact]="true"
+                    [linkToProfile]="true"
+                    [rankBadgePosition]="'end'"
                     [gameName]="duo.player1.gameName"
                     [tagLine]="duo.player1.tagLine"
                     [riotId]="duo.player1.riotId"
@@ -532,6 +542,8 @@
                   />
                   <app-player-identity
                     [compact]="true"
+                    [linkToProfile]="true"
+                    [rankBadgePosition]="'end'"
                     [gameName]="duo.player2.gameName"
                     [tagLine]="duo.player2.tagLine"
                     [riotId]="duo.player2.riotId"

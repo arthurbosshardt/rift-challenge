@@ -1,4 +1,5 @@
 import type { AppLocale } from '../i18n/translations';
+import type { ChallengeRegion } from '../models/challenge.models';
 
 export function defaultRiotTagLine(locale: AppLocale | string): string {
   return locale === 'fr' ? 'EUW' : 'NA';
@@ -71,6 +72,17 @@ export function parseRiotIdForLocale(
   locale: AppLocale | string,
 ): { gameName: string; tagLine: string } | null {
   return parseRiotId(riotId, defaultRiotTagLine(locale));
+}
+
+export function parseRiotIdForRegion(
+  riotId: string,
+  region: ChallengeRegion,
+): { gameName: string; tagLine: string } | null {
+  return parseRiotId(riotId, region);
+}
+
+export function normalizeRiotIdForRegion(riotId: string, region: ChallengeRegion): string {
+  return normalizeRiotId(riotId, region);
 }
 
 export function buildRiotId(gameName: string, tagLine: string): string | null {

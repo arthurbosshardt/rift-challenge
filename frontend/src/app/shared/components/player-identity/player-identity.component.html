@@ -1,10 +1,32 @@
 <div class="player-identity" [class.player-identity--compact]="compact()">
-  <app-player-avatar
-    [profileIconId]="profileIconId()"
-    [gameName]="gameName()"
-    [tier]="tier()"
-    [size]="compact() ? 'sm' : 'md'"
-  />
+  @if (linkToProfile()) {
+    <button
+      type="button"
+      class="player-identity__avatar-link"
+      [attr.aria-label]="viewProfileAria()"
+      (click)="goToProfile($event)"
+    >
+      <app-player-avatar
+        [profileIconId]="profileIconId()"
+        [gameName]="gameName()"
+        [tier]="avatarTier()"
+        [size]="compact() ? 'sm' : 'md'"
+      />
+    </button>
+  } @else {
+    <app-player-avatar
+      [profileIconId]="profileIconId()"
+      [gameName]="gameName()"
+      [tier]="avatarTier()"
+      [size]="compact() ? 'sm' : 'md'"
+    />
+  }
+
+  @if (rankBadgePosition() === 'end' && tier()) {
+    <div class="player-identity__rank-badge">
+      <app-rank-emblem [tier]="tier()" [size]="compact() ? 'sm' : 'md'" />
+    </div>
+  }
 
   <div class="player-identity__text">
     <span
@@ -40,7 +62,7 @@
       }
     </span>
     @if (rankLabel()) {
-      <span class="player-identity__rank-label">
+      <span class="player-identity__rank-label" [style.--rank-color]="rankColor()">
         <app-leaderboard-category-icon category="rank" [compact]="true" />
         {{ rankLabel() }}
       </span>

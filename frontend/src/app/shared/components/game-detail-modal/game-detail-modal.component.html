@@ -191,9 +191,29 @@
   <ng-template #playerFields let-player="player">
     <div class="game-detail-modal__avatar-rank">
       @if (player.profileIconUrl) {
-        <img class="game-detail-modal__avatar" [src]="player.profileIconUrl" alt="" loading="lazy" decoding="async" />
+        <img
+          class="game-detail-modal__avatar"
+          [src]="player.profileIconUrl"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="viewProfileAria(player)"
+          (click)="goToProfile(player, $event)"
+          (keydown.enter)="goToProfile(player, $event)"
+          (keydown.space)="goToProfile(player, $event)"
+        />
       } @else {
-        <span class="game-detail-modal__avatar game-detail-modal__avatar--fallback" aria-hidden="true"></span>
+        <span
+          class="game-detail-modal__avatar game-detail-modal__avatar--fallback"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="viewProfileAria(player)"
+          (click)="goToProfile(player, $event)"
+          (keydown.enter)="goToProfile(player, $event)"
+          (keydown.space)="goToProfile(player, $event)"
+        ></span>
       }
       @if (rankEmblemUrl(player); as emblem) {
         <img

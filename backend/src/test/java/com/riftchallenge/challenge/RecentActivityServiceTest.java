@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.riftchallenge.TestRiotAccounts;
+import com.riftchallenge.account.RiotAccountRepository;
+import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
@@ -15,6 +17,7 @@ import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.RiotLeagueClient;
+import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +39,15 @@ class RecentActivityServiceTest {
     private UserRiotAccountRepository userRiotAccountRepository;
 
     @Mock
+    private RiotAccountRepository riotAccountRepository;
+
+    @Mock
+    private ChallengeParticipantRepository participantRepository;
+
+    @Mock
+    private RiotAccountService riotAccountService;
+
+    @Mock
     private LeaderboardAccountMatchRepository accountMatchRepository;
 
     @Mock
@@ -50,6 +62,9 @@ class RecentActivityServiceTest {
     void setUp() {
         service = new RecentActivityService(
                 userRiotAccountRepository,
+                riotAccountRepository,
+                participantRepository,
+                riotAccountService,
                 accountMatchRepository,
                 backgroundSyncService,
                 riotLeagueClient,
@@ -193,6 +208,64 @@ class RecentActivityServiceTest {
         assertThat(result.get(0).seasonSyncComplete()).isFalse();
         assertThat(result.get(0).champions()).isNotEmpty();
         verify(backgroundSyncService).scheduleSyncIfIdle(account.getRiotAccount(), 500, 1);
+    }
+
+    @Test
+    void getActivityForRiotId_unknownRiotId_returnsEmpty() {
+        when(riotAccountRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase("Ghost", "EUW"))
+                .thenReturn(Optional.empty());
+        when(participantRepository.findFirstByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCaseOrderByCreatedAtDesc("Ghost", "EUW"))
+                .thenReturn(Optional.empty());
+
+        Optional<AccountRecentGamesResponse> result = service.getActivityForRiotId("Ghost", "EUW");
+
+        assertThat(result).isEmpty();
+    }
+
+    /**
+     * A challenge participant isn't necessarily backed by a RiotAccount row yet — viewing their
+     * activity should register one on the fly rather than 404, independent of whether
+     * PlayerLookupService.resolve() was called first.
+     */
+    @Test
+    void getActivityForRiotId_participantOnlyPlayer_registersAccountAndReturnsActivity() {
+        com.riftchallenge.account.RiotAccount riotAccount = TestRiotAccounts.riotAccount(PUUID, "NoLink", "NA1");
+        ChallengeParticipant participant = ChallengeParticipant.create(
+                UUID.randomUUID(), new com.riftchallenge.riot.dto.RiotAccountDto(PUUID, "NoLink", "NA1")
+        );
+        when(riotAccountRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase("NoLink", "NA1"))
+                .thenReturn(Optional.empty());
+        when(participantRepository.findFirstByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCaseOrderByCreatedAtDesc("NoLink", "NA1"))
+                .thenReturn(Optional.of(participant));
+        when(riotAccountService.findOrCreate(
+                new RiotAccountDto(PUUID, "NoLink", "NA1"),
+                participant.getProfileIconId()
+        )).thenReturn(riotAccount);
+        when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(backgroundSyncService.isSeasonHistoryExhausted(riotAccount.getId())).thenReturn(false);
+        when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(List.of());
+
+        Optional<AccountRecentGamesResponse> result = service.getActivityForRiotId("NoLink", "NA1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().accountId()).isEqualTo(riotAccount.getId());
+        verify(riotAccountService).findOrCreate(new RiotAccountDto(PUUID, "NoLink", "NA1"), participant.getProfileIconId());
+    }
+
+    @Test
+    void getActivityForRiotId_knownRiotId_returnsActivityKeyedByRiotAccountId() {
+        com.riftchallenge.account.RiotAccount riotAccount = TestRiotAccounts.riotAccount(PUUID, "Tanor", "EUW");
+        when(riotAccountRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase("Tanor", "EUW"))
+                .thenReturn(Optional.of(riotAccount));
+        when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW)).thenReturn(Optional.empty());
+        when(backgroundSyncService.isSeasonHistoryExhausted(riotAccount.getId())).thenReturn(false);
+        when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(List.of());
+
+        Optional<AccountRecentGamesResponse> result = service.getActivityForRiotId("Tanor", "EUW");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().accountId()).isEqualTo(riotAccount.getId());
+        assertThat(result.get().gameName()).isEqualTo("Tanor");
     }
 
     private static UserRiotAccount linkedAccount(UUID userId, String puuid) {
