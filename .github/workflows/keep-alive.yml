@@ -3,9 +3,15 @@ name: Keep backend warm
 # Render's free tier spins the API down after ~15 min of inactivity, which can leave
 # Googlebot (and real visitors) hitting a cold start of 2-3 minutes. Pinging the health
 # endpoint periodically keeps an instance warm. No app code involved, purely operational.
+#
+# GitHub doesn't guarantee scheduled workflows run on time — under load, a run can be
+# delayed by several minutes (GitHub's own docs warn schedules "may be delayed during
+# periods of high loads"). A */10 schedule leaves almost no buffer against Render's
+# 15-min timeout, so a single delayed run lets the instance sleep anyway. */5 keeps a
+# comfortable margin even when a run or two slips.
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:

@@ -42,7 +42,7 @@
         </button>
       </p>
     } @else if (challengesLoading()) {
-      @if (!backend.ready()) {
+      @if (!backend.checking() && !backend.ready()) {
         <p class="state">{{ 'backend.wakingUpMessage' | t }}</p>
       }
       <app-challenge-list-skeleton [count]="3" [ariaLabel]="'home.loading' | t" />

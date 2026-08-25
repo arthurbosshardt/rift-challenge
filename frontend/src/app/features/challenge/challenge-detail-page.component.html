@@ -1,6 +1,6 @@
 @if (loading()) {
   <app-page-shell [title]="''">
-    @if (!backend.ready()) {
+    @if (!backend.checking() && !backend.ready()) {
       <p class="state">{{ 'backend.wakingUpMessage' | t }}</p>
     }
     @if (loadingPreview(); as preview) {
