@@ -40,7 +40,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
       ' et compare ton avancement sur une période précise ou sur un nombre de games maximum autorisé. ',
     'landing.aboutLoginLinkLabel': 'Connecte-toi',
     'landing.aboutLoginTextAfter':
-      " et ajoute tes comptes pour tenter de performer et t'afficher sur le leaderboard !",
+      " et lie ton compte Riot pour tenter de performer et t'afficher sur le leaderboard !",
     'landing.aboutPerformText': "Tente de performer pour t'afficher sur le leaderboard !",
     'landing.aboutDismiss': 'Fermer',
     'leaderboard.titlePrefix': 'Classement',
