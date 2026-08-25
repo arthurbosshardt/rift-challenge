@@ -446,32 +446,6 @@ button.linkish:focus-visible .nav-icon {
   background: var(--gold-a12);
 }
 
-.shell__logout {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  color: var(--text-muted);
-  background: transparent;
-  flex-shrink: 0;
-}
-
-.shell__logout svg {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
-.shell__logout:hover,
-.shell__logout:focus-visible {
-  color: var(--danger);
-  border-color: rgba(232, 93, 93, 0.45);
-  background: rgba(232, 93, 93, 0.1);
-}
-
 .shell__title-row {
   display: inline-flex;
   align-items: center;
@@ -663,8 +637,7 @@ button.linkish:focus-visible .nav-icon {
     margin-left: 0.75rem;
   }
 
-  .shell__login-desktop,
-  .shell__logout-desktop {
+  .shell__login-desktop {
     display: none;
   }
 

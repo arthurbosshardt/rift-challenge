@@ -177,18 +177,6 @@
             </div>
           }
         </div>
-
-        @if (auth.isAuthenticated()) {
-          <button
-            type="button"
-            class="shell__logout shell__logout-desktop"
-            [attr.aria-label]="'nav.logout' | t"
-            [attr.title]="'nav.logout' | t"
-            (click)="openLogoutConfirm()"
-          >
-            <app-nav-icon name="logout" />
-          </button>
-        }
       </div>
     </div>
   </header>

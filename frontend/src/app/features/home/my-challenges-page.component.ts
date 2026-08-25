@@ -1,12 +1,10 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ChallengeApiService } from '../../core/services/challenge-api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SettingsModalService } from '../../core/services/settings-modal.service';
 import { ActivityCacheService } from '../../core/services/activity-cache.service';
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
-import { NavigationHistoryService } from '../../core/services/navigation-history.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { ChallengeListResponse } from '../../core/models/challenge.models';
@@ -20,7 +18,6 @@ import { NavIconComponent } from '../../shared/components/nav-icon/nav-icon.comp
 @Component({
   selector: 'app-my-challenges-page',
   imports: [
-    RouterLink,
     PageShellComponent,
     ChallengeCardComponent,
     ChallengeListSkeletonComponent,
@@ -38,13 +35,7 @@ export class MyChallengesPageComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly cache = inject(ActivityCacheService);
   private readonly publicCache = inject(PublicChallengesCacheService);
-  private readonly navigationHistory = inject(NavigationHistoryService);
   protected readonly backend = inject(BackendStatusService);
-
-  protected readonly backTarget = computed<string>(() => {
-    const previous = this.navigationHistory.previousUrl();
-    return previous?.startsWith('/challenges') ? previous : '/challenges';
-  });
 
   protected readonly challenges = this.cache.challenges;
   protected readonly challengesLoading = signal(this.cache.challengesLastLoadedAt() === null);

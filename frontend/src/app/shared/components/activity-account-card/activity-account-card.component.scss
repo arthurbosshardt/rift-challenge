@@ -165,6 +165,14 @@
   .activity-account__performance-col--hidden {
     display: block;
   }
+
+  .activity-account__champions-col {
+    order: 2;
+  }
+
+  .activity-account__performance-col {
+    order: 1;
+  }
 }
 
 .activity-account__champions-col,
