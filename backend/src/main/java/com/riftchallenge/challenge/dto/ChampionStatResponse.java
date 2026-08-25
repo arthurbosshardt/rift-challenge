@@ -12,6 +12,8 @@ public record ChampionStatResponse(
         double avgAssists,
         double kda,
         int avgCs,
-        double avgCsPerMin
+        double avgCsPerMin,
+        Integer rank,
+        Integer rankPoolSize
 ) {
 }

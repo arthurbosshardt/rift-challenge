@@ -4,7 +4,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { PlayerApiService } from '../../core/services/player-api.service';
 import { SummonerSuggestion } from '../../core/services/summoner-search.service';
-import { ActivityAccount, normalizeActivityAccount } from '../../core/services/activity-cache.service';
+import {
+  ActivityAccount,
+  applySyncBaseline,
+  normalizeActivityAccount,
+} from '../../core/services/activity-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -243,7 +247,10 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
           return;
         }
         this.activityRetryCount = 0;
-        this.activityAccount.set(normalizeActivityAccount(activity));
+        const normalized = normalizeActivityAccount(activity);
+        this.activityAccount.set(
+          applySyncBaseline(normalized, false, this.activityAccount() ?? undefined),
+        );
         this.activityError.set(null);
         this.activityLoading.set(false);
         this.lastRefreshedAt.set(new Date().toISOString());

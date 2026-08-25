@@ -15,6 +15,7 @@ public record AccountRecentGamesResponse(
         Integer losses,
         List<RecentGameResponse> games,
         List<ChampionStatResponse> champions,
+        PlaystyleResponse playstyle,
         int syncedGames,
         int seasonGames,
         boolean seasonSyncComplete,

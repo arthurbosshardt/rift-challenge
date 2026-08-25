@@ -1,0 +1,25 @@
+<div
+  class="language-switch"
+  role="group"
+  [attr.aria-label]="'nav.language' | t"
+  [style.bottom.px]="bottomOffsetPx()"
+>
+  <button
+    type="button"
+    class="language-switch__button"
+    [class.language-switch__button--active]="i18n.locale() === 'fr'"
+    [attr.aria-pressed]="i18n.locale() === 'fr'"
+    (click)="i18n.setLocale('fr')"
+  >
+    {{ 'settings.languageFr' | t }}
+  </button>
+  <button
+    type="button"
+    class="language-switch__button"
+    [class.language-switch__button--active]="i18n.locale() === 'en'"
+    [attr.aria-pressed]="i18n.locale() === 'en'"
+    (click)="i18n.setLocale('en')"
+  >
+    {{ 'settings.languageEn' | t }}
+  </button>
+</div>

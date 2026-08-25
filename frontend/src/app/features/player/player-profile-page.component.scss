@@ -2,9 +2,14 @@
 @use '../../shared/styles/activity-layout' as *;
 
 .activity-column__title {
+  align-items: center;
   gap: 0.65625rem;
   font-size: 1.59375rem;
-  line-height: 2.625rem;
+  line-height: 1;
+}
+
+.activity-column__riotid {
+  line-height: 1;
 }
 
 .activity-column__avatar {
@@ -14,7 +19,24 @@
 
 .activity-column__title:has(.player-avatar__rank-badge) .activity-column__avatar {
   margin-right: 1.75rem;
-  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .activity-column__header:has(.player-avatar__rank-badge) {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .activity-column__header:has(.player-avatar__rank-badge) {
+    row-gap: 1.75rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .activity-column__title {
+    flex: 1 0 100%;
+  }
 }
 
 .activity-column__riotid {

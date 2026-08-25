@@ -21,7 +21,7 @@ interface PersistedActivityCache {
   challengesGeneratedAt: string | null;
 }
 
-const STORAGE_KEY = 'riftchallenge.activityCache.v6';
+const STORAGE_KEY = 'riftchallenge.activityCache.v7';
 
 type ActivityAccountSource = AccountRecentGames & {
   matches?: ParticipantMatchHistory[];
@@ -51,6 +51,7 @@ export function normalizeActivityAccount(account: ActivityAccountSource): Activi
   return {
     ...account,
     champions: account.champions ?? [],
+    playstyle: account.playstyle ?? null,
     syncedGames,
     seasonGames,
     seasonSyncComplete,
@@ -60,7 +61,7 @@ export function normalizeActivityAccount(account: ActivityAccountSource): Activi
   };
 }
 
-function applySyncBaseline(
+export function applySyncBaseline(
   account: ActivityAccount,
   resetBaseline: boolean,
   previous?: ActivityAccount,

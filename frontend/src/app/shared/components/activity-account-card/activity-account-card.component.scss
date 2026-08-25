@@ -147,8 +147,8 @@
   align-items: start;
 }
 
-.activity-account__champions-col--hidden,
-.activity-account__performance-col--hidden {
+.activity-account__champion-view.activity-account__champion-view--hidden,
+.activity-account__playstyle-col.activity-account__playstyle-col--hidden {
   display: none;
 }
 
@@ -161,23 +161,32 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .activity-account__champions-col--hidden,
-  .activity-account__performance-col--hidden {
-    display: block;
+  .activity-account__champion-view.activity-account__champion-view--hidden {
+    display: flex;
   }
 
-  .activity-account__champions-col {
-    order: 2;
-  }
-
-  .activity-account__performance-col {
-    order: 1;
+  .activity-account__playstyle-col.activity-account__playstyle-col--hidden {
+    display: flex;
   }
 }
 
-.activity-account__champions-col,
-.activity-account__performance-col {
+.activity-account__champion-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   min-width: 0;
+}
+
+.activity-account__champions-col,
+.activity-account__performance-col,
+.activity-account__playstyle-col {
+  min-width: 0;
+}
+
+.activity-account__playstyle-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
 }
 
 .activity-account__performance-placeholder {
@@ -222,4 +231,180 @@
 .activity-account__performance-placeholder--splash .activity-account__performance-subtitle {
   color: rgba(255, 255, 255, 0.78);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.activity-account__rank-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  height: 100%;
+}
+
+.activity-account__rank-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 5.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.activity-account__rank-card-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.activity-account__rank-card--splash {
+  border-color: var(--border-strong);
+  background-repeat: no-repeat;
+  background-position: center 20%;
+  background-size: cover;
+}
+
+.activity-account__rank-card-rank {
+  overflow: hidden;
+  color: var(--gold-bright);
+  font-family: var(--font-brand);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.activity-account__rank-card-rank-suffix {
+  font-family: var(--font-family);
+  text-transform: lowercase;
+}
+
+.activity-account__rank-card-pool {
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+}
+
+.activity-account__rank-card-stats {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(2, auto);
+  gap: 0.125rem 0.875rem;
+  text-align: right;
+}
+
+.activity-account__rank-card-stat {
+  color: var(--text-subtle);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.activity-account__rank-card-stat--positive {
+  color: #7ddf8a;
+}
+
+.activity-account__rank-card-stat--negative {
+  color: var(--danger);
+}
+
+.activity-account__rank-card-stat--high {
+  color: #5fd4c7;
+}
+
+.activity-account__rank-card-stat--muted {
+  color: var(--text-subtle);
+  opacity: 0.75;
+}
+
+.activity-account__rank-card--splash .activity-account__rank-card-rank {
+  color: var(--gold-bright);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.activity-account__rank-card--splash .activity-account__rank-card-pool {
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.activity-account__rank-card--splash .activity-account__rank-card-stat {
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.activity-account__radar {
+  display: block;
+  overflow: visible;
+  width: 100%;
+  max-width: 20rem;
+  margin: 0 auto;
+}
+
+.activity-account__radar-ring {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.activity-account__radar-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.activity-account__radar-shape {
+  fill: color-mix(in srgb, var(--accent, #c89b3c) 28%, transparent);
+  stroke: var(--accent, #c89b3c);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.activity-account__radar-label {
+  fill: var(--text-muted);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.activity-account__radar-legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.activity-account__radar-legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
+}
+
+.activity-account__radar-legend-label {
+  color: var(--text-subtle);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.activity-account__radar-legend-value {
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-account__radar-legend-detail {
+  color: var(--text-subtle);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.25;
 }

@@ -212,6 +212,7 @@ export interface AccountRecentGames {
   losses: number | null;
   games: RecentGameResponse[];
   champions: ChampionStat[];
+  playstyle: Playstyle | null;
   syncedGames: number;
   seasonGames: number;
   seasonSyncComplete: boolean;
@@ -231,6 +232,21 @@ export interface ChampionStat {
   kda: number;
   avgCs: number;
   avgCsPerMin: number;
+  rank: number | null;
+  rankPoolSize: number | null;
+}
+
+export interface Playstyle {
+  kda: number;
+  farmPerMin: number;
+  aggressionPer10: number;
+  resiliencePer10: number;
+  soloCarryIndex: number;
+  kdaScore: number;
+  farmScore: number;
+  aggressionScore: number;
+  resilienceScore: number;
+  soloCarryScore: number;
 }
 
 export interface MatchItem {

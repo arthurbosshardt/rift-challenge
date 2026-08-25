@@ -7,8 +7,10 @@ import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
 import com.riftchallenge.challenge.dto.ChampionStatResponse;
+import com.riftchallenge.challenge.dto.PlaystyleResponse;
 import com.riftchallenge.challenge.dto.RecentGameResponse;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.ChampionRankRow;
 import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.SeasonActivityRow;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.ChallengeRegion;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class RecentActivityService {
 
     private static final Logger log = LoggerFactory.getLogger(RecentActivityService.class);
+    private static final int CHAMPION_RANK_MIN_GAMES = 3;
 
     private final UserRiotAccountRepository userRiotAccountRepository;
     private final RiotAccountRepository riotAccountRepository;
@@ -107,9 +111,9 @@ public class RecentActivityService {
                 || account.isActivitySeasonHistoryExhausted()
                 || backgroundSyncService.isSeasonHistoryExhausted(account.getId());
         boolean seasonSyncInProgress = !seasonSyncComplete;
-        List<ChampionStatResponse> champions = !seasonRows.isEmpty()
-                ? buildSeasonChampionStatsFromRows(seasonRows)
-                : List.of();
+        ChampionStatsResult statsResult = !seasonRows.isEmpty()
+                ? buildSeasonChampionStatsFromRows(account.getRiotPuuid(), seasonRows)
+                : ChampionStatsResult.EMPTY;
 
         return new AccountRecentGamesResponse(
                 responseId,
@@ -122,7 +126,8 @@ public class RecentActivityService {
                 seasonWins(currentRank, seasonRows),
                 seasonLosses(currentRank, seasonRows),
                 buildRecentGamesFromDatabase(account, seasonRows),
-                champions,
+                statsResult.champions(),
+                statsResult.playstyle(),
                 seasonRows.size(),
                 seasonSyncComplete ? syncedGames : seasonMatchTotal,
                 seasonSyncComplete,
@@ -201,7 +206,7 @@ public class RecentActivityService {
         return games;
     }
 
-    private List<ChampionStatResponse> buildSeasonChampionStatsFromRows(List<SeasonActivityRow> rows) {
+    private ChampionStatsResult buildSeasonChampionStatsFromRows(String riotPuuid, List<SeasonActivityRow> rows) {
         Map<Integer, ChampionAccumulator> championStats = new HashMap<>();
         ChampionAccumulator overall = new ChampionAccumulator();
 
@@ -215,7 +220,51 @@ public class RecentActivityService {
             }
         }
 
-        return buildChampionStats(overall, championStats);
+        Map<Integer, ChampionRankRow> ranks = accountMatchRepository
+                .findChampionRanks(riotPuuid, leaderboardProperties.seasonStartAt(), CHAMPION_RANK_MIN_GAMES)
+                .stream()
+                .collect(Collectors.toMap(ChampionRankRow::getChampionId, row -> row, (a, b) -> a));
+
+        return new ChampionStatsResult(buildChampionStats(overall, championStats, ranks), buildPlaystyle(overall));
+    }
+
+    private PlaystyleResponse buildPlaystyle(ChampionAccumulator overall) {
+        if (overall.games == 0 || overall.totalDurationSeconds <= 0) {
+            return null;
+        }
+        double per10Minutes = overall.totalDurationSeconds / 600.0;
+        double kda = overall.deaths > 0
+                ? (double) (overall.kills + overall.assists) / overall.deaths
+                : overall.kills + overall.assists;
+        double farmPerMin = overall.cs / (overall.totalDurationSeconds / 60.0);
+        double aggressionPer10 = overall.kills / per10Minutes;
+        double resiliencePer10 = Math.max(0.0, 10.0 - overall.deaths / per10Minutes);
+        double soloCarryIndex = (double) overall.kills / Math.max(overall.kills + overall.assists, 1);
+
+        return new PlaystyleResponse(
+                roundTwo(kda),
+                roundTwo(farmPerMin),
+                roundTwo(aggressionPer10),
+                roundTwo(resiliencePer10),
+                roundTwo(soloCarryIndex),
+                normalize(kda, 6.0),
+                normalize(farmPerMin, 10.0),
+                normalize(aggressionPer10, 10.0),
+                normalize(resiliencePer10, 10.0),
+                normalize(soloCarryIndex, 1.0)
+        );
+    }
+
+    private static double normalize(double value, double domainMax) {
+        return roundTwo(100.0 * Math.max(0.0, Math.min(value, domainMax)) / domainMax);
+    }
+
+    private static double roundTwo(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
+    private record ChampionStatsResult(List<ChampionStatResponse> champions, PlaystyleResponse playstyle) {
+        static final ChampionStatsResult EMPTY = new ChampionStatsResult(List.of(), null);
     }
 
     private ParticipantSnapshot toParticipantSnapshot(SeasonActivityRow row) {
@@ -248,22 +297,28 @@ public class RecentActivityService {
 
     private List<ChampionStatResponse> buildChampionStats(
             ChampionAccumulator overall,
-            Map<Integer, ChampionAccumulator> byChampion
+            Map<Integer, ChampionAccumulator> byChampion,
+            Map<Integer, ChampionRankRow> ranks
     ) {
         if (overall.games == 0) {
             return List.of();
         }
 
         List<ChampionStatResponse> champions = new ArrayList<>();
-        champions.add(overall.toResponse(null, null, null));
+        champions.add(overall.toResponse(null, null, null, null, null));
 
         byChampion.values().stream()
                 .sorted(Comparator.<ChampionAccumulator>comparingInt(accumulator -> accumulator.games).reversed())
-                .map(accumulator -> accumulator.toResponse(
-                        accumulator.championId,
-                        championIconUrlService.buildApiPath(accumulator.championId),
-                        accumulator.championName
-                ))
+                .map(accumulator -> {
+                    ChampionRankRow rankRow = ranks.get(accumulator.championId);
+                    return accumulator.toResponse(
+                            accumulator.championId,
+                            championIconUrlService.buildApiPath(accumulator.championId),
+                            accumulator.championName,
+                            rankRow != null ? rankRow.getRank() : null,
+                            rankRow != null ? rankRow.getPoolSize() : null
+                    );
+                })
                 .forEach(champions::add);
 
         return champions;
@@ -319,7 +374,13 @@ public class RecentActivityService {
             totalDurationSeconds += Math.max(snapshot.gameDurationSeconds(), 0L);
         }
 
-        ChampionStatResponse toResponse(Integer championId, String championIconUrl, String championName) {
+        ChampionStatResponse toResponse(
+                Integer championId,
+                String championIconUrl,
+                String championName,
+                Integer rank,
+                Integer rankPoolSize
+        ) {
             double winRate = games > 0 ? (double) wins / games : 0.0;
             double avgKills = statGames > 0 ? (double) kills / statGames : 0.0;
             double avgDeaths = statGames > 0 ? (double) deaths / statGames : 0.0;
@@ -341,7 +402,9 @@ public class RecentActivityService {
                     roundOneDecimal(avgAssists),
                     roundTwoDecimals(kda),
                     avgCs,
-                    roundOneDecimal(avgCsPerMin)
+                    roundOneDecimal(avgCsPerMin),
+                    rank,
+                    rankPoolSize
             );
         }
 

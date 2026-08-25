@@ -38,58 +38,144 @@
         type="button"
         class="activity-account__view-switch-btn"
         role="tab"
-        [attr.aria-selected]="selectedView() === 'performance'"
-        [class.activity-account__view-switch-btn--active]="selectedView() === 'performance'"
-        (click)="setSelectedView('performance')"
+        [attr.aria-selected]="selectedView() === 'champion'"
+        [class.activity-account__view-switch-btn--active]="selectedView() === 'champion'"
+        (click)="setSelectedView('champion')"
       >
-        {{ 'activity.switchPerformance' | t }}
+        {{ 'activity.switchChampion' | t }}
       </button>
       <button
         type="button"
         class="activity-account__view-switch-btn"
         role="tab"
-        [attr.aria-selected]="selectedView() === 'champions'"
-        [class.activity-account__view-switch-btn--active]="selectedView() === 'champions'"
-        (click)="setSelectedView('champions')"
+        [attr.aria-selected]="selectedView() === 'playstyle'"
+        [class.activity-account__view-switch-btn--active]="selectedView() === 'playstyle'"
+        (click)="setSelectedView('playstyle')"
       >
-        {{ 'activity.switchChampions' | t }}
+        {{ 'activity.switchPlaystyle' | t }}
       </button>
     </div>
     <div class="activity-account__stats-row">
       <div
-        class="activity-account__champions-col"
-        [class.activity-account__champions-col--hidden]="selectedView() !== 'champions'"
+        class="activity-account__champion-view"
+        [class.activity-account__champion-view--hidden]="selectedView() !== 'champion'"
       >
-        @if ((account().champions ?? []).length > 0) {
-          <app-champion-pool [champions]="account().champions ?? []" />
-        } @else if (syncInProgress()) {
-          <app-champion-pool-skeleton
-            [rowsOnly]="true"
-            [remainingGames]="syncRemaining()"
-            [remainingBaseline]="account().syncRemainingBaseline"
-          />
-        } @else if (account().syncedGames > 0 || account().matches.length > 0) {
-          <p class="activity-account__champions-empty">{{ 'activity.championsEmpty' | t }}</p>
-        }
+        <div class="activity-account__performance-col">
+          @if (topRankedChampions().length > 0) {
+            <div class="activity-account__rank-cards">
+              @for (block of topRankedChampions(); track block.championId) {
+                <div
+                  class="activity-account__rank-card"
+                  [class.activity-account__rank-card--splash]="block.splashUrl"
+                  [style.backgroundImage]="
+                    block.splashUrl
+                      ? 'linear-gradient(180deg, rgba(8, 9, 14, 0.55) 0%, rgba(8, 9, 14, 0.72) 60%, rgba(8, 9, 14, 0.92) 100%), url(' +
+                        block.splashUrl +
+                        ')'
+                      : null
+                  "
+                >
+                  <div class="activity-account__rank-card-info">
+                    <span class="activity-account__rank-card-rank"
+                      >{{ block.rankNumber }}<span class="activity-account__rank-card-rank-suffix">{{
+                        block.rankSuffix
+                      }}</span>
+                      {{ block.championName }}</span
+                    >
+                    @if (block.poolSize) {
+                      <span class="activity-account__rank-card-pool">
+                        {{ 'activity.championRankPool' | t: { count: block.poolSize } }}
+                      </span>
+                    }
+                  </div>
+                  <div class="activity-account__rank-card-stats">
+                    <span [class]="'activity-account__rank-card-stat ' + championWinRateClass(block)">{{
+                      championWinRateLabel(block)
+                    }}</span>
+                    <span class="activity-account__rank-card-stat">{{ championGamesLabel(block) }}</span>
+                    <span [class]="'activity-account__rank-card-stat ' + championKdaClass(block)">{{
+                      championKdaLabel(block)
+                    }}</span>
+                    <span class="activity-account__rank-card-stat activity-account__rank-card-stat--muted">{{
+                      championKdaRawLabel(block)
+                    }}</span>
+                    <span [class]="'activity-account__rank-card-stat ' + championFarmClass(block)">{{
+                      championFarmLabel(block)
+                    }}</span>
+                    <span class="activity-account__rank-card-stat activity-account__rank-card-stat--muted">{{
+                      championFarmAvgLabel(block)
+                    }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="activity-account__performance-placeholder">
+              <span class="activity-account__performance-title">{{ 'activity.championRankEmpty' | t }}</span>
+            </div>
+          }
+        </div>
+        <div class="activity-account__champions-col">
+          @if ((account().champions ?? []).length > 0) {
+            <app-champion-pool [champions]="account().champions ?? []" />
+          } @else if (syncInProgress()) {
+            <app-champion-pool-skeleton
+              [rowsOnly]="true"
+              [remainingGames]="syncRemaining()"
+              [remainingBaseline]="account().syncRemainingBaseline"
+            />
+          } @else if (account().syncedGames > 0 || account().matches.length > 0) {
+            <p class="activity-account__champions-empty">{{ 'activity.championsEmpty' | t }}</p>
+          }
+        </div>
       </div>
       <div
-        class="activity-account__performance-col"
-        [class.activity-account__performance-col--hidden]="selectedView() !== 'performance'"
+        class="activity-account__playstyle-col"
+        [class.activity-account__playstyle-col--hidden]="selectedView() !== 'playstyle'"
       >
-        <div
-          class="activity-account__performance-placeholder"
-          [class.activity-account__performance-placeholder--splash]="performanceBackgroundUrl()"
-          [style.backgroundImage]="
-            performanceBackgroundUrl()
-              ? 'linear-gradient(180deg, rgba(8, 9, 14, 0.55) 0%, rgba(8, 9, 14, 0.72) 60%, rgba(8, 9, 14, 0.92) 100%), url(' +
-                performanceBackgroundUrl() +
-                ')'
-              : null
-          "
-        >
-          <span class="activity-account__performance-title">{{ 'activity.performanceTitle' | t }}</span>
-          <span class="activity-account__performance-subtitle">{{ 'activity.performanceSubtitle' | t }}</span>
-        </div>
+        @if (playstyleAxes(); as axes) {
+          @if (radarGeometry(); as geometry) {
+            <div class="activity-account__radar-legend">
+              @for (axis of axes; track axis.key) {
+                <span class="activity-account__radar-legend-item">
+                  <span class="activity-account__radar-legend-label">{{ axis.labelKey | t }}</span>
+                  <span class="activity-account__radar-legend-value">{{ axis.rawLabel }}</span>
+                  <span class="activity-account__radar-legend-detail">({{ axis.detailKey | t }})</span>
+                </span>
+              }
+            </div>
+            <svg class="activity-account__radar" viewBox="0 0 200 200" role="img" [attr.aria-label]="'activity.switchPlaystyle' | t">
+              @for (ring of geometry.rings; track $index) {
+                <polygon class="activity-account__radar-ring" [attr.points]="ring" />
+              }
+              @for (axisLine of geometry.axisLines; track $index) {
+                <line
+                  class="activity-account__radar-axis"
+                  [attr.x1]="geometry.center"
+                  [attr.y1]="geometry.center"
+                  [attr.x2]="axisLine.x"
+                  [attr.y2]="axisLine.y"
+                />
+              }
+              <polygon class="activity-account__radar-shape" [attr.points]="geometry.polygon" />
+              @for (labelPoint of geometry.labelPoints; track $index) {
+                <text
+                  class="activity-account__radar-label"
+                  [attr.x]="labelPoint.x"
+                  [attr.y]="labelPoint.y"
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                >
+                  {{ axes[$index].labelKey | t }}
+                </text>
+              }
+            </svg>
+          }
+        } @else {
+          <div class="activity-account__performance-placeholder">
+            <span class="activity-account__performance-title">{{ 'activity.playstyleEmpty' | t }}</span>
+          </div>
+        }
       </div>
     </div>
   }

@@ -7,6 +7,7 @@ import { DeleteChallengeConfirmModalComponent } from './features/challenge/delet
 import { EditChallengeModalComponent } from './features/challenge/edit-challenge-modal.component';
 import { SettingsModalComponent } from './features/settings/settings-modal.component';
 import { GameDetailModalComponent } from './shared/components/game-detail-modal/game-detail-modal.component';
+import { LanguageSwitchComponent } from './shared/components/language-switch/language-switch.component';
 import { ThemeService } from './core/theme/theme.service';
 import { BackendStatusService } from './core/services/backend-status.service';
 
@@ -21,10 +22,11 @@ import { BackendStatusService } from './core/services/backend-status.service';
     DeleteChallengeConfirmModalComponent,
     SettingsModalComponent,
     GameDetailModalComponent,
+    LanguageSwitchComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template:
-    '<router-outlet /><app-login-modal /><app-logout-confirm-modal /><app-create-challenge-modal /><app-edit-challenge-modal /><app-delete-challenge-confirm-modal /><app-settings-modal /><app-game-detail-modal />',
+    '<router-outlet /><app-login-modal /><app-logout-confirm-modal /><app-create-challenge-modal /><app-edit-challenge-modal /><app-delete-challenge-confirm-modal /><app-settings-modal /><app-game-detail-modal /><app-language-switch />',
 })
 export class App {
   constructor() {
