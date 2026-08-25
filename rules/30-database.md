@@ -11,7 +11,7 @@ Applies to: `backend/src/main/resources/db/migration/**`, entités JPA.
 ## Concepts persistés
 
 - `app_user`
-- `user_riot_account` (PUUID, principal/smurf, icône)
+- `user_riot_account` (PUUID, icône — un seul compte par utilisateur, `UNIQUE (user_id)`)
 - `challenge` (owner, name unique, type, région, start/end UTC, share_slug, data_synced_at)
 - `challenge_participant`
 - `challenge_duo` (2 participants)

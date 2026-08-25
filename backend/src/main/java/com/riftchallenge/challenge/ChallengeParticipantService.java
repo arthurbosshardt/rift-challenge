@@ -1,6 +1,5 @@
 package com.riftchallenge.challenge;
 
-import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
 import com.riftchallenge.riot.ChallengeRegion;
@@ -31,7 +30,7 @@ public class ChallengeParticipantService {
     private final RiotAccountClient riotAccountClient;
     private final RiotLeagueClient riotLeagueClient;
     private final ParticipantProfileService participantProfileService;
-    private final RiotAccountService riotAccountService;
+    private final ChallengeParticipantWriter participantWriter;
     private final Clock clock;
 
     public ChallengeParticipantService(
@@ -41,7 +40,7 @@ public class ChallengeParticipantService {
             RiotAccountClient riotAccountClient,
             RiotLeagueClient riotLeagueClient,
             ParticipantProfileService participantProfileService,
-            RiotAccountService riotAccountService,
+            ChallengeParticipantWriter participantWriter,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
@@ -50,7 +49,7 @@ public class ChallengeParticipantService {
         this.riotAccountClient = riotAccountClient;
         this.riotLeagueClient = riotLeagueClient;
         this.participantProfileService = participantProfileService;
-        this.riotAccountService = riotAccountService;
+        this.participantWriter = participantWriter;
         this.clock = clock;
     }
 
@@ -61,16 +60,15 @@ public class ChallengeParticipantService {
                 .toList();
     }
 
-    @Transactional
     public ParticipantResponse addParticipant(UUID challengeId, UUID ownerId, AddParticipantRequest request) {
-        Challenge challenge = challengeRepository.findById(challengeId)
+        Challenge preCheck = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
 
-        if (!challenge.getOwnerId().equals(ownerId)) {
+        if (!preCheck.getOwnerId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not the challenge owner");
         }
 
-        if (challenge.getType() == ChallengeType.DUOQ) {
+        if (preCheck.getType() == ChallengeType.DUOQ) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Use the duo endpoint for DuoQ challenges");
         }
 
@@ -85,10 +83,11 @@ public class ChallengeParticipantService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Participant already added");
         }
 
-        riotAccountService.findOrCreate(account, null);
+        ChallengeParticipantWriter.ParticipantWriteResult result =
+                participantWriter.addParticipant(challengeId, ownerId, account);
+        ChallengeParticipant saved = result.participant();
+        Challenge challenge = result.challenge();
 
-        ChallengeParticipant participant = ChallengeParticipant.create(challengeId, account);
-        ChallengeParticipant saved = participantRepository.save(participant);
         if (clock.instant().isBefore(challenge.getStartAt())) {
             captureBaselineIfRanked(saved, challenge.getRegion());
         }

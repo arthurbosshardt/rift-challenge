@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { ActivityAccount } from '../../../core/services/activity-cache.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 import { formatRankLabel, tierColor } from '../../../core/utils/rank-display';
 import { hasPlayedRecord, winRateLabel, winRateToneModifier } from '../../../core/utils/record-display';
+import { championSplashUrl } from '../../../core/utils/champion-splash';
 import { MatchHistoryStripComponent } from '../match-history-strip/match-history-strip.component';
 import { ChampionPoolComponent } from '../champion-pool/champion-pool.component';
 import { ChampionPoolSkeletonComponent } from '../champion-pool-skeleton/champion-pool-skeleton.component';
@@ -33,6 +34,17 @@ export class ActivityAccountCardComponent {
   protected setSelectedView(view: 'champions' | 'performance'): void {
     this.selectedView.set(view);
   }
+
+  protected readonly performanceBackgroundUrl = computed(() => {
+    const champions = this.account().champions ?? [];
+    const mostPlayed = champions
+      .filter((entry) => entry.championId != null && entry.championId > 0)
+      .reduce<(typeof champions)[number] | null>(
+        (best, entry) => (best == null || entry.games > best.games ? entry : best),
+        null,
+      );
+    return championSplashUrl(mostPlayed?.championId ?? null);
+  });
 
   protected rankLabel(): string {
     const account = this.account();

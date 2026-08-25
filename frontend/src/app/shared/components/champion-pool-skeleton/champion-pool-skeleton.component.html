@@ -1,40 +1,43 @@
 <div
   class="champion-pool-skeleton"
   [class.champion-pool-skeleton--header-only]="headerOnly()"
+  [class.champion-pool-skeleton--rows-only]="rowsOnly()"
   role="status"
   aria-busy="true"
   [attr.aria-label]="loadingAriaLabel()"
 >
-  <div class="champion-pool-skeleton__header">
-    <div class="champion-pool-skeleton__status">
-      <svg class="champion-pool-skeleton__spinner" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
-        />
-      </svg>
-      <p class="champion-pool-skeleton__progress-label">
-        <span>{{ syncStatusLabel() }}</span>
-        <button
-          type="button"
-          class="champion-pool-skeleton__info-btn"
-          appClampTooltip
-          [attr.aria-label]="syncHintAriaLabel()"
-        >
-          <span aria-hidden="true">i</span>
-          <span class="champion-pool-skeleton__info-tooltip" role="tooltip">{{ syncHintLabel() }}</span>
-        </button>
-      </p>
+  @if (!rowsOnly()) {
+    <div class="champion-pool-skeleton__header">
+      <div class="champion-pool-skeleton__status">
+        <svg class="champion-pool-skeleton__spinner" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+          />
+        </svg>
+        <p class="champion-pool-skeleton__progress-label">
+          <span>{{ syncStatusLabel() }}</span>
+          <button
+            type="button"
+            class="champion-pool-skeleton__info-btn"
+            appClampTooltip
+            [attr.aria-label]="syncHintAriaLabel()"
+          >
+            <span aria-hidden="true">i</span>
+            <span class="champion-pool-skeleton__info-tooltip" role="tooltip">{{ syncHintLabel() }}</span>
+          </button>
+        </p>
+      </div>
+      <div
+        class="champion-pool-skeleton__progress"
+        role="progressbar"
+        [attr.aria-valuenow]="syncedInSession()"
+        [attr.aria-valuemin]="0"
+        [attr.aria-valuemax]="remainingBaseline()"
+      >
+        <div class="champion-pool-skeleton__progress-fill" [style.width.%]="progressPercent()"></div>
+      </div>
     </div>
-    <div
-      class="champion-pool-skeleton__progress"
-      role="progressbar"
-      [attr.aria-valuenow]="syncedInSession()"
-      [attr.aria-valuemin]="0"
-      [attr.aria-valuemax]="remainingBaseline()"
-    >
-      <div class="champion-pool-skeleton__progress-fill" [style.width.%]="progressPercent()"></div>
-    </div>
-  </div>
+  }
   @if (!headerOnly()) {
     <div class="champion-pool-skeleton__rows">
       @for (row of rows; track row) {

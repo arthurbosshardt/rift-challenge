@@ -22,6 +22,11 @@ export const COMMUNITY_DRAGON_CDN_CHAMPION_ICON_BASE =
   'https://cdn.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons';
 
 /**
+ * Community Dragon CDN base URL for champion splash art (centered, 1280x720).
+ */
+export const COMMUNITY_DRAGON_CHAMPION_SPLASH_BASE = 'https://cdn.communitydragon.org/latest/champion';
+
+/**
  * Community Dragon base URL for profile icons.
  */
 export const COMMUNITY_DRAGON_PROFILE_ICON_BASE =

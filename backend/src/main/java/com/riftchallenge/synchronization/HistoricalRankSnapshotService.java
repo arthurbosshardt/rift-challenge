@@ -28,7 +28,8 @@ public class HistoricalRankSnapshotService {
             RankState refreshState,
             int challengeWindowWins,
             int challengeWindowLosses,
-            boolean estimated
+            boolean baselineEstimated,
+            boolean refreshEstimated
     ) {
         Instant refreshAt = challenge.getEndAt() != null && now.isAfter(challenge.getEndAt())
                 ? challenge.getEndAt()
@@ -50,7 +51,7 @@ public class HistoricalRankSnapshotService {
                 baselineState,
                 0,
                 0,
-                estimated
+                baselineEstimated
         ));
 
         rankSnapshotRepository.save(toSnapshot(
@@ -60,7 +61,7 @@ public class HistoricalRankSnapshotService {
                 refreshState,
                 challengeWindowWins,
                 challengeWindowLosses,
-                estimated
+                refreshEstimated
         ));
     }
 

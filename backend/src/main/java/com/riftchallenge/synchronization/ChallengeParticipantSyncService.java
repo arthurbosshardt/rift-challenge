@@ -140,16 +140,19 @@ public class ChallengeParticipantSyncService {
         }
 
         Optional<RankState> refreshState = resolveRefreshRankState(challenge, participant, now, currentLeague);
-        boolean estimated;
+        boolean refreshEstimated;
 
         if (refreshState.isEmpty()) {
             List<Boolean> winsOldestFirst = challengeWindowWinsNewestFirst.reversed();
             refreshState = RankReplayService.estimateFromMatches(winsOldestFirst).map(RankReplayService.MatchBasedRankEstimate::refresh);
-            estimated = true;
+            refreshEstimated = true;
         } else {
-            estimated = isChallengeFinished(challenge, now);
+            refreshEstimated = isChallengeFinished(challenge, now);
         }
 
+        // The baseline is always reconstructed by replaying match outcomes backward from the
+        // refresh anchor, so it is a heuristic estimate regardless of whether the refresh state
+        // itself came from live Riot league data.
         RankState baselineState = RankReplayService.replayBackward(refreshState.get(), challengeWindowWinsNewestFirst);
         int challengeWindowWins = challengeWindowWinsNewestFirst.stream().mapToInt(win -> win ? 1 : 0).sum();
         int challengeWindowLosses = challengeWindowWinsNewestFirst.size() - challengeWindowWins;
@@ -162,7 +165,8 @@ public class ChallengeParticipantSyncService {
                 refreshState.get(),
                 challengeWindowWins,
                 challengeWindowLosses,
-                estimated
+                true,
+                refreshEstimated
         );
     }
 
@@ -227,6 +231,7 @@ public class ChallengeParticipantSyncService {
                 refreshState,
                 challengeWindowWins,
                 challengeWindowLosses,
+                true,
                 true
         );
     }
@@ -239,7 +244,8 @@ public class ChallengeParticipantSyncService {
             RankState refreshState,
             int challengeWindowWins,
             int challengeWindowLosses,
-            boolean estimated
+            boolean baselineEstimated,
+            boolean refreshEstimated
     ) {
         historicalRankSnapshotService.saveHistoricalSnapshots(
                 challenge,
@@ -249,7 +255,8 @@ public class ChallengeParticipantSyncService {
                 refreshState,
                 challengeWindowWins,
                 challengeWindowLosses,
-                estimated
+                baselineEstimated,
+                refreshEstimated
         );
     }
 

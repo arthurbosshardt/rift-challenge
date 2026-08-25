@@ -29,12 +29,11 @@ public class RiotAccountService {
         this.riotSummonerClient = riotSummonerClient;
     }
 
-    @Transactional
-    public RiotAccount findOrCreateFromRiotId(String riotId) {
+    public ResolvedRiotAccount resolveRiotAccount(String riotId) {
         RiotIdParser.ParsedRiotId parsed = RiotIdParser.parse(riotId);
         RiotAccountDto account = riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
         Integer profileIconId = riotSummonerClient.findProfileIconId(account.puuid(), ChallengeRegion.EUW).orElse(null);
-        return findOrCreate(account, profileIconId);
+        return new ResolvedRiotAccount(account, profileIconId);
     }
 
     @Transactional
@@ -47,7 +46,6 @@ public class RiotAccountService {
                 .orElseGet(() -> riotAccountRepository.save(RiotAccount.create(account, profileIconId)));
     }
 
-    @Transactional
     public BulkRegisterRiotAccountsResponse registerBulk(BulkRegisterRiotAccountsRequest request) {
         List<String> created = new ArrayList<>();
         List<String> existing = new ArrayList<>();
@@ -59,11 +57,9 @@ public class RiotAccountService {
             }
             String normalized = riotId.trim();
             try {
-                RiotIdParser.ParsedRiotId parsed = RiotIdParser.parse(normalized);
-                RiotAccountDto dto = riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
-                boolean alreadyTracked = riotAccountRepository.findByRiotPuuid(dto.puuid()).isPresent();
-                Integer profileIconId = riotSummonerClient.findProfileIconId(dto.puuid(), ChallengeRegion.EUW).orElse(null);
-                RiotAccount account = findOrCreate(dto, profileIconId);
+                ResolvedRiotAccount resolved = resolveRiotAccount(normalized);
+                boolean alreadyTracked = riotAccountRepository.findByRiotPuuid(resolved.account().puuid()).isPresent();
+                RiotAccount account = findOrCreate(resolved.account(), resolved.profileIconId());
                 String label = account.getRiotGameName() + "#" + account.getRiotTagLine();
                 if (alreadyTracked) {
                     existing.add(label);
@@ -76,5 +72,8 @@ public class RiotAccountService {
         }
 
         return new BulkRegisterRiotAccountsResponse(created, existing, errors);
+    }
+
+    public record ResolvedRiotAccount(RiotAccountDto account, Integer profileIconId) {
     }
 }

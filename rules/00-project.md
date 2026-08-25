@@ -35,7 +35,7 @@ Compte applicatif (email + mot de passe **ou** Google, via Supabase) :
 - créer / éditer / supprimer **ses** challenges (il en est **owner**) ;
 - ajouter / retirer des participants (SOLOQ) ou des duos (DUOQ) ;
 - choisir nom, dates de début et de fin, région ;
-- lier jusqu'à **10 comptes Riot** (1 principal + smurfs) ;
+- lier **un compte Riot** (le support multi-comptes/smurfs a existé puis a été retiré, voir `V26__user_riot_account_drop_smurfs.sql`) ;
 - voir les challenges (liste globale), ceux qu'il a créés, ceux auxquels il participe, et le **classement global** ;
 - rafraîchir manuellement les données Riot d'un challenge (**1 fois / 2 min**, imposé côté backend) ;
 - partager un challenge via une URL stable (`/challenges/{shareSlug}`, `shareSlug` = UUID du challenge).
@@ -61,7 +61,7 @@ Les visiteurs non connectés voient la landing, la liste des challenges, le lead
 | **DUOQ** | Jusqu'à **8 duos** = 16 joueurs. Un duo = exactement 2 joueurs. |
 | **Participant** | Un compte Riot (PUUID) inscrit dans un challenge. |
 | **Riot ID** | `gameName#tagLine` (affichage). L'identité stable est le **PUUID**. |
-| **Compte principal / smurf** | Comptes Riot liés à l'utilisateur app. Il faut un principal avant les smurfs. |
+| **Compte Riot lié** | Un seul compte Riot par utilisateur app (`UNIQUE (user_id)`). Le multi-comptes ("principal + smurfs") a existé puis a été retiré — ne pas le réintroduire sans demande explicite. |
 | **LP gained** | Delta de LP **pendant la fenêtre du challenge**, pas le LP actuel tout court. |
 | **Rank estimated** | Rang/LP reconstruits à partir des matchs quand le live Riot n'est plus fiable (challenge fini, peu de games). Flag `rankEstimated`. |
 | **Share slug** | Identifiant d'URL. **UUID du challenge** (stable si on renomme). |
@@ -80,7 +80,7 @@ Les anciennes routes `/races/...`, `/my-races`, `/public-races` redirigent vers 
 - SOLOQ : max 16 participants.
 - DUOQ : max 8 duos / 16 joueurs. Ce n'est **pas** une liste plate de 16 joueurs.
 - Le nom de challenge est **unique** (ignore-case) en base.
-- Max **10** comptes Riot / utilisateur applicatif. Un **principal** obligatoire avant les smurfs. Pas de doublon PUUID.
+- **Un seul** compte Riot / utilisateur applicatif (`UserRiotAccountService.linkAccount` refuse tout second lien). Le multi-comptes a existé (`V11`) puis a été retiré (`V26`) — ne pas le réintroduire sans demande explicite.
 
 ### 3.2 Cycle de vie
 
@@ -106,7 +106,7 @@ Seule la file **Ranked Solo/Duo**, queue Riot **`420`**, est synchronisée. Un m
 
 - Par challenge — SOLOQ : tri principalement sur `rankScore` / LP gagnés. DUOQ : score **combiné** des deux joueurs ; duos inéligibles restent visibles mais grisés, en bas.
 - LP / rang peuvent être **estimés** (`rankEstimated`) via replay des matchs (`RankReplayService`, `MatchLpEstimator`), surtout pour les défis terminés.
-- Leaderboard global — catégories : rang (saison uniquement), win rate (floor de **20 games** en saison / **8 games** en fenêtre glissante 7 jours — le floor ne s'applique **qu'au** win rate, pas aux autres catégories), win streak, LP gagnés, games jouées. Recalculé par un scheduler (voir `10-backend.md`), pas à la demande.
+- Leaderboard global — catégories : rang (saison uniquement), win rate (floor de **20 games** en saison / **10 games** en fenêtre glissante 7 jours — le floor ne s'applique **qu'au** win rate, pas aux autres catégories), win streak, LP gagnés, games jouées. Recalculé par un scheduler (voir `10-backend.md`), pas à la demande.
 
 ### 3.5 Refresh Riot
 

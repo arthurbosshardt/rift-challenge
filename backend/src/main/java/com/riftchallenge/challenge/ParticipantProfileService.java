@@ -22,7 +22,6 @@ public class ParticipantProfileService {
         this.participantRepository = participantRepository;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void ensureProfileIcon(UUID participantId, ChallengeRegion region) {
         participantRepository.findById(participantId)
                 .ifPresent(participant -> ensureProfileIconLoaded(participant, region));

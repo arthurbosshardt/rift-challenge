@@ -18,6 +18,7 @@ import { formatDurationCountdown, formatFinishedRankLabel, formatRankLabel } fro
 import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
 import { formatTimeSince } from '../../core/utils/relative-time';
 import { normalizeChallengeDetail } from '../../core/utils/challenge-detail';
+import { regionLabel as sharedRegionLabel } from '../../core/utils/region-display';
 import { copyTextToClipboard } from '../../core/utils/clipboard';
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
 import { ClampTooltipDirective } from '../../shared/directives/clamp-tooltip.directive';
@@ -323,16 +324,7 @@ export class ChallengeDetailPageComponent implements OnInit, OnDestroy {
   }
 
   protected regionLabel(region: ChallengeDetail['region']): string {
-    switch (region) {
-      case 'EUNE':
-        return this.i18n.t('challenge.regionEune');
-      case 'NA':
-        return this.i18n.t('challenge.regionNa');
-      case 'KR':
-        return this.i18n.t('challenge.regionKr');
-      default:
-        return this.i18n.t('challenge.regionEuw');
-    }
+    return sharedRegionLabel(region, this.i18n);
   }
 
   protected previewEntryLimit(type: ChallengeSummary['type']): number {

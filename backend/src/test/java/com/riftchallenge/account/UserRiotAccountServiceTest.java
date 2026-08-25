@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.dto.LinkRiotAccountRequest;
+import com.riftchallenge.account.RiotAccountService.ResolvedRiotAccount;
 import com.riftchallenge.riot.RiotSummonerClient;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.Optional;
@@ -36,25 +37,27 @@ class UserRiotAccountServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private UserRiotAccountWriter accountWriter;
+
     @InjectMocks
     private UserRiotAccountService userRiotAccountService;
 
     @Test
     void linkAccount_whenValid_persistsAccount() {
         UUID userId = UUID.randomUUID();
+        RiotAccountDto accountDto = new RiotAccountDto("puuid-1", "Tanor", "7154");
         RiotAccount riotAccount = TestRiotAccounts.riotAccount("puuid-1", "Tanor", "7154", 1234);
+        UserRiotAccount saved = TestRiotAccounts.linkedAccount(userId, riotAccount);
 
-        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.empty());
-        when(riotAccountService.findOrCreateFromRiotId("Tanor#7154")).thenReturn(riotAccount);
-        when(userRiotAccountRepository.findByRiotAccountPuuid("puuid-1")).thenReturn(Optional.empty());
-        when(userRiotAccountRepository.save(any(UserRiotAccount.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(riotAccountService.resolveRiotAccount("Tanor#7154"))
+                .thenReturn(new ResolvedRiotAccount(accountDto, 1234));
+        when(accountWriter.link(userId, accountDto, 1234)).thenReturn(saved);
 
         var response = userRiotAccountService.linkAccount(userId, new LinkRiotAccountRequest("Tanor#7154"));
 
         assertThat(response.riotId()).isEqualTo("Tanor#7154");
         assertThat(response.profileIconId()).isEqualTo(1234);
-        verify(userRiotAccountRepository).save(any(UserRiotAccount.class));
         verify(eventPublisher).publishEvent(any(LinkedAccountSyncEvent.class));
     }
 
@@ -69,25 +72,22 @@ class UserRiotAccountServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("already linked");
 
-        verify(userRiotAccountRepository, never()).save(any());
+        verify(accountWriter, never()).link(any(), any(), any());
     }
 
     @Test
     void linkAccount_whenLinkedToAnotherUser_throwsConflict() {
         UUID userId = UUID.randomUUID();
-        UUID otherUserId = UUID.randomUUID();
-        RiotAccount riotAccount = TestRiotAccounts.riotAccount("puuid-1", "Tanor", "7154");
+        RiotAccountDto accountDto = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
-        when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.empty());
-        when(riotAccountService.findOrCreateFromRiotId("Tanor#7154")).thenReturn(riotAccount);
-        when(userRiotAccountRepository.findByRiotAccountPuuid("puuid-1"))
-                .thenReturn(Optional.of(TestRiotAccounts.linkedAccount(otherUserId, riotAccount)));
+        when(riotAccountService.resolveRiotAccount("Tanor#7154"))
+                .thenReturn(new ResolvedRiotAccount(accountDto, null));
+        when(accountWriter.link(userId, accountDto, null))
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "Account linked to another user"));
 
         assertThatThrownBy(() -> userRiotAccountService.linkAccount(userId, new LinkRiotAccountRequest("Tanor#7154")))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("another user");
-
-        verify(userRiotAccountRepository, never()).save(any());
     }
 
     @Test

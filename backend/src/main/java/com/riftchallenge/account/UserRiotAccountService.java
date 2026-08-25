@@ -20,27 +20,28 @@ public class UserRiotAccountService {
     private final RiotAccountService riotAccountService;
     private final RiotSummonerClient riotSummonerClient;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserRiotAccountWriter accountWriter;
 
     public UserRiotAccountService(
             UserRiotAccountRepository userRiotAccountRepository,
             RiotAccountService riotAccountService,
             RiotSummonerClient riotSummonerClient,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            UserRiotAccountWriter accountWriter
     ) {
         this.userRiotAccountRepository = userRiotAccountRepository;
         this.riotAccountService = riotAccountService;
         this.riotSummonerClient = riotSummonerClient;
         this.eventPublisher = eventPublisher;
+        this.accountWriter = accountWriter;
     }
 
-    @Transactional
     public List<UserRiotAccountResponse> listAccounts(UUID userId) {
         return userRiotAccountRepository.findByUserId(userId)
                 .map(account -> List.of(enrichProfileIcon(account)))
                 .orElseGet(List::of);
     }
 
-    @Transactional
     public Optional<UserRiotAccountResponse> findLinkedAccount(UUID userId) {
         return userRiotAccountRepository.findByUserId(userId).map(this::enrichProfileIcon);
     }
@@ -59,7 +60,6 @@ public class UserRiotAccountService {
                 .orElseGet(List::of);
     }
 
-    @Transactional
     public UserRiotAccountResponse linkAccount(UUID userId, LinkRiotAccountRequest request) {
         if (userRiotAccountRepository.findByUserId(userId).isPresent()) {
             throw new ResponseStatusException(
@@ -68,15 +68,11 @@ public class UserRiotAccountService {
             );
         }
 
-        RiotAccount riotAccount = riotAccountService.findOrCreateFromRiotId(request.riotId());
+        RiotAccountService.ResolvedRiotAccount resolved = riotAccountService.resolveRiotAccount(request.riotId());
 
-        userRiotAccountRepository.findByRiotAccountPuuid(riotAccount.getRiotPuuid()).ifPresent(existing -> {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Account linked to another user");
-        });
-
-        UserRiotAccount saved = userRiotAccountRepository.save(UserRiotAccount.create(userId, riotAccount));
+        UserRiotAccount saved = accountWriter.link(userId, resolved.account(), resolved.profileIconId());
         eventPublisher.publishEvent(new LinkedAccountSyncEvent(saved));
-        return enrichProfileIcon(saved);
+        return UserRiotAccountResponse.from(saved);
     }
 
     @Transactional

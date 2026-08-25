@@ -1,6 +1,5 @@
 package com.riftchallenge.challenge;
 
-import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddDuoRequest;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotAccountClient;
@@ -30,7 +29,7 @@ public class ChallengeDuoService {
     private final RiotAccountClient riotAccountClient;
     private final RiotLeagueClient riotLeagueClient;
     private final ParticipantProfileService participantProfileService;
-    private final RiotAccountService riotAccountService;
+    private final ChallengeDuoWriter duoWriter;
     private final Clock clock;
 
     public ChallengeDuoService(
@@ -41,7 +40,7 @@ public class ChallengeDuoService {
             RiotAccountClient riotAccountClient,
             RiotLeagueClient riotLeagueClient,
             ParticipantProfileService participantProfileService,
-            RiotAccountService riotAccountService,
+            ChallengeDuoWriter duoWriter,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
@@ -51,20 +50,19 @@ public class ChallengeDuoService {
         this.riotAccountClient = riotAccountClient;
         this.riotLeagueClient = riotLeagueClient;
         this.participantProfileService = participantProfileService;
-        this.riotAccountService = riotAccountService;
+        this.duoWriter = duoWriter;
         this.clock = clock;
     }
 
-    @Transactional
     public void addDuo(UUID challengeId, UUID ownerId, AddDuoRequest request) {
-        Challenge challenge = challengeRepository.findById(challengeId)
+        Challenge preCheck = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
 
-        if (!challenge.getOwnerId().equals(ownerId)) {
+        if (!preCheck.getOwnerId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not the challenge owner");
         }
 
-        if (challenge.getType() != ChallengeType.DUOQ) {
+        if (preCheck.getType() != ChallengeType.DUOQ) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duos can only be added to DuoQ challenges");
         }
 
@@ -90,24 +88,15 @@ public class ChallengeDuoService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Player already added");
         }
 
-        riotAccountService.findOrCreate(account1, null);
-        riotAccountService.findOrCreate(account2, null);
-
-        ChallengeDuo duo = challengeDuoRepository.save(ChallengeDuo.create(challengeId));
-
-        ChallengeParticipant participant1 = participantRepository.save(
-                ChallengeParticipant.create(challengeId, account1, duo.getId())
-        );
-        ChallengeParticipant participant2 = participantRepository.save(
-                ChallengeParticipant.create(challengeId, account2, duo.getId())
-        );
+        ChallengeDuoWriter.DuoWriteResult result = duoWriter.addDuo(challengeId, ownerId, account1, account2);
+        Challenge challenge = result.challenge();
 
         if (clock.instant().isBefore(challenge.getStartAt())) {
-            captureBaselineIfRanked(participant1, challenge.getRegion());
-            captureBaselineIfRanked(participant2, challenge.getRegion());
+            captureBaselineIfRanked(result.participant1(), challenge.getRegion());
+            captureBaselineIfRanked(result.participant2(), challenge.getRegion());
         }
-        participantProfileService.ensureProfileIcon(participant1.getId(), challenge.getRegion());
-        participantProfileService.ensureProfileIcon(participant2.getId(), challenge.getRegion());
+        participantProfileService.ensureProfileIcon(result.participant1().getId(), challenge.getRegion());
+        participantProfileService.ensureProfileIcon(result.participant2().getId(), challenge.getRegion());
     }
 
     @Transactional

@@ -82,15 +82,15 @@ cd frontend && npm run build
 
 ## Riot API (secrets)
 
-Ne jamais committer la clé API. Utiliser le fichier `.env` à la racine (gitignored) :
+Ne jamais committer la clé API. Utiliser le fichier `.env` à la racine (gitignored, voir [`.env.example`](.env.example) pour la liste complète des variables) :
 
 ```env
 RIOT_API_KEY=votre_cle
-RIOT_APP_ID=871406
 RIOT_REGIONAL_ROUTING=europe
-RIOT_PLATFORM=euw1
 SPRING_PROFILES_ACTIVE=local
 ```
+
+La plateforme Riot (`euw1`, etc.) est choisie **par challenge** en base, pas via une variable d'environnement globale.
 
 Sous Windows PowerShell avant le lancement :
 

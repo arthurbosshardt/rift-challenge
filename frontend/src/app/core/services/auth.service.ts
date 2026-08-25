@@ -3,7 +3,7 @@ import { ApplicationRef, Injectable, computed, inject, signal } from '@angular/c
 import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
 import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthMeResponse, LinkedRiotAccount, UserRiotAccount } from '../models/challenge.models';
+import { AuthMeResponse, LinkedRiotAccount } from '../models/challenge.models';
 import { apiUrl } from '../utils/api-url';
 import {
   SESSION_LAST_SEEN_KEY,
@@ -406,7 +406,7 @@ export class AuthService {
 
       this.profileUsername.set(me.username?.trim() || null);
       const previousLinkedId = this.linkedRiotAccount()?.id ?? null;
-      const linked = me.linkedRiotAccount ?? (await this.fetchLinkedAccountFallback());
+      const linked = me.linkedRiotAccount ?? null;
       const nextLinkedId = linked?.id ?? null;
       if (previousLinkedId !== nextLinkedId) {
         this.activityCache.invalidateActivity();
@@ -417,27 +417,6 @@ export class AuthService {
       this.linkedRiotAccount.set(null);
     } finally {
       this.profileLoading.set(false);
-    }
-  }
-
-  private async fetchLinkedAccountFallback(): Promise<LinkedRiotAccount | null> {
-    try {
-      const accounts = await firstValueFrom(
-        this.http.get<UserRiotAccount[]>(apiUrl('/api/me/riot-accounts')),
-      );
-      const account = accounts[0];
-      if (!account) {
-        return null;
-      }
-      return {
-        id: account.id,
-        gameName: account.gameName,
-        tagLine: account.tagLine,
-        riotId: account.riotId,
-        profileIconId: account.profileIconId,
-      };
-    } catch {
-      return null;
     }
   }
 

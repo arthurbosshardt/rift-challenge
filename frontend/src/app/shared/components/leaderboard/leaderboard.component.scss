@@ -562,6 +562,44 @@ app-medal-badge {
   color: var(--text-muted);
 }
 
+@media (min-width: 1024px) {
+  /* Desktop reads left-to-right as: rank, player identity, sort stat, then
+     recent-history strip filling the rest of the row. The player column is a
+     fixed width (rather than auto) so the stat always starts at the same
+     horizontal position regardless of summoner name length. */
+  .leaderboard__row {
+    grid-template-columns: 2rem 7.5rem auto minmax(0, 1fr);
+  }
+
+  app-medal-badge {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .leaderboard__value {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .leaderboard__player {
+    grid-column: 2;
+    grid-row: 1;
+    align-items: flex-start;
+    justify-self: start;
+    gap: 0.5rem;
+  }
+
+  .leaderboard__name {
+    text-align: left;
+    max-width: 7.5rem;
+  }
+
+  .leaderboard__history {
+    grid-column: 4;
+    grid-row: 1;
+  }
+}
+
 @media (max-width: 1023px) {
   :host {
     width: 100%;

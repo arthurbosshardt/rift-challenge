@@ -148,6 +148,10 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
     return this.player()?.profileIconId ?? null;
   }
 
+  protected tier(): string | null {
+    return this.activityAccount()?.tier ?? null;
+  }
+
   protected riotIdLabel(): string | null {
     return this.player()?.riotId ?? null;
   }

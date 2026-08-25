@@ -195,6 +195,14 @@
   text-align: center;
 }
 
+.activity-account__performance-placeholder--splash {
+  border-style: solid;
+  border-color: var(--border-strong);
+  background-repeat: no-repeat;
+  background-position: center 15%;
+  background-size: cover;
+}
+
 .activity-account__performance-title {
   color: var(--text-muted);
   font-size: 0.9375rem;
@@ -204,4 +212,14 @@
 .activity-account__performance-subtitle {
   color: var(--text-subtle);
   font-size: 0.8125rem;
+}
+
+.activity-account__performance-placeholder--splash .activity-account__performance-title {
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.activity-account__performance-placeholder--splash .activity-account__performance-subtitle {
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }

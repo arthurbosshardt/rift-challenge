@@ -3,7 +3,6 @@ package com.riftchallenge.challenge;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddDuoRequest;
 import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotLeagueClient;
@@ -40,7 +39,7 @@ class ChallengeDuoServiceTest {
     @Mock
     private ParticipantProfileService participantProfileService;
     @Mock
-    private RiotAccountService riotAccountService;
+    private ChallengeDuoWriter duoWriter;
 
     private final Clock clock = Clock.fixed(Instant.parse("2026-08-16T10:00:00Z"), ZoneOffset.UTC);
     private ChallengeDuoService duoService;
@@ -55,7 +54,7 @@ class ChallengeDuoServiceTest {
                 riotAccountClient,
                 riotLeagueClient,
                 participantProfileService,
-                riotAccountService,
+                duoWriter,
                 clock
         );
     }

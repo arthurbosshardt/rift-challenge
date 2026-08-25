@@ -32,6 +32,7 @@ import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component'
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 import { MedalBadgeComponent } from '../medal-badge/medal-badge.component';
 import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
+import { regionLabel as sharedRegionLabel } from '../../../core/utils/region-display';
 import {
   ChallengeBadgeComponent,
   challengeRegionBadgeKind,
@@ -200,16 +201,7 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
   }
 
   regionLabel(region: ChallengeSummary['region']): string {
-    switch (region) {
-      case 'EUNE':
-        return this.i18n.t('challenge.regionEune');
-      case 'NA':
-        return this.i18n.t('challenge.regionNa');
-      case 'KR':
-        return this.i18n.t('challenge.regionKr');
-      default:
-        return this.i18n.t('challenge.regionEuw');
-    }
+    return sharedRegionLabel(region, this.i18n);
   }
 
   entryCountLabel(): string {

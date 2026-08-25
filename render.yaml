@@ -20,8 +20,6 @@ services:
         sync: false
       - key: RIOT_API_KEY
         sync: false
-      - key: RIOT_PLATFORM
-        value: euw1
       - key: RIOT_REGIONAL_ROUTING
         value: europe
       - key: CORS_ORIGINS

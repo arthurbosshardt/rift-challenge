@@ -8,7 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
 import com.riftchallenge.riot.RiotAccountClient;
@@ -50,7 +49,7 @@ class ChallengeParticipantServiceTest {
     private ParticipantProfileService participantProfileService;
 
     @Mock
-    private RiotAccountService riotAccountService;
+    private ChallengeParticipantWriter participantWriter;
 
     private final Clock clock = Clock.fixed(Instant.parse("2026-08-16T10:00:00Z"), ZoneOffset.UTC);
 
@@ -66,7 +65,7 @@ class ChallengeParticipantServiceTest {
                 riotAccountClient,
                 riotLeagueClient,
                 participantProfileService,
-                riotAccountService,
+                participantWriter,
                 clock
         );
     }
@@ -139,12 +138,13 @@ class ChallengeParticipantServiceTest {
         RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
         Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
+        ChallengeParticipant saved = ChallengeParticipant.create(challengeId, account);
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challengeId)).thenReturn(0L);
         when(riotAccountClient.getAccountByRiotId(eq("Tanor"), eq("7154"))).thenReturn(account);
         when(participantRepository.existsByChallengeIdAndRiotPuuid(challengeId, "puuid-1")).thenReturn(false);
-        when(participantRepository.save(org.mockito.ArgumentMatchers.any(ChallengeParticipant.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(participantWriter.addParticipant(challengeId, ownerId, account))
+                .thenReturn(new ChallengeParticipantWriter.ParticipantWriteResult(challenge, saved));
 
         ParticipantResponse response = participantService.addParticipant(
                 challengeId,
@@ -155,7 +155,7 @@ class ChallengeParticipantServiceTest {
         assertThat(response.riotId()).isEqualTo("Tanor#7154");
         assertThat(response.gameName()).isEqualTo("Tanor");
         assertThat(response.tagLine()).isEqualTo("7154");
-        verify(participantRepository).save(org.mockito.ArgumentMatchers.any(ChallengeParticipant.class));
+        verify(participantWriter).addParticipant(challengeId, ownerId, account);
     }
 
     @Test
@@ -165,12 +165,13 @@ class ChallengeParticipantServiceTest {
         RiotAccountDto account = new RiotAccountDto("puuid-1", "Tanor", "7154");
 
         Challenge challenge = Challenge.create(ownerId, "Test", ChallengeType.SOLOQ, java.time.Instant.parse("2026-12-01T18:00:00Z"));
+        ChallengeParticipant saved = ChallengeParticipant.create(challengeId, account);
         when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(challenge));
         when(participantRepository.countByChallengeId(challengeId)).thenReturn(0L);
         when(riotAccountClient.getAccountByRiotId(eq("Tanor"), eq("7154"))).thenReturn(account);
         when(participantRepository.existsByChallengeIdAndRiotPuuid(challengeId, "puuid-1")).thenReturn(false);
-        when(participantRepository.save(org.mockito.ArgumentMatchers.any(ChallengeParticipant.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(participantWriter.addParticipant(challengeId, ownerId, account))
+                .thenReturn(new ChallengeParticipantWriter.ParticipantWriteResult(challenge, saved));
         when(riotLeagueClient.findRankedSoloEntry("puuid-1", com.riftchallenge.riot.ChallengeRegion.EUW))
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed"));
 
@@ -181,7 +182,7 @@ class ChallengeParticipantServiceTest {
         );
 
         assertThat(response.riotId()).isEqualTo("Tanor#7154");
-        verify(participantRepository).save(org.mockito.ArgumentMatchers.any(ChallengeParticipant.class));
+        verify(participantWriter).addParticipant(challengeId, ownerId, account);
     }
 
     @Test

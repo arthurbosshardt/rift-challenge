@@ -45,16 +45,11 @@ public class SitemapController {
                     <priority>1.0</priority>
                   </url>
                   <url>
-                    <loc>%s/home</loc>
-                    <changefreq>weekly</changefreq>
-                    <priority>0.9</priority>
-                  </url>
-                  <url>
                     <loc>%s/challenges</loc>
                     <changefreq>hourly</changefreq>
                     <priority>0.9</priority>
                   </url>
-                """.formatted(frontendBaseUrl, frontendBaseUrl, frontendBaseUrl));
+                """.formatted(frontendBaseUrl, frontendBaseUrl));
 
         for (Challenge challenge : publicChallenges) {
             String slug = ChallengeSharePaths.encodeSlug(challenge.getShareSlug());
