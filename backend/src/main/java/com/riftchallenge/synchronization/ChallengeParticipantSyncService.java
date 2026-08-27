@@ -4,11 +4,14 @@ import com.riftchallenge.challenge.ParticipantProfileService;
 import com.riftchallenge.challenge.Challenge;
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeDataSyncService;
+import com.riftchallenge.leaderboard.AccountMatch;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RankReplayService;
 import com.riftchallenge.riot.RankReplayService.RankState;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
+import com.riftchallenge.riot.RiotMatchDurations;
 import com.riftchallenge.riot.RiotMatchLookupService;
 import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
@@ -37,7 +40,7 @@ public class ChallengeParticipantSyncService {
 
     private final RankSnapshotRepository rankSnapshotRepository;
     private final RiotMatchRepository riotMatchRepository;
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
+    private final AccountMatchRepository participantMatchRepository;
     private final RiotLeagueClient riotLeagueClient;
     private final RiotMatchClient riotMatchClient;
     private final RiotMatchLookupService riotMatchLookupService;
@@ -49,7 +52,7 @@ public class ChallengeParticipantSyncService {
     public ChallengeParticipantSyncService(
             RankSnapshotRepository rankSnapshotRepository,
             RiotMatchRepository riotMatchRepository,
-            ChallengeParticipantMatchRepository participantMatchRepository,
+            AccountMatchRepository participantMatchRepository,
             RiotLeagueClient riotLeagueClient,
             RiotMatchClient riotMatchClient,
             RiotMatchLookupService riotMatchLookupService,
@@ -86,7 +89,7 @@ public class ChallengeParticipantSyncService {
         boolean finished = isChallengeFinished(challenge, now);
         boolean hasRankSnapshots = hasBaseline(participant.getId()) && hasRefreshSnapshot(participant.getId());
         boolean skipChampionBackfill = finished
-                && participantMatchRepository.countMissingChampionIdByParticipantId(participant.getId()) == 0;
+                && participantMatchRepository.countMissingChampionIdByRiotPuuid(participant.getRiotPuuid()) == 0;
 
         int importedMatches = syncChallengeWindowMatches(challenge, participant, skipChampionBackfill);
         if (importedMatches > 0) {
@@ -331,14 +334,13 @@ public class ChallengeParticipantSyncService {
             ChallengeParticipant participant,
             boolean skipChampionBackfill
     ) {
-        purgeMatchesOutsideChallengeWindow(participant);
         if (!skipChampionBackfill) {
             championBackfillService.backfillForParticipant(participant.getId());
         }
 
         long startEpochSeconds = challenge.getStartAt().getEpochSecond();
         Long endEpochSeconds = challenge.getEndAt() != null ? challenge.getEndAt().getEpochSecond() : null;
-        long existingMatches = participantMatchRepository.countByParticipantId(participant.getId());
+        long existingMatches = participantMatchRepository.countInChallengeWindow(participant.getId(), challenge.getId());
         int importLimit = resolveImportLimit(challenge, existingMatches);
         int matchIdFetchLimit = resolveMatchIdFetchLimit(existingMatches, importLimit);
 
@@ -355,7 +357,7 @@ public class ChallengeParticipantSyncService {
             if (imported >= importLimit) {
                 break;
             }
-            if (participantMatchRepository.existsByParticipantIdAndRiotMatchId(participant.getId(), matchId)) {
+            if (participantMatchRepository.existsByRiotPuuidAndRiotMatchId(participant.getRiotPuuid(), matchId)) {
                 championBackfillService.backfillMatchIfMissing(participant, matchId);
                 continue;
             }
@@ -399,6 +401,11 @@ public class ChallengeParticipantSyncService {
 
         boolean win = false;
         Integer championId = null;
+        String championName = null;
+        int kills = 0;
+        int deaths = 0;
+        int assists = 0;
+        int cs = 0;
         for (RiotMatchDetailDto.Participant part : match.info().participants()) {
             if (!participant.getRiotPuuid().equals(part.puuid())) {
                 continue;
@@ -408,38 +415,39 @@ public class ChallengeParticipantSyncService {
                     part.profileIcon()
             );
             win = part.win();
-            championId = part.championId();
+            championId = part.championId() != null && part.championId() > 0 ? part.championId() : null;
+            championName = part.championName();
+            if (championName != null && championName.isBlank()) {
+                championName = null;
+            }
+            kills = part.kills();
+            deaths = part.deaths();
+            assists = part.assists();
+            cs = part.totalMinionsKilled() + part.neutralMinionsKilled();
             break;
         }
 
-        if (championId == null) {
-            championId = ParticipantMatchChampionBackfillService.extractChampionId(
-                    match,
-                    participant.getRiotPuuid()
+        long gameDurationSeconds = RiotMatchDurations.normalizeSeconds(match.info().gameDuration());
+
+        try {
+            participantMatchRepository.save(
+                    AccountMatch.create(
+                            participant.getRiotPuuid(),
+                            matchId,
+                            win,
+                            championId,
+                            championName,
+                            kills,
+                            deaths,
+                            assists,
+                            cs,
+                            gameDurationSeconds
+                    )
             );
+        } catch (DataIntegrityViolationException exception) {
+            log.debug("Account match {} for {} already persisted by another sync", matchId, participant.getRiotPuuid());
         }
-
-        participantMatchRepository.save(
-                ChallengeParticipantMatch.create(challenge.getId(), participant.getId(), matchId, win, championId)
-        );
         return true;
-    }
-
-    private void purgeMatchesOutsideChallengeWindow(ChallengeParticipant participant) {
-        List<ChallengeParticipantMatch> staleMatches = participantMatchRepository.findOutsideChallengeWindow(
-                participant.getId(),
-                participant.getChallengeId()
-        );
-        if (staleMatches.isEmpty()) {
-            return;
-        }
-
-        participantMatchRepository.deleteAll(staleMatches);
-        log.info(
-                "Removed {} out-of-window matches for participant {}",
-                staleMatches.size(),
-                participant.getId()
-        );
     }
 
     private int resolveImportLimit(Challenge challenge, long existingMatches) {
@@ -465,7 +473,7 @@ public class ChallengeParticipantSyncService {
                         participant.getId(),
                         participant.getChallengeId()
                 ).stream()
-                .map(ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::isWin)
+                .map(AccountMatchRepository.ParticipantMatchOutcomeInWindow::isWin)
                 .toList();
     }
 
@@ -610,17 +618,17 @@ public class ChallengeParticipantSyncService {
         if (isRefreshSnapshotEstimated(participant.getId())) {
             return false;
         }
-        if (participantMatchRepository.countByParticipantId(participant.getId()) == 0) {
+        if (participantMatchRepository.countInChallengeWindow(participant.getId(), challenge.getId()) == 0) {
             return false;
         }
-        if (participantMatchRepository.countMissingChampionIdByParticipantId(participant.getId()) > 0) {
+        if (participantMatchRepository.countMissingChampionIdByRiotPuuid(participant.getRiotPuuid()) > 0) {
             return false;
         }
         return !hasPendingMatchImports(challenge, participant);
     }
 
     private boolean hasPendingMatchImports(Challenge challenge, ChallengeParticipant participant) {
-        long existingMatches = participantMatchRepository.countByParticipantId(participant.getId());
+        long existingMatches = participantMatchRepository.countInChallengeWindow(participant.getId(), challenge.getId());
         int importLimit = resolveImportLimit(challenge, existingMatches);
         int matchIdFetchLimit = resolveMatchIdFetchLimit(existingMatches, importLimit);
 
@@ -636,7 +644,7 @@ public class ChallengeParticipantSyncService {
         );
 
         for (String matchId : matchIds) {
-            if (!participantMatchRepository.existsByParticipantIdAndRiotMatchId(participant.getId(), matchId)) {
+            if (!participantMatchRepository.existsByRiotPuuidAndRiotMatchId(participant.getRiotPuuid(), matchId)) {
                 return true;
             }
         }

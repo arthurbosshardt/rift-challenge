@@ -3,7 +3,7 @@ package com.riftchallenge.challenge;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +24,7 @@ class RecentActivityPoroIntegrationTest {
     private RecentActivityService recentActivityService;
 
     @Autowired
-    private LeaderboardAccountMatchRepository accountMatchRepository;
+    private AccountMatchRepository accountMatchRepository;
 
     @Autowired
     private LeaderboardProperties leaderboardProperties;

@@ -1,7 +1,7 @@
 package com.riftchallenge.challenge;
 
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class DuoEligibilityService {
 
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
+    private final AccountMatchRepository participantMatchRepository;
 
-    public DuoEligibilityService(ChallengeParticipantMatchRepository participantMatchRepository) {
+    public DuoEligibilityService(AccountMatchRepository participantMatchRepository) {
         this.participantMatchRepository = participantMatchRepository;
     }
 
@@ -75,12 +75,12 @@ public class DuoEligibilityService {
             return List.copyOf(matchIds);
         }
 
-        List<ChallengeParticipantMatchRepository.MatchIdAndGameStart> capped = MaxGamesCap.capToOldest(
+        List<AccountMatchRepository.MatchIdAndGameStart> capped = MaxGamesCap.capToOldest(
                 participantMatchRepository.findGameStartsForMatchIds(matchIds),
                 maxGames,
-                ChallengeParticipantMatchRepository.MatchIdAndGameStart::getGameStart
+                AccountMatchRepository.MatchIdAndGameStart::getGameStart
         );
-        return capped.stream().map(ChallengeParticipantMatchRepository.MatchIdAndGameStart::getMatchId).toList();
+        return capped.stream().map(AccountMatchRepository.MatchIdAndGameStart::getMatchId).toList();
     }
 
     private static String formatRiotId(ChallengeParticipant participant) {

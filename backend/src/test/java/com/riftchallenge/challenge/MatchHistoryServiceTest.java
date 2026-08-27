@@ -6,8 +6,8 @@ import static org.mockito.Mockito.when;
 
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.riot.ChampionIconUrlService;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository.ParticipantMatchHistoryRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository.ParticipantMatchHistoryRow;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class MatchHistoryServiceTest {
 
     @Mock
-    private ChallengeParticipantMatchRepository participantMatchRepository;
+    private AccountMatchRepository participantMatchRepository;
 
     @Mock
     private ChampionIconUrlService championIconUrlService;

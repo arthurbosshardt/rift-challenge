@@ -7,12 +7,15 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 /**
- * A ranked solo/duo match counted toward the global leaderboard, independent of any challenge.
- * Keyed by PUUID rather than a challenge participation — see {@link LeaderboardAccountSyncService}.
+ * One tracked account's participation in one ranked solo/duo match — the single source of truth
+ * for both the global leaderboard and every challenge's progress, keyed by {@code riotPuuid} +
+ * {@code riotMatchId} regardless of which (if any) challenge the account belongs to. Challenges
+ * compute their own progress by querying this table filtered by their own date window / max-games
+ * cap, rather than through a per-challenge junction table.
  */
 @Entity
-@Table(name = "leaderboard_account_match")
-public class LeaderboardAccountMatch {
+@Table(name = "account_match")
+public class AccountMatch {
 
     @Id
     private UUID id;
@@ -32,25 +35,27 @@ public class LeaderboardAccountMatch {
     @Column(name = "champion_name", length = 32)
     private String championName;
 
-    @Column
     private Integer kills;
-
-    @Column
     private Integer deaths;
-
-    @Column
     private Integer assists;
-
-    @Column
     private Integer cs;
 
     @Column(name = "game_duration_seconds")
     private Long gameDurationSeconds;
 
-    protected LeaderboardAccountMatch() {
+    /**
+     * True only for rows migrated in from the old {@code challenge_participant_match} junction
+     * table, which tracked only win/loss + champion — never combat stats. Past/ended challenges
+     * rely on this to flag that their match data may be less precise than what current syncs
+     * capture.
+     */
+    @Column(nullable = false)
+    private boolean historical;
+
+    protected AccountMatch() {
     }
 
-    public static LeaderboardAccountMatch create(
+    public static AccountMatch create(
             String riotPuuid,
             String riotMatchId,
             boolean win,
@@ -62,7 +67,7 @@ public class LeaderboardAccountMatch {
             int cs,
             long gameDurationSeconds
     ) {
-        LeaderboardAccountMatch match = new LeaderboardAccountMatch();
+        AccountMatch match = new AccountMatch();
         match.id = UUID.randomUUID();
         match.riotPuuid = riotPuuid;
         match.riotMatchId = riotMatchId;
@@ -74,7 +79,38 @@ public class LeaderboardAccountMatch {
         match.assists = assists;
         match.cs = cs;
         match.gameDurationSeconds = gameDurationSeconds;
+        match.historical = false;
         return match;
+    }
+
+    public boolean hasCombatStats() {
+        return kills != null && deaths != null && assists != null && cs != null && gameDurationSeconds != null;
+    }
+
+    public void backfillCombatStats(
+            String championName,
+            int kills,
+            int deaths,
+            int assists,
+            int cs,
+            long gameDurationSeconds
+    ) {
+        if (this.championName == null && championName != null && !championName.isBlank()) {
+            this.championName = championName;
+        }
+        this.kills = kills;
+        this.deaths = deaths;
+        this.assists = assists;
+        this.cs = cs;
+        this.gameDurationSeconds = gameDurationSeconds;
+    }
+
+    public void updateChampionId(Integer championId) {
+        this.championId = championId;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public String getRiotPuuid() {
@@ -117,25 +153,7 @@ public class LeaderboardAccountMatch {
         return gameDurationSeconds;
     }
 
-    public boolean hasCombatStats() {
-        return kills != null && deaths != null && assists != null && cs != null && gameDurationSeconds != null;
-    }
-
-    public void backfillCombatStats(
-            String championName,
-            int kills,
-            int deaths,
-            int assists,
-            int cs,
-            long gameDurationSeconds
-    ) {
-        if (this.championName == null && championName != null && !championName.isBlank()) {
-            this.championName = championName;
-        }
-        this.kills = kills;
-        this.deaths = deaths;
-        this.assists = assists;
-        this.cs = cs;
-        this.gameDurationSeconds = gameDurationSeconds;
+    public boolean isHistorical() {
+        return historical;
     }
 }

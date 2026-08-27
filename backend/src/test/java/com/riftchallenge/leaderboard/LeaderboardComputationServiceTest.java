@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.AccountMatchHistoryRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
 import com.riftchallenge.riot.ChampionIconUrlService;
@@ -31,7 +31,7 @@ class LeaderboardComputationServiceTest {
     private RiotAccountRepository riotAccountRepository;
 
     @Mock
-    private LeaderboardAccountMatchRepository matchRepository;
+    private AccountMatchRepository matchRepository;
 
     @Mock
     private LeaderboardAccountRankRepository rankRepository;

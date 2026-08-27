@@ -2,7 +2,7 @@ package com.riftchallenge.challenge;
 
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountSyncService;
 import com.riftchallenge.leaderboard.LeaderboardAccountSyncService.ActivitySyncBatchResult;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
@@ -40,7 +40,7 @@ public class ActivityAccountBackgroundSyncService {
     static final int COMBAT_STATS_BACKFILL_BATCH = 15;
 
     private final LeaderboardAccountSyncService accountSyncService;
-    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final AccountMatchRepository accountMatchRepository;
     private final RiotAccountRepository riotAccountRepository;
     private final RiotMatchLookupService riotMatchLookupService;
     private final LeaderboardProperties leaderboardProperties;
@@ -48,13 +48,17 @@ public class ActivityAccountBackgroundSyncService {
     private final Clock clock;
     private final ConcurrentMap<UUID, Boolean> syncInProgress = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Boolean> catchUpChainActive = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, Boolean> seasonHistoryExhausted = new ConcurrentHashMap<>();
+    /** Season match total recorded at the moment the season history was found exhausted, keyed by
+     *  riot account id. A cached exhaustion only still blocks catch-up while the live season total
+     *  hasn't grown past this value — otherwise the player has played new games since and a fresh
+     *  catch-up chain must run. */
+    private final ConcurrentMap<UUID, Integer> seasonHistoryExhaustedAtTotal = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Instant> lastChainStartedAt = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Boolean> combatStatsBackfillExhausted = new ConcurrentHashMap<>();
 
     public ActivityAccountBackgroundSyncService(
             LeaderboardAccountSyncService accountSyncService,
-            LeaderboardAccountMatchRepository accountMatchRepository,
+            AccountMatchRepository accountMatchRepository,
             RiotAccountRepository riotAccountRepository,
             RiotMatchLookupService riotMatchLookupService,
             LeaderboardProperties leaderboardProperties,
@@ -75,8 +79,11 @@ public class ActivityAccountBackgroundSyncService {
                 || syncInProgress.containsKey(riotAccountId);
     }
 
+    /** Legacy, total-agnostic check: true if the flag was ever set, regardless of whether it's
+     *  since gone stale. Prefer {@link #isSeasonHistoryExhausted(UUID, int)} for anything that
+     *  gates a sync decision. */
     public boolean isSeasonHistoryExhausted(UUID riotAccountId) {
-        if (Boolean.TRUE.equals(seasonHistoryExhausted.get(riotAccountId))) {
+        if (seasonHistoryExhaustedAtTotal.containsKey(riotAccountId)) {
             return true;
         }
         return riotAccountRepository.findById(riotAccountId)
@@ -84,17 +91,35 @@ public class ActivityAccountBackgroundSyncService {
                 .orElse(false);
     }
 
+    /** True only if the account was marked exhausted at a season total that is still >= the
+     *  current live season total — i.e. no new games have been played since exhaustion was
+     *  recorded. A recorded total of {@code null} (unknown, e.g. rows predating this tracking)
+     *  is treated as stale so a fresh catch-up can run instead of staying stuck forever. */
+    public boolean isSeasonHistoryExhausted(UUID riotAccountId, int seasonMatchTotal) {
+        Integer cachedTotal = seasonHistoryExhaustedAtTotal.get(riotAccountId);
+        if (cachedTotal != null) {
+            return cachedTotal >= seasonMatchTotal;
+        }
+        return riotAccountRepository.findById(riotAccountId)
+                .filter(RiotAccount::isActivitySeasonHistoryExhausted)
+                .map(account -> {
+                    Integer persistedTotal = account.getActivitySeasonHistoryExhaustedTotal();
+                    return persistedTotal != null && persistedTotal >= seasonMatchTotal;
+                })
+                .orElse(false);
+    }
+
     public void scheduleSyncIfIdle(RiotAccount account, int seasonMatchTotal, int storedMatchCount) {
         UUID riotAccountId = account.getId();
         if (storedMatchCount >= seasonMatchTotal) {
             catchUpChainActive.remove(riotAccountId);
-            seasonHistoryExhausted.remove(riotAccountId);
+            seasonHistoryExhaustedAtTotal.remove(riotAccountId);
             clearPersistedSeasonHistoryExhausted(account);
             scheduleCombatStatsBackfillIfIdle(account);
             return;
         }
 
-        if (isSeasonHistoryExhausted(riotAccountId)) {
+        if (isSeasonHistoryExhausted(riotAccountId, seasonMatchTotal)) {
             return;
         }
 
@@ -118,7 +143,7 @@ public class ActivityAccountBackgroundSyncService {
             return;
         }
 
-        if (isSeasonHistoryExhausted(riotAccountId)) {
+        if (isSeasonHistoryExhausted(riotAccountId, seasonMatchTotal)) {
             return;
         }
 
@@ -178,8 +203,8 @@ public class ActivityAccountBackgroundSyncService {
                 leaderboardProperties.seasonStartAt()
         );
         if (batchResult != null && batchResult.allMatchIdsImported()) {
-            seasonHistoryExhausted.put(riotAccountId, Boolean.TRUE);
-            markPersistedSeasonHistoryExhausted(account);
+            seasonHistoryExhaustedAtTotal.put(riotAccountId, seasonMatchTotal);
+            markPersistedSeasonHistoryExhausted(account, seasonMatchTotal);
         }
         if (storedMatchCount >= seasonMatchTotal
                 || (batchResult != null && batchResult.allMatchIdsImported())
@@ -251,11 +276,12 @@ public class ActivityAccountBackgroundSyncService {
         }
     }
 
-    private void markPersistedSeasonHistoryExhausted(RiotAccount account) {
-        if (account.isActivitySeasonHistoryExhausted()) {
+    private void markPersistedSeasonHistoryExhausted(RiotAccount account, int seasonMatchTotal) {
+        Integer persistedTotal = account.getActivitySeasonHistoryExhaustedTotal();
+        if (account.isActivitySeasonHistoryExhausted() && persistedTotal != null && persistedTotal >= seasonMatchTotal) {
             return;
         }
-        account.markActivitySeasonHistoryExhausted();
+        account.markActivitySeasonHistoryExhausted(seasonMatchTotal);
         riotAccountRepository.save(account);
     }
 

@@ -95,8 +95,8 @@ public class UserRiotAccount {
         return riotAccount.isActivitySeasonHistoryExhausted();
     }
 
-    public void markActivitySeasonHistoryExhausted() {
-        riotAccount.markActivitySeasonHistoryExhausted();
+    public void markActivitySeasonHistoryExhausted(int seasonMatchTotal) {
+        riotAccount.markActivitySeasonHistoryExhausted(seasonMatchTotal);
     }
 
     public void clearActivitySeasonHistoryExhausted() {

@@ -26,7 +26,7 @@ public class LeaderboardController {
     private final LeaderboardCacheService cacheService;
     private final AppUserRepository appUserRepository;
     private final LeaderboardProperties properties;
-    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final AccountMatchRepository accountMatchRepository;
     private final MatchDetailService matchDetailService;
     private final Clock clock;
 
@@ -34,7 +34,7 @@ public class LeaderboardController {
             LeaderboardCacheService cacheService,
             AppUserRepository appUserRepository,
             LeaderboardProperties properties,
-            LeaderboardAccountMatchRepository accountMatchRepository,
+            AccountMatchRepository accountMatchRepository,
             MatchDetailService matchDetailService,
             Clock clock
     ) {

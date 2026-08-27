@@ -41,7 +41,7 @@ class LeaderboardControllerTest {
     private AppUserRepository appUserRepository;
 
     @Mock
-    private LeaderboardAccountMatchRepository accountMatchRepository;
+    private AccountMatchRepository accountMatchRepository;
 
     @Mock
     private MatchDetailService matchDetailService;

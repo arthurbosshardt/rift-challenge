@@ -13,6 +13,7 @@ import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeDataSyncService;
 import com.riftchallenge.challenge.ChallengeType;
 import com.riftchallenge.challenge.ParticipantProfileService;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
 import com.riftchallenge.riot.RiotMatchLookupService;
@@ -49,7 +50,7 @@ class ChallengeParticipantSyncServiceTest {
     private RiotMatchRepository riotMatchRepository;
 
     @Mock
-    private ChallengeParticipantMatchRepository participantMatchRepository;
+    private AccountMatchRepository participantMatchRepository;
 
     @Mock
     private RiotLeagueClient riotLeagueClient;
@@ -159,7 +160,7 @@ class ChallengeParticipantSyncServiceTest {
         String matchId = "EUW1_555";
         when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
                 .thenReturn(List.of(matchId));
-        when(participantMatchRepository.existsByParticipantIdAndRiotMatchId(participant.getId(), matchId))
+        when(participantMatchRepository.existsByRiotPuuidAndRiotMatchId(PUUID, matchId))
                 .thenReturn(true);
 
         service.syncParticipant(challenge, participant, NOW);
@@ -171,7 +172,7 @@ class ChallengeParticipantSyncServiceTest {
 
     @Test
     void syncParticipant_stopsImportingAtPerRefreshCap() {
-        when(participantMatchRepository.countByParticipantId(participant.getId())).thenReturn(1L);
+        when(participantMatchRepository.countInChallengeWindow(participant.getId(), challenge.getId())).thenReturn(1L);
 
         List<String> matchIds = java.util.stream.IntStream.range(0, 12)
                 .mapToObj(i -> "EUW1_" + (600 + i))

@@ -11,8 +11,8 @@ import com.riftchallenge.account.RiotAccountService;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
 import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.SeasonActivityRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository.SeasonActivityRow;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
@@ -48,7 +48,7 @@ class RecentActivityServiceTest {
     private RiotAccountService riotAccountService;
 
     @Mock
-    private LeaderboardAccountMatchRepository accountMatchRepository;
+    private AccountMatchRepository accountMatchRepository;
 
     @Mock
     private ActivityAccountBackgroundSyncService backgroundSyncService;
@@ -90,7 +90,7 @@ class RecentActivityServiceTest {
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW))
                 .thenReturn(Optional.of(new RiotLeagueEntryDto("RANKED_SOLO_5x5", "GOLD", "II", 55, 72, 65)));
-        when(backgroundSyncService.isSeasonHistoryExhausted(account.getRiotAccount().getId())).thenReturn(false);
+        when(backgroundSyncService.isSeasonHistoryExhausted(account.getRiotAccount().getId(), 137)).thenReturn(false);
         when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(
                 java.util.stream.IntStream.range(0, 100)
                         .mapToObj(i -> seasonRow(
@@ -126,7 +126,7 @@ class RecentActivityServiceTest {
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW))
                 .thenReturn(Optional.of(new RiotLeagueEntryDto("RANKED_SOLO_5x5", "GOLD", "II", 55, 2, 1)));
-        when(backgroundSyncService.isSeasonHistoryExhausted(account.getRiotAccount().getId())).thenReturn(false);
+        when(backgroundSyncService.isSeasonHistoryExhausted(account.getRiotAccount().getId(), 3)).thenReturn(false);
         when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(List.of());
 
         List<AccountRecentGamesResponse> result = service.listRecentGames(userId);
@@ -141,7 +141,7 @@ class RecentActivityServiceTest {
     void listRecentGames_marksCompleteWhenSeasonHistoryExhausted() {
         UUID userId = UUID.randomUUID();
         UserRiotAccount account = linkedAccount(userId, PUUID);
-        account.markActivitySeasonHistoryExhausted();
+        account.markActivitySeasonHistoryExhausted(500);
         when(userRiotAccountRepository.findByUserId(userId)).thenReturn(Optional.of(account));
         when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(
                 java.util.stream.IntStream.range(0, 125)
@@ -242,7 +242,7 @@ class RecentActivityServiceTest {
                 participant.getProfileIconId()
         )).thenReturn(riotAccount);
         when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW)).thenReturn(Optional.empty());
-        when(backgroundSyncService.isSeasonHistoryExhausted(riotAccount.getId())).thenReturn(false);
+        when(backgroundSyncService.isSeasonHistoryExhausted(riotAccount.getId(), 500)).thenReturn(false);
         when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(List.of());
 
         Optional<AccountRecentGamesResponse> result = service.getActivityForRiotId("NoLink", "NA1");
@@ -258,7 +258,7 @@ class RecentActivityServiceTest {
         when(riotAccountRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase("Tanor", "EUW"))
                 .thenReturn(Optional.of(riotAccount));
         when(riotLeagueClient.findRankedSoloEntry(PUUID, ChallengeRegion.EUW)).thenReturn(Optional.empty());
-        when(backgroundSyncService.isSeasonHistoryExhausted(riotAccount.getId())).thenReturn(false);
+        when(backgroundSyncService.isSeasonHistoryExhausted(riotAccount.getId(), 500)).thenReturn(false);
         when(accountMatchRepository.findSeasonActivitySince(PUUID, SEASON_START)).thenReturn(List.of());
 
         Optional<AccountRecentGamesResponse> result = service.getActivityForRiotId("Tanor", "EUW");

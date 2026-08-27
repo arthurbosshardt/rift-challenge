@@ -9,9 +9,9 @@ import com.riftchallenge.challenge.dto.AccountRecentGamesResponse;
 import com.riftchallenge.challenge.dto.ChampionStatResponse;
 import com.riftchallenge.challenge.dto.PlaystyleResponse;
 import com.riftchallenge.challenge.dto.RecentGameResponse;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.ChampionRankRow;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.SeasonActivityRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository.ChampionRankRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository.SeasonActivityRow;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.ChampionIconUrlService;
@@ -42,7 +42,7 @@ public class RecentActivityService {
     private final RiotAccountRepository riotAccountRepository;
     private final ChallengeParticipantRepository participantRepository;
     private final RiotAccountService riotAccountService;
-    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final AccountMatchRepository accountMatchRepository;
     private final ActivityAccountBackgroundSyncService backgroundSyncService;
     private final RiotLeagueClient riotLeagueClient;
     private final ChampionIconUrlService championIconUrlService;
@@ -53,7 +53,7 @@ public class RecentActivityService {
             RiotAccountRepository riotAccountRepository,
             ChallengeParticipantRepository participantRepository,
             RiotAccountService riotAccountService,
-            LeaderboardAccountMatchRepository accountMatchRepository,
+            AccountMatchRepository accountMatchRepository,
             ActivityAccountBackgroundSyncService backgroundSyncService,
             RiotLeagueClient riotLeagueClient,
             ChampionIconUrlService championIconUrlService,
@@ -108,8 +108,8 @@ public class RecentActivityService {
 
         int syncedGames = seasonRows.size();
         boolean seasonSyncComplete = syncedGames >= seasonMatchTotal
-                || account.isActivitySeasonHistoryExhausted()
-                || backgroundSyncService.isSeasonHistoryExhausted(account.getId());
+                || isSeasonHistoryExhaustedAndStillValid(account, seasonMatchTotal)
+                || backgroundSyncService.isSeasonHistoryExhausted(account.getId(), seasonMatchTotal);
         boolean seasonSyncInProgress = !seasonSyncComplete;
         ChampionStatsResult statsResult = !seasonRows.isEmpty()
                 ? buildSeasonChampionStatsFromRows(account.getRiotPuuid(), seasonRows)
@@ -137,6 +137,16 @@ public class RecentActivityService {
 
     private static int seasonMatchTotal(Optional<RiotLeagueEntryDto> currentRank) {
         return ActivitySeasonMatchTotals.seasonMatchTotal(currentRank);
+    }
+
+    /** A stale exhausted flag (recorded before the player's live season total grew from a new
+     *  game) must not report the season as fully synced. */
+    private static boolean isSeasonHistoryExhaustedAndStillValid(RiotAccount account, int seasonMatchTotal) {
+        if (!account.isActivitySeasonHistoryExhausted()) {
+            return false;
+        }
+        Integer exhaustedAtTotal = account.getActivitySeasonHistoryExhaustedTotal();
+        return exhaustedAtTotal != null && exhaustedAtTotal >= seasonMatchTotal;
     }
 
     private static Integer seasonWins(Optional<RiotLeagueEntryDto> currentRank, List<SeasonActivityRow> seasonRows) {

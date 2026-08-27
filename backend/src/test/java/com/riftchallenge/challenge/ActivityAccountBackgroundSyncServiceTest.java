@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.leaderboard.LeaderboardAccountSyncService;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.RiotMatchLookupService;
@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ActivityAccountBackgroundSyncServiceTest {
@@ -40,7 +41,7 @@ class ActivityAccountBackgroundSyncServiceTest {
     private LeaderboardAccountSyncService accountSyncService;
 
     @Mock
-    private LeaderboardAccountMatchRepository accountMatchRepository;
+    private AccountMatchRepository accountMatchRepository;
 
     @Mock
     private RiotAccountRepository riotAccountRepository;
@@ -159,6 +160,39 @@ class ActivityAccountBackgroundSyncServiceTest {
         assertThat(service.isCatchUpActive(account.getId())).isFalse();
         verify(riotAccountRepository, timeout(2_000)).save(account);
         assertThat(account.isActivitySeasonHistoryExhausted()).isTrue();
+    }
+
+    /** Guards the exact bug this total-tracking exists for: a player who was marked exhausted
+     *  and then went on to play new ranked games must not stay stuck forever. */
+    @Test
+    void isSeasonHistoryExhausted_staleOncePersistedTotalIsBelowLiveTotal() {
+        RiotAccount account = riotAccount();
+        account.markActivitySeasonHistoryExhausted(137);
+        when(riotAccountRepository.findById(account.getId())).thenReturn(java.util.Optional.of(account));
+
+        assertThat(service.isSeasonHistoryExhausted(account.getId(), 145)).isFalse();
+    }
+
+    @Test
+    void isSeasonHistoryExhausted_stillBlocksWhenPersistedTotalIsAtLeastLiveTotal() {
+        RiotAccount account = riotAccount();
+        account.markActivitySeasonHistoryExhausted(137);
+        when(riotAccountRepository.findById(account.getId())).thenReturn(java.util.Optional.of(account));
+
+        assertThat(service.isSeasonHistoryExhausted(account.getId(), 137)).isTrue();
+    }
+
+    /** Rows written before this tracking existed have a {@code null} recorded total; treat that as
+     *  stale rather than permanently blocking, so accounts stuck by the old bug unstick themselves
+     *  on the very next request instead of needing a manual DB fix. */
+    @Test
+    void isSeasonHistoryExhausted_treatsUnknownPersistedTotalAsStale() {
+        RiotAccount account = riotAccount();
+        account.markActivitySeasonHistoryExhausted(137);
+        ReflectionTestUtils.setField(account, "activitySeasonHistoryExhaustedTotal", null);
+        when(riotAccountRepository.findById(account.getId())).thenReturn(java.util.Optional.of(account));
+
+        assertThat(service.isSeasonHistoryExhausted(account.getId(), 137)).isFalse();
     }
 
     private static RiotAccount riotAccount() {

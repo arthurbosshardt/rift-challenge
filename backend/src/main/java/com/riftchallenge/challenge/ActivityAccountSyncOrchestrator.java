@@ -3,7 +3,7 @@ package com.riftchallenge.challenge;
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.UserRiotAccount;
 import com.riftchallenge.account.UserRiotAccountRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.leaderboard.LeaderboardProperties;
 import com.riftchallenge.riot.RiotLeagueClient;
 import org.slf4j.Logger;
@@ -16,14 +16,14 @@ public class ActivityAccountSyncOrchestrator {
     private static final Logger log = LoggerFactory.getLogger(ActivityAccountSyncOrchestrator.class);
 
     private final UserRiotAccountRepository userRiotAccountRepository;
-    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final AccountMatchRepository accountMatchRepository;
     private final ActivityAccountBackgroundSyncService backgroundSyncService;
     private final RiotLeagueClient riotLeagueClient;
     private final LeaderboardProperties leaderboardProperties;
 
     public ActivityAccountSyncOrchestrator(
             UserRiotAccountRepository userRiotAccountRepository,
-            LeaderboardAccountMatchRepository accountMatchRepository,
+            AccountMatchRepository accountMatchRepository,
             ActivityAccountBackgroundSyncService backgroundSyncService,
             RiotLeagueClient riotLeagueClient,
             LeaderboardProperties leaderboardProperties

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.RiotMatchClient;
 import com.riftchallenge.riot.RiotMatchLookupService;
@@ -44,7 +45,7 @@ class LeaderboardAccountSyncServiceTest {
     private RiotAccountRepository riotAccountRepository;
 
     @Mock
-    private LeaderboardAccountMatchRepository accountMatchRepository;
+    private AccountMatchRepository accountMatchRepository;
 
     @Mock
     private LeaderboardAccountRankRepository accountRankRepository;
@@ -78,6 +79,7 @@ class LeaderboardAccountSyncServiceTest {
         );
 
         account = TestRiotAccounts.riotAccount(PUUID, "Player", "EUW");
+        account.assignRegion(ChallengeRegion.EUW);
         lenient().when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         lenient().when(riotAccountRepository.findPuidsIn(any())).thenReturn(List.of());
         lenient().when(riotLeagueClient.findRankedSoloEntry(any(), any())).thenReturn(Optional.empty());
@@ -205,8 +207,8 @@ class LeaderboardAccountSyncServiceTest {
         );
     }
 
-    private static LeaderboardAccountMatch linkedMatch(String matchId, boolean win, int championId) {
-        return LeaderboardAccountMatch.create(
+    private static AccountMatch linkedMatch(String matchId, boolean win, int championId) {
+        return AccountMatch.create(
                 PUUID, matchId, win, championId, "Champ", 5, 2, 7, 150, 1_800L
         );
     }

@@ -7,8 +7,8 @@ import com.riftchallenge.riot.ChampionIconUrlService;
 import com.riftchallenge.riot.MatchLpEstimator;
 import com.riftchallenge.riot.RankReplayService;
 import com.riftchallenge.riot.RankReplayService.RankState;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository.ParticipantMatchHistoryRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository.ParticipantMatchHistoryRow;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,11 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MatchHistoryService {
 
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
+    private final AccountMatchRepository participantMatchRepository;
     private final ChampionIconUrlService championIconUrlService;
 
     public MatchHistoryService(
-            ChallengeParticipantMatchRepository participantMatchRepository,
+            AccountMatchRepository participantMatchRepository,
             ChampionIconUrlService championIconUrlService
     ) {
         this.participantMatchRepository = participantMatchRepository;
@@ -103,7 +103,7 @@ public class MatchHistoryService {
             return List.of();
         }
 
-        List<ChallengeParticipantMatchRepository.DuoMatchHistoryRow> rows = MaxGamesCap.capToOldest(
+        List<AccountMatchRepository.DuoMatchHistoryRow> rows = MaxGamesCap.capToOldest(
                 participantMatchRepository.findDuoHistoryByParticipantIdsAndChallengeId(
                         player1.getId(),
                         player2.getId(),
@@ -111,7 +111,7 @@ public class MatchHistoryService {
                         inWindowTogetherMatchIds
                 ),
                 challenge.getMaxGames(),
-                ChallengeParticipantMatchRepository.DuoMatchHistoryRow::getGameStart
+                AccountMatchRepository.DuoMatchHistoryRow::getGameStart
         );
         if (rows.isEmpty()) {
             return List.of();
@@ -121,7 +121,7 @@ public class MatchHistoryService {
         RankState state2 = rankStateFromProgress(progress2);
         List<DuoMatchHistoryResponse> history = new ArrayList<>();
 
-        for (ChallengeParticipantMatchRepository.DuoMatchHistoryRow row : rows) {
+        for (AccountMatchRepository.DuoMatchHistoryRow row : rows) {
             if (!isWithinChallengeWindow(row.getGameStart(), challenge.getStartAt(), challenge.getEndAt())) {
                 continue;
             }

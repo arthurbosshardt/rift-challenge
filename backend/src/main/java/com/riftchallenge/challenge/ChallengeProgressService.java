@@ -9,7 +9,7 @@ import com.riftchallenge.riot.RankScoreConverter;
 import com.riftchallenge.synchronization.RankSnapshot;
 import com.riftchallenge.synchronization.RankSnapshot.SnapshotType;
 import com.riftchallenge.synchronization.RankSnapshotRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +27,13 @@ public class ChallengeProgressService {
     static final int MIN_MATCHES_FOR_RANK_ESTIMATE = RankReplayService.MIN_MATCHES_FOR_RANK_ESTIMATE;
 
     private final RankSnapshotRepository rankSnapshotRepository;
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
+    private final AccountMatchRepository participantMatchRepository;
     private final MatchHistoryService matchHistoryService;
     private final ChallengeRepository challengeRepository;
 
     public ChallengeProgressService(
             RankSnapshotRepository rankSnapshotRepository,
-            ChallengeParticipantMatchRepository participantMatchRepository,
+            AccountMatchRepository participantMatchRepository,
             MatchHistoryService matchHistoryService,
             ChallengeRepository challengeRepository
     ) {
@@ -77,7 +77,7 @@ public class ChallengeProgressService {
                         .countWinsAndLossesInChallengeWindowForParticipants(participantIds, challengeId)
                         .stream()
                         .collect(Collectors.toMap(
-                                ChallengeParticipantMatchRepository.ParticipantWinLossCount::getParticipantId,
+                                AccountMatchRepository.ParticipantWinLossCount::getParticipantId,
                                 row -> new ParticipantWinLoss(row.getWins(), row.getLosses())
                         ));
 
@@ -103,21 +103,21 @@ public class ChallengeProgressService {
             UUID challengeId,
             int maxGames
     ) {
-        Map<UUID, List<ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindowForParticipant>> outcomesByParticipant =
+        Map<UUID, List<AccountMatchRepository.ParticipantMatchOutcomeInWindowForParticipant>> outcomesByParticipant =
                 participantMatchRepository.findOutcomesInChallengeWindowForParticipants(participantIds, challengeId).stream()
                         .collect(Collectors.groupingBy(
-                                ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindowForParticipant::getParticipantId
+                                AccountMatchRepository.ParticipantMatchOutcomeInWindowForParticipant::getParticipantId
                         ));
 
         Map<UUID, ParticipantWinLoss> result = new HashMap<>();
-        for (Map.Entry<UUID, List<ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindowForParticipant>> entry
+        for (Map.Entry<UUID, List<AccountMatchRepository.ParticipantMatchOutcomeInWindowForParticipant>> entry
                 : outcomesByParticipant.entrySet()) {
-            List<ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindowForParticipant> capped = MaxGamesCap.capToOldest(
+            List<AccountMatchRepository.ParticipantMatchOutcomeInWindowForParticipant> capped = MaxGamesCap.capToOldest(
                     entry.getValue(),
                     maxGames,
-                    ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindowForParticipant::getGameStart
+                    AccountMatchRepository.ParticipantMatchOutcomeInWindowForParticipant::getGameStart
             );
-            result.put(entry.getKey(), countWinLoss(capped, ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindowForParticipant::isWin));
+            result.put(entry.getKey(), countWinLoss(capped, AccountMatchRepository.ParticipantMatchOutcomeInWindowForParticipant::isWin));
         }
         return result;
     }
@@ -168,12 +168,12 @@ public class ChallengeProgressService {
 
         ParticipantWinLoss syncedWinLoss;
         if (challenge != null && challenge.getMaxGames() != null) {
-            List<ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow> capped = MaxGamesCap.capToOldest(
+            List<AccountMatchRepository.ParticipantMatchOutcomeInWindow> capped = MaxGamesCap.capToOldest(
                     participantMatchRepository.findOutcomesInChallengeWindow(participantId, challengeId),
                     challenge.getMaxGames(),
-                    ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::getGameStart
+                    AccountMatchRepository.ParticipantMatchOutcomeInWindow::getGameStart
             );
-            syncedWinLoss = countWinLoss(capped, ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::isWin);
+            syncedWinLoss = countWinLoss(capped, AccountMatchRepository.ParticipantMatchOutcomeInWindow::isWin);
         } else {
             long syncedWins = participantMatchRepository.countWinsInChallengeWindow(participantId, challengeId);
             long syncedLosses = participantMatchRepository.countLossesInChallengeWindow(participantId, challengeId);
@@ -268,13 +268,13 @@ public class ChallengeProgressService {
     }
 
     private Optional<MatchBasedRankEstimate> estimateRankFromSyncedMatches(UUID participantId, UUID challengeId, Challenge challenge) {
-        List<ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow> outcomes = MaxGamesCap.capToOldest(
+        List<AccountMatchRepository.ParticipantMatchOutcomeInWindow> outcomes = MaxGamesCap.capToOldest(
                 participantMatchRepository.findOutcomesInChallengeWindow(participantId, challengeId),
                 challenge == null ? null : challenge.getMaxGames(),
-                ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::getGameStart
+                AccountMatchRepository.ParticipantMatchOutcomeInWindow::getGameStart
         );
         List<Boolean> winsOldestFirst = outcomes.stream()
-                .map(ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow::isWin)
+                .map(AccountMatchRepository.ParticipantMatchOutcomeInWindow::isWin)
                 .toList()
                 .reversed();
 

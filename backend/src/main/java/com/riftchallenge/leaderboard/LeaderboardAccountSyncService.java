@@ -31,11 +31,16 @@ import org.springframework.web.server.ResponseStatusException;
  * depend on which challenge(s) they've joined or how often those get refreshed. Runs only from
  * {@link LeaderboardCacheService#refresh}, same cadence as the leaderboard recompute itself.
  *
- * <p>Tracked accounts aren't region-tagged yet; assumes EUW,
- * same simplification used everywhere else a linked account is queried outside a challenge.
+ * <p>Tracked accounts aren't region-tagged at creation: {@link #resolveRegion} lazily detects and
+ * caches each account's server on its first sync by probing every distinct continental routing.
  */
 @Service
 public class LeaderboardAccountSyncService {
+
+    /** Representative probe for each distinct continental routing (EUNE shares EUW's "europe"). */
+    private static final ChallengeRegion[] PROBE_REGIONS = {ChallengeRegion.EUW, ChallengeRegion.NA, ChallengeRegion.KR};
+    /** Unbounded lower bound for {@link #backfillFullHistory}, which fetches full history, not just the current season. */
+    private static final long FULL_HISTORY_START_EPOCH_SECONDS = 0L;
 
     static final int MAX_NEW_MATCHES_PER_SYNC = 10;
     static final int MAX_CATCHUP_MATCHES = 10;
@@ -58,7 +63,7 @@ public class LeaderboardAccountSyncService {
     private static final Logger log = LoggerFactory.getLogger(LeaderboardAccountSyncService.class);
 
     private final RiotAccountRepository riotAccountRepository;
-    private final LeaderboardAccountMatchRepository accountMatchRepository;
+    private final AccountMatchRepository accountMatchRepository;
     private final LeaderboardAccountRankRepository accountRankRepository;
     private final RiotMatchRepository riotMatchRepository;
     private final RiotLeagueClient riotLeagueClient;
@@ -68,7 +73,7 @@ public class LeaderboardAccountSyncService {
 
     public LeaderboardAccountSyncService(
             RiotAccountRepository riotAccountRepository,
-            LeaderboardAccountMatchRepository accountMatchRepository,
+            AccountMatchRepository accountMatchRepository,
             LeaderboardAccountRankRepository accountRankRepository,
             RiotMatchRepository riotMatchRepository,
             RiotLeagueClient riotLeagueClient,
@@ -94,7 +99,12 @@ public class LeaderboardAccountSyncService {
         try {
             for (RiotAccount account : accounts) {
                 try {
-                    riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid(), ChallengeRegion.EUW)
+                    ChallengeRegion region = resolveRegion(account);
+                    if (region == null) {
+                        continue;
+                    }
+
+                    riotLeagueClient.findRankedSoloEntry(account.getRiotPuuid(), region)
                             .ifPresent(entry -> upsertRank(account.getRiotPuuid(), now, entry));
 
                     if (remainingBudget <= 0) {
@@ -108,7 +118,7 @@ public class LeaderboardAccountSyncService {
                         continue;
                     }
 
-                    remainingBudget -= syncMatches(account, now, remainingBudget);
+                    remainingBudget -= syncMatches(account, region, now, remainingBudget);
                 } catch (ResponseStatusException exception) {
                     if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
                         log.warn("Riot API rate limit while syncing leaderboard accounts; stopping this pass");
@@ -131,11 +141,45 @@ public class LeaderboardAccountSyncService {
     }
 
     /**
+     * Resolves and caches which Riot server a tracked account plays on. Accounts aren't
+     * region-tagged when created (see {@code RiotAccountService#findOrCreate}), so on an
+     * account's first sync this probes one representative platform per distinct continental
+     * routing for a single recent ranked solo/duo match id, then decodes the exact platform from
+     * its prefix via {@link ChallengeRegion#fromMatchId}. Once persisted, later syncs reuse the
+     * cached value with no extra Riot calls.
+     *
+     * @return the account's region, or {@code null} if none of the probes found any ranked
+     *     solo/duo history for this account yet.
+     */
+    private ChallengeRegion resolveRegion(RiotAccount account) {
+        ChallengeRegion cached = account.getRegion();
+        if (cached != null) {
+            return cached;
+        }
+
+        for (ChallengeRegion probe : PROBE_REGIONS) {
+            List<String> matchIds = riotMatchClient.getRecentRankedSoloMatchIds(account.getRiotPuuid(), 1, probe);
+            if (!matchIds.isEmpty()) {
+                ChallengeRegion resolved = ChallengeRegion.fromMatchId(matchIds.get(0));
+                account.assignRegion(resolved);
+                riotAccountRepository.save(account);
+                return resolved;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Incrementally imports missing ranked solo/duo season matches for one linked account.
      * Called on Mes statistiques refresh so champion stats can be served from DB (OP.GG-style)
      * without hundreds of live Riot calls per page load.
      */
     public ActivitySyncBatchResult syncAccountForActivity(RiotAccount account, int seasonMatchTotal) {
+        ChallengeRegion region = resolveRegion(account);
+        if (region == null) {
+            return new ActivitySyncBatchResult(0, true);
+        }
+
         int fetchLimit = Math.min(Math.max(seasonMatchTotal, 1), 500);
         String puuid = account.getRiotPuuid();
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
@@ -143,11 +187,12 @@ public class LeaderboardAccountSyncService {
                 properties.seasonStartAt().getEpochSecond(),
                 null,
                 fetchLimit,
-                ChallengeRegion.EUW
+                region
         );
 
         int used = syncMatches(
                 account,
+                region,
                 ACTIVITY_MAX_IMPORTS_PER_REFRESH,
                 ACTIVITY_MAX_CATCHUP_MATCHES,
                 fetchLimit,
@@ -182,7 +227,7 @@ public class LeaderboardAccountSyncService {
 
         int updated = 0;
         for (String matchId : matchIds) {
-            Optional<LeaderboardAccountMatch> existing =
+            Optional<AccountMatch> existing =
                     accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId);
             if (existing.isEmpty() || existing.get().hasCombatStats()) {
                 continue;
@@ -218,13 +263,18 @@ public class LeaderboardAccountSyncService {
      * @return how many new matches were imported.
      */
     public int backfillFullHistory(RiotAccount account) {
+        ChallengeRegion region = resolveRegion(account);
+        if (region == null) {
+            return 0;
+        }
+
         String puuid = account.getRiotPuuid();
         List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
                 puuid,
-                properties.seasonStartAt().getEpochSecond(),
+                FULL_HISTORY_START_EPOCH_SECONDS,
                 null,
                 Integer.MAX_VALUE,
-                ChallengeRegion.EUW
+                region
         );
 
         int imported = 0;
@@ -249,13 +299,14 @@ public class LeaderboardAccountSyncService {
     }
 
     /** @return how many match-detail fetches were performed for this account. */
-    private int syncMatches(RiotAccount account, Instant now, int budget) {
+    private int syncMatches(RiotAccount account, ChallengeRegion region, Instant now, int budget) {
         long existingMatches = accountMatchRepository.countByRiotPuuid(account.getRiotPuuid());
         int fetchLimit = existingMatches == 0
                 ? Math.min(MAX_CATCHUP_MATCHES, budget)
                 : (int) Math.min(100, existingMatches + MAX_NEW_MATCHES_PER_SYNC);
         return syncMatches(
                 account,
+                region,
                 MAX_NEW_MATCHES_PER_SYNC,
                 MAX_CATCHUP_MATCHES,
                 fetchLimit,
@@ -266,6 +317,7 @@ public class LeaderboardAccountSyncService {
     /** @return how many match-detail fetches were performed for this account. */
     private int syncMatches(
             RiotAccount account,
+            ChallengeRegion region,
             int importLimit,
             int catchUpImportLimit,
             int fetchLimit,
@@ -280,7 +332,7 @@ public class LeaderboardAccountSyncService {
                 properties.seasonStartAt().getEpochSecond(),
                 null,
                 fetchLimit,
-                ChallengeRegion.EUW
+                region
         );
 
         int fetched = 0;
@@ -289,7 +341,7 @@ public class LeaderboardAccountSyncService {
                 break;
             }
 
-            Optional<LeaderboardAccountMatch> existing =
+            Optional<AccountMatch> existing =
                     accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId);
             if (existing.isPresent()) {
                 if (!existing.get().hasCombatStats()) {
@@ -374,7 +426,7 @@ public class LeaderboardAccountSyncService {
 
         ParticipantSnapshot snapshot = participant.get();
         try {
-            accountMatchRepository.save(LeaderboardAccountMatch.create(
+            accountMatchRepository.save(AccountMatch.create(
                     puuid,
                     matchId,
                     snapshot.win(),
@@ -394,7 +446,7 @@ public class LeaderboardAccountSyncService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    boolean backfillMatchStats(LeaderboardAccountMatch linkedMatch, String puuid, String matchId) {
+    boolean backfillMatchStats(AccountMatch linkedMatch, String puuid, String matchId) {
         RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
         if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
             return false;

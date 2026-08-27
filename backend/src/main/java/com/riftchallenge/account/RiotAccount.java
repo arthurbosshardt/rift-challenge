@@ -1,5 +1,6 @@
 package com.riftchallenge.account;
 
+import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,6 +32,12 @@ public class RiotAccount {
 
     @Column(name = "activity_season_history_exhausted", nullable = false)
     private boolean activitySeasonHistoryExhausted;
+
+    @Column(name = "activity_season_history_exhausted_total")
+    private Integer activitySeasonHistoryExhaustedTotal;
+
+    @Column(name = "region", length = 8)
+    private String region;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -104,11 +111,29 @@ public class RiotAccount {
         return activitySeasonHistoryExhausted;
     }
 
-    public void markActivitySeasonHistoryExhausted() {
+    /** Season match total (wins + losses) recorded when the exhausted flag was last set, or {@code null}
+     *  if unknown (e.g. rows written before this tracking existed). A stale flag whose recorded total
+     *  is lower than the current live season total no longer blocks catch-up. */
+    public Integer getActivitySeasonHistoryExhaustedTotal() {
+        return activitySeasonHistoryExhaustedTotal;
+    }
+
+    public void markActivitySeasonHistoryExhausted(int seasonMatchTotal) {
         this.activitySeasonHistoryExhausted = true;
+        this.activitySeasonHistoryExhaustedTotal = seasonMatchTotal;
     }
 
     public void clearActivitySeasonHistoryExhausted() {
         this.activitySeasonHistoryExhausted = false;
+        this.activitySeasonHistoryExhaustedTotal = null;
+    }
+
+    /** Riot server this account was last confirmed to play on, or {@code null} if not yet detected. */
+    public ChallengeRegion getRegion() {
+        return region == null ? null : ChallengeRegion.valueOf(region);
+    }
+
+    public void assignRegion(ChallengeRegion region) {
+        this.region = region.name();
     }
 }

@@ -15,7 +15,7 @@ import com.riftchallenge.challenge.dto.UpdateChallengeScheduleRequest;
 import com.riftchallenge.challenge.dto.UpdateChallengeStartRequest;
 import com.riftchallenge.match.MatchDetailService;
 import com.riftchallenge.match.dto.MatchDetailResponse;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -48,7 +48,7 @@ public class ChallengeController {
     private final RecentActivityRequestThrottle recentActivityRequestThrottle;
     private final ChallengeParticipantRepository participantRepository;
     private final ChallengeDuoRepository duoRepository;
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
+    private final AccountMatchRepository participantMatchRepository;
     private final MatchDetailService matchDetailService;
 
     public ChallengeController(
@@ -62,7 +62,7 @@ public class ChallengeController {
             RecentActivityRequestThrottle recentActivityRequestThrottle,
             ChallengeParticipantRepository participantRepository,
             ChallengeDuoRepository duoRepository,
-            ChallengeParticipantMatchRepository participantMatchRepository,
+            AccountMatchRepository participantMatchRepository,
             MatchDetailService matchDetailService
     ) {
         this.challengeService = challengeService;
@@ -258,7 +258,7 @@ public class ChallengeController {
     ) {
         ChallengeParticipant participant = participantRepository.findByIdAndChallengeId(participantId, challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
-        if (!participantMatchRepository.existsByParticipantIdAndRiotMatchId(participantId, matchId)) {
+        if (!participantMatchRepository.existsByRiotPuuidAndRiotMatchId(participant.getRiotPuuid(), matchId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
         }
         return matchDetailService.buildMatchDetail(matchId, participant.getRiotPuuid());
@@ -277,7 +277,7 @@ public class ChallengeController {
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duo has no players"));
         boolean matchLinked = duoPlayers.stream()
-                .anyMatch(player -> participantMatchRepository.existsByParticipantIdAndRiotMatchId(player.getId(), matchId));
+                .anyMatch(player -> participantMatchRepository.existsByRiotPuuidAndRiotMatchId(player.getRiotPuuid(), matchId));
         if (!matchLinked) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
         }

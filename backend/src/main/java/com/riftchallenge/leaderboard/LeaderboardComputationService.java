@@ -2,7 +2,7 @@ package com.riftchallenge.leaderboard;
 
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
-import com.riftchallenge.leaderboard.LeaderboardAccountMatchRepository.AccountMatchHistoryRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardMatchHistoryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
@@ -40,14 +40,14 @@ public class LeaderboardComputationService {
     private static final Duration ROLLING_WINDOW = Duration.ofDays(7);
 
     private final RiotAccountRepository riotAccountRepository;
-    private final LeaderboardAccountMatchRepository matchRepository;
+    private final AccountMatchRepository matchRepository;
     private final LeaderboardAccountRankRepository rankRepository;
     private final LeaderboardProperties properties;
     private final ChampionIconUrlService championIconUrlService;
 
     public LeaderboardComputationService(
             RiotAccountRepository riotAccountRepository,
-            LeaderboardAccountMatchRepository matchRepository,
+            AccountMatchRepository matchRepository,
             LeaderboardAccountRankRepository rankRepository,
             LeaderboardProperties properties,
             ChampionIconUrlService championIconUrlService

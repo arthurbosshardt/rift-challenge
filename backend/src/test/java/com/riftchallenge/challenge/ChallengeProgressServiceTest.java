@@ -9,8 +9,8 @@ import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.synchronization.RankSnapshot;
 import com.riftchallenge.synchronization.RankSnapshotRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository;
-import com.riftchallenge.synchronization.ChallengeParticipantMatchRepository.ParticipantMatchOutcomeInWindow;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
+import com.riftchallenge.leaderboard.AccountMatchRepository.ParticipantMatchOutcomeInWindow;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,7 +27,7 @@ class ChallengeProgressServiceTest {
     private RankSnapshotRepository rankSnapshotRepository;
 
     @Mock
-    private ChallengeParticipantMatchRepository participantMatchRepository;
+    private AccountMatchRepository participantMatchRepository;
 
     @Mock
     private MatchHistoryService matchHistoryService;

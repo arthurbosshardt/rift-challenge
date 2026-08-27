@@ -2,6 +2,8 @@ package com.riftchallenge.synchronization;
 
 import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeParticipantRepository;
+import com.riftchallenge.leaderboard.AccountMatch;
+import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.riot.RiotMatchLookupService;
 import com.riftchallenge.riot.dto.RiotMatchDetailDto;
 import java.util.ArrayList;
@@ -24,31 +26,31 @@ public class ParticipantMatchChampionBackfillService {
     static final int BATCH_SIZE = 100;
 
     private final ChallengeParticipantRepository participantRepository;
-    private final ChallengeParticipantMatchRepository participantMatchRepository;
+    private final AccountMatchRepository accountMatchRepository;
     private final RiotMatchLookupService riotMatchLookupService;
 
     public ParticipantMatchChampionBackfillService(
             ChallengeParticipantRepository participantRepository,
-            ChallengeParticipantMatchRepository participantMatchRepository,
+            AccountMatchRepository accountMatchRepository,
             RiotMatchLookupService riotMatchLookupService
     ) {
         this.participantRepository = participantRepository;
-        this.participantMatchRepository = participantMatchRepository;
+        this.accountMatchRepository = accountMatchRepository;
         this.riotMatchLookupService = riotMatchLookupService;
     }
 
     public int backfillAll() {
-        long missing = participantMatchRepository.countByChampionIdIsNull();
+        long missing = accountMatchRepository.countByChampionIdIsNull();
         if (missing == 0) {
             log.info("Champion ID backfill: nothing to update");
             return 0;
         }
 
-        log.info("Champion ID backfill: {} participant-match rows missing champion_id", missing);
+        log.info("Champion ID backfill: {} account-match rows missing champion_id", missing);
         int updated = 0;
 
         while (true) {
-            List<ChallengeParticipantMatch> batch = participantMatchRepository.findAllMissingChampionId(
+            List<AccountMatch> batch = accountMatchRepository.findAllMissingChampionId(
                     PageRequest.of(0, BATCH_SIZE)
             );
             if (batch.isEmpty()) {
@@ -69,57 +71,42 @@ public class ParticipantMatchChampionBackfillService {
         }
 
         while (true) {
-            List<ChallengeParticipantMatch> batch = participantMatchRepository.findMissingChampionIdByParticipantId(
-                    participantId,
+            List<AccountMatch> batch = accountMatchRepository.findMissingChampionIdByRiotPuuid(
+                    participant.getRiotPuuid(),
                     PageRequest.of(0, BATCH_SIZE)
             );
             if (batch.isEmpty()) {
                 return;
             }
-            backfillBatchForParticipant(participant, batch);
+            backfillBatch(batch);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void backfillMatchIfMissing(ChallengeParticipant participant, String matchId) {
-        participantMatchRepository.findByParticipantIdAndRiotMatchId(participant.getId(), matchId)
+        accountMatchRepository.findByRiotPuuidAndRiotMatchId(participant.getRiotPuuid(), matchId)
                 .filter(link -> link.getChampionId() == null)
-                .ifPresent(link -> backfillMatchLinksForParticipant(participant, matchId, List.of(link)));
+                .ifPresent(link -> backfillMatchLinks(matchId, List.of(link)));
     }
 
-    private int backfillBatch(List<ChallengeParticipantMatch> links) {
-        Map<String, List<ChallengeParticipantMatch>> linksByMatchId = groupByMatchId(links);
+    private int backfillBatch(List<AccountMatch> links) {
+        Map<String, List<AccountMatch>> linksByMatchId = groupByMatchId(links);
         int updated = 0;
 
-        for (Map.Entry<String, List<ChallengeParticipantMatch>> entry : linksByMatchId.entrySet()) {
+        for (Map.Entry<String, List<AccountMatch>> entry : linksByMatchId.entrySet()) {
             updated += backfillMatchLinks(entry.getKey(), entry.getValue());
         }
 
         return updated;
     }
 
-    private int backfillBatchForParticipant(ChallengeParticipant participant, List<ChallengeParticipantMatch> links) {
-        Map<String, List<ChallengeParticipantMatch>> linksByMatchId = groupByMatchId(links);
-        int updated = 0;
-
-        for (Map.Entry<String, List<ChallengeParticipantMatch>> entry : linksByMatchId.entrySet()) {
-            updated += backfillMatchLinksForParticipant(participant, entry.getKey(), entry.getValue());
-        }
-
-        return updated;
-    }
-
-    private int backfillMatchLinks(String matchId, List<ChallengeParticipantMatch> links) {
+    private int backfillMatchLinks(String matchId, List<AccountMatch> links) {
         try {
             RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
             int updated = 0;
 
-            for (ChallengeParticipantMatch link : links) {
-                ChallengeParticipant participant = participantRepository.findById(link.getParticipantId()).orElse(null);
-                if (participant == null) {
-                    continue;
-                }
-                if (persistChampionId(participant, link, match)) {
+            for (AccountMatch link : links) {
+                if (persistChampionId(link, match)) {
                     updated++;
                 }
             }
@@ -131,47 +118,21 @@ public class ParticipantMatchChampionBackfillService {
         }
     }
 
-    private int backfillMatchLinksForParticipant(
-            ChallengeParticipant participant,
-            String matchId,
-            List<ChallengeParticipantMatch> links
-    ) {
-        try {
-            RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
-            int updated = 0;
-
-            for (ChallengeParticipantMatch link : links) {
-                if (persistChampionId(participant, link, match)) {
-                    updated++;
-                }
-            }
-
-            return updated;
-        } catch (RuntimeException ex) {
-            log.debug("Champion ID backfill skipped for match {}: {}", matchId, ex.getMessage());
-            return 0;
-        }
-    }
-
-    private boolean persistChampionId(
-            ChallengeParticipant participant,
-            ChallengeParticipantMatch link,
-            RiotMatchDetailDto match
-    ) {
-        Integer championId = extractChampionId(match, participant.getRiotPuuid());
+    private boolean persistChampionId(AccountMatch link, RiotMatchDetailDto match) {
+        Integer championId = extractChampionId(match, link.getRiotPuuid());
         if (championId == null) {
             return false;
         }
 
         link.updateChampionId(championId);
-        participantMatchRepository.save(link);
+        accountMatchRepository.save(link);
         return true;
     }
 
-    private static Map<String, List<ChallengeParticipantMatch>> groupByMatchId(List<ChallengeParticipantMatch> links) {
-        Map<String, List<ChallengeParticipantMatch>> grouped = new LinkedHashMap<>();
+    private static Map<String, List<AccountMatch>> groupByMatchId(List<AccountMatch> links) {
+        Map<String, List<AccountMatch>> grouped = new LinkedHashMap<>();
 
-        for (ChallengeParticipantMatch link : links) {
+        for (AccountMatch link : links) {
             grouped.computeIfAbsent(link.getRiotMatchId(), ignored -> new ArrayList<>()).add(link);
         }
 
