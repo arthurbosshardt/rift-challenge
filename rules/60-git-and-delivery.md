@@ -14,9 +14,9 @@ Sur push/PR vers `main` :
 
 CI ne nécessite aucun secret de production.
 
-## Keep-alive (`.github/workflows/keep-alive.yml`)
+## Keep-alive (`cloudflare/keep-alive-worker`)
 
-Ping périodique (10 min) de `/actuator/health` sur le backend Render pour limiter le cold start (offre gratuite Render : spin-down après inactivité). Nécessite la variable de repo `RENDER_HEALTH_URL` (Settings → Secrets and variables → Actions → Variables) — sans elle le job tourne mais ne fait rien.
+Ping périodique (5 min) de `/actuator/health` sur le backend Render pour limiter le cold start (offre gratuite Render : spin-down après inactivité), via un Cloudflare Worker avec Cron Trigger. Voir `cloudflare/keep-alive-worker/README.md` pour le setup et le déploiement. Remplace l'ancien workflow GitHub Actions, dont le scheduler pouvait sauter des exécutions sous charge.
 
 ## Déploiement
 

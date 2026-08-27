@@ -1,0 +1,13 @@
+name = "riftchallenge-keep-alive"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Cloudflare's cron scheduler runs on dedicated infra shared by all Workers,
+# not a CI job queue like GitHub Actions — triggers fire reliably at the
+# configured interval instead of being silently dropped under load.
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+# Not a secret (public health endpoint).
+HEALTH_URL = "https://riftchallenge-backend.onrender.com/actuator/health"

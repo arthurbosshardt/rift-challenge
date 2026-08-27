@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  HostListener,
+  afterNextRender,
+  inject,
+  signal,
+} from '@angular/core';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/t.pipe';
 
@@ -18,7 +26,20 @@ export class LanguageSwitchComponent {
   protected readonly bottomOffsetPx = signal(BASE_OFFSET_PX);
 
   constructor() {
-    this.updateOffset();
+    const destroyRef = inject(DestroyRef);
+
+    afterNextRender(() => {
+      this.updateOffset();
+
+      const footer = document.querySelector('footer.site-footer');
+      if (!footer || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const observer = new ResizeObserver(() => this.updateOffset());
+      observer.observe(document.body);
+      observer.observe(footer);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
   }
 
   @HostListener('window:scroll')

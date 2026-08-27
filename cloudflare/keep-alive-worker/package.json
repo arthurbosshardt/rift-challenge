@@ -1,0 +1,11 @@
+{
+  "name": "riftchallenge-keep-alive-worker",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

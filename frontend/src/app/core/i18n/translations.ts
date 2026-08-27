@@ -34,7 +34,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'landing.aboutTextBefore': 'Inspiré du fameux ',
     'landing.aboutLinkLabel': 'SoloQ Challenge',
     'landing.aboutTextMiddle':
-      ' (soloqchallenge.fr), Rift Challenge te permet de te mesurer à tes amis et au reste du monde, uniquement à travers la solo queue. ',
+      ', Rift Challenge te permet de te mesurer à tes amis et au reste du monde, uniquement à travers la solo queue. ',
     'landing.aboutCreateLinkLabel': 'Crée ton propre challenge',
     'landing.aboutTextAfterCreate':
       ' et compare ton avancement sur une période précise ou sur un nombre de games maximum autorisé. ',
@@ -501,7 +501,7 @@ export const TRANSLATIONS: Record<AppLocale, Record<string, string>> = {
     'landing.aboutTextBefore': 'Inspired by the famous ',
     'landing.aboutLinkLabel': 'SoloQ Challenge',
     'landing.aboutTextMiddle':
-      ' (soloqchallenge.fr), Rift Challenge lets you compete against your friends and the rest of the world, using solo queue only. ',
+      ', Rift Challenge lets you compete against your friends and the rest of the world, using solo queue only. ',
     'landing.aboutCreateLinkLabel': 'Create your own challenge',
     'landing.aboutTextAfterCreate':
       ' and track your progress over a set period or a maximum number of games. ',

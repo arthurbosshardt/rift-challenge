@@ -145,5 +145,5 @@ Guides détaillés :
 4. **Vercel → Environment Variables** — `API_BASE_URL` = URL publique du backend Render (ex. `https://ton-backend.onrender.com`)
 5. **Supabase** — Site URL `https://rift-challenge.com` + redirect URLs (voir [GOOGLE_OAUTH.md](docs/GOOGLE_OAUTH.md))
 6. **Google Cloud** — autoriser `https://rift-challenge.com` et `https://www.rift-challenge.com` dans les origins OAuth
-7. **GitHub → Settings → Secrets and variables → Actions → Variables** — `RENDER_HEALTH_URL` (URL `/actuator/health` du backend Render) pour le workflow anti cold-start (`.github/workflows/keep-alive.yml`)
+7. **Cloudflare Worker anti cold-start** — voir `cloudflare/keep-alive-worker/README.md` (ping périodique de `/actuator/health` sur le backend Render)
 8. Redéployer front + backend, puis tester login, création de challenge et lien partageable
