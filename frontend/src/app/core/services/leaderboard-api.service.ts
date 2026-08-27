@@ -17,6 +17,11 @@ export class LeaderboardApiService {
     return this.http.post<LeaderboardResponse>(apiUrl('/api/leaderboard/refresh'), {});
   }
 
+  /** Kicks off a full match-history backfill for every account, running in the background on the server. */
+  backfillHistory(): Observable<void> {
+    return this.http.post<void>(apiUrl('/api/admin/riot-accounts/backfill-history'), {});
+  }
+
   getPlayerMatchDetail(puuid: string, matchId: string): Observable<MatchDetail> {
     return this.http.get<MatchDetail>(apiUrl(`/api/leaderboard/players/${puuid}/matches/${matchId}`));
   }

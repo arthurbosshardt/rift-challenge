@@ -39,6 +39,9 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly refreshing = signal(false);
+  protected readonly backfilling = signal(false);
+  protected readonly backfillMessage = signal<string | null>(null);
+  protected readonly backfillMessageIsError = signal(false);
   protected readonly response = signal<LeaderboardResponse | null>(null);
   protected readonly timeframe = signal<LeaderboardTimeframe>('last7Days');
   protected readonly category = signal<LeaderboardCategory>('lpGained');
@@ -48,6 +51,7 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
 
   private tickInterval: ReturnType<typeof setInterval> | null = null;
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
+  private backfillMessageTimer: ReturnType<typeof setTimeout> | null = null;
   private static readonly mobileHistoryMq = '(max-width: 719px)';
 
   protected readonly entries = computed<LeaderboardEntry[]>(() => {
@@ -101,6 +105,10 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
     if (this.copyResetTimer) {
       clearTimeout(this.copyResetTimer);
       this.copyResetTimer = null;
+    }
+    if (this.backfillMessageTimer) {
+      clearTimeout(this.backfillMessageTimer);
+      this.backfillMessageTimer = null;
     }
   }
 
@@ -179,6 +187,32 @@ export class LeaderboardComponent implements OnInit, OnDestroy {
         this.error.set(this.i18n.t('leaderboard.loadError'));
       },
     });
+  }
+
+  protected backfillHistory(): void {
+    if (this.backfilling()) {
+      return;
+    }
+    this.backfilling.set(true);
+    this.api.backfillHistory().subscribe({
+      next: () => {
+        this.backfilling.set(false);
+        this.showBackfillMessage(this.i18n.t('leaderboard.backfillStarted'), false);
+      },
+      error: () => {
+        this.backfilling.set(false);
+        this.showBackfillMessage(this.i18n.t('leaderboard.backfillError'), true);
+      },
+    });
+  }
+
+  private showBackfillMessage(message: string, isError: boolean): void {
+    this.backfillMessage.set(message);
+    this.backfillMessageIsError.set(isError);
+    if (this.backfillMessageTimer) {
+      clearTimeout(this.backfillMessageTimer);
+    }
+    this.backfillMessageTimer = setTimeout(() => this.backfillMessage.set(null), 5000);
   }
 
   protected lastUpdatedLabel(): string | null {

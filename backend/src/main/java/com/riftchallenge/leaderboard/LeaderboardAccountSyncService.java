@@ -207,6 +207,47 @@ public class LeaderboardAccountSyncService {
         return updated;
     }
 
+    /**
+     * Fetches and imports every ranked solo/duo match since season start that isn't already
+     * stored for this account — unlike {@link #syncMatches}, not capped to a small per-pass
+     * budget. Meant for a one-off "rattrapage" backfill run against a Riot key with real headroom
+     * (see {@code RiotHistoryBackfillService}), where the HTTP-level {@link
+     * com.riftchallenge.riot.RiotAppRateLimiter} is what keeps calls within Riot's actual quota
+     * instead of an artificial per-pass cap.
+     *
+     * @return how many new matches were imported.
+     */
+    public int backfillFullHistory(RiotAccount account) {
+        String puuid = account.getRiotPuuid();
+        List<String> matchIds = riotMatchClient.getAllRankedSoloMatchIdsInWindow(
+                puuid,
+                properties.seasonStartAt().getEpochSecond(),
+                null,
+                Integer.MAX_VALUE,
+                ChallengeRegion.EUW
+        );
+
+        int imported = 0;
+        for (String matchId : matchIds) {
+            if (accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId).isPresent()) {
+                continue;
+            }
+            try {
+                if (importMatch(puuid, matchId)) {
+                    imported++;
+                }
+            } catch (ResponseStatusException exception) {
+                log.warn(
+                        "Skipping match {} for account {} during backfill: {}",
+                        matchId,
+                        account.getId(),
+                        exception.getReason()
+                );
+            }
+        }
+        return imported;
+    }
+
     /** @return how many match-detail fetches were performed for this account. */
     private int syncMatches(RiotAccount account, Instant now, int budget) {
         long existingMatches = accountMatchRepository.countByRiotPuuid(account.getRiotPuuid());

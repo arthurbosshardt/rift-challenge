@@ -13,7 +13,12 @@ import org.springframework.web.client.RestClient;
 public class RiotConfig {
 
     @Bean
-    RestClient riotRestClient(RiotProperties properties) {
+    RiotAppRateLimiter riotAppRateLimiter() {
+        return new RiotAppRateLimiter();
+    }
+
+    @Bean
+    RestClient riotRestClient(RiotProperties properties, RiotAppRateLimiter riotAppRateLimiter) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(5_000);
         requestFactory.setReadTimeout(10_000);
@@ -21,6 +26,7 @@ public class RiotConfig {
         return RestClient.builder()
                 .requestFactory(requestFactory)
                 .requestInterceptor(new RiotRateLimitRetryInterceptor())
+                .requestInterceptor(new RiotRateLimitingInterceptor(riotAppRateLimiter))
                 .defaultHeader("X-Riot-Token", properties.apiKey())
                 .build();
     }
@@ -29,5 +35,11 @@ public class RiotConfig {
     ExecutorService riotSyncExecutor(RiotProperties properties) {
         int concurrency = Math.max(1, properties.syncConcurrency());
         return Executors.newFixedThreadPool(concurrency);
+    }
+
+    /** Dedicated so a long-running admin-triggered backfill never steals a {@link #riotSyncExecutor} slot from itself. */
+    @Bean(destroyMethod = "shutdown")
+    ExecutorService riotBackfillOrchestratorExecutor() {
+        return Executors.newSingleThreadExecutor();
     }
 }

@@ -230,6 +230,15 @@
   color: var(--danger);
 }
 
+.leaderboard__backfill-message {
+  font-size: 0.8125rem;
+  color: var(--gold);
+}
+
+.leaderboard__backfill-message--error {
+  color: var(--danger);
+}
+
 .leaderboard__list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
