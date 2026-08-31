@@ -37,6 +37,9 @@ class LeaderboardComputationServiceTest {
     private LeaderboardAccountRankRepository rankRepository;
 
     @Mock
+    private LeaderboardAccountRankHistoryRepository rankHistoryRepository;
+
+    @Mock
     private ChampionIconUrlService championIconUrlService;
 
     private LeaderboardComputationService service;
@@ -47,10 +50,14 @@ class LeaderboardComputationServiceTest {
                 riotAccountRepository,
                 matchRepository,
                 rankRepository,
+                rankHistoryRepository,
                 new LeaderboardProperties(SEASON_START, "admin@example.com"),
                 championIconUrlService
         );
         org.mockito.Mockito.lenient().when(rankRepository.findByRiotPuuid(any())).thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient()
+                .when(rankHistoryRepository.findFirstByRiotPuuidAndCapturedAtLessThanEqualOrderByCapturedAtDesc(any(), any()))
+                .thenReturn(Optional.empty());
         org.mockito.Mockito.lenient().when(championIconUrlService.buildApiPath(any())).thenReturn(null);
     }
 

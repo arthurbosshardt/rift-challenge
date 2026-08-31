@@ -65,6 +65,7 @@ public class LeaderboardAccountSyncService {
     private final RiotAccountRepository riotAccountRepository;
     private final AccountMatchRepository accountMatchRepository;
     private final LeaderboardAccountRankRepository accountRankRepository;
+    private final LeaderboardAccountRankHistoryRepository accountRankHistoryRepository;
     private final RiotMatchRepository riotMatchRepository;
     private final RiotLeagueClient riotLeagueClient;
     private final RiotMatchClient riotMatchClient;
@@ -75,6 +76,7 @@ public class LeaderboardAccountSyncService {
             RiotAccountRepository riotAccountRepository,
             AccountMatchRepository accountMatchRepository,
             LeaderboardAccountRankRepository accountRankRepository,
+            LeaderboardAccountRankHistoryRepository accountRankHistoryRepository,
             RiotMatchRepository riotMatchRepository,
             RiotLeagueClient riotLeagueClient,
             RiotMatchClient riotMatchClient,
@@ -84,6 +86,7 @@ public class LeaderboardAccountSyncService {
         this.riotAccountRepository = riotAccountRepository;
         this.accountMatchRepository = accountMatchRepository;
         this.accountRankRepository = accountRankRepository;
+        this.accountRankHistoryRepository = accountRankHistoryRepository;
         this.riotMatchRepository = riotMatchRepository;
         this.riotLeagueClient = riotLeagueClient;
         this.riotMatchClient = riotMatchClient;
@@ -138,6 +141,9 @@ public class LeaderboardAccountSyncService {
                 .orElseGet(() -> LeaderboardAccountRank.create(puuid, now, entry.tier(), entry.rank(), entry.leaguePoints()));
         rank.update(now, entry.tier(), entry.rank(), entry.leaguePoints());
         accountRankRepository.save(rank);
+        accountRankHistoryRepository.save(
+                LeaderboardAccountRankHistory.create(puuid, now, entry.tier(), entry.rank(), entry.leaguePoints())
+        );
     }
 
     /**

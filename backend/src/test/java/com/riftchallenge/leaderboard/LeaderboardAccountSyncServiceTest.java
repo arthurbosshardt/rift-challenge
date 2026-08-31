@@ -51,6 +51,9 @@ class LeaderboardAccountSyncServiceTest {
     private LeaderboardAccountRankRepository accountRankRepository;
 
     @Mock
+    private LeaderboardAccountRankHistoryRepository accountRankHistoryRepository;
+
+    @Mock
     private RiotMatchRepository riotMatchRepository;
 
     @Mock
@@ -71,6 +74,7 @@ class LeaderboardAccountSyncServiceTest {
                 riotAccountRepository,
                 accountMatchRepository,
                 accountRankRepository,
+                accountRankHistoryRepository,
                 riotMatchRepository,
                 riotLeagueClient,
                 riotMatchClient,

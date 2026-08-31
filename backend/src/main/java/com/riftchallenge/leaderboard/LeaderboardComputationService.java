@@ -42,6 +42,7 @@ public class LeaderboardComputationService {
     private final RiotAccountRepository riotAccountRepository;
     private final AccountMatchRepository matchRepository;
     private final LeaderboardAccountRankRepository rankRepository;
+    private final LeaderboardAccountRankHistoryRepository rankHistoryRepository;
     private final LeaderboardProperties properties;
     private final ChampionIconUrlService championIconUrlService;
 
@@ -49,12 +50,14 @@ public class LeaderboardComputationService {
             RiotAccountRepository riotAccountRepository,
             AccountMatchRepository matchRepository,
             LeaderboardAccountRankRepository rankRepository,
+            LeaderboardAccountRankHistoryRepository rankHistoryRepository,
             LeaderboardProperties properties,
             ChampionIconUrlService championIconUrlService
     ) {
         this.riotAccountRepository = riotAccountRepository;
         this.matchRepository = matchRepository;
         this.rankRepository = rankRepository;
+        this.rankHistoryRepository = rankHistoryRepository;
         this.properties = properties;
         this.championIconUrlService = championIconUrlService;
     }
@@ -81,13 +84,13 @@ public class LeaderboardComputationService {
             PlayerIdentity identity = identityOf(account);
             PlayerRank rank = ranks.get(account.getRiotPuuid());
 
-            seasonStats.add(toStats(identity, history, rank));
+            seasonStats.add(toStats(identity, history, rank, seasonStart));
 
             List<TaggedMatch> rollingHistory = history.stream()
                     .filter(match -> !match.gameStart().isBefore(rollingStart))
                     .toList();
             if (!rollingHistory.isEmpty()) {
-                rollingStats.add(toStats(identity, rollingHistory, rank));
+                rollingStats.add(toStats(identity, rollingHistory, rank, rollingStart));
             }
         }
 
@@ -156,7 +159,8 @@ public class LeaderboardComputationService {
     private ParticipantWindowStats toStats(
             PlayerIdentity identity,
             List<TaggedMatch> historyAsc,
-            PlayerRank rank
+            PlayerRank rank,
+            Instant windowStart
     ) {
         int gamesPlayed = historyAsc.size();
         List<Boolean> winsOrdered = historyAsc.stream().map(TaggedMatch::win).toList();
@@ -165,8 +169,8 @@ public class LeaderboardComputationService {
         double winRate = (double) wins / gamesPlayed;
         int winStreak = WinStreakCalculator.longestWinStreak(winsOrdered);
 
-        Integer lpGained = null;
-        if (gamesPlayed >= RankReplayService.MIN_MATCHES_FOR_RANK_ESTIMATE) {
+        Integer lpGained = lpGainedFromHistory(identity, rank, windowStart);
+        if (lpGained == null && gamesPlayed >= RankReplayService.MIN_MATCHES_FOR_RANK_ESTIMATE) {
             lpGained = RankReplayService.estimateFromMatches(winsOrdered)
                     .map(estimate -> RankScoreConverter.lpGained(
                             estimate.baseline().tier(), estimate.baseline().rankDivision(), estimate.baseline().leaguePoints(),
@@ -187,6 +191,26 @@ public class LeaderboardComputationService {
                 lpGained,
                 recentMatches(historyAsc, tierForLp)
         );
+    }
+
+    /**
+     * A real LP-gained figure, computed as an exact score delta between the account's current
+     * rank and its actual rank snapshot at or before {@code windowStart} — precise, but only
+     * available once a snapshot from before the window existed at sync time (see
+     * {@link LeaderboardAccountSyncService#upsertRank}). Returns {@code null} when no such
+     * snapshot exists yet, in which case the caller falls back to the win/loss heuristic.
+     */
+    private Integer lpGainedFromHistory(PlayerIdentity identity, PlayerRank rank, Instant windowStart) {
+        if (rank == null) {
+            return null;
+        }
+        return rankHistoryRepository
+                .findFirstByRiotPuuidAndCapturedAtLessThanEqualOrderByCapturedAtDesc(identity.puuid(), windowStart)
+                .map(baseline -> RankScoreConverter.lpGained(
+                        baseline.getTier(), baseline.getRankDivision(), baseline.getLeaguePoints(),
+                        rank.tier(), rank.rankDivision(), rank.leaguePoints()
+                ))
+                .orElse(null);
     }
 
     private List<LeaderboardMatchHistoryResponse> recentMatches(List<TaggedMatch> historyAsc, String tier) {
