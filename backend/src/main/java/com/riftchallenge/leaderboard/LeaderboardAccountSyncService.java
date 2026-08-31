@@ -177,7 +177,7 @@ public class LeaderboardAccountSyncService {
     public ActivitySyncBatchResult syncAccountForActivity(RiotAccount account, int seasonMatchTotal) {
         ChallengeRegion region = resolveRegion(account);
         if (region == null) {
-            return new ActivitySyncBatchResult(0, true);
+            return new ActivitySyncBatchResult(0, true, 0);
         }
 
         int fetchLimit = Math.min(Math.max(seasonMatchTotal, 1), 500);
@@ -205,10 +205,18 @@ public class LeaderboardAccountSyncService {
 
         boolean allMatchIdsImported = matchIds.stream()
                 .noneMatch(matchId -> accountMatchRepository.findByRiotPuuidAndRiotMatchId(puuid, matchId).isEmpty());
-        return new ActivitySyncBatchResult(used, allMatchIdsImported);
+        return new ActivitySyncBatchResult(used, allMatchIdsImported, matchIds.size());
     }
 
-    public record ActivitySyncBatchResult(int fetchesUsed, boolean allMatchIdsImported) {
+    /**
+     * @param availableMatches how many season match ids Riot's match-list API actually returned
+     *     for this window at sync time — the ground truth for "how much history exists right now",
+     *     as opposed to {@code seasonMatchTotal} (wins+losses from the rank endpoint, which falls
+     *     back to a large placeholder when the rank lookup fails). Callers must record exhaustion
+     *     against this value, not the caller-supplied total, or a single transient rank-lookup
+     *     failure can permanently wedge catch-up (see {@link ActivityAccountBackgroundSyncService}).
+     */
+    public record ActivitySyncBatchResult(int fetchesUsed, boolean allMatchIdsImported, int availableMatches) {
     }
 
     /**

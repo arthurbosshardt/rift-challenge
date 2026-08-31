@@ -32,6 +32,7 @@ import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component'
 import { RankEmblemComponent } from '../rank-emblem/rank-emblem.component';
 import { MedalBadgeComponent } from '../medal-badge/medal-badge.component';
 import { formatChallengeDateCompact } from '../../../core/utils/challenge-date';
+import { formatTimeSince } from '../../../core/utils/relative-time';
 import { regionLabel as sharedRegionLabel } from '../../../core/utils/region-display';
 import {
   ChallengeBadgeComponent,
@@ -210,6 +211,14 @@ export class ChallengeCardComponent implements AfterViewInit, OnDestroy {
       return this.i18n.t('challenge.duoCount', { count });
     }
     return this.i18n.t('challenge.entryCount', { count });
+  }
+
+  lastUpdatedLabel(): string | null {
+    const dataSyncedAt = this.challenge().dataSyncedAt;
+    if (!dataSyncedAt) {
+      return null;
+    }
+    return formatTimeSince(dataSyncedAt, Date.now(), this.i18n.locale());
   }
 
   previewTitle(): string {

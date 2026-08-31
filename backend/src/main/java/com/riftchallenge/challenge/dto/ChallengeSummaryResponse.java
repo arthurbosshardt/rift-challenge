@@ -20,7 +20,8 @@ public record ChallengeSummaryResponse(
         int entryCount,
         List<String> participantGameNames,
         List<ParticipantPreviewResponse> previewParticipants,
-        List<DuoPreviewResponse> previewDuos
+        List<DuoPreviewResponse> previewDuos,
+        Instant dataSyncedAt
 ) {
 
     public static ChallengeSummaryResponse from(
@@ -51,7 +52,8 @@ public record ChallengeSummaryResponse(
                 entryCount,
                 participantGameNames,
                 previewParticipants,
-                previewDuos
+                previewDuos,
+                challenge.getDataSyncedAt()
         );
     }
 

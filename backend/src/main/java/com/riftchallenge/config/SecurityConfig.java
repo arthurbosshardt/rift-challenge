@@ -70,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/leaderboard/players/*/matches/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/summoners/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/players/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/players/*/activity/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenge-preview").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/challenge-preview-image").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/sitemap.xml").permitAll()

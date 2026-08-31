@@ -9,6 +9,7 @@ import {
   applySyncBaseline,
   normalizeActivityAccount,
 } from '../../core/services/activity-cache.service';
+import { AccountRecentGames } from '../../core/models/challenge.models';
 import { BackendStatusService } from '../../core/services/backend-status.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -232,7 +233,12 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
       return;
     }
     this.activityError.set(null);
-    this.loadActivity(true, false);
+    this.activityLoading.set(true);
+    const riotId = this.riotId;
+    this.playerApi.refreshActivity(riotId).subscribe({
+      next: (activity) => this.handleActivitySuccess(riotId, activity),
+      error: (err: HttpErrorResponse) => this.handleActivityError(riotId, err, false),
+    });
     this.refreshCooldown.start();
   }
 
@@ -242,43 +248,57 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
     }
     const riotId = this.riotId;
     this.playerApi.getActivity(riotId).subscribe({
-      next: (activity) => {
-        if (riotId !== this.riotId) {
-          return;
-        }
-        this.activityRetryCount = 0;
-        const normalized = normalizeActivityAccount(activity);
-        this.activityAccount.set(
-          applySyncBaseline(normalized, false, this.activityAccount() ?? undefined),
-        );
-        this.activityError.set(null);
-        this.activityLoading.set(false);
-        this.lastRefreshedAt.set(new Date().toISOString());
-        this.updateSeasonSyncPolling();
-      },
-      error: (err: HttpErrorResponse) => {
-        if (riotId !== this.riotId) {
-          return;
-        }
-        if (err.status === 404) {
-          this.activityLoading.set(false);
-          return;
-        }
-        if (allowRetry && this.activityRetryCount < PlayerProfilePageComponent.MAX_LOAD_RETRIES) {
-          this.activityRetryCount++;
-          this.activityRetryTimer = setTimeout(() => {
-            if (riotId === this.riotId) {
-              this.loadActivity(true, true);
-            }
-          }, PlayerProfilePageComponent.LOAD_RETRY_DELAY_MS);
-          return;
-        }
-        this.activityLoading.set(false);
-        this.activityError.set(
-          err.status === 429 ? this.i18n.t('home.refreshOnCooldown') : this.i18n.t('activity.loadError'),
-        );
-      },
+      next: (activity) => this.handleActivitySuccess(riotId, activity),
+      error: (err: HttpErrorResponse) => this.handleActivityError(riotId, err, allowRetry),
     });
+  }
+
+  private handleActivitySuccess(riotId: string, activity: AccountRecentGames): void {
+    if (riotId !== this.riotId) {
+      return;
+    }
+    this.activityRetryCount = 0;
+    const normalized = normalizeActivityAccount(activity);
+    const previous = this.activityAccount();
+    if (!previous || this.hasNewActivityData(previous, normalized)) {
+      this.lastRefreshedAt.set(new Date().toISOString());
+    }
+    this.activityAccount.set(applySyncBaseline(normalized, false, previous ?? undefined));
+    this.activityError.set(null);
+    this.activityLoading.set(false);
+    this.updateSeasonSyncPolling();
+  }
+
+  private handleActivityError(riotId: string, err: HttpErrorResponse, allowRetry: boolean): void {
+    if (riotId !== this.riotId) {
+      return;
+    }
+    if (err.status === 404) {
+      this.activityLoading.set(false);
+      return;
+    }
+    if (allowRetry && this.activityRetryCount < PlayerProfilePageComponent.MAX_LOAD_RETRIES) {
+      this.activityRetryCount++;
+      this.activityRetryTimer = setTimeout(() => {
+        if (riotId === this.riotId) {
+          this.loadActivity(true, true);
+        }
+      }, PlayerProfilePageComponent.LOAD_RETRY_DELAY_MS);
+      return;
+    }
+    this.activityLoading.set(false);
+    this.activityError.set(
+      err.status === 429 ? this.i18n.t('home.refreshOnCooldown') : this.i18n.t('activity.loadError'),
+    );
+  }
+
+  private hasNewActivityData(previous: ActivityAccount, next: ActivityAccount): boolean {
+    return (
+      next.syncedGames !== previous.syncedGames ||
+      next.wins !== previous.wins ||
+      next.losses !== previous.losses ||
+      next.games[0]?.id !== previous.games[0]?.id
+    );
   }
 
   private clearActivityRetry(): void {

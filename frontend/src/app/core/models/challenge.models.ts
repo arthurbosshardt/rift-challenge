@@ -46,6 +46,7 @@ export interface ChallengeSummary {
   participantGameNames: string[];
   previewParticipants: ParticipantPreview[];
   previewDuos: DuoPreview[];
+  dataSyncedAt: string | null;
 }
 
 export interface ChallengeListResponse {

@@ -136,6 +136,68 @@ public class ActivityAccountBackgroundSyncService {
         startCatchUpChain(account, seasonMatchTotal, 0);
     }
 
+    /**
+     * Synchronous counterpart to {@link #scheduleSyncIfIdle} for the player-profile "Actualiser"
+     * button: runs a single catch-up batch on the calling thread so the click's own response
+     * reflects newly-imported matches immediately, instead of waiting on the async chain's 45s
+     * cadence. If more than one batch's worth is missing, the remainder continues via the normal
+     * background chain exactly as {@link #startCatchUpChain} already does.
+     */
+    public void syncNowIfIdle(RiotAccount account, int seasonMatchTotal, int storedMatchCount) {
+        UUID riotAccountId = account.getId();
+        if (storedMatchCount >= seasonMatchTotal) {
+            catchUpChainActive.remove(riotAccountId);
+            seasonHistoryExhaustedAtTotal.remove(riotAccountId);
+            clearPersistedSeasonHistoryExhausted(account);
+            return;
+        }
+
+        if (isSeasonHistoryExhausted(riotAccountId, seasonMatchTotal)) {
+            return;
+        }
+
+        if (isCatchUpActive(riotAccountId)) {
+            return;
+        }
+
+        if (syncInProgress.putIfAbsent(riotAccountId, Boolean.TRUE) != null) {
+            return;
+        }
+
+        lastChainStartedAt.put(riotAccountId, clock.instant());
+        catchUpChainActive.put(riotAccountId, Boolean.TRUE);
+
+        ActivitySyncBatchResult batchResult;
+        try {
+            riotMatchLookupService.beginRefreshScope();
+            try {
+                batchResult = accountSyncService.syncAccountForActivity(account, seasonMatchTotal);
+            } finally {
+                riotMatchLookupService.endRefreshScope();
+            }
+        } catch (ResponseStatusException exception) {
+            catchUpChainActive.remove(riotAccountId);
+            if (exception.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                log.warn("Synchronous activity refresh hit Riot rate limit for riot account {}", riotAccountId);
+            } else {
+                log.warn(
+                        "Synchronous activity refresh failed for riot account {}: {}",
+                        riotAccountId,
+                        exception.getReason()
+                );
+            }
+            return;
+        } catch (RuntimeException exception) {
+            catchUpChainActive.remove(riotAccountId);
+            log.warn("Synchronous activity refresh failed for riot account {}: {}", riotAccountId, exception.getMessage());
+            return;
+        } finally {
+            syncInProgress.remove(riotAccountId);
+        }
+
+        scheduleContinuationOrFinish(account, seasonMatchTotal, batchResult, 0);
+    }
+
     void startCatchUpChain(RiotAccount account, int seasonMatchTotal, int chainDepth) {
         UUID riotAccountId = account.getId();
         if (chainDepth >= MAX_CATCH_UP_CHAIN) {
@@ -198,13 +260,32 @@ public class ActivityAccountBackgroundSyncService {
             syncInProgress.remove(riotAccountId);
         }
 
+        scheduleContinuationOrFinish(account, seasonMatchTotal, batchResult, chainDepth);
+    }
+
+    /** Shared post-batch bookkeeping for both the async chain and the synchronous refresh path:
+     *  records exhaustion if this batch reached the end, and either stops or queues the next
+     *  batch after the usual retry delay. */
+    private void scheduleContinuationOrFinish(
+            RiotAccount account,
+            int seasonMatchTotal,
+            ActivitySyncBatchResult batchResult,
+            int chainDepth
+    ) {
+        UUID riotAccountId = account.getId();
         long storedMatchCount = accountMatchRepository.countSeasonMatchesSince(
                 account.getRiotPuuid(),
                 leaderboardProperties.seasonStartAt()
         );
         if (batchResult != null && batchResult.allMatchIdsImported()) {
-            seasonHistoryExhaustedAtTotal.put(riotAccountId, seasonMatchTotal);
-            markPersistedSeasonHistoryExhausted(account, seasonMatchTotal);
+            // Record exhaustion against what Riot's match-list API actually returned for this
+            // window, not the caller-supplied seasonMatchTotal — that total falls back to a large
+            // placeholder (see ActivitySeasonMatchTotals.FALLBACK_LIMIT) whenever the rank lookup
+            // fails, and persisting that placeholder would wedge catch-up forever since a real
+            // season total practically never reaches it.
+            int exhaustedAtTotal = batchResult.availableMatches();
+            seasonHistoryExhaustedAtTotal.put(riotAccountId, exhaustedAtTotal);
+            markPersistedSeasonHistoryExhausted(account, exhaustedAtTotal);
         }
         if (storedMatchCount >= seasonMatchTotal
                 || (batchResult != null && batchResult.allMatchIdsImported())

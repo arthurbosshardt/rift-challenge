@@ -198,35 +198,6 @@
           </a>
         </div>
       }
-
-      <div class="challenge-search__field challenge-search__field--refresh">
-        <span class="challenge-search__label challenge-search__label--invisible" aria-hidden="true">&nbsp;</span>
-        <div class="challenge-search__refresh-row">
-          <button
-            type="button"
-            class="refresh-action-btn"
-            (click)="refreshChallenges()"
-            [disabled]="loading() || refreshing() || !refreshAvailable() || !backend.ready()"
-            [attr.aria-label]="'home.searchRefreshAria' | t"
-            [attr.title]="!backend.ready() ? ('backend.wakingUpAria' | t) : null"
-          >
-            <svg
-              class="refresh-action-btn__icon"
-              [class.refresh-action-btn__icon--spinning]="refreshing()"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.934 7.934 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.934 7.934 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
-              />
-            </svg>
-            <span class="refresh-action-btn__label refresh-action-btn__label--short">{{ refreshButtonLabel() }}</span>
-          </button>
-          @if (lastUpdatedLabel(); as label) {
-            <span class="challenge-search__last-updated">{{ label }}</span>
-          }
-        </div>
-      </div>
     </div>
 
     @if (hasActiveFilters()) {

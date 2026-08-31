@@ -1,5 +1,5 @@
 /** Durée pendant laquelle la session survit à la fermeture du navigateur. */
-export const SESSION_TTL_MS = 60 * 60 * 1000;
+export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const SESSION_LAST_SEEN_KEY = 'riftchallenge.session.lastSeen';
 

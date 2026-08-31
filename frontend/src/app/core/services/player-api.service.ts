@@ -21,6 +21,10 @@ export class PlayerApiService {
     return this.http.get<AccountRecentGames>(`${this.baseUrl}/${encodeURIComponent(riotId)}/activity`);
   }
 
+  refreshActivity(riotId: string): Observable<AccountRecentGames> {
+    return this.http.post<AccountRecentGames>(`${this.baseUrl}/${encodeURIComponent(riotId)}/activity/refresh`, {});
+  }
+
   getChallenges(riotId: string): Observable<ChallengeListResponse> {
     return this.http
       .get<RawChallengeListResponse>(`${this.baseUrl}/${encodeURIComponent(riotId)}/challenges`)

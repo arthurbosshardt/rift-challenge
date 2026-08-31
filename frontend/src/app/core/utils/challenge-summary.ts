@@ -55,6 +55,7 @@ export function normalizeChallengeSummary(raw: RawChallengeSummary): ChallengeSu
     participantGameNames: normalizeParticipantGameNames(raw),
     previewParticipants: normalizeParticipants(raw.previewParticipants),
     previewDuos: normalizeDuos(raw.previewDuos),
+    dataSyncedAt: raw.dataSyncedAt ?? null,
   };
 }
 

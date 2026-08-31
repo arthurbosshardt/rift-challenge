@@ -76,7 +76,7 @@ class ActivityAccountBackgroundSyncServiceTest {
         RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(10L, 10L);
         when(accountSyncService.syncAccountForActivity(account, 120))
-                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false));
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false, 5));
 
         service.scheduleSyncIfIdle(account, 120, 10);
 
@@ -122,7 +122,7 @@ class ActivityAccountBackgroundSyncServiceTest {
         RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(10L, 10L);
         when(accountSyncService.syncAccountForActivity(account, 120))
-                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false));
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, false, 5));
 
         service.startCatchUpChain(account, 120, 0);
         service.scheduleSyncIfIdle(account, 120, 10);
@@ -135,7 +135,7 @@ class ActivityAccountBackgroundSyncServiceTest {
         RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(125L);
         when(accountSyncService.syncAccountForActivity(account, 137))
-                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(0, true));
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(0, true, 137));
 
         service.startCatchUpChain(account, 137, 0);
         verify(accountSyncService, timeout(2_000)).syncAccountForActivity(account, 137);
@@ -150,7 +150,7 @@ class ActivityAccountBackgroundSyncServiceTest {
         RiotAccount account = riotAccount();
         when(accountMatchRepository.countSeasonMatchesSince(PUUID, SEASON_START)).thenReturn(125L, 125L);
         when(accountSyncService.syncAccountForActivity(account, 137))
-                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, true));
+                .thenReturn(new LeaderboardAccountSyncService.ActivitySyncBatchResult(5, true, 137));
         when(riotAccountRepository.save(account)).thenReturn(account);
 
         service.startCatchUpChain(account, 137, 0);

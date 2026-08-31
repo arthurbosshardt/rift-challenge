@@ -2,7 +2,6 @@ import {
   Component,
   computed,
   inject,
-  OnDestroy,
   OnInit,
   signal,
   ChangeDetectionStrategy,
@@ -17,8 +16,6 @@ import { SettingsModalService } from '../../core/services/settings-modal.service
 import { PublicChallengesCacheService } from '../../core/services/public-challenges-cache.service';
 import { BackendStatusService } from '../../core/services/backend-status.service';
 import { ChallengeListResponse, ChallengeRegion } from '../../core/models/challenge.models';
-import { formatRefreshCountdown } from '../../core/utils/refresh-countdown';
-import { formatTimeSince } from '../../core/utils/relative-time';
 import { regionLabel as sharedRegionLabel } from '../../core/utils/region-display';
 
 import { PageShellComponent } from '../../shared/components/page-shell/page-shell.component';
@@ -61,7 +58,7 @@ import {
 
   styleUrl: './public-challenges-page.component.scss',
 })
-export class PublicChallengesPageComponent implements OnInit, OnDestroy {
+export class PublicChallengesPageComponent implements OnInit {
   private readonly challengeApi = inject(ChallengeApiService);
 
   protected readonly auth = inject(AuthService);
@@ -78,11 +75,6 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
   protected readonly loading = signal(this.cache.lastLoadedAt() === null);
 
   protected readonly refreshing = signal(false);
-
-  protected readonly refreshAvailable = this.cache.refreshAvailable;
-
-  private tickInterval: ReturnType<typeof setInterval> | null = null;
-  protected readonly nowMs = signal(Date.now());
 
   protected readonly error = signal<string | null>(null);
 
@@ -134,10 +126,6 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
     void this.initPage();
   }
 
-  ngOnDestroy(): void {
-    this.stopCountdownTick();
-  }
-
   protected onChallengeNameInput(event: Event): void {
     this.challengeNameQuery.set((event.target as HTMLInputElement).value);
   }
@@ -174,50 +162,6 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
     this.regionFilter.set(DEFAULT_PUBLIC_CHALLENGE_REGION_FILTER);
   }
 
-  protected refreshChallenges(): void {
-    if (!this.refreshAvailable() || this.refreshing()) {
-      return;
-    }
-
-    this.refreshing.set(true);
-    this.error.set(null);
-
-    this.challengeApi.refreshPublicChallenges().subscribe({
-      next: (response) => this.applyResponse(response),
-      error: (err: { status?: number }) => {
-        this.error.set(
-          err.status === 429
-            ? this.i18n.t('home.refreshOnCooldown')
-            : this.i18n.t('home.loadPublicError'),
-        );
-        this.refreshing.set(false);
-      },
-    });
-  }
-
-  protected refreshButtonLabel(): string {
-    const nextAvailable = this.cache.nextRefreshAvailableAt();
-    if (!this.refreshAvailable() && nextAvailable) {
-      const countdown = formatRefreshCountdown(nextAvailable, this.nowMs());
-      if (countdown) {
-        return countdown;
-      }
-    }
-    return this.i18n.t('home.searchRefreshLabel');
-  }
-
-  protected lastUpdatedLabel(): string | null {
-    const generatedAt = this.cache.generatedAt();
-    if (!generatedAt) {
-      return null;
-    }
-    const time = formatTimeSince(generatedAt, this.nowMs(), this.i18n.locale());
-    if (!time) {
-      return null;
-    }
-    return this.i18n.t('activity.lastRefreshed', { time });
-  }
-
   private loadChallenges(): void {
     const showFullScreenLoader = this.allChallenges().length === 0;
 
@@ -250,40 +194,8 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
   private applyResponse(response: ChallengeListResponse): void {
     this.allChallenges.set(response.challenges);
     this.cache.lastLoadedAt.set(Date.now());
-    this.cache.generatedAt.set(response.generatedAt);
-    this.cache.refreshAvailable.set(response.refreshAvailable);
-    this.cache.nextRefreshAvailableAt.set(response.nextRefreshAvailableAt);
     this.loading.set(false);
     this.refreshing.set(false);
-
-    if (response.refreshAvailable) {
-      this.stopCountdownTick();
-    } else {
-      this.startCountdownTick();
-    }
-  }
-
-  private startCountdownTick(): void {
-    this.stopCountdownTick();
-    this.tickInterval = setInterval(() => {
-      this.nowMs.set(Date.now());
-      const nextAvailable = this.cache.nextRefreshAvailableAt();
-      if (
-        this.cache.refreshAvailable() ||
-        !nextAvailable ||
-        !formatRefreshCountdown(nextAvailable, this.nowMs())
-      ) {
-        this.cache.refreshAvailable.set(true);
-        this.stopCountdownTick();
-      }
-    }, 1000);
-  }
-
-  private stopCountdownTick(): void {
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-      this.tickInterval = null;
-    }
   }
 
   private async initPage(): Promise<void> {
@@ -301,9 +213,6 @@ export class PublicChallengesPageComponent implements OnInit, OnDestroy {
       this.loadChallenges();
     } else {
       this.loading.set(false);
-      if (!this.cache.refreshAvailable()) {
-        this.startCountdownTick();
-      }
     }
   }
 }

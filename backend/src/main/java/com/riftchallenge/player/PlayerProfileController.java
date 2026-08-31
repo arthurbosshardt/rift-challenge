@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -64,6 +65,22 @@ public class PlayerProfileController {
         throttle.enforce(request, authentication, "activity");
         ExactRiotId parsed = ExactRiotId.parse(riotId);
         return recentActivityService.getActivityForRiotId(parsed.gameName(), parsed.tagLine())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+    }
+
+    /**
+     * "Actualiser" button: synchronously imports any missing season matches before responding,
+     * unlike {@link #getActivity}, which reads DB-only and lets a background chain catch up.
+     */
+    @PostMapping("/{riotId}/activity/refresh")
+    public AccountRecentGamesResponse refreshActivity(
+            HttpServletRequest request,
+            Authentication authentication,
+            @PathVariable String riotId
+    ) {
+        throttle.enforce(request, authentication, "activity-refresh");
+        ExactRiotId parsed = ExactRiotId.parse(riotId);
+        return recentActivityService.getActivityForRiotIdRefresh(parsed.gameName(), parsed.tagLine())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
     }
 

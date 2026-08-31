@@ -72,7 +72,7 @@ public class RecentActivityService {
 
     public List<AccountRecentGamesResponse> listRecentGames(UUID userId) {
         Optional<UserRiotAccount> account = userRiotAccountRepository.findByUserId(userId);
-        return account.map(link -> buildResponse(link.getRiotAccount(), link.getId())).map(List::of).orElseGet(List::of);
+        return account.map(link -> buildResponse(link.getRiotAccount(), link.getId(), false)).map(List::of).orElseGet(List::of);
     }
 
     /**
@@ -82,6 +82,19 @@ public class RecentActivityService {
      * having been called first to register it.
      */
     public Optional<AccountRecentGamesResponse> getActivityForRiotId(String gameName, String tagLine) {
+        return resolveAccount(gameName, tagLine).map(a -> buildResponse(a, a.getId(), false));
+    }
+
+    /**
+     * Refresh-button counterpart of {@link #getActivityForRiotId}: synchronously imports any
+     * missing season matches before building the response, so the caller's own click reflects
+     * newly-imported games instead of relying on the async background chain to catch up later.
+     */
+    public Optional<AccountRecentGamesResponse> getActivityForRiotIdRefresh(String gameName, String tagLine) {
+        return resolveAccount(gameName, tagLine).map(a -> buildResponse(a, a.getId(), true));
+    }
+
+    private Optional<RiotAccount> resolveAccount(String gameName, String tagLine) {
         Optional<RiotAccount> account = riotAccountRepository
                 .findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(gameName, tagLine);
         if (account.isEmpty()) {
@@ -92,10 +105,10 @@ public class RecentActivityService {
                             participant.getProfileIconId()
                     ));
         }
-        return account.map(a -> buildResponse(a, a.getId()));
+        return account;
     }
 
-    private AccountRecentGamesResponse buildResponse(RiotAccount account, UUID responseId) {
+    private AccountRecentGamesResponse buildResponse(RiotAccount account, UUID responseId, boolean syncNow) {
         Optional<RiotLeagueEntryDto> currentRank = fetchCurrentRank(account);
         int seasonMatchTotal = seasonMatchTotal(currentRank);
 
@@ -104,7 +117,15 @@ public class RecentActivityService {
                 leaderboardProperties.seasonStartAt()
         );
 
-        backgroundSyncService.scheduleSyncIfIdle(account, seasonMatchTotal, seasonRows.size());
+        if (syncNow) {
+            backgroundSyncService.syncNowIfIdle(account, seasonMatchTotal, seasonRows.size());
+            seasonRows = accountMatchRepository.findSeasonActivitySince(
+                    account.getRiotPuuid(),
+                    leaderboardProperties.seasonStartAt()
+            );
+        } else {
+            backgroundSyncService.scheduleSyncIfIdle(account, seasonMatchTotal, seasonRows.size());
+        }
 
         int syncedGames = seasonRows.size();
         boolean seasonSyncComplete = syncedGames >= seasonMatchTotal

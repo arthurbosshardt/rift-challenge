@@ -33,12 +33,6 @@ export class ChallengeApiService {
     return this.listChallenges(`${this.baseUrl}/public`);
   }
 
-  refreshPublicChallenges(): Observable<ChallengeListResponse> {
-    return this.http
-      .post<RawChallengeListResponse>(`${this.baseUrl}/public/refresh`, {})
-      .pipe(map((raw) => normalizeChallengeListResponse(raw)));
-  }
-
   listParticipatingChallenges(): Observable<ChallengeListResponse> {
     return this.listChallenges(`${this.baseUrl}/participating`);
   }

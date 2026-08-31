@@ -336,6 +336,20 @@
             </dt>
             <dd>{{ entryCountLabel() }}</dd>
           </div>
+          <div>
+            <dt>
+              <svg class="challenge-card__meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.75" />
+                <path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              {{ 'challenge.lastUpdateLabel' | t }}
+            </dt>
+            @if (lastUpdatedLabel(); as lastUpdated) {
+              <dd>{{ lastUpdated }}</dd>
+            } @else {
+              <dd class="challenge-card__meta-muted">{{ 'challenge.noSync' | t }}</dd>
+            }
+          </div>
         </dl>
       </div>
 
