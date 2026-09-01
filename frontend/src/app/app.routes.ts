@@ -22,6 +22,11 @@ export const routes: Routes = [
     },
   },
   {
+    // rootRedirectGuard (below) sends every unauthenticated visit to '/' here client-side, so
+    // this is what a JS-executing crawler actually ends up rendering for the homepage — do not
+    // mark this noindex without accounting for that (see 20-frontend.md SEO notes / audit).
+    // The HTTP 301 to '/' in vercel.json only fires for a direct/raw fetch of '/home' itself
+    // (bookmarks, old links, non-JS crawlers) and is unaffected by this in-app redirect.
     path: 'home',
     loadComponent: () =>
       import('./features/home/landing-page.component').then((m) => m.LandingPageComponent),

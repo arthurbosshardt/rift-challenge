@@ -9,7 +9,16 @@
       "has": [{ "type": "host", "value": "www.rift-challenge.com" }],
       "destination": "https://rift-challenge.com/:path*",
       "permanent": true
-    }
+    },
+    { "source": "/home", "destination": "/", "permanent": true },
+    { "source": "/concept", "destination": "/", "permanent": true },
+    { "source": "/public-races", "destination": "/challenges", "permanent": true },
+    { "source": "/public-challenges", "destination": "/challenges", "permanent": true },
+    { "source": "/my-races", "destination": "/my-participations", "permanent": true },
+    { "source": "/created-races", "destination": "/my-participations", "permanent": true },
+    { "source": "/created-challenges", "destination": "/my-participations", "permanent": true },
+    { "source": "/races/new", "destination": "/challenges/new", "permanent": true },
+    { "source": "/races/:slug", "destination": "/challenges/:slug", "permanent": true }
   ],
   "rewrites": [
     {
@@ -22,18 +31,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot|bingbot|Bingbot|Slurp|DuckDuckBot|Applebot).*"
-        }
-      ],
-      "destination": "/api/challenge-preview?slug=:slug"
-    },
-    {
-      "source": "/races/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot|bingbot|Bingbot|Slurp|DuckDuckBot|Applebot).*"
+          "value": ".*(Discordbot|discordbot|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot|WhatsApp|TelegramBot|Googlebot|bingbot|Bingbot|Slurp|DuckDuckBot|Applebot|Mastodon|Pinterest|YandexBot|redditbot).*"
         }
       ],
       "destination": "/api/challenge-preview?slug=:slug"

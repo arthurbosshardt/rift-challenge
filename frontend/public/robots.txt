@@ -1,7 +1,6 @@
 # https://rift-challenge.com/robots.txt
 User-agent: *
 Allow: /
-Allow: /home
 Allow: /challenges
 Allow: /challenges/
 
@@ -9,6 +8,10 @@ Disallow: /login
 Disallow: /settings
 Disallow: /auth/
 Disallow: /my-challenges
+Disallow: /my-participations
+Disallow: /my-races
+Disallow: /created-races
+Disallow: /created-challenges
 Disallow: /challenges/new
 Disallow: /dashboard
 

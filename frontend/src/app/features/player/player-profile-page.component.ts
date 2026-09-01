@@ -337,7 +337,7 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
     this.seo.apply({
       title: `${this.i18n.t('seo.player.title', { name: player.gameName })} | Rift Challenge`,
       description: this.i18n.t('seo.player.description', { name: player.gameName }),
-      path: `/players/${encodeURIComponent(this.riotId)}`,
+      path: this.canonicalPlayerPath(),
     });
   }
 
@@ -345,8 +345,17 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
     this.seo.apply({
       title: `${this.i18n.t('seo.player.notFound.title')} | Rift Challenge`,
       description: this.i18n.t('seo.player.notFound.description'),
-      path: `/players/${encodeURIComponent(this.riotId)}`,
+      path: this.canonicalPlayerPath(),
       noindex: true,
     });
+  }
+
+  /**
+   * Riot ID lookups are case-insensitive, so `/players/Foo#EUW` and `/players/foo#euw` are the
+   * same profile. Lowercasing here (display elsewhere still uses the properly-cased riotId from
+   * the resolved player) avoids splitting indexing signal across both casings.
+   */
+  private canonicalPlayerPath(): string {
+    return `/players/${encodeURIComponent(this.riotId.toLowerCase())}`;
   }
 }
