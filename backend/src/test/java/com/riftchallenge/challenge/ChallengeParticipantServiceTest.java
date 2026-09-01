@@ -58,12 +58,13 @@ class ChallengeParticipantServiceTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
+        BaselineSnapshotService baselineSnapshotService =
+                new BaselineSnapshotService(riotLeagueClient, rankSnapshotRepository, clock);
         participantService = new ChallengeParticipantService(
                 challengeRepository,
                 participantRepository,
-                rankSnapshotRepository,
+                baselineSnapshotService,
                 riotAccountClient,
-                riotLeagueClient,
                 participantProfileService,
                 participantWriter,
                 clock

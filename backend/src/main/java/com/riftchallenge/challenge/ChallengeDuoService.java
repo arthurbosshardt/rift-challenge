@@ -1,16 +1,10 @@
 package com.riftchallenge.challenge;
 
 import com.riftchallenge.challenge.dto.AddDuoRequest;
-import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotIdParser;
-import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.dto.RiotAccountDto;
-import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
-import com.riftchallenge.synchronization.RankSnapshot;
-import com.riftchallenge.synchronization.RankSnapshotRepository;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,9 +19,8 @@ public class ChallengeDuoService {
     private final ChallengeRepository challengeRepository;
     private final ChallengeDuoRepository challengeDuoRepository;
     private final ChallengeParticipantRepository participantRepository;
-    private final RankSnapshotRepository rankSnapshotRepository;
+    private final BaselineSnapshotService baselineSnapshotService;
     private final RiotAccountClient riotAccountClient;
-    private final RiotLeagueClient riotLeagueClient;
     private final ParticipantProfileService participantProfileService;
     private final ChallengeDuoWriter duoWriter;
     private final Clock clock;
@@ -36,9 +29,8 @@ public class ChallengeDuoService {
             ChallengeRepository challengeRepository,
             ChallengeDuoRepository challengeDuoRepository,
             ChallengeParticipantRepository participantRepository,
-            RankSnapshotRepository rankSnapshotRepository,
+            BaselineSnapshotService baselineSnapshotService,
             RiotAccountClient riotAccountClient,
-            RiotLeagueClient riotLeagueClient,
             ParticipantProfileService participantProfileService,
             ChallengeDuoWriter duoWriter,
             Clock clock
@@ -46,9 +38,8 @@ public class ChallengeDuoService {
         this.challengeRepository = challengeRepository;
         this.challengeDuoRepository = challengeDuoRepository;
         this.participantRepository = participantRepository;
-        this.rankSnapshotRepository = rankSnapshotRepository;
+        this.baselineSnapshotService = baselineSnapshotService;
         this.riotAccountClient = riotAccountClient;
-        this.riotLeagueClient = riotLeagueClient;
         this.participantProfileService = participantProfileService;
         this.duoWriter = duoWriter;
         this.clock = clock;
@@ -92,8 +83,8 @@ public class ChallengeDuoService {
         Challenge challenge = result.challenge();
 
         if (clock.instant().isBefore(challenge.getStartAt())) {
-            captureBaselineIfRanked(result.participant1(), challenge.getRegion());
-            captureBaselineIfRanked(result.participant2(), challenge.getRegion());
+            baselineSnapshotService.captureBaselineIfRanked(result.participant1(), challenge.getRegion());
+            baselineSnapshotService.captureBaselineIfRanked(result.participant2(), challenge.getRegion());
         }
         participantProfileService.ensureProfileIcon(result.participant1().getId(), challenge.getRegion());
         participantProfileService.ensureProfileIcon(result.participant2().getId(), challenge.getRegion());
@@ -130,28 +121,5 @@ public class ChallengeDuoService {
             }
             throw exception;
         }
-    }
-
-    private void captureBaselineIfRanked(ChallengeParticipant participant, ChallengeRegion region) {
-        try {
-            riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid(), region)
-                    .ifPresent(entry -> rankSnapshotRepository.save(toBaselineSnapshot(participant.getId(), entry)));
-        } catch (ResponseStatusException ignored) {
-            // Baseline can be captured on the first refresh if Riot is temporarily unavailable.
-        }
-    }
-
-    private RankSnapshot toBaselineSnapshot(UUID participantId, RiotLeagueEntryDto entry) {
-        return RankSnapshot.create(
-                participantId,
-                clock.instant(),
-                RankSnapshot.SnapshotType.BASELINE,
-                entry.queueType(),
-                entry.tier(),
-                entry.rank(),
-                entry.leaguePoints(),
-                entry.wins(),
-                entry.losses()
-        );
     }
 }

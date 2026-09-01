@@ -2,16 +2,10 @@ package com.riftchallenge.challenge;
 
 import com.riftchallenge.challenge.dto.AddParticipantRequest;
 import com.riftchallenge.challenge.dto.ParticipantResponse;
-import com.riftchallenge.riot.ChallengeRegion;
 import com.riftchallenge.riot.RiotAccountClient;
 import com.riftchallenge.riot.RiotIdParser;
-import com.riftchallenge.riot.RiotLeagueClient;
 import com.riftchallenge.riot.dto.RiotAccountDto;
-import com.riftchallenge.riot.dto.RiotLeagueEntryDto;
-import com.riftchallenge.synchronization.RankSnapshot;
-import com.riftchallenge.synchronization.RankSnapshotRepository;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -26,9 +20,8 @@ public class ChallengeParticipantService {
 
     private final ChallengeRepository challengeRepository;
     private final ChallengeParticipantRepository participantRepository;
-    private final RankSnapshotRepository rankSnapshotRepository;
+    private final BaselineSnapshotService baselineSnapshotService;
     private final RiotAccountClient riotAccountClient;
-    private final RiotLeagueClient riotLeagueClient;
     private final ParticipantProfileService participantProfileService;
     private final ChallengeParticipantWriter participantWriter;
     private final Clock clock;
@@ -36,18 +29,16 @@ public class ChallengeParticipantService {
     public ChallengeParticipantService(
             ChallengeRepository challengeRepository,
             ChallengeParticipantRepository participantRepository,
-            RankSnapshotRepository rankSnapshotRepository,
+            BaselineSnapshotService baselineSnapshotService,
             RiotAccountClient riotAccountClient,
-            RiotLeagueClient riotLeagueClient,
             ParticipantProfileService participantProfileService,
             ChallengeParticipantWriter participantWriter,
             Clock clock
     ) {
         this.challengeRepository = challengeRepository;
         this.participantRepository = participantRepository;
-        this.rankSnapshotRepository = rankSnapshotRepository;
+        this.baselineSnapshotService = baselineSnapshotService;
         this.riotAccountClient = riotAccountClient;
-        this.riotLeagueClient = riotLeagueClient;
         this.participantProfileService = participantProfileService;
         this.participantWriter = participantWriter;
         this.clock = clock;
@@ -89,7 +80,7 @@ public class ChallengeParticipantService {
         Challenge challenge = result.challenge();
 
         if (clock.instant().isBefore(challenge.getStartAt())) {
-            captureBaselineIfRanked(saved, challenge.getRegion());
+            baselineSnapshotService.captureBaselineIfRanked(saved, challenge.getRegion());
         }
         participantProfileService.ensureProfileIcon(saved.getId(), challenge.getRegion());
         return ParticipantResponse.from(saved);
@@ -108,28 +99,5 @@ public class ChallengeParticipantService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
 
         participantRepository.delete(participant);
-    }
-
-    private void captureBaselineIfRanked(ChallengeParticipant participant, ChallengeRegion region) {
-        try {
-            riotLeagueClient.findRankedSoloEntry(participant.getRiotPuuid(), region)
-                    .ifPresent(entry -> rankSnapshotRepository.save(toBaselineSnapshot(participant.getId(), entry)));
-        } catch (ResponseStatusException ignored) {
-            // Baseline can be captured on the first refresh if Riot is temporarily unavailable.
-        }
-    }
-
-    private RankSnapshot toBaselineSnapshot(UUID participantId, RiotLeagueEntryDto entry) {
-        return RankSnapshot.create(
-                participantId,
-                clock.instant(),
-                RankSnapshot.SnapshotType.BASELINE,
-                entry.queueType(),
-                entry.tier(),
-                entry.rank(),
-                entry.leaguePoints(),
-                entry.wins(),
-                entry.losses()
-        );
     }
 }
