@@ -11,10 +11,13 @@ import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.leaderboard.AccountMatchRepository.ParticipantMatchHistoryRow;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,23 +65,84 @@ public class MatchHistoryService {
                 continue;
             }
 
-            int lpDelta = row.isWin()
-                    ? MatchLpEstimator.averageWinLp(state.tier())
-                    : -MatchLpEstimator.averageLossLp(state.tier());
-
-            history.add(new ParticipantMatchHistoryResponse(
-                    row.getMatchId(),
-                    row.getChampionId(),
-                    championIconUrlService.buildApiPath(row.getChampionId()),
-                    row.isWin(),
-                    lpDelta,
-                    row.getGameStart()
-            ));
-
+            history.add(toHistoryEntry(row.getMatchId(), row.isWin(), row.getChampionId(), row.getGameStart(), state));
             state = RankReplayService.applyBackward(state, row.isWin());
         }
 
         return List.copyOf(history);
+    }
+
+    /**
+     * Batched form of {@link #buildForParticipant} — fetches and builds match history for every
+     * given participant in one query instead of one query per participant. Used on the challenge
+     * detail page for SOLOQ challenges, which otherwise issues N queries for N participants.
+     *
+     * @param progressByParticipantId current rank progress per participant id, used the same way
+     *     {@code progress} is in {@link #buildForParticipant} — as the starting point the replay
+     *     walks backward from.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, List<ParticipantMatchHistoryResponse>> buildForParticipants(
+            List<ChallengeParticipant> participants,
+            Map<UUID, ParticipantProgressResponse> progressByParticipantId,
+            Challenge challenge
+    ) {
+        if (challenge == null || participants.isEmpty()) {
+            return Map.of();
+        }
+
+        List<UUID> participantIds = participants.stream().map(ChallengeParticipant::getId).toList();
+        List<AccountMatchRepository.ParticipantMatchHistoryRowForParticipant> rows =
+                participantMatchRepository.findHistoryByParticipantIdsAndChallengeId(participantIds, challenge.getId());
+
+        Map<UUID, List<AccountMatchRepository.ParticipantMatchHistoryRowForParticipant>> rowsByParticipantId = rows.stream()
+                .collect(Collectors.groupingBy(AccountMatchRepository.ParticipantMatchHistoryRowForParticipant::getParticipantId));
+
+        Map<UUID, List<ParticipantMatchHistoryResponse>> result = new HashMap<>();
+        for (ChallengeParticipant participant : participants) {
+            UUID participantId = participant.getId();
+            List<AccountMatchRepository.ParticipantMatchHistoryRowForParticipant> participantRows = MaxGamesCap.capToOldest(
+                    rowsByParticipantId.getOrDefault(participantId, List.of()),
+                    challenge.getMaxGames(),
+                    AccountMatchRepository.ParticipantMatchHistoryRowForParticipant::getGameStart
+            );
+
+            RankState state = rankStateFromProgress(progressByParticipantId.get(participantId));
+            List<ParticipantMatchHistoryResponse> history = new ArrayList<>();
+
+            for (AccountMatchRepository.ParticipantMatchHistoryRowForParticipant row : participantRows) {
+                if (!isWithinChallengeWindow(row.getGameStart(), challenge.getStartAt(), challenge.getEndAt())) {
+                    continue;
+                }
+
+                history.add(toHistoryEntry(row.getMatchId(), row.isWin(), row.getChampionId(), row.getGameStart(), state));
+                state = RankReplayService.applyBackward(state, row.isWin());
+            }
+
+            result.put(participantId, List.copyOf(history));
+        }
+
+        return result;
+    }
+
+    private ParticipantMatchHistoryResponse toHistoryEntry(
+            String matchId,
+            boolean win,
+            Integer championId,
+            Instant gameStart,
+            RankState state
+    ) {
+        int lpDelta = win
+                ? MatchLpEstimator.averageWinLp(state.tier())
+                : -MatchLpEstimator.averageLossLp(state.tier());
+        return new ParticipantMatchHistoryResponse(
+                matchId,
+                championId,
+                championIconUrlService.buildApiPath(championId),
+                win,
+                lpDelta,
+                gameStart
+        );
     }
 
     @Transactional(readOnly = true)

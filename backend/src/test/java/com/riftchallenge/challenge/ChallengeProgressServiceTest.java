@@ -2,9 +2,13 @@ package com.riftchallenge.challenge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.riftchallenge.challenge.dto.ParticipantMatchHistoryResponse;
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import com.riftchallenge.synchronization.RankSnapshot;
@@ -12,6 +16,7 @@ import com.riftchallenge.synchronization.RankSnapshotRepository;
 import com.riftchallenge.leaderboard.AccountMatchRepository;
 import com.riftchallenge.leaderboard.AccountMatchRepository.ParticipantMatchOutcomeInWindow;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -40,8 +45,9 @@ class ChallengeProgressServiceTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        when(matchHistoryService.buildForParticipant(any(), any(), any())).thenReturn(List.of());
-        when(challengeRepository.findById(any())).thenReturn(Optional.empty());
+        // lenient: not every test exercises both the single-participant and batched history paths.
+        org.mockito.Mockito.lenient().when(matchHistoryService.buildForParticipant(any(), any(), any())).thenReturn(List.of());
+        org.mockito.Mockito.lenient().when(challengeRepository.findById(any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -419,6 +425,56 @@ class ChallengeProgressServiceTest {
 
         assertThat(progress.wins()).isEqualTo(2);
         assertThat(progress.losses()).isEqualTo(1);
+    }
+
+    @Test
+    void buildProgress_withMultipleParticipants_batchesMatchHistoryInOneCall() {
+        Challenge challenge = Challenge.create(
+                UUID.randomUUID(),
+                "Batch challenge",
+                ChallengeType.SOLOQ,
+                java.time.Instant.parse("2026-08-01T00:00:00Z"),
+                java.time.Instant.parse("2026-09-01T00:00:00Z"));
+        ChallengeParticipant participant1 = ChallengeParticipant.create(
+                challenge.getId(),
+                new RiotAccountDto("puuid-1", "One", "EUW")
+        );
+        ChallengeParticipant participant2 = ChallengeParticipant.create(
+                challenge.getId(),
+                new RiotAccountDto("puuid-2", "Two", "EUW")
+        );
+        List<ChallengeParticipant> participants = List.of(participant1, participant2);
+        List<UUID> participantIds = List.of(participant1.getId(), participant2.getId());
+
+        when(rankSnapshotRepository.findByParticipantIdInAndSnapshotType(participantIds, RankSnapshot.SnapshotType.BASELINE))
+                .thenReturn(List.of());
+        when(rankSnapshotRepository.findByParticipantIdInAndSnapshotType(participantIds, RankSnapshot.SnapshotType.REFRESH))
+                .thenReturn(List.of());
+        when(participantMatchRepository.countWinsAndLossesInChallengeWindowForParticipants(participantIds, challenge.getId()))
+                .thenReturn(List.of());
+
+        ParticipantMatchHistoryResponse historyEntry = new ParticipantMatchHistoryResponse(
+                "MATCH_1", 1, "/champion-icons/1.png", true, 20, java.time.Instant.parse("2026-08-05T00:00:00Z"));
+        when(matchHistoryService.buildForParticipants(eq(participants), any(), eq(challenge)))
+                .thenReturn(Map.of(participant1.getId(), List.of(historyEntry), participant2.getId(), List.of()));
+
+        List<ParticipantProgressResponse> progress = challengeProgressService.buildProgress(challenge, participants);
+
+        assertThat(progress).hasSize(2);
+        ParticipantProgressResponse progress1 = progress.stream()
+                .filter(entry -> entry.id().equals(participant1.getId()))
+                .findFirst()
+                .orElseThrow();
+        ParticipantProgressResponse progress2 = progress.stream()
+                .filter(entry -> entry.id().equals(participant2.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(progress1.recentMatches()).containsExactly(historyEntry);
+        assertThat(progress2.recentMatches()).isEmpty();
+
+        // One batched call for both participants, never the N-query-per-participant path.
+        verify(matchHistoryService).buildForParticipants(eq(participants), any(), eq(challenge));
+        verify(matchHistoryService, never()).buildForParticipant(any(), any(), any());
     }
 
     private static ParticipantMatchOutcomeInWindow outcomeAt(boolean win, java.time.Instant gameStart) {

@@ -2,7 +2,6 @@ package com.riftchallenge.leaderboard;
 
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
-import com.riftchallenge.leaderboard.AccountMatchRepository.AccountMatchHistoryRow;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardMatchHistoryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
@@ -18,6 +17,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
@@ -72,11 +73,13 @@ public class LeaderboardComputationService {
             recordLatestRank(ranks, account);
         }
 
+        Map<String, List<TaggedMatch>> historyByPuuid = accountHistoriesSince(accounts, seasonStart);
+
         List<ParticipantWindowStats> seasonStats = new ArrayList<>();
         List<ParticipantWindowStats> rollingStats = new ArrayList<>();
 
         for (RiotAccount account : accounts) {
-            List<TaggedMatch> history = accountHistorySince(account.getRiotPuuid(), seasonStart);
+            List<TaggedMatch> history = historyByPuuid.getOrDefault(account.getRiotPuuid(), List.of());
             if (history.isEmpty()) {
                 continue;
             }
@@ -95,24 +98,43 @@ public class LeaderboardComputationService {
         }
 
         return new LeaderboardSnapshot(
-                buildWindow(seasonStats, ranks, MIN_GAMES_FOR_WIN_RATE, seasonStart),
-                buildWindow(rollingStats, ranks, MIN_GAMES_FOR_WIN_RATE_ROLLING, seasonStart),
+                buildWindow(seasonStats, ranks, MIN_GAMES_FOR_WIN_RATE, historyByPuuid),
+                buildWindow(rollingStats, ranks, MIN_GAMES_FOR_WIN_RATE_ROLLING, historyByPuuid),
                 now
         );
     }
 
-    private List<TaggedMatch> accountHistorySince(String riotPuuid, Instant since) {
-        return matchRepository.findHistorySince(riotPuuid, since).stream()
-                .map(row -> new TaggedMatch(row.getMatchId(), row.isWin(), row.getChampionId(), row.getGameStart()))
-                .sorted(Comparator.comparing(TaggedMatch::gameStart))
-                .toList();
+    /**
+     * Batched form of the old per-account {@code accountHistorySince} — fetches season history
+     * for every tracked account in one query instead of one query per account, then groups by
+     * puuid. Keyed by {@code seasonStart} for every caller (the rolling window is filtered from
+     * this same season history in Java, see {@link #compute}), so a single fetch covers both the
+     * main per-account loop and {@link #buildRankList}'s fallback lookup below.
+     */
+    private Map<String, List<TaggedMatch>> accountHistoriesSince(List<RiotAccount> accounts, Instant since) {
+        Set<String> puuids = accounts.stream().map(RiotAccount::getRiotPuuid).collect(Collectors.toSet());
+        if (puuids.isEmpty()) {
+            return Map.of();
+        }
+
+        return matchRepository.findHistorySinceForPuuids(puuids, since).stream()
+                .collect(Collectors.groupingBy(
+                        AccountMatchRepository.AccountMatchHistoryRowForPuuid::getRiotPuuid,
+                        Collectors.collectingAndThen(
+                                Collectors.mapping(
+                                        row -> new TaggedMatch(row.getMatchId(), row.isWin(), row.getChampionId(), row.getGameStart()),
+                                        Collectors.toList()
+                                ),
+                                list -> list.stream().sorted(Comparator.comparing(TaggedMatch::gameStart)).toList()
+                        )
+                ));
     }
 
     private LeaderboardWindow buildWindow(
             List<ParticipantWindowStats> stats,
             Map<String, PlayerRank> ranks,
             int winRateMinGames,
-            Instant rankHistorySince
+            Map<String, List<TaggedMatch>> historyByPuuid
     ) {
         Map<String, ParticipantWindowStats> statsByPuuid = new HashMap<>();
         for (ParticipantWindowStats entry : stats) {
@@ -120,7 +142,7 @@ public class LeaderboardComputationService {
         }
 
         return new LeaderboardWindow(
-                buildRankList(ranks, statsByPuuid, rankHistorySince),
+                buildRankList(ranks, statsByPuuid, historyByPuuid),
                 buildStatList(
                         stats,
                         winRateMinGames,
@@ -240,7 +262,7 @@ public class LeaderboardComputationService {
     private List<LeaderboardEntryResponse> buildRankList(
             Map<String, PlayerRank> ranks,
             Map<String, ParticipantWindowStats> statsByPuuid,
-            Instant historySince
+            Map<String, List<TaggedMatch>> historyByPuuid
     ) {
         List<PlayerRank> sorted = ranks.values().stream()
                 .sorted(Comparator.comparingInt(
@@ -256,7 +278,7 @@ public class LeaderboardComputationService {
             List<LeaderboardMatchHistoryResponse> recentMatches = stats != null
                     ? stats.recentMatches()
                     : recentMatches(
-                            accountHistorySince(rank.identity().puuid(), historySince),
+                            historyByPuuid.getOrDefault(rank.identity().puuid(), List.of()),
                             rank.tier() != null ? rank.tier() : "GOLD"
                     );
             result.add(toRankEntry(rank, position++, recentMatches));

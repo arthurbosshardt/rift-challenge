@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import com.riftchallenge.TestRiotAccounts;
 import com.riftchallenge.account.RiotAccount;
 import com.riftchallenge.account.RiotAccountRepository;
-import com.riftchallenge.leaderboard.AccountMatchRepository.AccountMatchHistoryRow;
+import com.riftchallenge.leaderboard.AccountMatchRepository.AccountMatchHistoryRowForPuuid;
 import com.riftchallenge.leaderboard.dto.LeaderboardEntryResponse;
 import com.riftchallenge.leaderboard.dto.LeaderboardSnapshot;
 import com.riftchallenge.riot.ChampionIconUrlService;
@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,7 +68,8 @@ class LeaderboardComputationServiceTest {
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
         boolean[] wins = new boolean[19];
         java.util.Arrays.fill(wins, true);
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(history(wins));
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START))
+                .thenReturn(history(account.getRiotPuuid(), wins));
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -81,7 +83,8 @@ class LeaderboardComputationServiceTest {
     void accountWithEnoughGames_ranksByWinRate() {
         RiotAccount account = account("puuid-active", "Active", "EUW");
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(history(
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START)).thenReturn(history(
+                account.getRiotPuuid(),
                 true, true, true, true, false, true, true, true, false, true,
                 true, true, true, true, false, true, true, true, false, true
         ));
@@ -101,7 +104,7 @@ class LeaderboardComputationServiceTest {
     void accountWithNoMatches_isExcludedEntirely() {
         RiotAccount account = account("puuid-idle", "Idle", "EUW");
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(List.of());
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START)).thenReturn(List.of());
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -115,10 +118,10 @@ class LeaderboardComputationServiceTest {
         RiotAccount account = account("puuid-rolling", "Rolling", "EUW");
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
 
-        List<AccountMatchHistoryRow> allSeasonMatches = new ArrayList<>();
-        allSeasonMatches.addAll(historyAt(NOW.minusSeconds(30L * 24 * 3600), true, 25));
-        allSeasonMatches.addAll(historyAt(NOW.minusSeconds(2L * 24 * 3600), false, 20));
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(allSeasonMatches);
+        List<AccountMatchHistoryRowForPuuid> allSeasonMatches = new ArrayList<>();
+        allSeasonMatches.addAll(historyAt(account.getRiotPuuid(), NOW.minusSeconds(30L * 24 * 3600), true, 25));
+        allSeasonMatches.addAll(historyAt(account.getRiotPuuid(), NOW.minusSeconds(2L * 24 * 3600), false, 20));
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START)).thenReturn(allSeasonMatches);
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -134,8 +137,8 @@ class LeaderboardComputationServiceTest {
     void winStreakBelowTwo_excludedFromWinStreakLeaderboard() {
         RiotAccount account = account("puuid-single-win", "SingleWin", "EUW");
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START))
-                .thenReturn(history(false, true, false));
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START))
+                .thenReturn(history(account.getRiotPuuid(), false, true, false));
 
         LeaderboardSnapshot snapshot = service.compute(NOW);
 
@@ -146,7 +149,7 @@ class LeaderboardComputationServiceTest {
     void rankList_reflectsStoredAccountRank() {
         RiotAccount account = account("puuid-rank", "Ranked", "EUW");
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START)).thenReturn(List.of());
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START)).thenReturn(List.of());
         when(rankRepository.findByRiotPuuid(account.getRiotPuuid())).thenReturn(Optional.of(
                 LeaderboardAccountRank.create(account.getRiotPuuid(), NOW, "DIAMOND", "II", 40)
         ));
@@ -165,8 +168,8 @@ class LeaderboardComputationServiceTest {
     void rankList_last7Days_includesSeasonHistoryWhenNoRollingStats() {
         RiotAccount account = account("puuid-rank-rolling", "Ranked", "EUW");
         when(riotAccountRepository.findAll()).thenReturn(List.of(account));
-        when(matchRepository.findHistorySince(account.getRiotPuuid(), SEASON_START))
-                .thenReturn(historyAt(NOW.minusSeconds(30L * 24 * 3600), true, 5));
+        when(matchRepository.findHistorySinceForPuuids(Set.of(account.getRiotPuuid()), SEASON_START))
+                .thenReturn(historyAt(account.getRiotPuuid(), NOW.minusSeconds(30L * 24 * 3600), true, 5));
         when(rankRepository.findByRiotPuuid(account.getRiotPuuid())).thenReturn(Optional.of(
                 LeaderboardAccountRank.create(account.getRiotPuuid(), NOW, "PLATINUM", "I", 20)
         ));
@@ -181,28 +184,29 @@ class LeaderboardComputationServiceTest {
         return TestRiotAccounts.riotAccount(puuid, gameName, tagLine);
     }
 
-    private static List<AccountMatchHistoryRow> history(boolean... wins) {
+    private static List<AccountMatchHistoryRowForPuuid> history(String riotPuuid, boolean... wins) {
         Instant start = SEASON_START.plusSeconds(3600);
-        List<AccountMatchHistoryRow> result = new ArrayList<>();
+        List<AccountMatchHistoryRowForPuuid> result = new ArrayList<>();
         for (int i = 0; i < wins.length; i++) {
-            result.add(new TestHistory("match-" + i, wins[i], 1, start.plusSeconds(i * 3600L)));
+            result.add(new TestHistory(riotPuuid, "match-" + i, wins[i], 1, start.plusSeconds(i * 3600L)));
         }
         return result;
     }
 
-    private static List<AccountMatchHistoryRow> historyAt(Instant gameStart, boolean win, int count) {
-        List<AccountMatchHistoryRow> result = new ArrayList<>();
+    private static List<AccountMatchHistoryRowForPuuid> historyAt(String riotPuuid, Instant gameStart, boolean win, int count) {
+        List<AccountMatchHistoryRowForPuuid> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            result.add(new TestHistory("match-at-" + gameStart + "-" + i, win, 1, gameStart.plusSeconds(i)));
+            result.add(new TestHistory(riotPuuid, "match-at-" + gameStart + "-" + i, win, 1, gameStart.plusSeconds(i)));
         }
         return result;
     }
 
     private record TestHistory(
+            String getRiotPuuid,
             String getMatchId,
             boolean isWin,
             Integer getChampionId,
             Instant getGameStart
-    ) implements AccountMatchHistoryRow {
+    ) implements AccountMatchHistoryRowForPuuid {
     }
 }

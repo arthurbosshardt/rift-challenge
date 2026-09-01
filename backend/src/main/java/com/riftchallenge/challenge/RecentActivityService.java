@@ -251,10 +251,17 @@ public class RecentActivityService {
             }
         }
 
-        Map<Integer, ChampionRankRow> ranks = accountMatchRepository
-                .findChampionRanks(riotPuuid, leaderboardProperties.seasonStartAt(), CHAMPION_RANK_MIN_GAMES)
-                .stream()
-                .collect(Collectors.toMap(ChampionRankRow::getChampionId, row -> row, (a, b) -> a));
+        Map<Integer, ChampionRankRow> ranks = championStats.isEmpty()
+                ? Map.of()
+                : accountMatchRepository
+                        .findChampionRanks(
+                                riotPuuid,
+                                leaderboardProperties.seasonStartAt(),
+                                CHAMPION_RANK_MIN_GAMES,
+                                championStats.keySet()
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(ChampionRankRow::getChampionId, row -> row, (a, b) -> a));
 
         return new ChampionStatsResult(buildChampionStats(overall, championStats, ranks), buildPlaystyle(overall));
     }

@@ -1,5 +1,6 @@
 package com.riftchallenge.challenge;
 
+import com.riftchallenge.challenge.dto.ParticipantMatchHistoryResponse;
 import com.riftchallenge.challenge.dto.ParticipantProgressResponse;
 import com.riftchallenge.riot.MatchLpEstimator;
 import com.riftchallenge.riot.RankReplayService;
@@ -86,7 +87,12 @@ public class ChallengeProgressService {
             RankSnapshot baseline = baselineByParticipant.get(participant.getId());
             RankSnapshot current = refreshByParticipant.getOrDefault(participant.getId(), baseline);
             ParticipantWinLoss winLoss = winLossByParticipant.getOrDefault(participant.getId(), ParticipantWinLoss.NONE);
-            unsorted.add(buildForParticipant(participant, includeMatchHistory, challenge, baseline, current, winLoss));
+            // Match history is attached below in one batched call rather than per-participant here.
+            unsorted.add(buildForParticipant(participant, false, challenge, baseline, current, winLoss));
+        }
+
+        if (includeMatchHistory) {
+            attachMatchHistoryBatch(participants, unsorted, challenge);
         }
 
         unsorted.sort(ChallengeLeaderboardOrdering.BY_LP_GAIN);
@@ -96,6 +102,24 @@ public class ChallengeProgressService {
             ranked.add(unsorted.get(index).withPosition(index + 1));
         }
         return ranked;
+    }
+
+    /** Batches the N per-participant match-history queries {@link #buildForParticipant} would otherwise issue into one. */
+    private void attachMatchHistoryBatch(
+            List<ChallengeParticipant> participants,
+            List<ParticipantProgressResponse> progressList,
+            Challenge challenge
+    ) {
+        Map<UUID, ParticipantProgressResponse> progressByParticipantId = progressList.stream()
+                .collect(Collectors.toMap(ParticipantProgressResponse::id, progress -> progress));
+        Map<UUID, List<ParticipantMatchHistoryResponse>> historyByParticipantId =
+                matchHistoryService.buildForParticipants(participants, progressByParticipantId, challenge);
+
+        for (int index = 0; index < progressList.size(); index++) {
+            ParticipantProgressResponse progress = progressList.get(index);
+            List<ParticipantMatchHistoryResponse> history = historyByParticipantId.getOrDefault(progress.id(), List.of());
+            progressList.set(index, progress.withRecentMatches(history));
+        }
     }
 
     private Map<UUID, ParticipantWinLoss> winLossByParticipantCappedToMaxGames(

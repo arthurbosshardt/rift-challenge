@@ -67,21 +67,39 @@ public interface AccountMatchRepository extends JpaRepository<AccountMatch, UUID
             Pageable pageable
     );
 
+    /**
+     * Fetches season history for every given account in one query instead of one query per
+     * account (used by the leaderboard computation, which otherwise issues N queries for N
+     * tracked accounts on every scheduled recompute).
+     */
     @Query("""
-            SELECT am.riotMatchId AS matchId,
+            SELECT am.riotPuuid AS riotPuuid,
+                   am.riotMatchId AS matchId,
                    am.win AS win,
                    am.championId AS championId,
                    rm.gameStart AS gameStart
             FROM AccountMatch am, RiotMatch rm
-            WHERE am.riotPuuid = :riotPuuid
+            WHERE am.riotPuuid IN :riotPuuids
               AND rm.riotMatchId = am.riotMatchId
               AND rm.gameStart >= :since
             ORDER BY rm.gameStart ASC
             """)
-    List<AccountMatchHistoryRow> findHistorySince(
-            @Param("riotPuuid") String riotPuuid,
+    List<AccountMatchHistoryRowForPuuid> findHistorySinceForPuuids(
+            @Param("riotPuuids") Set<String> riotPuuids,
             @Param("since") Instant since
     );
+
+    interface AccountMatchHistoryRowForPuuid {
+        String getRiotPuuid();
+
+        String getMatchId();
+
+        boolean isWin();
+
+        Integer getChampionId();
+
+        Instant getGameStart();
+    }
 
     interface SeasonActivityRow {
         String getMatchId();
@@ -105,21 +123,19 @@ public interface AccountMatchRepository extends JpaRepository<AccountMatch, UUID
         Instant getGameStart();
     }
 
-    interface AccountMatchHistoryRow {
-        String getMatchId();
-
-        boolean isWin();
-
-        Integer getChampionId();
-
-        Instant getGameStart();
-    }
 
     /**
      * Ranks a player against every other tracked account that has played the same champion this
      * season, by a composite performance score (win rate 45% + KDA 35% + CS/min 20%). Native SQL
      * because Hibernate/JPQL doesn't support window functions. The score expression is duplicated
      * in ORDER BY since a native-query SELECT alias can't reliably be referenced there.
+     *
+     * <p>{@code championIds} restricts the whole computation (including the RANK()/pool_size
+     * window, via the CTE's WHERE clause) to the caller's own played champions instead of ranking
+     * every champion in the pool — the caller only ever reads rows for those champions anyway, and
+     * this query previously computed ranks for the full season's worth of champions on every
+     * profile view. Must not be called with an empty collection: {@code column IN ()} is invalid
+     * SQL, so callers should skip the call entirely when they have no champions to rank.
      */
     @Query(value = """
             WITH per_player_champion AS (
@@ -129,7 +145,7 @@ public interface AccountMatchRepository extends JpaRepository<AccountMatch, UUID
                      SUM(am.cs) AS cs, SUM(am.game_duration_seconds) AS duration_seconds
               FROM account_match am
               JOIN riot_match rm ON rm.riot_match_id = am.riot_match_id
-              WHERE rm.game_start >= :since AND am.champion_id IS NOT NULL AND am.kills IS NOT NULL
+              WHERE rm.game_start >= :since AND am.champion_id IN (:championIds) AND am.kills IS NOT NULL
               GROUP BY am.riot_puuid, am.champion_id
               HAVING COUNT(*) >= :minGames
             ),
@@ -150,7 +166,8 @@ public interface AccountMatchRepository extends JpaRepository<AccountMatch, UUID
     List<ChampionRankRow> findChampionRanks(
             @Param("puuid") String puuid,
             @Param("since") Instant since,
-            @Param("minGames") int minGames
+            @Param("minGames") int minGames,
+            @Param("championIds") Set<Integer> championIds
     );
 
     interface ChampionRankRow {
@@ -314,6 +331,43 @@ public interface AccountMatchRepository extends JpaRepository<AccountMatch, UUID
     );
 
     interface ParticipantMatchHistoryRow {
+        String getMatchId();
+
+        boolean isWin();
+
+        Integer getChampionId();
+
+        Instant getGameStart();
+    }
+
+    /**
+     * Batched form of {@link #findHistoryByParticipantIdAndChallengeId} — fetches match history
+     * for every given participant in one query instead of one query per participant (used on the
+     * challenge detail page, which otherwise issues N queries for N SOLOQ participants).
+     */
+    @Query("""
+            SELECT cp.id AS participantId,
+                   am.riotMatchId AS matchId,
+                   am.win AS win,
+                   am.championId AS championId,
+                   rm.gameStart AS gameStart
+            FROM AccountMatch am, RiotMatch rm, ChallengeParticipant cp, Challenge c
+            WHERE cp.id IN :participantIds
+              AND cp.riotPuuid = am.riotPuuid
+              AND c.id = :challengeId
+              AND rm.riotMatchId = am.riotMatchId
+              AND rm.gameStart >= c.startAt
+              AND (c.endAt IS NULL OR rm.gameStart < c.endAt)
+            ORDER BY rm.gameStart DESC
+            """)
+    List<ParticipantMatchHistoryRowForParticipant> findHistoryByParticipantIdsAndChallengeId(
+            @Param("participantIds") List<UUID> participantIds,
+            @Param("challengeId") UUID challengeId
+    );
+
+    interface ParticipantMatchHistoryRowForParticipant {
+        UUID getParticipantId();
+
         String getMatchId();
 
         boolean isWin();
