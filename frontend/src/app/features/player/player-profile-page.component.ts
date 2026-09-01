@@ -64,6 +64,10 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
   protected readonly riotIdCopied = signal(false);
 
   private riotId = '';
+  /** Guards the one auto-refresh per page visit in {@link autoRefreshIfNeeded} — reset per riotId
+   *  in {@link loadPlayer} so navigating between players re-arms it, but the background poll
+   *  loop (also driven off seasonSyncInProgress) doesn't keep re-triggering it. */
+  private autoRefreshTriggered = false;
   private seasonSyncPollInterval: ReturnType<typeof setInterval> | null = null;
   private paramSubscription: Subscription | null = null;
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
@@ -94,6 +98,7 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
     this.clearActivityRetry();
     this.clearResolveRetry();
     this.riotId = riotId;
+    this.autoRefreshTriggered = false;
     this.player.set(null);
     this.notFound.set(false);
     this.activityAccount.set(null);
@@ -267,6 +272,30 @@ export class PlayerProfilePageComponent implements OnInit, OnDestroy {
     this.activityError.set(null);
     this.activityLoading.set(false);
     this.updateSeasonSyncPolling();
+    this.autoRefreshIfNeeded(riotId, normalized);
+  }
+
+  /**
+   * A player whose season sync isn't complete — most commonly one just discovered through the
+   * search bar's live-Riot fallback and never synced before — would otherwise sit on whatever the
+   * passive DB-only load found (often nothing) until the background catch-up chain's ~45s polling
+   * cadence catches up. Kick off one synchronous refresh immediately instead, the same request the
+   * "Actualiser" button makes. Silent (no loading spinner, errors swallowed): this mirrors the
+   * existing background poll, and the poll it starts alongside will keep retrying regardless.
+   * Safe to fire even if a background chain is already running — the backend's own sync guards
+   * (see ActivityAccountBackgroundSyncService) make redundant calls a no-op.
+   */
+  private autoRefreshIfNeeded(riotId: string, activity: ActivityAccount): void {
+    if (this.autoRefreshTriggered || !activity.seasonSyncInProgress) {
+      return;
+    }
+    this.autoRefreshTriggered = true;
+    this.playerApi.refreshActivity(riotId).subscribe({
+      next: (refreshed) => this.handleActivitySuccess(riotId, refreshed),
+      error: () => {
+        /* best-effort — the background sync + poll already running will keep catching up */
+      },
+    });
   }
 
   private handleActivityError(riotId: string, err: HttpErrorResponse, allowRetry: boolean): void {
