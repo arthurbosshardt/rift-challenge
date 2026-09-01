@@ -1,5 +1,6 @@
 package com.riftchallenge.synchronization;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,6 +28,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Covers the highest-risk behaviour of the Riot sync pipeline: only ranked solo/duo
@@ -97,9 +101,11 @@ class ChallengeParticipantSyncServiceTest {
         );
         participant = ChallengeParticipant.create(challenge.getId(), new RiotAccountDto(PUUID, "Player", "EUW"));
 
-        // Not-finished challenge: keeps the historical/estimated-rank branch a no-op
-        // so these tests stay focused on match-window sync behaviour.
-        when(riotLeagueClient.findRankedSoloEntry(any(), any())).thenReturn(Optional.empty());
+        // Not-finished challenge: keeps the historical/estimated-rank branch a no-op so most tests
+        // stay focused on match-window sync behaviour. lenient(): the finished-challenge tests
+        // below never reach this call at all (different branch), which strict stubbing would
+        // otherwise flag as unnecessary.
+        org.mockito.Mockito.lenient().when(riotLeagueClient.findRankedSoloEntry(any(), any())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -185,6 +191,117 @@ class ChallengeParticipantSyncServiceTest {
         service.syncParticipant(challenge, participant, NOW);
 
         verify(participantMatchRepository, times(ChallengeParticipantSyncService.MAX_NEW_MATCHES_PER_REFRESH)).save(any());
+    }
+
+    @Test
+    void syncChallengeWindowMatches_stopsOnRateLimit_keepingMatchesImportedSoFar() {
+        String importedMatchId = "EUW1_700";
+        String rateLimitedMatchId = "EUW1_701";
+        when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
+                .thenReturn(List.of(importedMatchId, rateLimitedMatchId));
+        when(riotMatchLookupService.getMatch(importedMatchId))
+                .thenReturn(matchDetail(importedMatchId, START_AT.plusSeconds(3600), 420, true, 99));
+        when(riotMatchLookupService.getMatch(rateLimitedMatchId))
+                .thenThrow(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached"));
+
+        // A 429 partway through the loop must not fail the whole sync — it should stop importing
+        // and keep whatever was already saved, letting the next refresh pick up where it left off.
+        assertThatCode(() -> service.syncParticipant(challenge, participant, NOW)).doesNotThrowAnyException();
+
+        verify(participantMatchRepository, times(1)).save(any());
+    }
+
+    @Test
+    void importMatchDetail_toleratesConcurrentDuplicateAccountMatch() {
+        String matchId = "EUW1_800";
+        when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
+                .thenReturn(List.of(matchId));
+        when(riotMatchLookupService.getMatch(matchId))
+                .thenReturn(matchDetail(matchId, START_AT.plusSeconds(3600), 420, true, 99));
+        // Simulates another concurrent sync (e.g. a linked leaderboard sync) having already
+        // inserted the same (riot_puuid, riot_match_id) row between the existence check and save.
+        when(participantMatchRepository.save(any())).thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        assertThatCode(() -> service.syncParticipant(challenge, participant, NOW)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void persistMatchIfNeeded_toleratesConcurrentDuplicateRiotMatch() {
+        String matchId = "EUW1_900";
+        when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
+                .thenReturn(List.of(matchId));
+        when(riotMatchLookupService.getMatch(matchId))
+                .thenReturn(matchDetail(matchId, START_AT.plusSeconds(3600), 420, true, 99));
+        when(riotMatchRepository.existsByRiotMatchId(matchId)).thenReturn(false);
+        // Simulates another concurrent participant's sync having already inserted this shared
+        // riot_match row (matches aren't scoped per-participant) between the check and the save.
+        when(riotMatchRepository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        assertThatCode(() -> service.syncParticipant(challenge, participant, NOW)).doesNotThrowAnyException();
+
+        // The shared riot_match row lost the race, but this participant's own account_match link
+        // is independent and must still be persisted.
+        verify(participantMatchRepository, times(1)).save(any());
+    }
+
+    @Test
+    void syncParticipant_finishedChallengeFullySynced_skipsRiotSyncEntirely() {
+        Instant afterEnd = END_AT.plusSeconds(3600);
+        RankSnapshot baseline = RankSnapshot.create(
+                participant.getId(), START_AT, RankSnapshot.SnapshotType.BASELINE,
+                "RANKED_SOLO_5x5", "GOLD", "IV", 20, 0, 0
+        );
+        RankSnapshot refresh = RankSnapshot.create(
+                participant.getId(), END_AT, RankSnapshot.SnapshotType.REFRESH,
+                "RANKED_SOLO_5x5", "GOLD", "II", 40, 5, 3
+        );
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(), RankSnapshot.SnapshotType.BASELINE
+        )).thenReturn(Optional.of(baseline));
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(), RankSnapshot.SnapshotType.REFRESH
+        )).thenReturn(Optional.of(refresh));
+        when(participantMatchRepository.countInChallengeWindow(participant.getId(), challenge.getId())).thenReturn(5L);
+        when(participantMatchRepository.countMissingChampionIdByRiotPuuid(PUUID)).thenReturn(0L);
+        // hasPendingMatchImports() re-lists match ids and finds them all already linked.
+        String alreadyLinkedMatchId = "EUW1_950";
+        when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
+                .thenReturn(List.of(alreadyLinkedMatchId));
+        when(participantMatchRepository.existsByRiotPuuidAndRiotMatchId(PUUID, alreadyLinkedMatchId)).thenReturn(true);
+
+        service.syncParticipant(challenge, participant, afterEnd);
+
+        // The whole match-window sync (and its champion backfill) must be skipped, not just a no-op pass.
+        verify(championBackfillService, never()).backfillForParticipant(any());
+        verify(riotMatchLookupService, never()).getMatch(anyString());
+    }
+
+    @Test
+    void syncParticipant_finishedChallengeWithMissingChampionIds_doesNotSkip() {
+        Instant afterEnd = END_AT.plusSeconds(3600);
+        RankSnapshot baseline = RankSnapshot.create(
+                participant.getId(), START_AT, RankSnapshot.SnapshotType.BASELINE,
+                "RANKED_SOLO_5x5", "GOLD", "IV", 20, 0, 0
+        );
+        RankSnapshot refresh = RankSnapshot.create(
+                participant.getId(), END_AT, RankSnapshot.SnapshotType.REFRESH,
+                "RANKED_SOLO_5x5", "GOLD", "II", 40, 5, 3
+        );
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(), RankSnapshot.SnapshotType.BASELINE
+        )).thenReturn(Optional.of(baseline));
+        when(rankSnapshotRepository.findFirstByParticipantIdAndSnapshotTypeOrderByCapturedAtDesc(
+                participant.getId(), RankSnapshot.SnapshotType.REFRESH
+        )).thenReturn(Optional.of(refresh));
+        when(participantMatchRepository.countInChallengeWindow(participant.getId(), challenge.getId())).thenReturn(5L);
+        // Still some rows missing champion_id — must not take the "fully synced" skip path.
+        when(participantMatchRepository.countMissingChampionIdByRiotPuuid(PUUID)).thenReturn(2L);
+        when(riotMatchClient.getAllRankedSoloMatchIdsInWindow(eq(PUUID), any(Long.class), any(), any(Integer.class), any()))
+                .thenReturn(List.of());
+
+        service.syncParticipant(challenge, participant, afterEnd);
+
+        verify(championBackfillService, times(1)).backfillForParticipant(participant.getId());
     }
 
     private static RiotMatchDetailDto matchDetail(String matchId, Instant gameStart, int queueId, boolean win, int championId) {
