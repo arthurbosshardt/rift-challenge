@@ -15,8 +15,12 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ChallengeOpenGraphImageRenderer {
+
+    private static final Logger log = LoggerFactory.getLogger(ChallengeOpenGraphImageRenderer.class);
 
     static final int WIDTH = 1200;
     static final int HEIGHT = 630;
@@ -306,6 +310,7 @@ public final class ChallengeOpenGraphImageRenderer {
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
             return font;
         } catch (Exception exception) {
+            log.debug("Falling back to system font: brand font failed to load", exception);
             return null;
         }
     }
@@ -317,6 +322,7 @@ public final class ChallengeOpenGraphImageRenderer {
             }
             return ImageIO.read(stream);
         } catch (IOException exception) {
+            log.debug("Falling back to no logo: brand logo failed to load", exception);
             return null;
         }
     }

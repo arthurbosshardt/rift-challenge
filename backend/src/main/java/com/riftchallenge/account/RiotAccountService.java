@@ -9,11 +9,16 @@ import com.riftchallenge.riot.RiotSummonerClient;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RiotAccountService {
+
+    private static final Logger log = LoggerFactory.getLogger(RiotAccountService.class);
 
     private final RiotAccountRepository riotAccountRepository;
     private final RiotAccountClient riotAccountClient;
@@ -66,8 +71,13 @@ public class RiotAccountService {
                 } else {
                     created.add(label);
                 }
+            } catch (ResponseStatusException exception) {
+                // Reason strings on these are curated, user-facing messages (e.g. "Riot account
+                // not found") — safe to return as-is, unlike a raw RuntimeException#getMessage().
+                errors.add(normalized + ": " + exception.getReason());
             } catch (RuntimeException exception) {
-                errors.add(normalized + ": " + exception.getMessage());
+                log.warn("Failed to register Riot account {}", normalized, exception);
+                errors.add(normalized + ": registration failed");
             }
         }
 
