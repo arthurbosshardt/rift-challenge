@@ -50,6 +50,12 @@ riftchallenge:
     app-id: ${RIOT_APP_ID:}
     regional-routing: ${RIOT_REGIONAL_ROUTING:europe}
     sync-concurrency: ${RIOT_SYNC_CONCURRENCY:8}
+    # Upper bound on how long a single 429 retry sleeps, even if Riot's own Retry-After asks for
+    # longer (observed well past a minute under sustained rate limiting). Several call sites run
+    # this synchronously on a request thread, so an unbounded sleep here can tie up the Tomcat
+    # pool; this keeps worst case bounded to max-retry-delay-ms * RiotRateLimitRetryInterceptor's
+    # attempt cap instead.
+    max-retry-delay-ms: ${RIOT_MAX_RETRY_DELAY_MS:10000}
   leaderboard:
     # Start of the current ranked YEAR (the reset that actually zeroes LP — e.g. Jan 8 2026
     # noon server time for Season 1 2026), not an in-year season/split boundary: Riot does not

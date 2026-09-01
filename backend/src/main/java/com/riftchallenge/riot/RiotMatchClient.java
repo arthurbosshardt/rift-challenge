@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -52,6 +54,10 @@ public class RiotMatchClient {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached");
         } catch (HttpClientErrorException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed");
+        } catch (HttpServerErrorException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API is currently unavailable");
+        } catch (ResourceAccessException exception) {
+            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Riot API request timed out");
         }
     }
 
@@ -129,6 +135,10 @@ public class RiotMatchClient {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached");
         } catch (HttpClientErrorException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed");
+        } catch (HttpServerErrorException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API is currently unavailable");
+        } catch (ResourceAccessException exception) {
+            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Riot API request timed out");
         }
     }
 
@@ -153,6 +163,10 @@ public class RiotMatchClient {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Riot API rate limit reached");
         } catch (HttpClientErrorException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API request failed");
+        } catch (HttpServerErrorException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API is currently unavailable");
+        } catch (ResourceAccessException exception) {
+            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Riot API request timed out");
         }
     }
 }

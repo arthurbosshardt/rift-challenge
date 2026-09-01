@@ -17,15 +17,30 @@ class RiotRateLimitRetryInterceptorTest {
         MockClientHttpResponse response = new MockClientHttpResponse(new byte[0], 429);
         response.getHeaders().add("Retry-After", "3");
 
-        assertThat(RiotRateLimitRetryInterceptor.parseRetryAfterMs(response)).isEqualTo(3_000L);
+        assertThat(RiotRateLimitRetryInterceptor.parseRetryAfterMs(response, 60_000L)).isEqualTo(3_000L);
     }
 
     @Test
     void parseRetryAfterMs_fallsBackToDefaultWhenMissing() {
         MockClientHttpResponse response = new MockClientHttpResponse(new byte[0], 429);
 
-        assertThat(RiotRateLimitRetryInterceptor.parseRetryAfterMs(response))
+        assertThat(RiotRateLimitRetryInterceptor.parseRetryAfterMs(response, 60_000L))
                 .isEqualTo(RiotRateLimitRetryInterceptor.DEFAULT_RETRY_DELAY_MS);
+    }
+
+    @Test
+    void parseRetryAfterMs_capsHeaderValueToMaxDelay() {
+        MockClientHttpResponse response = new MockClientHttpResponse(new byte[0], 429);
+        response.getHeaders().add("Retry-After", "600");
+
+        assertThat(RiotRateLimitRetryInterceptor.parseRetryAfterMs(response, 5_000L)).isEqualTo(5_000L);
+    }
+
+    @Test
+    void parseRetryAfterMs_capsDefaultDelayToMaxDelay() {
+        MockClientHttpResponse response = new MockClientHttpResponse(new byte[0], 429);
+
+        assertThat(RiotRateLimitRetryInterceptor.parseRetryAfterMs(response, 500L)).isEqualTo(500L);
     }
 
     @Test

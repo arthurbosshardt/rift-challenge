@@ -15,6 +15,18 @@ public class RiotRateLimitRetryInterceptor implements ClientHttpRequestIntercept
 
     static final int MAX_ATTEMPTS = 5;
     static final long DEFAULT_RETRY_DELAY_MS = 2_000L;
+    /** Used only by the no-arg constructor (tests, or any caller not wiring RiotProperties). */
+    static final long DEFAULT_MAX_RETRY_DELAY_MS = 10_000L;
+
+    private final long maxRetryDelayMs;
+
+    public RiotRateLimitRetryInterceptor() {
+        this(DEFAULT_MAX_RETRY_DELAY_MS);
+    }
+
+    public RiotRateLimitRetryInterceptor(long maxRetryDelayMs) {
+        this.maxRetryDelayMs = maxRetryDelayMs;
+    }
 
     @Override
     public ClientHttpResponse intercept(
@@ -34,7 +46,7 @@ public class RiotRateLimitRetryInterceptor implements ClientHttpRequestIntercept
                 return response;
             }
 
-            long delayMs = parseRetryAfterMs(response);
+            long delayMs = parseRetryAfterMs(response, maxRetryDelayMs);
             log.warn(
                     "Riot API rate limit for {} (attempt {}/{}), retrying in {}ms",
                     request.getURI(),
@@ -48,16 +60,21 @@ public class RiotRateLimitRetryInterceptor implements ClientHttpRequestIntercept
         return response;
     }
 
-    static long parseRetryAfterMs(ClientHttpResponse response) {
+    /**
+     * @param maxDelayMs upper bound applied to both the header-supplied and default delays — Riot
+     *     can ask for a Retry-After well beyond what's reasonable to block a request thread on.
+     */
+    static long parseRetryAfterMs(ClientHttpResponse response, long maxDelayMs) {
         List<String> retryAfter = response.getHeaders().get("Retry-After");
         if (retryAfter != null && !retryAfter.isEmpty()) {
             try {
-                return Math.max(1_000L, Long.parseLong(retryAfter.getFirst()) * 1_000L);
+                long requestedMs = Long.parseLong(retryAfter.getFirst()) * 1_000L;
+                return Math.min(maxDelayMs, Math.max(1_000L, requestedMs));
             } catch (NumberFormatException ignored) {
                 // Fall back to default delay.
             }
         }
-        return DEFAULT_RETRY_DELAY_MS;
+        return Math.min(maxDelayMs, DEFAULT_RETRY_DELAY_MS);
     }
 
     private static void sleep(long delayMs) throws IOException {

@@ -12,6 +12,7 @@ public record RiotProperties(
         // which of the 3 continental clusters is queried. Per-challenge platform/continental
         // routing lives on ChallengeRegion instead.
         String regionalRouting,
-        int syncConcurrency
+        int syncConcurrency,
+        long maxRetryDelayMs
 ) {
 }

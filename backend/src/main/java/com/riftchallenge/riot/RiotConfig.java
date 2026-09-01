@@ -25,7 +25,7 @@ public class RiotConfig {
 
         return RestClient.builder()
                 .requestFactory(requestFactory)
-                .requestInterceptor(new RiotRateLimitRetryInterceptor())
+                .requestInterceptor(new RiotRateLimitRetryInterceptor(properties.maxRetryDelayMs()))
                 .requestInterceptor(new RiotRateLimitingInterceptor(riotAppRateLimiter))
                 .defaultHeader("X-Riot-Token", properties.apiKey())
                 .build();

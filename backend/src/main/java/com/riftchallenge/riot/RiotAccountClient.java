@@ -4,6 +4,8 @@ import com.riftchallenge.riot.dto.RiotAccountDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -38,6 +40,10 @@ public class RiotAccountClient {
                     HttpStatus.BAD_GATEWAY,
                     "Riot API request failed"
             );
+        } catch (HttpServerErrorException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Riot API is currently unavailable");
+        } catch (ResourceAccessException exception) {
+            throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Riot API request timed out");
         }
     }
 }
