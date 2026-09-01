@@ -102,9 +102,9 @@ export class SummonerTypeaheadComponent {
 
   protected onInput(value: string): void {
     this.valueChange.emit(value);
-    const hashIndex = value.indexOf('#');
-    const query = hashIndex > 0 ? value.slice(0, hashIndex).trim() : value;
-    this.queries.next(query);
+    // Sent as-is, '#tagLine' included: the backend falls back to a live Riot lookup when nothing
+    // local matches a complete gameName#tagLine (see SummonerSearchService), which needs the tag.
+    this.queries.next(value);
   }
 
   protected pick(suggestion: SummonerSuggestion): void {

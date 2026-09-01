@@ -1,6 +1,7 @@
 package com.riftchallenge.summoner;
 
 import com.riftchallenge.authentication.AuthenticatedUserIds;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
@@ -28,8 +29,12 @@ public class SummonerSearchController {
     }
 
     @GetMapping("/search")
-    public List<SummonerSuggestionResponse> search(@RequestParam String q) {
-        return summonerSearchService.search(q);
+    public List<SummonerSuggestionResponse> search(
+            HttpServletRequest request,
+            Authentication authentication,
+            @RequestParam String q
+    ) {
+        return summonerSearchService.search(q, request, authentication);
     }
 
     @GetMapping("/resolve")

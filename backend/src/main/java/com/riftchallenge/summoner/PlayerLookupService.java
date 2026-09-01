@@ -9,7 +9,6 @@ import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -44,7 +43,9 @@ public class PlayerLookupService {
         this.riotAccountService = riotAccountService;
     }
 
-    @Transactional
+    // Intentionally not @Transactional: resolveFromRiot() below calls out to Riot. Each
+    // repository read/write already runs its own short-lived transaction (Spring Data default),
+    // so no Hikari connection is held open across that network call.
     public Optional<SummonerSuggestionResponse> resolve(String gameName, String tagLine) {
         Optional<ChallengeParticipant> participant = participantRepository
                 .findFirstByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCaseOrderByCreatedAtDesc(gameName, tagLine);
