@@ -15,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ParticipantMatchChampionBackfillService {
@@ -63,7 +61,9 @@ public class ParticipantMatchChampionBackfillService {
         return updated;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // Intentionally not @Transactional: backfillMatchLinks() below calls out to Riot per match.
+    // Each repository read/write already runs its own short-lived transaction (Spring Data
+    // default), so no Hikari connection is held open across the network calls in this loop.
     public void backfillForParticipant(UUID participantId) {
         ChallengeParticipant participant = participantRepository.findById(participantId).orElse(null);
         if (participant == null) {
@@ -82,7 +82,7 @@ public class ParticipantMatchChampionBackfillService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // See backfillForParticipant() above: intentionally not @Transactional.
     public void backfillMatchIfMissing(ChallengeParticipant participant, String matchId) {
         accountMatchRepository.findByRiotPuuidAndRiotMatchId(participant.getRiotPuuid(), matchId)
                 .filter(link -> link.getChampionId() == null)

@@ -397,7 +397,10 @@ public class LeaderboardAccountSyncService {
         return fetched;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // Intentionally not @Transactional: this calls out to Riot first (getMatch), which can block
+    // for a while under sustained rate limiting (see MAX_MATCH_IMPORTS_PER_PASS above). Each
+    // repository read/write below already runs its own short-lived transaction (Spring Data
+    // default), so no Hikari connection is held open across the network call.
     boolean importMatch(String puuid, String matchId) {
         RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
         if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {
@@ -459,7 +462,7 @@ public class LeaderboardAccountSyncService {
         return true;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // See importMatch() above: intentionally not @Transactional, same reasoning.
     boolean backfillMatchStats(AccountMatch linkedMatch, String puuid, String matchId) {
         RiotMatchDetailDto match = riotMatchLookupService.getMatch(matchId);
         if (match.info().queueId() != RiotMatchClient.RANKED_SOLO_QUEUE_ID) {

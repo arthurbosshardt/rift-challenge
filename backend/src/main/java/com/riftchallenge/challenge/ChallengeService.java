@@ -170,14 +170,17 @@ public class ChallengeService {
         );
     }
 
-    @Transactional(readOnly = true)
+    // Intentionally not @Transactional: toDetailResponse() calls out to Riot (profile icon
+    // backfill) when includeMatchHistory is true. Holding a DB transaction open across that
+    // network call would pin a Hikari connection for the duration of the Riot request, which
+    // is disproportionate given the small production pool. Each repository call below runs its
+    // own short-lived transaction instead.
     public ChallengeDetailResponse getByShareSlug(String shareSlug, UUID callerId) {
         Challenge challenge = challengeRepository.findByShareSlug(shareSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge not found"));
         return toDetailResponse(challenge, callerId);
     }
 
-    @Transactional(readOnly = true)
     public ChallengeDetailResponse getById(UUID challengeId, UUID callerId) {
         return getById(challengeId, callerId, true);
     }
