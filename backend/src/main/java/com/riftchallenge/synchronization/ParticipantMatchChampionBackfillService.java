@@ -22,6 +22,16 @@ public class ParticipantMatchChampionBackfillService {
     private static final Logger log = LoggerFactory.getLogger(ParticipantMatchChampionBackfillService.class);
 
     static final int BATCH_SIZE = 100;
+    /**
+     * Cap for {@link #backfillForParticipant}, which — unlike {@link #backfillAll} (a one-off
+     * startup job) — runs synchronously on the request thread of every active-challenge refresh.
+     * It backfills champion_id for a participant's whole match history, not just this challenge's
+     * window, so on an account with a large backlog (e.g. rows migrated by V33 without champion
+     * data) an unbounded loop here could block a refresh for as long as it takes to work through
+     * the entire backlog, one Riot call per match. A refresh chips away at it incrementally
+     * instead, same tradeoff as the other per-refresh import caps in ChallengeParticipantSyncService.
+     */
+    static final int MAX_MATCHES_PER_PARTICIPANT_REFRESH = 15;
 
     private final ChallengeParticipantRepository participantRepository;
     private final AccountMatchRepository accountMatchRepository;
@@ -70,16 +80,14 @@ public class ParticipantMatchChampionBackfillService {
             return;
         }
 
-        while (true) {
-            List<AccountMatch> batch = accountMatchRepository.findMissingChampionIdByRiotPuuid(
-                    participant.getRiotPuuid(),
-                    PageRequest.of(0, BATCH_SIZE)
-            );
-            if (batch.isEmpty()) {
-                return;
-            }
-            backfillBatch(batch);
+        List<AccountMatch> batch = accountMatchRepository.findMissingChampionIdByRiotPuuid(
+                participant.getRiotPuuid(),
+                PageRequest.of(0, MAX_MATCHES_PER_PARTICIPANT_REFRESH)
+        );
+        if (batch.isEmpty()) {
+            return;
         }
+        backfillBatch(batch);
     }
 
     // See backfillForParticipant() above: intentionally not @Transactional.
