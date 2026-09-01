@@ -1,6 +1,6 @@
 # Rift Challenge — règles projet
 
-Document de reprise pour quiconque (humain ou assistant IA) débarque sur ce repo. Lis ce fichier et le reste de `rules/` **avant** d'ajouter une page, un composant, un endpoint ou une règle métier. Réutilise l'existant — n'invente pas un nouveau pattern quand un équivalent existe déjà.
+Document de reprise pour quiconque (humain ou assistant IA) débarque sur ce repo. Lis ce fichier et le reste de `docs/` **avant** d'ajouter une page, un composant, un endpoint ou une règle métier. Réutilise l'existant — n'invente pas un nouveau pattern quand un équivalent existe déjà.
 
 Fichiers du dossier :
 
@@ -13,8 +13,10 @@ Fichiers du dossier :
 | `40-riot-api.md` | Intégration Riot Games |
 | `50-testing.md` | Stratégie de tests |
 | `60-git-and-delivery.md` | Git, CI/CD, déploiement |
+| `DEPLOY.md` | Guide opérationnel déploiement (humains) |
+| `GOOGLE_OAUTH.md` | Guide opérationnel Google OAuth (humains) |
 
-Guides opérationnels complémentaires (humains) : [`docs/DEPLOY.md`](../docs/DEPLOY.md), [`docs/GOOGLE_OAUTH.md`](../docs/GOOGLE_OAUTH.md).
+Guides opérationnels complémentaires (humains) : [`DEPLOY.md`](./DEPLOY.md), [`GOOGLE_OAUTH.md`](./GOOGLE_OAUTH.md).
 
 ---
 
@@ -36,18 +38,21 @@ Compte applicatif (email + mot de passe **ou** Google, via Supabase) :
 - ajouter / retirer des participants (SOLOQ) ou des duos (DUOQ) ;
 - choisir nom, dates de début et de fin, région ;
 - lier **un compte Riot** (le support multi-comptes/smurfs a existé puis a été retiré, voir `V26__user_riot_account_drop_smurfs.sql`) ;
-- voir les challenges (liste globale), ceux qu'il a créés, ceux auxquels il participe, et le **classement global** ;
-- rafraîchir manuellement les données Riot d'un challenge (**1 fois / 2 min**, imposé côté backend) ;
+- voir les challenges (liste globale), ceux qu'il a créés, ceux auxquels il participe (`/my-participations`), et le **classement global** ;
+- consulter le **profil public** de n'importe quel joueur (`/players/{riotId}`) : activité récente (matchs Ranked Solo/Duo, refresh manuel), et challenges auxquels ce joueur participe — que le joueur soit ou non l'utilisateur connecté ;
+- rafraîchir manuellement les données Riot d'un challenge (**1 fois / 2 min**, imposé côté backend) ou l'activité d'un profil joueur (throttle dédié, voir `10-backend.md`) ;
 - partager un challenge via une URL stable (`/challenges/{shareSlug}`, `shareSlug` = UUID du challenge).
 
-Les visiteurs non connectés voient la landing, la liste des challenges, le leaderboard global, et le détail d'un challenge via son lien de partage — tout challenge est consultable publiquement.
+Une fois connecté (et compte Riot lié), l'écran d'accueil par défaut redirige vers **son propre profil joueur** (`/players/{riotId}`) plutôt que vers un tableau de bord dédié — voir `myChallengesRedirectGuard` (`/my-challenges` est une URL legacy conservée pour les anciens liens, qui redirige vers ce même profil).
+
+Les visiteurs non connectés voient la landing, la liste des challenges, le leaderboard global, le détail d'un challenge via son lien de partage, et n'importe quel profil joueur — tout est consultable publiquement, y compris sans compte.
 
 ### Ce que le produit n'est pas
 
 - Pas un client Riot, pas un tracker live type Porofessor.
-- Les classements **ne sont pas temps réel**. Le refresh par challenge est manuel et throttlé ; le leaderboard global est recalculé 4×/jour (voir `10-backend.md`).
+- Les classements **ne sont pas temps réel**. Le refresh par challenge (ou par profil joueur) est manuel et throttlé ; le leaderboard global est recalculé 4×/jour (voir `10-backend.md`).
 - Pas affilié à Riot Games (disclaimer légal dans le footer).
-- La page **« Mes games récentes »** existe dans le code (`/api/challenges/recent`, modal 5v5) mais est **retirée de la navigation** : résultat produit jugé non convaincant. Ne pas la réactiver sans demande explicite.
+- Un ancien **tableau de bord** (« mes games récentes », modal 5v5, endpoint `GET /api/challenges/recent`) a existé et reste dans le code mais n'est plus dans la navigation ni le parcours par défaut : il a été remplacé par le profil joueur public (`/players/{riotId}`), jugé plus convaincant. Ne pas réactiver l'ancien tableau de bord sans demande explicite.
 
 ---
 
@@ -65,7 +70,8 @@ Les visiteurs non connectés voient la landing, la liste des challenges, le lead
 | **LP gained** | Delta de LP **pendant la fenêtre du challenge**, pas le LP actuel tout court. |
 | **Rank estimated** | Rang/LP reconstruits à partir des matchs quand le live Riot n'est plus fiable (challenge fini, peu de games). Flag `rankEstimated`. |
 | **Share slug** | Identifiant d'URL. **UUID du challenge** (stable si on renomme). |
-| **Refresh** | Sync manuelle Riot → Postgres pour un challenge. Cooldown **2 minutes**, appliqué de façon atomique côté backend. |
+| **Profil joueur** | Page publique `/players/{riotId}` : activité récente + challenges d'un joueur donné, connecté ou non, owner du profil ou non. |
+| **Refresh** | Sync manuelle Riot → Postgres pour un challenge (ou l'activité d'un profil joueur). Cooldown **2 minutes** pour un challenge, appliqué de façon atomique côté backend. |
 | **Leaderboard global** | Classement tous-challenges-confondus (saison + fenêtre glissante 7 jours), recalculé périodiquement et mis en cache. « Saison » = **année ranked Riot complète** (depuis le reset de LP de janvier), pas un split — Riot ne reset **pas** les LP entre les 3 saisons internes de l'année (S1/S2/S3), donc borner à un split sous-compterait l'activité des joueurs. |
 
 Les anciennes routes `/races/...`, `/my-races`, `/public-races` redirigent vers `/challenges/...`.
@@ -133,7 +139,7 @@ Seule la file **Ranked Solo/Duo**, queue Riot **`420`**, est synchronisée. Un m
 
 ## 4. Principes d'ingénierie
 
-- Lire le code existant + `rules/` avant un gros changement. Plus petit diff cohérent.
+- Lire le code existant + `docs/` avant un gros changement. Plus petit diff cohérent.
 - Ne pas sur-ingénierer : pas d'abstraction, de lib ou de config pour un besoin hypothétique.
 - Pas de logique métier dans les composants Angular. Règles métier dans les services backend, jamais uniquement côté client.
 - **Ne jamais faire confiance au frontend** : ownership, limites 16/8/10, cooldown, DuoQ — tout est revérifié côté serveur.
@@ -153,7 +159,7 @@ Ne jamais exposer la clé Riot au frontend. Ne jamais logger un secret. Toute li
 
 Avant d'implémenter une feature significative :
 
-1. Inspecter le code existant et les règles pertinentes dans `rules/`.
+1. Inspecter le code existant et les règles pertinentes dans `docs/`.
 2. Expliquer brièvement le plan d'implémentation et les fichiers concernés.
 3. Faire le plus petit changement cohérent.
 4. Ajouter/mettre à jour les tests pour toute règle métier touchée.
@@ -165,7 +171,7 @@ Ne pas réécrire l'application en profondeur sans demande explicite.
 
 ## 7. État connu / pièges
 
-- **Dashboard** : code + API `/recent` + modal 5v5 présents ; nav masquée. Certains parcours legacy peuvent encore rediriger vers `/my-challenges`/`/dashboard` — vérifier les guards (`core/guards/home.guards.ts`) avant d'y toucher.
+- **Dashboard legacy** : code + API `GET /api/challenges/recent` + modal 5v5 encore présents mais hors navigation et hors parcours par défaut (remplacés par le profil joueur `/players/{riotId}`). `/dashboard` et `/my-challenges` redirigent (voir `core/guards/home.guards.ts`) — vérifier ces guards avant d'y toucher.
 - **Share slug** : UUID, jamais recalculé après un renommage.
 - **Rangs estimés** : défis finis / peu de games ; plafonds dans `RankReplayService`.
 - **Icônes** : Community Dragon / Data Dragon via constantes `ddragon-constants.ts` + proxy backend champions (jamais d'appel direct depuis le navigateur vers Riot/Data Dragon).

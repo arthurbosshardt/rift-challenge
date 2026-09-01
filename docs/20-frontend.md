@@ -11,7 +11,7 @@ Angular **22**, standalone components, TypeScript strict, Signals, Angular Route
 ```
 core/       — auth, i18n, models, services API, guards, interceptors, utils, theme, seo
 shared/     — layout, cartes, leaderboard, tooltips, skeletons — composants réutilisables
-features/   — auth/, home/, challenge/, settings/
+features/   — auth/, home/, challenge/, player/, settings/
 ```
 
 Pas de logique métier dans les composants. Utils purs dans `core/utils/`. HTTP uniquement dans les services (`core/services/*-api.service.ts`).

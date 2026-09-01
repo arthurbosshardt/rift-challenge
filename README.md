@@ -8,7 +8,7 @@ Plateforme de **challenges** League of Legends (Angular + Spring Boot + PostgreS
 
 - `frontend/` — Angular
 - `backend/` — Spring Boot
-- `rules/` — règles projet mutualisées (produit, backend, frontend, base de données, API Riot, tests, delivery) — **à lire avant tout changement significatif**, humain ou IA
+- `docs/` — règles projet mutualisées (produit, backend, frontend, base de données, API Riot, tests, delivery) + guides opérationnels — **à lire avant tout changement significatif**, humain ou IA
 
 ## Versions
 
@@ -44,7 +44,7 @@ $env:PGPASSWORD='postgres'
 & "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -O riftchallenge riftchallenge
 ```
 
-Variables dans `.env` à la racine (gitignored). Les migrations Flyway s'exécutent au démarrage du backend (`V1` → `V24` actuellement).
+Variables dans `.env` à la racine (gitignored). Les migrations Flyway s'exécutent au démarrage du backend (`V1` → `V35` actuellement).
 
 ## Lancer
 
@@ -108,11 +108,13 @@ Les clés dev Riot expirent toutes les 24 h — regénérer sur le portail si be
 
 | Route | Accès |
 |---|---|
-| `/`, `/home` | Landing publique |
+| `/`, `/home` | Landing publique (redirige vers le profil joueur si connecté avec compte Riot lié) |
 | `/challenges` | Liste des challenges + classement global |
 | `/challenges/:shareSlug` | Détail d'un challenge (public via lien de partage) |
 | `/challenges/new` | Création (connecté) |
-| `/my-challenges` | Challenges rejoints (connecté + compte Riot lié) |
+| `/players/:riotId` | Profil public d'un joueur : activité récente + challenges — accessible à tous, page d'accueil par défaut pour un utilisateur connecté avec compte Riot lié |
+| `/my-participations` | Challenges rejoints (connecté + compte Riot lié) |
+| `/my-challenges` | URL legacy, redirige vers `/players/:riotId` du compte lié |
 | `/settings` | Paramètres (connecté) |
 | `/login`, `/auth/callback`, `/auth/reset-password` | Flux d'auth |
 
@@ -120,7 +122,7 @@ Table de routage source : `frontend/src/app/app.routes.ts`.
 
 ## API (repères)
 
-Voir [`rules/10-backend.md`](rules/10-backend.md) pour la liste complète des endpoints, l'architecture backend et les mécanismes de throttling.
+Voir [`docs/10-backend.md`](docs/10-backend.md) pour la liste complète des endpoints, l'architecture backend et les mécanismes de throttling.
 
 ## Déploiement
 

@@ -28,7 +28,7 @@ Ping périodique (5 min) de `/actuator/health` sur le backend Render pour limite
 
 CORS prod : `https://rift-challenge.com` et `https://www.rift-challenge.com` (variable `CORS_ORIGINS` côté Render, jamais en dur dans le code).
 
-Guides détaillés (opérationnels, humains) : [`docs/DEPLOY.md`](../docs/DEPLOY.md), [`docs/GOOGLE_OAUTH.md`](../docs/GOOGLE_OAUTH.md).
+Guides détaillés (opérationnels, humains) : [`DEPLOY.md`](./DEPLOY.md), [`GOOGLE_OAUTH.md`](./GOOGLE_OAUTH.md).
 
 ## Environnements
 

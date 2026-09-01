@@ -12,13 +12,14 @@ Packages orientés **feature**, pas par couche technique globale :
 
 ```
 authentication/   — filtre JWT Supabase, /api/auth/me
-account/          — AppUser, comptes Riot liés
+account/          — AppUser, comptes Riot liés (utilisateur + admin)
 challenge/        — CRUD, progress, duos, throttles, OG, sitemap
+player/           — profil joueur public (/api/players), réutilise challenge/ et summoner/
 riot/             — clients HTTP Riot, parsing, icônes, rank score, replay LP
 synchronization/  — sync des matchs, snapshots de rang, backfill champion
 summoner/         — recherche / résolution d'invocateur
-leaderboard/      — cache, calcul, scheduler du classement global
-match/            — détail de match (partagé challenge/duo)
+leaderboard/      — cache, calcul, scheduler du classement global, sync des comptes, backfill d'historique
+match/            — détail de match (partagé challenge/duo/profil joueur/leaderboard)
 config/           — Spring config (sécurité, CORS, Riot, executor)
 common/           — utilitaires partagés (throttle générique, résolution de clé client)
 health/           — health checks
@@ -30,18 +31,29 @@ Dans une feature : `controller` (mince, délègue), `service` (règles métier),
 
 Base `/api`.
 
-Challenges :
-- `GET /api/challenges/public?challengeName=&summoner=&type=` — liste (cache), `POST /public/refresh`
-- `GET /api/challenges/owned` · `/participating` · `/mine`
-- `GET /api/challenges/share/{shareSlug}`
-- `POST /api/challenges` (throttle mutation par user)
+Challenges (`ChallengeController`, base `/api/challenges`) :
+- `GET /public?challengeName=&summoner=&type=` — liste (cache), `POST /public/refresh` (throttle liste)
+- `GET /participating` (auth)
+- `GET /share/{shareSlug}` (public)
+- `POST /` (auth, throttle mutation par user)
 - `PATCH /{id}` (nom + dates ensemble) · `PATCH /{id}/schedule|start|end|name`
 - `DELETE /{id}`
 - `POST /{id}/refresh` (cooldown 2 min atomique + throttle IP)
 - `POST/DELETE /{id}/participants`, `/{id}/duos` (throttle mutation par user)
-- `GET /recent` (dashboard, auth, throttle dédié)
+- `GET /recent` (dashboard legacy, hors nav — auth, throttle dédié)
+- `GET /{id}/participants/{participantId}/matches/{matchId}` · `GET /{id}/duos/{duoId}/matches/{matchId}` — détail de match
 
-Autres : `GET /api/auth/me` · comptes Riot (`UserRiotAccountController`) · `GET /api/summoners/search|resolve` · icônes champion `/api/champion-icons/{id}.png` (proxy backend) · OG `/api/challenge-preview[-image]/{slug}` · `GET /api/leaderboard` + `POST /api/leaderboard/refresh` (admin) · `GET /api/sitemap.xml` (dynamique, toutes les URLs de challenges publiques) · `GET /actuator/health`.
+Profil joueur public (`PlayerProfileController`, base `/api/players`, throttle dédié par action, aucune auth requise) :
+- `GET /{riotId}` — résolution Riot ID → PUUID/profil
+- `GET /{riotId}/activity` · `POST /{riotId}/activity/refresh` (refresh synchrone, importe les matchs de saison manquants)
+- `GET /{riotId}/challenges` — challenges auxquels ce joueur participe
+
+Comptes Riot liés (`UserRiotAccountController`, base `/api/me/riot-accounts`, auth) : `GET /` · `POST /` (link) · `DELETE /{accountId}` · `GET /{accountId}/matches/{matchId}`.
+Admin comptes Riot (`AdminRiotAccountController`, base `/api/admin/riot-accounts`, réservé à l'email admin) : `POST /bulk` (enregistrement en masse + sync leaderboard), `POST /backfill-history` (backfill asynchrone de l'historique complet, best-effort — progression uniquement dans les logs).
+
+Leaderboard (`LeaderboardController`, base `/api/leaderboard`) : `GET /` (snapshot en cache) · `POST /refresh` (admin, pure agrégation DB, pas d'appel Riot) · `GET /players/{puuid}/matches/{matchId}`.
+
+Autres : `GET /api/auth/me` · `GET /api/summoners/search|resolve` · icônes champion `/api/champion-icons/{id}.png` (proxy backend) · OG `/api/challenges/share/{slug}/preview[-image.png]` + alias `/api/challenge-preview[-image]` · `GET /api/sitemap.xml` (dynamique, toutes les URLs de challenges publiques) · `GET /actuator/health`.
 
 Auth : Bearer JWT Supabase. Deux `SecurityFilterChain` (endpoints publics vs authentifiés) — voir `SecurityConfig`. CORS piloté par la variable d'env `CORS_ORIGINS` (jamais de wildcard en dur dans le code).
 
