@@ -15,6 +15,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SummonerSearchService, SummonerSuggestion } from '../../../core/services/summoner-search.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { parseRiotId } from '../../../core/utils/riot-id';
 import { PlayerAvatarComponent } from '../player-avatar/player-avatar.component';
 import { NavIconComponent } from '../nav-icon/nav-icon.component';
 
@@ -34,6 +35,11 @@ export class SummonerTypeaheadComponent {
   readonly value = input('');
   readonly valueChange = output<string>();
   readonly selected = output<SummonerSuggestion>();
+  /** No suggestion matched (e.g. a real player never added to a challenge before), but the typed
+   *  value still parses as a valid gameName#tagLine — let the caller navigate there directly and
+   *  resolve it server-side instead of silently doing nothing. Only emitted when showSearchButton
+   *  is set, same as {@link triggerSearch}'s existing top-suggestion pick. */
+  readonly manualSubmit = output<string>();
   readonly showSearchButton = input(false);
 
   private readonly searchApi = inject(SummonerSearchService);
@@ -116,11 +122,22 @@ export class SummonerTypeaheadComponent {
     this.triggerSearch();
   }
 
-  /** Picks the top autocomplete match — used by the Enter key and the search button. */
+  /**
+   * Picks the top autocomplete match — used by the Enter key and the search button. Falls back
+   * to emitting the raw typed value when it parses as a valid Riot ID but matched no suggestion
+   * (nothing happens otherwise, which used to be the case for any player this app hadn't already
+   * seen before).
+   */
   protected triggerSearch(): void {
     const top = this.suggestions()[0];
     if (top) {
       this.pick(top);
+      return;
+    }
+
+    const parsed = parseRiotId(this.value());
+    if (parsed) {
+      this.manualSubmit.emit(`${parsed.gameName}#${parsed.tagLine}`);
     }
   }
 

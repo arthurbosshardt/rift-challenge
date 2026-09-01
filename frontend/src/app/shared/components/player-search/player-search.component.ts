@@ -48,4 +48,10 @@ export class PlayerSearchComponent {
     this.collapse();
     void this.router.navigate(['/players', suggestion.riotId]);
   }
+
+  /** No matching suggestion, but the typed value is a valid Riot ID — resolve it on the profile page instead. */
+  protected onManualSubmit(riotId: string): void {
+    this.collapse();
+    void this.router.navigate(['/players', riotId]);
+  }
 }

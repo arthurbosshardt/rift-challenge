@@ -7,8 +7,10 @@ import com.riftchallenge.challenge.ChallengeParticipant;
 import com.riftchallenge.challenge.ChallengeParticipantRepository;
 import com.riftchallenge.riot.dto.RiotAccountDto;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Resolves an exact riotId to the puuid/identity backing it, for the public player profile
@@ -17,6 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
  * linked or leaderboard-synced), so both are checked. A participant-only match is also
  * registered into {@link RiotAccount} here, so viewing a player's profile is enough to pick
  * it up in the leaderboard's periodic sync.
+ *
+ * <p>If neither local source has this player — nobody has ever added them to a challenge or
+ * looked them up before — falls back to a live Riot lookup, so "any player" (per the product
+ * docs) actually means any player, not just ones this app has already seen. The found account
+ * is persisted the same way the participant-only branch already does, so it's a one-time Riot
+ * call per player. Callers are expected to rate-limit this (see PlayerProfileRequestThrottle) —
+ * it's the only branch here that can reach Riot's API.
  */
 @Service
 public class PlayerLookupService {
@@ -48,13 +57,39 @@ public class PlayerLookupService {
             return Optional.of(toResponse(p.getRiotPuuid(), p.getRiotGameName(), p.getRiotTagLine(), p.getProfileIconId()));
         }
 
-        return riotAccountRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(gameName, tagLine)
-                .map(account -> toResponse(
-                        account.getRiotPuuid(),
-                        account.getRiotGameName(),
-                        account.getRiotTagLine(),
-                        account.getProfileIconId()
-                ));
+        Optional<RiotAccount> tracked = riotAccountRepository
+                .findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(gameName, tagLine);
+        if (tracked.isPresent()) {
+            RiotAccount account = tracked.get();
+            return Optional.of(toResponse(
+                    account.getRiotPuuid(),
+                    account.getRiotGameName(),
+                    account.getRiotTagLine(),
+                    account.getProfileIconId()
+            ));
+        }
+
+        return resolveFromRiot(gameName, tagLine);
+    }
+
+    private Optional<SummonerSuggestionResponse> resolveFromRiot(String gameName, String tagLine) {
+        RiotAccountService.ResolvedRiotAccount resolved;
+        try {
+            resolved = riotAccountService.resolveExactRiotAccount(gameName, tagLine);
+        } catch (ResponseStatusException exception) {
+            if (exception.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return Optional.empty();
+            }
+            throw exception;
+        }
+
+        RiotAccount saved = riotAccountService.findOrCreate(resolved.account(), resolved.profileIconId());
+        return Optional.of(toResponse(
+                saved.getRiotPuuid(),
+                saved.getRiotGameName(),
+                saved.getRiotTagLine(),
+                saved.getProfileIconId()
+        ));
     }
 
     private static SummonerSuggestionResponse toResponse(

@@ -36,7 +36,16 @@ public class RiotAccountService {
 
     public ResolvedRiotAccount resolveRiotAccount(String riotId) {
         RiotIdParser.ParsedRiotId parsed = RiotIdParser.parse(riotId);
-        RiotAccountDto account = riotAccountClient.getAccountByRiotId(parsed.gameName(), parsed.tagLine());
+        return resolveExactRiotAccount(parsed.gameName(), parsed.tagLine());
+    }
+
+    /**
+     * Same as {@link #resolveRiotAccount(String)} but for an already-split, exact gameName/tagLine
+     * — skips {@link RiotIdParser}'s whitespace normalization, which is meant for sloppy
+     * user-typed input and would corrupt a legitimate internal space in a stored/exact gameName.
+     */
+    public ResolvedRiotAccount resolveExactRiotAccount(String gameName, String tagLine) {
+        RiotAccountDto account = riotAccountClient.getAccountByRiotId(gameName, tagLine);
         Integer profileIconId = riotSummonerClient.findProfileIconId(account.puuid(), ChallengeRegion.EUW).orElse(null);
         return new ResolvedRiotAccount(account, profileIconId);
     }

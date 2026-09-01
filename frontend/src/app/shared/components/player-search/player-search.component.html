@@ -13,6 +13,7 @@
       [value]="query()"
       (valueChange)="query.set($event)"
       (selected)="onSelected($event)"
+      (manualSubmit)="onManualSubmit($event)"
       [showSearchButton]="true"
       [placeholder]="'nav.searchPlayer' | t"
     />
